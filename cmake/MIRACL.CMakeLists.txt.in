@@ -1,0 +1,67 @@
+cmake_minimum_required(VERSION 3.0)
+
+project(MIRACL)
+
+option(BUILD_EXE "Build executables" OFF)
+
+# override C/CXXFLAGS
+set(CMAKE_C_FLAGS "-m64 -O2")
+set(CMAKE_CXX_FLAGS "-m64 -O2")
+
+# PATCH
+# * flatten directory
+# * cp mirdef.h64 mirdef.h
+# * cp mrmuldv.g64 mrmuldv.c
+
+set(MIRACL_C_SOURCES
+    mraes.c mralloc.c mrarth0.c mrarth1.c mrarth2.c mrarth3.c mrbits.c
+    mrbrick.c mrbuild.c mrcore.c mrcrt.c mrcurve.c mrdouble.c mrebrick.c
+    mrec2m.c mrecn2.c mrfast.c mrflash.c mrflsh1.c mrflsh2.c mrflsh3.c
+    mrflsh4.c mrfpe.c mrfrnd.c mrgcd.c mrgcm.c mrgf2m.c mrio1.c mrio2.c
+    mrjack.c mrlucas.c mrmonty.c mrmuldv.c mrpi.c mrpower.c mrprime.c mrrand.c
+    mrround.c mrscrt.c mrsha3.c mrshs256.c mrshs512.c mrshs.c mrsmall.c
+    mrsroot.c mrstrong.c mrxgcd.c mrzzn2b.c mrzzn2.c mrzzn3.c mrzzn4.c
+)
+
+set(MIRACL_CXX_SOURCES
+    big.cpp crt.cpp ec2.cpp ecn.cpp flash.cpp poly.cpp polymod.cpp zzn.cpp
+)
+
+add_library(miracl ${MIRACL_C_SOURCES})
+add_library(miracl_cxx ${MIRACL_CXX_SOURCES})
+
+install(TARGETS miracl miracl_cxx DESTINATION lib)
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+    DESTINATION include/miracl_lib
+    FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY DESTINATION include/dummy_include_dir)
+
+if (BUILD_EXE)
+    add_executable(bmark bmark.c)
+    target_link_libraries(bmark miracl)
+    add_executable(fact fact.c)
+    target_link_libraries(fact miracl)
+    add_executable(mersenne mersenne.cpp)
+    target_link_libraries(mersenne miracl_cxx miracl)
+    add_executable(brent brent.cpp)
+    target_link_libraries(brent miracl_cxx miracl)
+    add_executable(sample sample.cpp)
+    target_link_libraries(sample miracl_cxx miracl)
+    add_executable(ecsgen ecsgen.cpp)
+    target_link_libraries(ecsgen miracl_cxx miracl)
+    add_executable(ecsign ecsign.cpp)
+    target_link_libraries(ecsign miracl_cxx miracl)
+    add_executable(ecsver ecsver.cpp)
+    target_link_libraries(ecsver miracl_cxx miracl)
+    add_executable(pk-demo pk-demo.cpp)
+    target_link_libraries(pk-demo miracl_cxx miracl)
+    add_executable(schoof schoof.cpp)
+    target_link_libraries(schoof miracl_cxx miracl)
+
+    install(TARGETS
+        bmark fact mersenne brent sample ecsgen ecsign ecsver
+        pk-demo schoof
+        DESTINATION bin
+    )
+endif (BUILD_EXE)

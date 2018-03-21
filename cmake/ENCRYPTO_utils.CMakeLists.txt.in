@@ -1,0 +1,61 @@
+cmake_minimum_required(VERSION 3.0)
+
+project(ENCRYPTO_utils)
+
+
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_CXX_FLAGS_DEBUG "-g3 -ggdb -O0")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+
+# Dependencies
+find_package(Threads REQUIRED)
+
+find_library(MIRACL_LIBRARY libmiracl.a)
+if ((NOT MIRACL_LIBRARY) OR (NOT EXISTS ${MIRACL_LIBRARY}))
+    message(FATAL_ERROR "MIRACL library not found")
+else()
+    message(STATUS "Found MIRACL library: ${MIRACL_LIBRARY}")
+endif()
+find_library(MIRACL_CXX_LIBRARY libmiracl_cxx.a)
+if ((NOT MIRACL_CXX_LIBRARY) OR (NOT EXISTS ${MIRACL_CXX_LIBRARY}))
+    message(FATAL_ERROR "MIRACL cxx library not found")
+else()
+    message(STATUS "Found MIRACL cxx library: ${MIRACL_CXX_LIBRARY}")
+endif()
+find_path(MIRACL_INCLUDE_DIR miracl_lib/miracl.h)
+if ((NOT MIRACL_INCLUDE_DIR) OR (NOT EXISTS ${MIRACL_INCLUDE_DIR}))
+    message(FATAL_ERROR "MIRACL include dir not found")
+else()
+    message(STATUS "Found MIRACL include dir: ${MIRACL_INCLUDE_DIR}")
+endif()
+
+set(ENCRYPTO_utils_SOURCES
+    cbitvector.cpp
+    circular_queue.cpp
+    connection.cpp
+    crypto/crypto.cpp
+    crypto/dgk.cpp
+    crypto/djn.cpp
+    crypto/ecc-pk-crypto.cpp
+    crypto/gmp-pk-crypto.cpp
+    crypto/intrin_sequential_enc8.cpp
+    crypto/TedKrovetzAesNiWrapperC.cpp
+    fileops.cpp
+    graycode.cpp
+    parse_options.cpp
+    powmod.cpp
+)
+
+
+add_library(encrypto_utils ${ENCRYPTO_utils_SOURCES})
+# allow relative includes: #include "../miracl_lib/...h"
+target_include_directories(encrypto_utils PRIVATE ${MIRACL_INCLUDE_DIR})
+
+install(TARGETS encrypto_utils  DESTINATION "lib")
+
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION include
+        FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION include
+        FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY DESTINATION include/dummy_include_dir)
