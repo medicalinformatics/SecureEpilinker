@@ -4,7 +4,7 @@ project(ABY)
 
 option(BUILD_EXE "Build executables" OFF)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native")
 set(CMAKE_CXX_FLAGS_DEBUG "-std=c++17 -g3 -ggdb -O0")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
