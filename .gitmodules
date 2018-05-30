@@ -9,4 +9,4 @@
 	url = https://github.com/encryptogroup/OTExtension.git
 [submodule "extern/ABY"]
 	path = extern/ABY
-	url = https://github.com/encryptogroup/ABY.git
+	url = git@git.compbiol.bio.tu-darmstadt.de:crisp/ABY.git 
