@@ -25,6 +25,9 @@
 #include "include/millionaire_prob.h"
 
 #include "fmt/format.h"
+#include "nlohmann/json.hpp"
+#include "valijson/validator.hpp"
+#include "valijson/adapters/nlohmann_json_adapter.hpp"
 
 int32_t read_test_options(int32_t* argcp, char*** argvp, e_role* role,
 		uint32_t* bitlen, uint32_t* nvals, uint32_t* secparam, string* address,
@@ -80,7 +83,8 @@ int main(int argc, char** argv) {
 			&port, &test_op);
 
 	seclvl seclvl = get_sec_lvl(secparam);
-
+        nlohmann::json test;
+        test["test"] = "Erfolgreich";
 	//evaluate the millionaires circuit using Yao
 	test_millionaire_prob_circuit(role, (char*) address.c_str(), port, seclvl, 1, 32,
 			nthreads, mt_alg, S_YAO);
@@ -88,6 +92,7 @@ int main(int argc, char** argv) {
 	//test_millionaire_prob_circuit(role, (char*) address.c_str(), seclvl, 1, 32,
 	//		nthreads, mt_alg, S_BOOL);
 
+        fmt::print("JSON Test {}!\n", test["test"].get<std::string>());
 	return 0;
 }
 
