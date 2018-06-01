@@ -19,3 +19,6 @@
 [submodule "extern/valijson"]
 	path = extern/valijson
 	url = https://github.com/tristanpenman/valijson.git
+[submodule "extern/restbed"]
+	path = extern/restbed
+	url = https://github.com/Corvusoft/restbed
