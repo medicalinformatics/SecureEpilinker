@@ -16,3 +16,6 @@
 [submodule "extern/fmt"]
 	path = extern/fmt
 	url = https://github.com/fmtlib/fmt
+[submodule "extern/valijson"]
+	path = extern/valijson
+	url = https://github.com/tristanpenman/valijson.git
