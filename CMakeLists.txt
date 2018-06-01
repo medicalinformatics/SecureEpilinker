@@ -15,3 +15,28 @@ file(MAKE_DIRECTORY ${Project_INSTALL_PREFIX})
 
 # build external dependencies
 add_subdirectory(extern)
+
+# build main application
+add_executable (millionaire millionaire_prob_test.cpp
+                            include/millionaire_prob.h
+                            include/millionaire_prob.cpp)
+add_dependencies(millionaire ABY)
+add_dependencies(millionaire OTExtension)
+add_dependencies(millionaire MIRACL)
+add_dependencies(millionaire ENCRYPTO_utils)
+
+
+find_package(OpenSSL)
+find_package(Threads)
+
+set(EXTERNALLIBS ${Project_INSTALL_PREFIX}/lib/libaby.a
+  ${Project_INSTALL_PREFIX}/lib/libotextension.a
+  ${Project_INSTALL_PREFIX}/lib/libencrypto_utils.a
+  ${Project_INSTALL_PREFIX}/lib/libmiracl_cxx.a
+  ${Project_INSTALL_PREFIX}/lib/libmiracl.a
+  )
+
+target_include_directories(millionaire PRIVATE ${Project_INSTALL_PREFIX}/include)
+target_link_libraries(millionaire PRIVATE  ${EXTERNALLIBS} gmp gmpxx rt OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
+target_link_libraries(millionaire PRIVATE fmt::fmt-header-only nlohmann_json)
+set_property(TARGET millionaire PROPERTY CXX_STANDARD 14)
