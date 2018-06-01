@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://www.cbs.tu-darmstadt.de/secureepilink/schemas/init-schema.json",
+  "definitions": {
+    "authentication": {
+      "type": "object",
+      "properties": {
+        "authType": {"enum": ["none","apikey"]},
+        "additionalProperties": {
+          "sharedkey": {"type": "string"}
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "frequency": {
+          "type": "number"
+        },
+        "errorRate": {
+          "type": "number"
+        },
+        "comparator": {
+          "type": "string",
+          "enum": [
+            "binary",
+            "nGram"
+          ]
+        },
+        "fieldType": {
+          "enum": [
+            "integer",
+            "number",
+            "string",
+            "bitmask"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "localAuthentication": {"$ref": "#/definitions/authentication"},
+    "dataService": {
+      "type": "object",
+      "properties": {
+        "url": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "connectionProfile": {"type": "object",
+      "properties": {
+        "url": {"type": "string"},
+        "authentication": {"$ref": "#/definitions/authentication"}
+      },
+      "additionalProperties": false
+    },
+    "linkageService": {
+      "url": { "type": "string"},
+      "authentication": { "$ref": "#/definitions/authentication"}
+    },
+    "algorithm": {
+      "type": "object",
+      "properties": {
+        "algoType": {"enum": ["epilink"]},
+        "bloomLength": {"type": "integer"},
+        "threshold_match": {"type": "number"},
+        "threshold_non_match": {"type": "number"},
+        "exchangeGroups": {"type": "array"},
+        "fields": {"type": "array",
+          "items": {"$ref": "#/definitions/field"},
+          "additionalItems": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

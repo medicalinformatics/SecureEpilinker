@@ -1,0 +1,8 @@
+{
+"port": 8080,
+"serverKeyPath": "/home/kussel/Projekte/epirest/apps/data/server.key",
+"serverCertificatePath": "/home/kussel/Projekte/epirest/apps/data/server.crt",
+"serverDHPath": "/home/kussel/Projekte/epirest/apps/data/dh768.pem",
+"initSchemaPath": "/home/kussel/Projekte/epirest/apps/data/init-schema.json",
+"linkRecordSchemaPath": "/home/kussel/Projekte/epirest/apps/data/linkrecord-schema.json"
+}

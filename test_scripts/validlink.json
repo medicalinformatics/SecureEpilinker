@@ -1,0 +1,17 @@
+{
+  "callback": {
+    "url": "https://mlc.mitro.dkfz.de/linkCallback/123",
+    "token": "3lk4j3Y4l5j"
+    },
+  "fields": {
+    "vorname": "I07A1YM4aKNXlQ...",
+    "nachname": "5f3dPPzqJvw=...",
+    "geburtsname": "kj8ictbYoOM=...",
+    "geburtstag": 24,
+    "geburtsmonat": 12,
+    "geburtsjahr": 1864,
+    "plz": "65432",
+    "ort": "EFXma8cPVEA=...",
+    "versichertennummer": "A123456781-1"
+  }
+}

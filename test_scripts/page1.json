@@ -1,0 +1,62 @@
+{ 
+   "_links":{ 
+      "self":{ 
+         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=50&todate=1524096000"
+      },
+      "first":{ 
+         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=50&todate=1524096000"
+      },
+      "prev":{ 
+         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=50&todate=1524096000"
+      },
+      "next":{ 
+         "href":"http://localhost:8800/rest/api/AllRecords?page=2&pagesize=50&todate=1524096000"
+      },
+      "last":{ 
+         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=3&pagesize=50&todate=1524096000"
+      }
+   },
+   "total":1250,
+   "currentPageNumber":1,
+   "lastPageNumber":3,
+   "pageSize":50,
+   "todate":1524096000,
+   "records":[ 
+      { 
+         "fields":{ 
+            "vorname":"I07A1YM4aKNXlQ...",
+            "nachname":"5f3dPPzqJvw=...",
+            "geburtsname":"kj8ictbYoOM=...",
+            "geburtstag": 24,
+            "geburtsmonat": 12,
+            "geburtsjahr": 1864,
+            "plz":"65432",
+            "ort":"EFXma8cPVEA=..."
+         },
+         "ids":[ 
+            { 
+               "idType":"lid",
+               "idString":"12345"
+            }
+         ]
+      },
+      { 
+         "fields":{ 
+            "vorname":"I07A1YM4aKNXlQ...",
+            "nachname":"5f3dPPzqJvw=...",
+            "geburtsname":"kj8ictbYoOM=...",
+            "geburtstag":24,
+            "geburtsmonat":12,
+            "geburtsjahr":1864,
+            "plz":"65432",
+            "ort":"EFXma8cPVEA=..."
+         },
+         "ids":[ 
+            { 
+               "idType":"lid",
+               "idString":"23231"
+            }
+         ]
+      }
+   ]
+}

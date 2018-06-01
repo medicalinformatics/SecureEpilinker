@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://www.cbs.tu-darmstadt.de/secureepilink/schemas/linkrecord-schema.json",
+  "definitions": {
+  },
+  "type": "object",
+  "properties": {
+     "callback":  {
+       "type": "object",
+       "properties": {
+         "url": {"type": "string"},
+         "token": {"type": "string"}
+       },
+       "additionalProperties": false
+     },
+    "fields": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}
