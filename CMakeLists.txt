@@ -25,6 +25,7 @@ add_dependencies(sel OTExtension)
 add_dependencies(sel MIRACL)
 add_dependencies(sel ENCRYPTO_utils)
 add_dependencies(sel valijson_patch)
+add_dependencies(sel restbed_patch)
 
 
 find_package(OpenSSL)

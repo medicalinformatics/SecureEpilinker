@@ -1,0 +1,691 @@
+From cbd506bed306b52ed335266faf4e3ac4939fb72f Mon Sep 17 00:00:00 2001
+Message-Id: <cbd506bed306b52ed335266faf4e3ac4939fb72f.1526038516.git.kussel@cbs.tu-darmstadt.de>
+From: Tobias Kussel <kussel@cbs.tu-darmstadt.de>
+Date: Fri, 11 May 2018 13:30:06 +0200
+Subject: [PATCH] Added missing dependency in tests
+
+---
+ test/feature/CMakeLists.txt     | 215 ++++++++++++++++++++++----------
+ test/integration/CMakeLists.txt |  20 +--
+ test/regression/CMakeLists.txt  |  56 ++++-----
+ test/unit/CMakeLists.txt        |  21 ++--
+ 4 files changed, 199 insertions(+), 113 deletions(-)
+
+diff --git a/test/feature/CMakeLists.txt b/test/feature/CMakeLists.txt
+index 633aed9..bf674f2 100644
+--- a/test/feature/CMakeLists.txt
++++ b/test/feature/CMakeLists.txt
+@@ -14,261 +14,346 @@ include_directories( SYSTEM ${catch_INCLUDE} ${asio_INCLUDE} )
+ # Build
+ #
+ add_executable( publishing_single_path_resources_http_get_feature_test_suite ${SOURCE_DIR}/publishing_single_path_resources/http_get.cpp )
+-target_link_libraries( publishing_single_path_resources_http_get_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_single_path_resources_http_get_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_single_path_resources_http_get_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_single_path_resources_http_get_feature_test_suite )
+ 
+ add_executable( publishing_single_path_resources_http_put_feature_test_suite ${SOURCE_DIR}/publishing_single_path_resources/http_put.cpp )
+-target_link_libraries( publishing_single_path_resources_http_put_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_single_path_resources_http_put_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_single_path_resources_http_put_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_single_path_resources_http_put_feature_test_suite )
+ 
+ add_executable( publishing_single_path_resources_http_head_feature_test_suite ${SOURCE_DIR}/publishing_single_path_resources/http_head.cpp )
+-target_link_libraries( publishing_single_path_resources_http_head_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_single_path_resources_http_head_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_single_path_resources_http_head_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_single_path_resources_http_head_feature_test_suite )
+ 
+ add_executable( publishing_single_path_resources_http_post_feature_test_suite ${SOURCE_DIR}/publishing_single_path_resources/http_post.cpp )
+-target_link_libraries( publishing_single_path_resources_http_post_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_single_path_resources_http_post_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_single_path_resources_http_post_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_single_path_resources_http_post_feature_test_suite )
+ 
+ add_executable( publishing_single_path_resources_http_trace_feature_test_suite ${SOURCE_DIR}/publishing_single_path_resources/http_trace.cpp )
+-target_link_libraries( publishing_single_path_resources_http_trace_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_single_path_resources_http_trace_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_single_path_resources_http_trace_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_single_path_resources_http_trace_feature_test_suite )
+ 
+ add_executable( publishing_single_path_resources_http_patch_feature_test_suite ${SOURCE_DIR}/publishing_single_path_resources/http_patch.cpp )
+-target_link_libraries( publishing_single_path_resources_http_patch_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_single_path_resources_http_patch_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_single_path_resources_http_patch_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_single_path_resources_http_patch_feature_test_suite )
+ 
+ add_executable( publishing_single_path_resources_http_delete_feature_test_suite ${SOURCE_DIR}/publishing_single_path_resources/http_delete.cpp )
+-target_link_libraries( publishing_single_path_resources_http_delete_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_single_path_resources_http_delete_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_single_path_resources_http_delete_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_single_path_resources_http_delete_feature_test_suite )
+ 
+ add_executable( publishing_single_path_resources_http_connect_feature_test_suite ${SOURCE_DIR}/publishing_single_path_resources/http_connect.cpp )
+-target_link_libraries( publishing_single_path_resources_http_connect_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_single_path_resources_http_connect_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_single_path_resources_http_connect_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_single_path_resources_http_connect_feature_test_suite )
+ 
+ add_executable( publishing_single_path_resources_http_options_feature_test_suite ${SOURCE_DIR}/publishing_single_path_resources/http_options.cpp )
+-target_link_libraries( publishing_single_path_resources_http_options_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_single_path_resources_http_options_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_single_path_resources_http_options_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_single_path_resources_http_options_feature_test_suite )
+ 
+ add_executable( publishing_multi_path_resources_http_get_feature_test_suite ${SOURCE_DIR}/publishing_multi_path_resources/http_get.cpp )
+-target_link_libraries( publishing_multi_path_resources_http_get_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_multi_path_resources_http_get_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_multi_path_resources_http_get_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_multi_path_resources_http_get_feature_test_suite )
+ 
+ add_executable( publishing_multi_path_resources_http_put_feature_test_suite ${SOURCE_DIR}/publishing_multi_path_resources/http_put.cpp )
+-target_link_libraries( publishing_multi_path_resources_http_put_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_multi_path_resources_http_put_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_multi_path_resources_http_put_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_multi_path_resources_http_put_feature_test_suite )
+ 
+ add_executable( publishing_multi_path_resources_http_head_feature_test_suite ${SOURCE_DIR}/publishing_multi_path_resources/http_head.cpp )
+-target_link_libraries( publishing_multi_path_resources_http_head_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_multi_path_resources_http_head_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_multi_path_resources_http_head_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_multi_path_resources_http_head_feature_test_suite )
+ 
+ add_executable( publishing_multi_path_resources_http_post_feature_test_suite ${SOURCE_DIR}/publishing_multi_path_resources/http_post.cpp )
+-target_link_libraries( publishing_multi_path_resources_http_post_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_multi_path_resources_http_post_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_multi_path_resources_http_post_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_multi_path_resources_http_post_feature_test_suite )
+ 
+ add_executable( publishing_multi_path_resources_http_trace_feature_test_suite ${SOURCE_DIR}/publishing_multi_path_resources/http_trace.cpp )
+-target_link_libraries( publishing_multi_path_resources_http_trace_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_multi_path_resources_http_trace_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_multi_path_resources_http_trace_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_multi_path_resources_http_trace_feature_test_suite )
+ 
+ add_executable( publishing_multi_path_resources_http_patch_feature_test_suite ${SOURCE_DIR}/publishing_multi_path_resources/http_patch.cpp )
+-target_link_libraries( publishing_multi_path_resources_http_patch_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_multi_path_resources_http_patch_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_multi_path_resources_http_patch_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_multi_path_resources_http_patch_feature_test_suite )
+ 
+ add_executable( publishing_multi_path_resources_http_delete_feature_test_suite ${SOURCE_DIR}/publishing_multi_path_resources/http_delete.cpp )
+-target_link_libraries( publishing_multi_path_resources_http_delete_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_multi_path_resources_http_delete_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_multi_path_resources_http_delete_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_multi_path_resources_http_delete_feature_test_suite )
+ 
+ add_executable( publishing_multi_path_resources_http_connect_feature_test_suite ${SOURCE_DIR}/publishing_multi_path_resources/http_connect.cpp )
+-target_link_libraries( publishing_multi_path_resources_http_connect_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_multi_path_resources_http_connect_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_multi_path_resources_http_connect_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_multi_path_resources_http_connect_feature_test_suite )
+ 
+ add_executable( publishing_multi_path_resources_http_options_feature_test_suite ${SOURCE_DIR}/publishing_multi_path_resources/http_options.cpp )
+-target_link_libraries( publishing_multi_path_resources_http_options_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  publishing_multi_path_resources_http_options_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publishing_multi_path_resources_http_options_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publishing_multi_path_resources_http_options_feature_test_suite )
+ 
+ add_executable( custom_http_methods_http_get_feature_test_suite ${SOURCE_DIR}/custom_http_methods/http_get.cpp )
+-target_link_libraries( custom_http_methods_http_get_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_http_methods_http_get_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_http_methods_http_get_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_http_methods_http_get_feature_test_suite )
+ 
+ add_executable( custom_http_methods_http_put_feature_test_suite ${SOURCE_DIR}/custom_http_methods/http_put.cpp )
+-target_link_libraries( custom_http_methods_http_put_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_http_methods_http_put_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_http_methods_http_put_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_http_methods_http_put_feature_test_suite )
+ 
+ add_executable( custom_http_methods_http_head_feature_test_suite ${SOURCE_DIR}/custom_http_methods/http_head.cpp )
+-target_link_libraries( custom_http_methods_http_head_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_http_methods_http_head_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_http_methods_http_head_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_http_methods_http_head_feature_test_suite )
+ 
+ add_executable( custom_http_methods_http_post_feature_test_suite ${SOURCE_DIR}/custom_http_methods/http_post.cpp )
+-target_link_libraries( custom_http_methods_http_post_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_http_methods_http_post_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_http_methods_http_post_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_http_methods_http_post_feature_test_suite )
+ 
+ add_executable( custom_http_methods_http_trace_feature_test_suite ${SOURCE_DIR}/custom_http_methods/http_trace.cpp )
+-target_link_libraries( custom_http_methods_http_trace_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_http_methods_http_trace_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_http_methods_http_trace_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_http_methods_http_trace_feature_test_suite )
+ 
+ add_executable( custom_http_methods_http_patch_feature_test_suite ${SOURCE_DIR}/custom_http_methods/http_patch.cpp )
+-target_link_libraries( custom_http_methods_http_patch_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_http_methods_http_patch_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_http_methods_http_patch_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_http_methods_http_patch_feature_test_suite )
+ 
+ add_executable( custom_http_methods_http_delete_feature_test_suite ${SOURCE_DIR}/custom_http_methods/http_delete.cpp )
+-target_link_libraries( custom_http_methods_http_delete_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_http_methods_http_delete_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_http_methods_http_delete_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_http_methods_http_delete_feature_test_suite )
+ 
+ add_executable( custom_http_methods_http_connect_feature_test_suite ${SOURCE_DIR}/custom_http_methods/http_connect.cpp )
+-target_link_libraries( custom_http_methods_http_connect_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_http_methods_http_connect_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_http_methods_http_connect_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_http_methods_http_connect_feature_test_suite )
+ 
+ add_executable( custom_http_methods_http_options_feature_test_suite ${SOURCE_DIR}/custom_http_methods/http_options.cpp )
+-target_link_libraries( custom_http_methods_http_options_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_http_methods_http_options_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_http_methods_http_options_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_http_methods_http_options_feature_test_suite )
+ 
+ add_executable( custom_http_methods_http_invoke_feature_test_suite ${SOURCE_DIR}/custom_http_methods/http_invoke.cpp )
+-target_link_libraries( custom_http_methods_http_invoke_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_http_methods_http_invoke_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_http_methods_http_invoke_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_http_methods_http_invoke_feature_test_suite )
+ 
+ add_executable( http_method_handlers_http_get_feature_test_suite ${SOURCE_DIR}/http_method_handlers/http_get.cpp )
+-target_link_libraries( http_method_handlers_http_get_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_method_handlers_http_get_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_method_handlers_http_get_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_method_handlers_http_get_feature_test_suite )
+ 
+ add_executable( http_method_handlers_http_put_feature_test_suite ${SOURCE_DIR}/http_method_handlers/http_put.cpp )
+-target_link_libraries( http_method_handlers_http_put_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_method_handlers_http_put_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_method_handlers_http_put_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_method_handlers_http_put_feature_test_suite )
+ 
+ add_executable( http_method_handlers_http_head_feature_test_suite ${SOURCE_DIR}/http_method_handlers/http_head.cpp )
+-target_link_libraries( http_method_handlers_http_head_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_method_handlers_http_head_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_method_handlers_http_head_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_method_handlers_http_head_feature_test_suite )
+ 
+ add_executable( http_method_handlers_http_post_feature_test_suite ${SOURCE_DIR}/http_method_handlers/http_post.cpp )
+-target_link_libraries( http_method_handlers_http_post_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_method_handlers_http_post_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_method_handlers_http_post_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_method_handlers_http_post_feature_test_suite )
+ 
+ add_executable( http_method_handlers_http_trace_feature_test_suite ${SOURCE_DIR}/http_method_handlers/http_trace.cpp )
+-target_link_libraries( http_method_handlers_http_trace_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_method_handlers_http_trace_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_method_handlers_http_trace_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_method_handlers_http_trace_feature_test_suite )
+ 
+ add_executable( http_method_handlers_http_patch_feature_test_suite ${SOURCE_DIR}/http_method_handlers/http_patch.cpp )
+-target_link_libraries( http_method_handlers_http_patch_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_method_handlers_http_patch_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_method_handlers_http_patch_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_method_handlers_http_patch_feature_test_suite )
+ 
+ add_executable( http_method_handlers_http_delete_feature_test_suite ${SOURCE_DIR}/http_method_handlers/http_delete.cpp )
+-target_link_libraries( http_method_handlers_http_delete_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_method_handlers_http_delete_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_method_handlers_http_delete_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_method_handlers_http_delete_feature_test_suite )
+ 
+ add_executable( http_method_handlers_http_connect_feature_test_suite ${SOURCE_DIR}/http_method_handlers/http_connect.cpp )
+-target_link_libraries( http_method_handlers_http_connect_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_method_handlers_http_connect_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_method_handlers_http_connect_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_method_handlers_http_connect_feature_test_suite )
+ 
+ add_executable( http_method_handlers_http_options_feature_test_suite ${SOURCE_DIR}/http_method_handlers/http_options.cpp )
+-target_link_libraries( http_method_handlers_http_options_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_method_handlers_http_options_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_method_handlers_http_options_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_method_handlers_http_options_feature_test_suite )
+ 
+ add_executable( custom_service_authentication_feature_test_suite ${SOURCE_DIR}/custom_authentication/service.cpp )
+-target_link_libraries( custom_service_authentication_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_service_authentication_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_service_authentication_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_service_authentication_feature_test_suite )
+ 
+ add_executable( custom_resource_authentication_feature_test_suite ${SOURCE_DIR}/custom_authentication/resource.cpp )
+-target_link_libraries( custom_resource_authentication_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_resource_authentication_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_resource_authentication_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_resource_authentication_feature_test_suite )
+ 
+ add_executable( custom_failed_service_filter_validation_handler_feature_test_suite ${SOURCE_DIR}/custom_failed_resource_filter_validation_handler/service.cpp )
+-target_link_libraries( custom_failed_service_filter_validation_handler_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  custom_failed_service_filter_validation_handler_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_failed_service_filter_validation_handler_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_failed_service_filter_validation_handler_feature_test_suite )
+ 
+ add_executable( custom_failed_resource_filter_validation_handler_feature_test_suite ${SOURCE_DIR}/custom_failed_resource_filter_validation_handler/resource.cpp )
+-target_link_libraries( custom_failed_resource_filter_validation_handler_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries(
++  custom_failed_resource_filter_validation_handler_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_failed_resource_filter_validation_handler_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_failed_resource_filter_validation_handler_feature_test_suite )
+ 
+ add_executable( custom_method_not_allowed_handler_feature_test_suite ${SOURCE_DIR}/custom_method_not_allowed_handler/feature.cpp )
+-target_link_libraries( custom_method_not_allowed_handler_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_method_not_allowed_handler_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_method_not_allowed_handler_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_method_not_allowed_handler_feature_test_suite )
+ 
+ add_executable( custom_method_not_implemented_handler_feature_test_suite ${SOURCE_DIR}/custom_method_not_implemented_handler/feature.cpp )
+-target_link_libraries( custom_method_not_implemented_handler_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_method_not_implemented_handler_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_method_not_implemented_handler_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_method_not_implemented_handler_feature_test_suite )
+ 
+ add_executable( custom_resource_not_found_handler_feature_test_suite ${SOURCE_DIR}/custom_resource_not_found_handler/feature.cpp )
+-target_link_libraries( custom_resource_not_found_handler_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_resource_not_found_handler_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_resource_not_found_handler_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_resource_not_found_handler_feature_test_suite )
+ 
+ add_executable( path_parameters_feature_test_suite ${SOURCE_DIR}/path_parameters/feature.cpp )
+-target_link_libraries( path_parameters_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( path_parameters_feature_test_suite ${STATIC_LIBRARY_NAME}
++  dl)
+ add_test( path_parameters_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/path_parameters_feature_test_suite )
+ 
+ add_executable( query_parameters_feature_test_suite ${SOURCE_DIR}/query_parameters/feature.cpp )
+-target_link_libraries( query_parameters_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( query_parameters_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( query_parameters_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/query_parameters_feature_test_suite )
+ 
+ add_executable( resource_method_filters_feature_test_suite ${SOURCE_DIR}/resource_method_filters/feature.cpp )
+-target_link_libraries( resource_method_filters_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( resource_method_filters_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( resource_method_filters_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/resource_method_filters_feature_test_suite )
+ 
+ add_executable( runtime_service_modifications_feature_test_suite ${SOURCE_DIR}/runtime_service_modifications/feature.cpp )
+-target_link_libraries( runtime_service_modifications_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( runtime_service_modifications_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( runtime_service_modifications_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/runtime_service_modifications_feature_test_suite )
+ 
+ add_executable( publish_duplicate_resources_feature_test_suite ${SOURCE_DIR}/publish_duplicate_resources/feature.cpp )
+-target_link_libraries( publish_duplicate_resources_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( publish_duplicate_resources_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( publish_duplicate_resources_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/publish_duplicate_resources_feature_test_suite )
+ 
+ add_executable( custom_service_error_handling_feature_test_suite ${SOURCE_DIR}/custom_error_handling/service.cpp )
+-target_link_libraries( custom_service_error_handling_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_service_error_handling_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_service_error_handling_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_service_error_handling_feature_test_suite )
+ 
+ add_executable( custom_resource_error_handling_feature_test_suite ${SOURCE_DIR}/custom_error_handling/resource.cpp )
+-target_link_libraries( custom_resource_error_handling_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_resource_error_handling_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_resource_error_handling_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_resource_error_handling_feature_test_suite )
+ 
+ add_executable( case_insensitive_service_feature_test_suite ${SOURCE_DIR}/service_case_sensitivity/case_insensitive.cpp )
+-target_link_libraries( case_insensitive_service_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( case_insensitive_service_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( case_insensitive_service_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/case_insensitive_service_feature_test_suite )
+ 
+ add_executable( service_rules_engine_feature_test_suite ${SOURCE_DIR}/rules_engine/service.cpp )
+-target_link_libraries( service_rules_engine_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( service_rules_engine_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( service_rules_engine_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/service_rules_engine_feature_test_suite )
+ 
+ add_executable( resource_rules_engine_feature_test_suite ${SOURCE_DIR}/rules_engine/resource.cpp )
+-target_link_libraries( resource_rules_engine_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( resource_rules_engine_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( resource_rules_engine_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/resource_rules_engine_feature_test_suite )
+ 
+ add_executable( mixed_rules_engine_feature_test_suite ${SOURCE_DIR}/rules_engine/mixed.cpp )
+-target_link_libraries( mixed_rules_engine_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( mixed_rules_engine_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( mixed_rules_engine_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/mixed_rules_engine_feature_test_suite )
+ 
+ add_executable( http_client_connect_feature_test_suite ${SOURCE_DIR}/http_client/connect.cpp )
+-target_link_libraries( http_client_connect_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_client_connect_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_client_connect_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_client_connect_feature_test_suite )
+ 
+ add_executable( http_client_fetch_feature_test_suite ${SOURCE_DIR}/http_client/fetch.cpp )
+-target_link_libraries( http_client_fetch_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_client_fetch_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_client_fetch_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_client_fetch_feature_test_suite )
+ 
+ add_executable( http_client_close_feature_test_suite ${SOURCE_DIR}/http_client/close.cpp )
+-target_link_libraries( http_client_close_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_client_close_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_client_close_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_client_close_feature_test_suite )
+ 
+ add_executable( http_client_async_feature_test_suite ${SOURCE_DIR}/http_client/async.cpp )
+-target_link_libraries( http_client_async_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_client_async_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_client_async_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_client_async_feature_test_suite )
+ 
+ add_executable( http_client_keep_alive_feature_test_suite ${SOURCE_DIR}/http_client/keep_alive.cpp )
+-target_link_libraries( http_client_keep_alive_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_client_keep_alive_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( http_client_keep_alive_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_client_keep_alive_feature_test_suite )
+ 
+ add_executable( custom_status_message_feature_test_suite ${SOURCE_DIR}/custom_status_message/feature.cpp )
+-target_link_libraries( custom_status_message_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( custom_status_message_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( custom_status_message_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/custom_status_message_feature_test_suite )
+ 
+ add_executable( signal_handling_feature_test_suite ${SOURCE_DIR}/signal_handling/feature.cpp )
+-target_link_libraries( signal_handling_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( signal_handling_feature_test_suite ${STATIC_LIBRARY_NAME}
++  dl)
+ add_test( signal_handling_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/signal_handling_feature_test_suite )
+ 
+ add_executable( service_connection_timeout_feature_test_suite ${SOURCE_DIR}/connection_timeout/server.cpp )
+-target_link_libraries( service_connection_timeout_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( service_connection_timeout_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( service_connection_timeout_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/service_connection_timeout_feature_test_suite )
+ 
+ add_executable( client_connection_timeout_feature_test_suite ${SOURCE_DIR}/connection_timeout/client.cpp )
+-target_link_libraries( client_connection_timeout_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( client_connection_timeout_feature_test_suite
++  ${STATIC_LIBRARY_NAME} dl)
+ add_test( client_connection_timeout_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/client_connection_timeout_feature_test_suite )
+ 
+ add_executable( service_status_feature_test_suite ${SOURCE_DIR}/service_status/feature.cpp )
+-target_link_libraries( service_status_feature_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( service_status_feature_test_suite ${STATIC_LIBRARY_NAME}
++  dl)
+ add_test( service_status_feature_test_suite ${EXECUTABLE_OUTPUT_PATH}/service_status_feature_test_suite )
+diff --git a/test/integration/CMakeLists.txt b/test/integration/CMakeLists.txt
+index b1cbc6a..f4e08c5 100644
+--- a/test/integration/CMakeLists.txt
++++ b/test/integration/CMakeLists.txt
+@@ -14,41 +14,41 @@ include_directories( SYSTEM ${catch_INCLUDE} )
+ # Build
+ #
+ add_executable( request_integration_test_suite ${SOURCE_DIR}/request_suite.cpp )
+-target_link_libraries( request_integration_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( request_integration_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( request_integration_test_suite ${EXECUTABLE_OUTPUT_PATH}/request_integration_test_suite )
+ 
+ add_executable( string_integration_test_suite ${SOURCE_DIR}/string_suite.cpp )
+-target_link_libraries( string_integration_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( string_integration_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( string_integration_test_suite ${EXECUTABLE_OUTPUT_PATH}/string_integration_test_suite )
+ 
+ add_executable( session_integration_test_suite ${SOURCE_DIR}/session_suite.cpp )
+-target_link_libraries( session_integration_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( session_integration_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( session_integration_test_suite ${EXECUTABLE_OUTPUT_PATH}/session_integration_test_suite )
+ 
+ add_executable( resource_integration_test_suite ${SOURCE_DIR}/resource_suite.cpp )
+-target_link_libraries( resource_integration_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( resource_integration_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( resource_integration_test_suite ${EXECUTABLE_OUTPUT_PATH}/resource_integration_test_suite )
+ 
+ add_executable( response_integration_test_suite ${SOURCE_DIR}/response_suite.cpp )
+-target_link_libraries( response_integration_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( response_integration_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( response_integration_test_suite ${EXECUTABLE_OUTPUT_PATH}/response_integration_test_suite )
+ 
+ add_executable( ssl_settings_integration_test_suite ${SOURCE_DIR}/ssl_settings_suite.cpp )
+-target_link_libraries( ssl_settings_integration_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( ssl_settings_integration_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( ssl_settings_integration_test_suite ${EXECUTABLE_OUTPUT_PATH}/ssl_settings_integration_test_suite )
+ 
+ add_executable( settings_integration_test_suite ${SOURCE_DIR}/settings_suite.cpp )
+-target_link_libraries( settings_integration_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( settings_integration_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( settings_integration_test_suite ${EXECUTABLE_OUTPUT_PATH}/settings_integration_test_suite )
+ 
+ add_executable( service_integration_test_suite ${SOURCE_DIR}/service_suite.cpp )
+-target_link_libraries( service_integration_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( service_integration_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( service_integration_test_suite ${EXECUTABLE_OUTPUT_PATH}/service_integration_test_suite )
+ 
+ add_executable( http_integration_test_suite ${SOURCE_DIR}/http_suite.cpp )
+-target_link_libraries( http_integration_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( http_integration_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( http_integration_test_suite ${EXECUTABLE_OUTPUT_PATH}/http_integration_test_suite )
+ 
+ add_executable( web_socket_message_integration_test_suite ${SOURCE_DIR}/web_socket_message_suite.cpp )
+-target_link_libraries( web_socket_message_integration_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( web_socket_message_integration_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( web_socket_message_integration_test_suite ${EXECUTABLE_OUTPUT_PATH}/web_socket_message_integration_test_suite )
+diff --git a/test/regression/CMakeLists.txt b/test/regression/CMakeLists.txt
+index b854ece..81cc304 100644
+--- a/test/regression/CMakeLists.txt
++++ b/test/regression/CMakeLists.txt
+@@ -14,113 +14,113 @@ include_directories( SYSTEM ${catch_INCLUDE} ${asio_INCLUDE} )
+ # Build
+ #
+ add_executable( resources_are_not_overwritten_regression_test_suite ${SOURCE_DIR}/resources_are_not_overwritten.cpp )
+-target_link_libraries( resources_are_not_overwritten_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( resources_are_not_overwritten_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( resources_are_not_overwritten_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/resources_are_not_overwritten_regression_test_suite )
+ 
+ add_executable( missing_regex_support_on_gcc_4.8_regression_test_suite ${SOURCE_DIR}/missing_regex_support_on_gcc_4.8.cpp )
+-target_link_libraries( missing_regex_support_on_gcc_4.8_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( missing_regex_support_on_gcc_4.8_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( missing_regex_support_on_gcc_4.8_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/missing_regex_support_on_gcc_4.8_regression_test_suite )
+ 
+ add_executable( request_uris_are_not_being_decoded_regression_test_suite ${SOURCE_DIR}/request_uris_are_not_being_decoded.cpp )
+-target_link_libraries( request_uris_are_not_being_decoded_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( request_uris_are_not_being_decoded_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( request_uris_are_not_being_decoded_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/request_uris_are_not_being_decoded_regression_test_suite )
+ 
+ add_executable( resource_responding_on_invalid_path_regression_test_suite ${SOURCE_DIR}/resource_responding_on_invalid_path.cpp )
+-target_link_libraries( resource_responding_on_invalid_path_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( resource_responding_on_invalid_path_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( resource_responding_on_invalid_path_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/resource_responding_on_invalid_path_regression_test_suite )
+ 
+ add_executable( segmentation_fault_on_mismatched_path_regression_test_suite ${SOURCE_DIR}/segmentation_fault_on_mismatched_path.cpp )
+-target_link_libraries( segmentation_fault_on_mismatched_path_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( segmentation_fault_on_mismatched_path_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( segmentation_fault_on_mismatched_path_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/segmentation_fault_on_mismatched_path_regression_test_suite )
+ 
+ add_executable( exception_thrown_with_space_in_resource_path_regression_test_suite ${SOURCE_DIR}/exception_thrown_with_space_in_resource_path.cpp )
+-target_link_libraries( exception_thrown_with_space_in_resource_path_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( exception_thrown_with_space_in_resource_path_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( exception_thrown_with_space_in_resource_path_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/exception_thrown_with_space_in_resource_path_regression_test_suite )
+ 
+ add_executable( uncaught_exception_when_peer_closes_connection_regression_test_suite ${SOURCE_DIR}/uncaught_exception_when_peer_closes_connection.cpp )
+-target_link_libraries( uncaught_exception_when_peer_closes_connection_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( uncaught_exception_when_peer_closes_connection_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( uncaught_exception_when_peer_closes_connection_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/uncaught_exception_when_peer_closes_connection_regression_test_suite )
+ 
+ add_executable( error_handler_not_overwritten_regression_test_suite ${SOURCE_DIR}/error_handler_not_overwritten.cpp )
+-target_link_libraries( error_handler_not_overwritten_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( error_handler_not_overwritten_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( error_handler_not_overwritten_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/error_handler_not_overwritten_regression_test_suite )
+ 
+ add_executable( large_request_bodies_being_trimmed_regression_test_suite ${SOURCE_DIR}/large_request_bodies_being_trimmed.cpp )
+-target_link_libraries( large_request_bodies_being_trimmed_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( large_request_bodies_being_trimmed_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( large_request_bodies_being_trimmed_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/large_request_bodies_being_trimmed_regression_test_suite )
+ 
+ add_executable( fails_to_parse_identical_query_parameters_regression_test_suite ${SOURCE_DIR}/fails_to_parse_identical_query_parameters.cpp )
+-target_link_libraries( fails_to_parse_identical_query_parameters_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( fails_to_parse_identical_query_parameters_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( fails_to_parse_identical_query_parameters_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/fails_to_parse_identical_query_parameters_regression_test_suite )
+ 
+ add_executable( content_length_present_on_empty_response_body_regression_test_suite ${SOURCE_DIR}/content_length_present_on_empty_response_body.cpp )
+-target_link_libraries( content_length_present_on_empty_response_body_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( content_length_present_on_empty_response_body_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( content_length_present_on_empty_response_body_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/content_length_present_on_empty_response_body_regression_test_suite )
+ 
+ add_executable( content_type_present_on_empty_response_body_regression_test_suite ${SOURCE_DIR}/content_type_present_on_empty_response_body.cpp )
+-target_link_libraries( content_type_present_on_empty_response_body_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( content_type_present_on_empty_response_body_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( content_type_present_on_empty_response_body_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/content_type_present_on_empty_response_body_regression_test_suite )
+ 
+ add_executable( resource_destroyed_with_bound_functors_regression_test_suite ${SOURCE_DIR}/resource_destroyed_with_bound_functors.cpp )
+-target_link_libraries( resource_destroyed_with_bound_functors_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( resource_destroyed_with_bound_functors_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( resource_destroyed_with_bound_functors_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/resource_destroyed_with_bound_functors_regression_test_suite )
+ 
+ add_executable( fails_to_parse_header_values_containing_colons_regression_test_suite ${SOURCE_DIR}/fails_to_parse_header_values_containing_colons.cpp )
+-target_link_libraries( fails_to_parse_header_values_containing_colons_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( fails_to_parse_header_values_containing_colons_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( fails_to_parse_header_values_containing_colons_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/fails_to_parse_header_values_containing_colons_regression_test_suite )
+ 
+ add_executable( string_replace_fails_to_replace_embedded_targets_regression_test_suite ${SOURCE_DIR}/string_replace_fails_to_replace_embedded_targets.cpp )
+-target_link_libraries( string_replace_fails_to_replace_embedded_targets_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( string_replace_fails_to_replace_embedded_targets_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( string_replace_fails_to_replace_embedded_targets_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/string_replace_fails_to_replace_embedded_targets_regression_test_suite )
+ 
+ add_executable( path_parameters_are_not_visible_within_rules_regression_test_suite ${SOURCE_DIR}/path_parameters_are_not_visible_within_rules.cpp )
+-target_link_libraries( path_parameters_are_not_visible_within_rules_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( path_parameters_are_not_visible_within_rules_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( path_parameters_are_not_visible_within_rules_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/path_parameters_are_not_visible_within_rules_regression_test_suite )
+ 
+ add_executable( request_get_parameters_fails_to_return_data_regression_test_suite ${SOURCE_DIR}/request_get_parameters_fails_to_return_data.cpp )
+-target_link_libraries( request_get_parameters_fails_to_return_data_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( request_get_parameters_fails_to_return_data_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( request_get_parameters_fails_to_return_data_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/request_get_parameters_fails_to_return_data_regression_test_suite )
+ 
+ add_executable( uri_fails_to_handle_file_scheme_relative_paths_regression_test_suite ${SOURCE_DIR}/uri_fails_to_handle_file_scheme_relative_paths.cpp )
+-target_link_libraries( uri_fails_to_handle_file_scheme_relative_paths_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( uri_fails_to_handle_file_scheme_relative_paths_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( uri_fails_to_handle_file_scheme_relative_paths_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/uri_fails_to_handle_file_scheme_relative_paths_regression_test_suite )
+ 
+ add_executable( multiple_log_entries_regression_test_suite ${SOURCE_DIR}/multiple_log_entries.cpp )
+-target_link_libraries( multiple_log_entries_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( multiple_log_entries_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( multiple_log_entries_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/multiple_log_entries_regression_test_suite )
+ 
+ add_executable( client_fails_to_calculate_body_length_regression_test_suite ${SOURCE_DIR}/client_fails_to_calculate_body_length.cpp )
+-target_link_libraries( client_fails_to_calculate_body_length_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( client_fails_to_calculate_body_length_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( client_fails_to_calculate_body_length_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/client_fails_to_calculate_body_length_regression_test_suite )
+ 
+ add_executable( yield_callback_leads_to_service_crash_regression_test_suite ${SOURCE_DIR}/yield_callback_leads_to_service_crash.cpp )
+-target_link_libraries( yield_callback_leads_to_service_crash_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( yield_callback_leads_to_service_crash_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( yield_callback_leads_to_service_crash_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/yield_callback_leads_to_service_crash_regression_test_suite )
+ 
+ add_executable( service_error_handler_overflow_regression_test_suite ${SOURCE_DIR}/service_error_handler_overflow.cpp )
+-target_link_libraries( service_error_handler_overflow_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( service_error_handler_overflow_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( service_error_handler_overflow_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/service_error_handler_overflow_regression_test_suite )
+ 
+ add_executable( resource_error_handler_overflow_regression_test_suite ${SOURCE_DIR}/resource_error_handler_overflow.cpp )
+-target_link_libraries( resource_error_handler_overflow_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( resource_error_handler_overflow_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( resource_error_handler_overflow_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/resource_error_handler_overflow_regression_test_suite )
+ 
+ add_executable( path_parameters_off_by_one_regression_test_suite ${SOURCE_DIR}/path_parameters_off_by_one.cpp )
+-target_link_libraries( path_parameters_off_by_one_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( path_parameters_off_by_one_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( path_parameters_off_by_one_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/path_parameters_off_by_one_regression_test_suite )
+ 
+ add_executable( allow_hyphen_in_path_parameter_name_regression_test_suite ${SOURCE_DIR}/allow_hyphen_in_path_parameter_name.cpp )
+-target_link_libraries( allow_hyphen_in_path_parameter_name_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( allow_hyphen_in_path_parameter_name_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( allow_hyphen_in_path_parameter_name_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/allow_hyphen_in_path_parameter_name_regression_test_suite )
+ 
+ add_executable( allow_underscore_in_path_parameter_name_regression_test_suite ${SOURCE_DIR}/allow_underscore_in_path_parameter_name.cpp )
+-target_link_libraries( allow_underscore_in_path_parameter_name_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( allow_underscore_in_path_parameter_name_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( allow_underscore_in_path_parameter_name_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/allow_underscore_in_path_parameter_name_regression_test_suite )
+ 
+ add_executable( ipv4_session_origin_destination_malformed_regression_test_suite ${SOURCE_DIR}/ipv4_session_origin_destination_malformed.cpp )
+-target_link_libraries( ipv4_session_origin_destination_malformed_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( ipv4_session_origin_destination_malformed_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( ipv4_session_origin_destination_malformed_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/ipv4_session_origin_destination_malformed_regression_test_suite )
+ 
+ add_executable( locale_creates_incorrect_version_format_regression_test_suite ${SOURCE_DIR}/locale_creates_incorrect_version_format.cpp )
+-target_link_libraries( locale_creates_incorrect_version_format_regression_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( locale_creates_incorrect_version_format_regression_test_suite ${STATIC_LIBRARY_NAME} dl )
+ add_test( locale_creates_incorrect_version_format_regression_test_suite ${EXECUTABLE_OUTPUT_PATH}/locale_creates_incorrect_version_format_regression_test_suite )
+diff --git a/test/unit/CMakeLists.txt b/test/unit/CMakeLists.txt
+index 604a5e1..1fb2cac 100644
+--- a/test/unit/CMakeLists.txt
++++ b/test/unit/CMakeLists.txt
+@@ -14,41 +14,42 @@ include_directories( SYSTEM ${catch_INCLUDE} )
+ # Build
+ #
+ add_executable( uri_unit_test_suite ${SOURCE_DIR}/uri_suite.cpp )
+-target_link_libraries( uri_unit_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( uri_unit_test_suite ${STATIC_LIBRARY_NAME} dl)
+ add_test( uri_unit_test_suite ${EXECUTABLE_OUTPUT_PATH}/uri_unit_test_suite )
+ 
+ add_executable( string_unit_test_suite ${SOURCE_DIR}/string_suite.cpp )
+-target_link_libraries( string_unit_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( string_unit_test_suite ${STATIC_LIBRARY_NAME} dl)
+ add_test( string_unit_test_suite ${EXECUTABLE_OUTPUT_PATH}/string_unit_test_suite )
+ 
+ add_executable( session_unit_test_suite ${SOURCE_DIR}/session_suite.cpp )
+-target_link_libraries( session_unit_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( session_unit_test_suite ${STATIC_LIBRARY_NAME} dl)
+ add_test( session_unit_test_suite ${EXECUTABLE_OUTPUT_PATH}/session_unit_test_suite )
+ 
+ add_executable( service_unit_test_suite ${SOURCE_DIR}/service_suite.cpp )
+-target_link_libraries( service_unit_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( service_unit_test_suite ${STATIC_LIBRARY_NAME} dl)
+ add_test( service_unit_test_suite ${EXECUTABLE_OUTPUT_PATH}/service_unit_test_suite )
+ 
+ add_executable( request_unit_test_suite ${SOURCE_DIR}/request_suite.cpp )
+-target_link_libraries( request_unit_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( request_unit_test_suite ${STATIC_LIBRARY_NAME} dl)
+ add_test( request_unit_test_suite ${EXECUTABLE_OUTPUT_PATH}/request_unit_test_suite )
+ 
+ add_executable( settings_unit_test_suite ${SOURCE_DIR}/settings_suite.cpp )
+-target_link_libraries( settings_unit_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( settings_unit_test_suite ${STATIC_LIBRARY_NAME} dl)
+ add_test( settings_unit_test_suite ${EXECUTABLE_OUTPUT_PATH}/settings_unit_test_suite )
+ 
+ add_executable( response_unit_test_suite ${SOURCE_DIR}/response_suite.cpp )
+-target_link_libraries( response_unit_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( response_unit_test_suite ${STATIC_LIBRARY_NAME} dl)
+ add_test( response_unit_test_suite ${EXECUTABLE_OUTPUT_PATH}/response_unit_test_suite )
+ 
+ add_executable( resource_unit_test_suite ${SOURCE_DIR}/resource_suite.cpp )
+-target_link_libraries( resource_unit_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( resource_unit_test_suite ${STATIC_LIBRARY_NAME} dl)
+ add_test( resource_unit_test_suite ${EXECUTABLE_OUTPUT_PATH}/resource_unit_test_suite )
+ 
+ add_executable( ssl_settings_unit_test_suite ${SOURCE_DIR}/ssl_settings_suite.cpp )
+-target_link_libraries( ssl_settings_unit_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( ssl_settings_unit_test_suite ${STATIC_LIBRARY_NAME} dl)
+ add_test( ssl_settings_unit_test_suite ${EXECUTABLE_OUTPUT_PATH}/ssl_settings_unit_test_suite )
+ 
+ add_executable( web_socket_message_unit_test_suite ${SOURCE_DIR}/web_socket_message_suite.cpp )
+-target_link_libraries( web_socket_message_unit_test_suite ${STATIC_LIBRARY_NAME} )
++target_link_libraries( web_socket_message_unit_test_suite ${STATIC_LIBRARY_NAME}
++  dl)
+ add_test( web_socket_message_unit_test_suite ${EXECUTABLE_OUTPUT_PATH}/web_socket_message_unit_test_suite )
+-- 
+2.17.0
+
