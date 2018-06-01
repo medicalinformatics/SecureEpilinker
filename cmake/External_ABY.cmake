@@ -7,7 +7,7 @@ configure_file(
 ExternalProject_Add(ABY
     DEPENDS MIRACL
     SOURCE_DIR "${PROJECT_SOURCE_DIR}/extern/ABY"
-    INSTALL_DIR "${Project_INSTALL_PREFIX}"
+    INSTALL_DIR "${SecureEpiLinker_INSTALL_PREFIX}"
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_BINARY_DIR}/ABY.CMakeLists.txt"
         "<SOURCE_DIR>/CMakeLists.txt"
