@@ -48,7 +48,7 @@ class ConnectionHandler {
 
   size_t num_connections() const;
 
-  void set_local_configuration(std::unique_ptr<LocalConfiguration>&& l_conf);
+  void set_local_configuration(std::shared_ptr<LocalConfiguration>&& l_conf);
 
   bool connection_exists(const RemoteId& c_id) const;
 
@@ -69,6 +69,7 @@ class ConnectionHandler {
     std::lock_guard<std::mutex> lock(m_local_data_mutex);
     m_local_configuration->run_comparison();
   };
+  std::shared_ptr<LocalConfiguration> get_local_configuration() const;
 
  private:
   void insert_connection(RemoteId&& remote_id,
@@ -79,7 +80,7 @@ class ConnectionHandler {
 
   std::unordered_map<RemoteId, std::shared_ptr<RemoteConfiguration>>
       m_connections;
-  std::unique_ptr<LocalConfiguration> m_local_configuration;
+  std::shared_ptr<LocalConfiguration> m_local_configuration;
   std::unordered_map<JobId, RemoteId> m_job_id_to_remote_id;
   std::shared_ptr<restbed::Service> m_service;
   std::mutex m_local_data_mutex;

@@ -163,7 +163,7 @@ sel::SessionResponse sel::valid_init_json_handler(
     sel::RemoteId remote_id,
     const std::shared_ptr<sel::ConnectionHandler>& handler) {
   if (remote_id == "local") {
-    auto local_config = std::make_unique<sel::LocalConfiguration>();
+    auto local_config = std::make_shared<sel::LocalConfiguration>();
     fmt::print("Creating local configuration\n");
     std::vector<sel::ML_Field> fields;
     sel::AlgorithmConfig algo;

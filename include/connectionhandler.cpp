@@ -43,7 +43,8 @@ size_t sel::ConnectionHandler::num_connections() const {
 }
 
 void sel::ConnectionHandler::set_local_configuration(
-    std::unique_ptr<LocalConfiguration>&& l_conf) {
+    std::shared_ptr<LocalConfiguration>&& l_conf) {
+  std::lock_guard<std::mutex> lock(m_local_data_mutex);
   m_local_configuration = std::move(l_conf);
 }
 
@@ -95,4 +96,8 @@ void sel::ConnectionHandler::update_connection(
     const sel::JobId& remote_id,
     std::shared_ptr<sel::RemoteConfiguration> connection) {
   m_connections[remote_id] = std::move(connection);
+}
+
+std::shared_ptr<sel::LocalConfiguration> sel::ConnectionHandler::get_local_configuration() const {
+  return m_local_configuration;
 }
