@@ -35,12 +35,12 @@
 
 #include "base64.h"
 #include <iostream>
+#include <string>
 
 static const std::string base64_chars =
-             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-             "abcdefghijklmnopqrstuvwxyz"
-             "0123456789+/";
-
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz"
+    "0123456789+/";
 
 static inline bool is_base64(uint8_t c) {
   return (isalnum(c) || (c == '+') || (c == '/'));
@@ -57,30 +57,33 @@ std::string base64_encode(uint8_t const* buf, unsigned int bufLen) {
     char_array_3[i++] = *(buf++);
     if (i == 3) {
       char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-      char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-      char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+      char_array_4[1] =
+          ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+      char_array_4[2] =
+          ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
       char_array_4[3] = char_array_3[2] & 0x3f;
 
-      for(i = 0; (i <4) ; i++)
+      for (i = 0; (i < 4); i++)
         ret += base64_chars[char_array_4[i]];
       i = 0;
     }
   }
 
-  if (i)
-  {
-    for(j = i; j < 3; j++)
+  if (i) {
+    for (j = i; j < 3; j++)
       char_array_3[j] = '\0';
 
     char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-    char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-    char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+    char_array_4[1] =
+        ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+    char_array_4[2] =
+        ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
     char_array_4[3] = char_array_3[2] & 0x3f;
 
     for (j = 0; (j < i + 1); j++)
       ret += base64_chars[char_array_4[j]];
 
-    while((i++ < 3))
+    while ((i++ < 3))
       ret += '=';
   }
 
@@ -95,47 +98,76 @@ std::vector<uint8_t> base64_decode(std::string const& encoded_string) {
   uint8_t char_array_4[4], char_array_3[3];
   std::vector<uint8_t> ret;
 
-  while (in_len-- && ( encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
-    char_array_4[i++] = encoded_string[in_]; in_++;
-    if (i ==4) {
-      for (i = 0; i <4; i++)
+  while (in_len-- && (encoded_string[in_] != '=') &&
+         is_base64(encoded_string[in_])) {
+    char_array_4[i++] = encoded_string[in_];
+    in_++;
+    if (i == 4) {
+      for (i = 0; i < 4; i++)
         char_array_4[i] = base64_chars.find(char_array_4[i]);
 
-      char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-      char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+      char_array_3[0] =
+          (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+      char_array_3[1] =
+          ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
       char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
       for (i = 0; (i < 3); i++)
-          ret.emplace_back(char_array_3[i]);
+        ret.emplace_back(char_array_3[i]);
       i = 0;
     }
   }
 
   if (i) {
-    for (j = i; j <4; j++)
+    for (j = i; j < 4; j++)
       char_array_4[j] = 0;
 
-    for (j = 0; j <4; j++)
+    for (j = 0; j < 4; j++)
       char_array_4[j] = base64_chars.find(char_array_4[j]);
 
     char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-    char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+    char_array_3[1] =
+        ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
     char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-    for (j = 0; (j < i - 1); j++) ret.emplace_back(char_array_3[j]);
+    for (j = 0; (j < i - 1); j++)
+      ret.emplace_back(char_array_3[j]);
   }
 
   return ret;
 }
 
-bool check_bloom_length(std::vector<uint8_t> bloom, const unsigned bloomlength) {
-  const unsigned restbits{bloomlength % 8};
+bool check_bloom_length(std::vector<uint8_t>& bloom,
+                        const unsigned bloomlength) {
+  const unsigned restbits{bloomlength % 8u};
   if (restbits != 0) {  // Bloomfilter length not byte aligned
-    if (bloom.back() >> (8 - restbits) != 0) {  // "padding" not zero
-      bloom.back() =
-          bloom.back() & (0xFF >> (8u - restbits));  // set remainder to zero
+    auto shiftbyte{bloom.back()};
+    shiftbyte &= (0xFF << (8u - restbits));
+    if (bloom.back() != shiftbyte) {  // "padding" not zero
+      bloom.back() = shiftbyte;       // set remainder to zero
       return false;
     }
   }
   return true;
+}
+
+std::string print_bytearray(const std::vector<uint8_t>& array) {
+  std::string bitstring;
+  for (const auto& byte : array) {
+    bitstring += print_byte(byte) + ' ';
+  }
+  return bitstring;
+}
+
+std::string print_byte(uint8_t byte) {
+  std::string bytestring;
+  (byte & 0b10000000) ? (bytestring += "1") : (bytestring += "0");
+  (byte & 0b01000000) ? (bytestring += "1") : (bytestring += "0");
+  (byte & 0b00100000) ? (bytestring += "1") : (bytestring += "0");
+  (byte & 0b00010000) ? (bytestring += "1") : (bytestring += "0");
+  (byte & 0b00001000) ? (bytestring += "1") : (bytestring += "0");
+  (byte & 0b00000100) ? (bytestring += "1") : (bytestring += "0");
+  (byte & 0b00000010) ? (bytestring += "1") : (bytestring += "0");
+  (byte & 0b00000001) ? (bytestring += "1") : (bytestring += "0");
+  return bytestring;
 }
