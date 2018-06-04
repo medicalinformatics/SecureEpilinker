@@ -101,8 +101,13 @@ sel::SessionResponse sel::valid_linkrecord_json_handler(
                 throw std::runtime_error("Invalid Field Type");
               }
               const auto b64string{f->get<std::string>()};
-              tempfield = base64_decode(b64string);
-              // TODO(TK): B64 Check
+              auto tempbytearray{base64_decode(b64string)};
+//              fmt::print("Bitstring: {}\n", print_bytearray(tempbytearray));
+              if(!check_bloom_length(tempbytearray,(handler->get_local_configuration())->get_bloom_length())){
+            fmt::print(
+                "Warning: Set bits after bloomfilterlength. Set to zero.\n");
+              } 
+              tempfield = tempbytearray;
               break;
             }
             case FieldType::INTEGER: {

@@ -22,6 +22,7 @@
 #include "databasefetcher.h"
 #include "fmt/format.h"
 #include "seltypes.h"
+#include <exception>
 
 using namespace sel;
 sel::LocalConfiguration::LocalConfiguration(
@@ -76,7 +77,6 @@ void LocalConfiguration::set_local_auth(
 }
 
 void LocalConfiguration::poll_data() {
-  fmt::print("LocalConfiguration URL: \"{}\"\n", m_data_service);
   m_database_fetcher->set_url(m_data_service);
   m_database_fetcher->set_page_size(25u);  // TODO(TK): Magic number raus!
   auto&& data{m_database_fetcher->fetch_data(m_local_authentication.get())};
@@ -94,7 +94,11 @@ void LocalConfiguration::run_comparison() {
     aby_data.emplace_back(field.second);
     weights.emplace_back(get_field(field.first).weight);
   }
-  run_aby(0);
+  try{
+    run_aby(0);
+  } catch (const std::exception& e){
+    fmt::print(stderr, "Error running MPC server: {}\n", e.what());
+  }
   // Start ABY Server it gets m_data and weights
   // Send ABY Share and IDs to Linkage Server
 }

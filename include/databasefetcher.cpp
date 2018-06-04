@@ -31,6 +31,7 @@
 #include "seltypes.h"
 
 sel::PollData sel::DatabaseFetcher::fetch_data(AuthenticationConfig* l_auth) {
+  fmt::print("Requesting Database\n");
   m_page = 1u;
   auto paget{
       request_page(m_url + "?pagesize=" + std::to_string(m_page_size), l_auth)};
@@ -54,8 +55,7 @@ sel::PollData sel::DatabaseFetcher::fetch_data(AuthenticationConfig* l_auth) {
   fmt::print("Recieved Inputs:\n");
   for (auto& p : m_data) {
     fmt::print(
-        "-------------------------------\n{}\n-------------------------------\n"
-        "--\n",
+        "-------------------------------\n{}\n-------------------------------\n",
         p.first);
     for (auto& d : p.second) {
       if (auto pval = std::get_if<int>(&d)) {
@@ -76,8 +76,7 @@ sel::PollData sel::DatabaseFetcher::fetch_data(AuthenticationConfig* l_auth) {
     }
   }
   fmt::print(
-      "------------------------------\nIDs\n----------------------------"
-      "-\n");
+      "------------------------------\nIDs\n-----------------------------\n");
   for (const auto& m : m_ids) {
     for (const auto& i : m) {
       fmt::print("Type: {}, ID: {}; ", i.first, i.second);
@@ -116,7 +115,7 @@ void sel::DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
           auto bloom = base64_decode(temp);
           if (!check_bloom_length(bloom, m_parent->get_bloom_length())) {
             fmt::print(
-                "Warning: Set bits after bloomfilterlength. Set to zero.");
+                "Warning: Set bits after bloomfilterlength. Set to zero.\n");
           }
           temp_data[f.key()].emplace_back(std::move(bloom));
       }
