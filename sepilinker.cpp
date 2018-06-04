@@ -29,6 +29,7 @@
 
 #include "fmt/format.h"
 #include "nlohmann/json.hpp"
+#include "cxxopts.hpp"
 #include "restbed"
 
 #include <functional>
@@ -40,11 +41,48 @@ using namespace sel;
 
 
 int main(int argc, char* argv[]) {
+  // Commandline Parser
+  cxxopts::Options options("Secure EpiLinker", "Secure Multi Party Recard Linkage via EpiLink algorithm");
+  options.add_options()
+    ("c,config", "Config file name", cxxopts::value<std::string>()->default_value("../data/serverconf.json"))
+    ("i,initschema", "File name of initializeation schema", cxxopts::value<std::string>())
+    ("l,linkschema", "File name of linkRecord schema", cxxopts::value<std::string>())
+    ("k,key", "File name of server key", cxxopts::value<std::string>())
+    ("d,dh", "File name of Diffi-Hellman group", cxxopts::value<std::string>())
+    ("C,cert", "File name of server certificate", cxxopts::value<std::string>())
+    ("p,port", "Port for listening", cxxopts::value<unsigned>())
+    ("h,help", " Print this help");
+  auto cmdoptions{options.parse(argc,argv)};
+  if(cmdoptions.count("help")) {
+    fmt::print("{}\n",options.help());
+    return 0;
+  }
+  auto server_config = read_json_from_disk(cmdoptions["config"].as<std::string>());
+
+  // Override config file
+  if(cmdoptions.count("initschema")){
+    server_config["initSchemaPath"] = cmdoptions["initschema"].as<std::string>();
+  }
+  if(cmdoptions.count("linkschema")){
+    server_config["linkRecordSchemaPath"] = cmdoptions["linkschema"].as<std::string>();
+  }
+  if(cmdoptions.count("key")){
+    server_config["serverKeyPath"] = cmdoptions["key"].as<std::string>();
+  }
+  if(cmdoptions.count("dh")){
+    server_config["serverDHPath"] = cmdoptions["dh"].as<std::string>();
+  }
+  if(cmdoptions.count("cert")){
+    server_config["serverCertificatePath"] = cmdoptions["cert"].as<std::string>();
+  }
+  if(cmdoptions.count("port")){
+    server_config["port"] = cmdoptions["port"].as<unsigned>();
+  }
+  
+  // Program
   restbed::Service service;
   // Create Connection Handler
   auto connections = std::make_shared<sel::ConnectionHandler>(&service);
-  auto server_config = read_json_from_disk(
-      "/home/kussel/Projekte/epirest/apps/data/serverconf.json");
   // Create JSON Validator
   auto init_validator = std::make_shared<sel::Validator>(
       read_json_from_disk(server_config["initSchemaPath"].get<std::string>()));

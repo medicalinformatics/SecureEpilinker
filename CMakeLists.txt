@@ -80,7 +80,8 @@ target_link_libraries(sel PRIVATE asan ubsan ${EXTERNALLIBS} gmp gmpxx rt
 #target_link_libraries(sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
   #OpenSSL::SSL OpenSSL::Crypto Threads::Threads stdc++fs
   #${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
-target_link_libraries(sel PRIVATE fmt::fmt-header-only nlohmann_json)
+target_link_libraries(sel PRIVATE fmt::fmt-header-only nlohmann_json
+  cxxopts)
 set_property(TARGET sel PROPERTY CXX_STANDARD 17)
 target_compile_options(sel PRIVATE "-Wall" "-Wpedantic" "-Wextra" "-fexceptions")
 #Debug Version
