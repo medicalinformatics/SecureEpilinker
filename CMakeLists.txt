@@ -17,7 +17,7 @@ file(MAKE_DIRECTORY ${SecureEpiLinker_INSTALL_PREFIX})
 add_subdirectory(extern)
 
 # build main application
-add_executable (sel epirest.cpp 
+add_executable (sel sepilinker.cpp 
       include/resourcehandler.h 
       include/resourcehandler.cpp
       include/validator.h 
@@ -47,13 +47,15 @@ add_executable (sel epirest.cpp
       include/monitormethodhandler.cpp
       include/tempselmethodhandler.h
       include/tempselmethodhandler.cpp
-                            include/millionaire_prob.h
-                            include/millionaire_prob.cpp)
+      include/millionaire_prob.h
+      include/millionaire_prob.cpp)
 add_dependencies(sel ABY)
 add_dependencies(sel OTExtension)
 add_dependencies(sel MIRACL)
 add_dependencies(sel ENCRYPTO_utils)
 add_dependencies(sel valijson_patch)
+# FIXME(TK): restbed patch not working. Needs to be applied manually
+message(WARNING "Restbed Patch needs to be applied manually at the moment")
 add_dependencies(sel restbed_patch)
 
 set(EXTERNALLIBS ${SecureEpiLinker_INSTALL_PREFIX}/lib/libaby.a
@@ -66,16 +68,25 @@ set(EXTERNALLIBS ${SecureEpiLinker_INSTALL_PREFIX}/lib/libaby.a
 find_package(OpenSSL)
 find_package(Threads)
 
+#include externals as system libs to suppress warnings
 include_directories(SYSTEM ${SecureEpiLinker_INSTALL_PREFIX}/include
   "extern/restbed/source")
 target_include_directories(sel PRIVATE extern/valijson/include)
+# Debug Version (sanitizers linked)
 target_link_libraries(sel PRIVATE asan ubsan ${EXTERNALLIBS} gmp gmpxx rt
   OpenSSL::SSL OpenSSL::Crypto Threads::Threads stdc++fs
   ${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
+# Release Version
+#target_link_libraries(sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
+  #OpenSSL::SSL OpenSSL::Crypto Threads::Threads stdc++fs
+  #${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
 target_link_libraries(sel PRIVATE fmt::fmt-header-only nlohmann_json)
 set_property(TARGET sel PROPERTY CXX_STANDARD 17)
 target_compile_options(sel PRIVATE "-Wall" "-Wpedantic" "-Wextra" "-fexceptions")
+#Debug Version
 target_compile_options(sel PRIVATE "-O0" "-ggdb" "-fsanitize=address"
   "-fsanitize-address-use-after-scope" "-fsanitize=undefined")
+#target_compile_options(sel PRIVATE "-O2" "-s" "-DNDEBUG"
+  #"-fsanitize-address-use-after-scope" "-fsanitize=undefined")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)

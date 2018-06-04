@@ -40,14 +40,14 @@ class RequestHandler(BaseHTTPRequestHandler):
         
         if(request_path.find("page=2")== -1 and request_path.find("page=3")== -1):
             print("First Page")
-            with open('../build/page1.json', 'r') as myfile:
+            with open('page1.json', 'r') as myfile:
                 msg=myfile.read().replace('\n', '')
         if(request_path.find("page=2")!= -1):
             print("Second Page")
-            with open('../build/page2.json', 'r') as myfile:
+            with open('page2.json', 'r') as myfile:
                 msg=myfile.read().replace('\n', '')
         if(request_path.find("page=3")!= -1):
-            with open('../build/page3.json', 'r') as myfile:
+            with open('page3.json', 'r') as myfile:
                 msg=myfile.read().replace('\n', '')
         self.send_response(200,'')
         self.send_header('Content-Length', str(len(msg)))

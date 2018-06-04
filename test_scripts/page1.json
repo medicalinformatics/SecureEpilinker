@@ -1,60 +1,60 @@
 { 
    "_links":{ 
       "self":{ 
-         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=50&todate=1524096000"
+         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=2&todate=1524096000"
       },
       "first":{ 
-         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=50&todate=1524096000"
+         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=2&todate=1524096000"
       },
       "prev":{ 
-         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=50&todate=1524096000"
+         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=2&todate=1524096000"
       },
       "next":{ 
-         "href":"http://localhost:8800/rest/api/AllRecords?page=2&pagesize=50&todate=1524096000"
+         "href":"http://localhost:8800/rest/api/AllRecords?page=2&pagesize=2&todate=1524096000"
       },
       "last":{ 
-         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=3&pagesize=50&todate=1524096000"
+         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=3&pagesize=2&todate=1524096000"
       }
    },
-   "total":1250,
+   "total":6,
    "currentPageNumber":1,
    "lastPageNumber":3,
-   "pageSize":50,
+   "pageSize": 2,
    "todate":1524096000,
    "records":[ 
       { 
          "fields":{ 
-            "vorname":"I07A1YM4aKNXlQ...",
-            "nachname":"5f3dPPzqJvw=...",
-            "geburtsname":"kj8ictbYoOM=...",
-            "geburtstag": 24,
-            "geburtsmonat": 12,
-            "geburtsjahr": 1864,
-            "plz":"65432",
-            "ort":"EFXma8cPVEA=..."
+            "vorname":"TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVlciBhZGlwaXNjaW5nIGVsaXQuIEFlbmVh",
+            "nachname":"QXVjaCBnaWJ0IGVzIG5pZW1hbmRlbiwgZGVyIGRlbiBTY2htZXJ6IGFuIHNpY2ggbGllYnQsIHN1Y2h0IG9k",
+            "geburtsname":"V2VpdCBoaW50ZW4sIGhpbnRlciBkZW4gV29ydGJlcmdlbiwgZmVybiBkZXIgTGFlbmRlciBWb2thbGllbiB1",
+            "geburtstag": 14,
+            "geburtsmonat": 2,
+            "geburtsjahr": 1963,
+            "plz":"65434",
+            "ort":"TGkgRXVyb3BhbiBsaW5ndWVzIGVzIG1lbWJyZXMgZGVsIHNhbSBmYW1pbGllLiBMb3Igc2VwYXJhdCBleGlz"
          },
          "ids":[ 
             { 
                "idType":"lid",
-               "idString":"12345"
+               "idString":"11111"
             }
          ]
       },
       { 
          "fields":{ 
-            "vorname":"I07A1YM4aKNXlQ...",
-            "nachname":"5f3dPPzqJvw=...",
-            "geburtsname":"kj8ictbYoOM=...",
+            "vorname":"RWluZSB3dW5kZXJiYXJlIEhlaXRlcmtlaXQgaGF0IG1laW5lIGdhbnplIFNlZWxlIGVpbmdlbm9tbWVuLCBn",
+            "nachname":"SmVtYW5kIG11c3N0ZSBKb3NlZiBLLiB2ZXJsZXVtZGV0IGhhYmVuLCBkZW5uIG9obmUgZGFzcyBlciBldHdh",
+            "geburtsname":"RXMgZ2lidCBpbSBNb21lbnQgaW4gZGllc2UgTWFubnNjaGFmdCwgb2gsIGVpbmlnZSBTcGllbGVyIHZlcmdl",
             "geburtstag":24,
             "geburtsmonat":12,
-            "geburtsjahr":1864,
+            "geburtsjahr":1964,
             "plz":"65432",
-            "ort":"EFXma8cPVEA=..."
+            "ort":"RXIgaG9lcnRlIGxlaXNlIFNjaHJpdHRlIGhpbnRlciBzaWNoLiBEYXMgYmVkZXV0ZXRlIG5pY2h0cyBHdXRl"
          },
          "ids":[ 
             { 
                "idType":"lid",
-               "idString":"23231"
+               "idString":"11112"
             }
          ]
       }
