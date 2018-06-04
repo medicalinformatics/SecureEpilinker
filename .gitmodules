@@ -22,3 +22,6 @@
 [submodule "extern/restbed"]
 	path = extern/restbed
 	url = https://github.com/Corvusoft/restbed
+[submodule "extern/cxxopts"]
+	path = extern/cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
