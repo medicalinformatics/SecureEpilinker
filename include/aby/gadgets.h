@@ -44,8 +44,26 @@ ArithShare binary_accumulate(vector<ArithShare> vals,
     const BinaryOp_ArithShare& op);
 */
 
-BoolShare split_accumulate(BoolShare simd_share,
-    const BinaryOp_BoolShare& op);
+/**
+ * Accumulates all values in simd_share as if it was first split and then
+ * binary-accumulated using op. Returns a share of same bitlen and nvals=1.
+ *
+ * More efficient than binary accumulate because share is repetitively split and
+ * then op applied to only two values, effectively dividing nvals by 2 in each
+ * iteration. If nvals is odd, remainder share is saved and later appended if
+ * there is another odd split.
+ */
+BoolShare split_accumulate(BoolShare simd_share, const BinaryOp_BoolShare& op);
+
+/**
+ * Like split_accumulate but more specific to running a selector op_select which
+ * returns a share with only one wire. This share is then muxed to select either
+ * the first or second part of a split share. The same selection process is also
+ * applied in parallel to target.
+ * Output will be saved to input references, so initial shares are overwritten.
+ */
+void split_select_target(BoolShare& selector, BoolShare& target,
+    const BinaryOp_BoolShare& op_select);
 
 BoolShare max(const vector<BoolShare>&);
 BoolShare sum(const vector<BoolShare>&);
