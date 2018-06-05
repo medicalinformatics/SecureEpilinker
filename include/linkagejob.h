@@ -28,6 +28,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <map>
 
 namespace restbed {
 class Service;
@@ -35,21 +36,25 @@ class Service;
 
 namespace sel {
 class ConnectionHandler;
+class LocalConfiguration;
 
 class LinkageJob {
  public:
    LinkageJob();
+   LinkageJob(std::shared_ptr<LocalConfiguration>);
    void set_callback(CallbackConfig cc) {m_callback = std::move(cc);}
    void add_data_field(const FieldName& fieldname, DataField field) {m_data.emplace(fieldname, std::move(field));}
    JobStatus get_status() const { return m_status; }
    JobId get_id() const {return m_id;}
    void run_job();
+   void set_local_config(std::shared_ptr<LocalConfiguration>);
  private:
+   void set_id();
    JobId m_id;
   JobStatus m_status{JobStatus::QUEUED};
-  std::unordered_map<FieldName, std::variant<int, double, std::string, std::vector<uint8_t>>>
-      m_data;
+  std::map<FieldName, DataField> m_data;
   CallbackConfig m_callback;
+  std::shared_ptr<LocalConfiguration> m_local_config;
 };
 
 }  // namespace sel

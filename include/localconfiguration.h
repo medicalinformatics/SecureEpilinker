@@ -27,6 +27,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <set>
 
 #include "authenticationconfig.hpp"
 
@@ -42,7 +43,7 @@ class LocalConfiguration {
   void add_field(ML_Field field);
 
   const ML_Field& get_field(const FieldName& fieldname);
-  void add_exchange_group(std::vector<FieldName>& group);
+  void add_exchange_group(std::set<FieldName> group);
 
   bool field_exists(const FieldName& fieldname);
   void set_algorithm_config(AlgorithmConfig aconfig);
@@ -51,6 +52,7 @@ class LocalConfiguration {
   void set_local_auth(std::unique_ptr<AuthenticationConfig> auth);
   void poll_data();
   void poll_differential_data();
+  std::vector<std::set<FieldName>> const& get_exchange_group() const;
 
   void run_comparison();
   std::string print_auth_type() const {return m_local_authentication->print_type();}
@@ -60,7 +62,7 @@ class LocalConfiguration {
   void start_aby_server() const;
   std::unique_ptr<AuthenticationConfig> m_local_authentication;
   std::unordered_map<FieldName, ML_Field> m_fields;
-  std::vector<std::vector<FieldName>> m_exchange_groups;
+  std::vector<std::set<FieldName>> m_exchange_groups;
   AlgorithmConfig m_algorithm;
   std::string m_data_service;
   std::map<FieldName, std::vector<DataField>> m_data;

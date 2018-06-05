@@ -23,6 +23,7 @@
 #include "fmt/format.h"
 #include "seltypes.h"
 #include <exception>
+#include <set>
 
 using namespace sel;
 sel::LocalConfiguration::LocalConfiguration(
@@ -44,18 +45,14 @@ const sel::ML_Field& LocalConfiguration::get_field(
   }
 }
 
-void LocalConfiguration::add_exchange_group(std::vector<sel::FieldName>& group) {
-  std::vector<sel::FieldName> tempgroup;
-
+void LocalConfiguration::add_exchange_group(std::set<sel::FieldName> group) {
   for (const auto& f : group) {
-    if (field_exists(f)) {
-      tempgroup.emplace_back(f);
-    } else {
+    if (!field_exists(f)) {
       throw std::runtime_error(
           "Invalid Exchange Group. Field(s) does not exist!");
     }
   }
-  m_exchange_groups.emplace_back(std::move(tempgroup));
+  m_exchange_groups.emplace_back(std::move(group));
 }
 
 bool LocalConfiguration::field_exists(const sel::FieldName& fieldname) {
@@ -83,6 +80,10 @@ void LocalConfiguration::poll_data() {
   m_todate = data.todate;
   m_data = std::move(data.data);
   m_ids = std::move(data.ids);
+}
+
+std::vector<std::set<FieldName>> const& sel::LocalConfiguration::get_exchange_group() const{
+  return m_exchange_groups;
 }
 
 void LocalConfiguration::run_comparison() {

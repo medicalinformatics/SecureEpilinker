@@ -68,7 +68,7 @@ std::unique_ptr<sel::AuthenticationConfig> sel::get_auth_object(
 
 bool sel::check_exchange_group(
     const std::unordered_set<sel::FieldName>& fieldnames,
-    const std::vector<sel::FieldName>& exchange_group) {
+    const std::set<sel::FieldName>& exchange_group) {
   bool fields_present{true};
   for (const auto& f : exchange_group) {
     fields_present &= fieldnames.count(f);
@@ -83,7 +83,7 @@ sel::SessionResponse sel::valid_linkrecord_json_handler(
   try {
     sel::JobId job_id;
     if (handler->num_connections()) {
-      auto job{std::make_shared<LinkageJob>()};
+      auto job{std::make_shared<LinkageJob>(handler->get_local_configuration())};
       job_id = job->get_id();
       fmt::print("Ressource Path: {}\n", job_id);
       try {
@@ -190,9 +190,9 @@ sel::SessionResponse sel::valid_init_json_handler(
         fieldnames.emplace(f["name"].get<std::string>());
       }
       for (const auto& eg : j["algorithm"]["exchangeGroups"]) {
-        std::vector<sel::FieldName> egroup;
+        std::set<sel::FieldName> egroup;
         for (const auto& f : eg) {
-          egroup.emplace_back(f.get<std::string>());
+          egroup.emplace(f.get<std::string>());
         }
         if (check_exchange_group(fieldnames, egroup)) {
           local_config->add_exchange_group(egroup);
