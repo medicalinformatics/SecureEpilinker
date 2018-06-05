@@ -451,18 +451,6 @@ uint32_t SecureEpilinker::run() {
   return result.get_clear_value<bin_type>();
 }
 
-
-/*
-  * 1. Boolean Part of the circuit:
-  * Input: Bitmasks and Hammingweights of client and server
-  *  a. B_and = AND of bitmasks
-  *  b. H_and = HW of B_and
-  *  c. l bit left-shift of H_and
-  *  d. H_add = ADD HWs of denominator
-  *  e. 16-bit integer division of H_and / H_add
-  */
-
-
 /*
   * Takes rescaled weights and makes Contant Input Shares on the given circuit
   * run v_hw_type weights_rsc = rescale_weights(weights); before
@@ -489,8 +477,5 @@ vector<BoolShare> make_client_bitmask_inputs(BooleanCircuit* circ,
       });
   return inputs;
 }
-/*
-  * calculates the weight of the given exchange group and permutation
-  */
-//BoolShare permutation_weight()
+
 } // namespace sel
