@@ -32,7 +32,10 @@ namespace sel {
 
 constexpr size_t bitbytes(size_t b) { return (b + 7)/8; }
 
-/* dunno why u not working */
+/**
+ * Concatenates the vectors to a single vector, i.e., it flattenes the given
+ * vector of vectors.
+ */
 template <typename T>
 std::vector<T> concat_vec(const std::vector<std::vector<T>>& vs) {
   size_t total_size{0};
@@ -45,6 +48,25 @@ std::vector<T> concat_vec(const std::vector<std::vector<T>>& vs) {
   }
   return c;
 }
+
+/**
+ * Repeats the vectors n times.
+ */
+template <typename T>
+std::vector<T> repeat_vec(const std::vector<T>& v, const size_t n) {
+  std::vector<T> c;
+  c.reserve(v.size() * n);
+  for (size_t i = 0; i != n; ++i) {
+    c.insert(c.end(), v.begin(), v.end());
+  }
+  return c;
+}
+
+/**
+ * Generates a bitmaks of given size (rounded up to next multiple of 8) with
+ * given bit set at all positions.
+ */
+std::vector<uint8_t> repeat_bit(const bool bit, const size_t n);
 
 std::vector<uint8_t> vector_bool_to_bitmask(const std::vector<bool>&);
 
