@@ -6,8 +6,7 @@ option(BUILD_EXE "Build executables" OFF)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native")
-set(CMAKE_CXX_FLAGS_DEBUG "-std=c++17 -g3 -ggdb -O0")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+set(CMAKE_CXX_FLAGS_DEBUG "-std=c++14 -g3 -ggdb -O0")
 
 # Dependencies
 find_package(Threads REQUIRED)
