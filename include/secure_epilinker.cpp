@@ -162,11 +162,14 @@ public:
     is_input_set = true;
   }
 
+  struct result_shares {
+    OutShare max_idx, match, tmatch;
+  };
   /*
   * Builds the shared component of the circuit after initial input shares of
   * client and server have been created.
   */
-  OutShare build_circuit() {
+  result_shares build_circuit() {
     // Where we store all group and individual comparison weights as ariths
     vector<ArithShare> a_field_weights;
     vector<BoolShare> b_field_weights;
@@ -209,10 +212,24 @@ public:
 #endif
 
     // 4. Determine index of max score of all nvals calculations
+    BoolShare max_idx{const_idx};
+    assert((bool)const_idx); // check that it was copied, not moved
+    split_select_target(sum_field_weights, max_idx,
+        (BinaryOp_BoolShare) [](auto a, auto b) {return a>b;});
 
     // 5. Left side: sum up all weights and multiply with threshold
     //  Since weights and threshold are public inputs, this can be computed
     //  locally. This is done in set_constants().
+    //
+    // 6. Set two comparison bits, whether > (tentative) threshold
+    BoolShare match = const_w_threshold < sum_field_weights;
+    BoolShare tmatch = const_w_tthreshold < sum_field_weights;
+#ifdef DEBUG_SEL_CIRCUIT
+    print_share(match, "match?");
+    print_share(tmatch, "tentative match?");
+#endif
+
+    return {out(max_idx, ALL), out(match, ALL), out(tmatch, ALL)};
   }
 
 private:
@@ -230,7 +247,7 @@ private:
   // Constant shares
   BoolShare const_zero, const_idx;
   // Left side of inequality: T * sum(weights)
-  ArithShare const_w_threshold, const_w_tthreshold;
+  BoolShare const_w_threshold, const_w_tthreshold;
 
   // state variables
   uint32_t nvals{0};
@@ -269,8 +286,8 @@ private:
     cout << "W: " << hex << W << " T: " << hex << T << " Tt: " << hex << Tt << endl;
 #endif
 
-    const_w_threshold = constant_simd(acirc, W*T, BitLen, nvals);
-    const_w_tthreshold = constant_simd(acirc, W*Tt, BitLen, nvals);
+    const_w_threshold = constant(bcirc, W*T, BitLen);
+    const_w_tthreshold = constant(bcirc, W*Tt, BitLen);
   }
 
   /* Not needed, can compute those values offline
@@ -450,12 +467,12 @@ uint32_t SecureEpilinker::run_as_server(const EpilinkServerInput& input) {
 }
 
 uint32_t SecureEpilinker::run() {
-  OutShare result = selc->build_circuit();
+  SELCircuit::result_shares res = selc->build_circuit();
   party.ExecCircuit();
 
   is_setup = false; // need to run new setup phase
 
-  return result.get_clear_value<bin_type>();
+  return res.max_idx.get_clear_value<bin_type>();
 }
 
 /*
