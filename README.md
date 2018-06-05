@@ -96,6 +96,10 @@ Give an example
 
 Add additional notes about how to deploy this on a live system
 
+## REST interface
+
+Informatino on how to use the API
+
 ## Built With
 
 * [ABY](https://github.com/encryptogroup/ABY/) - The multi party computation
@@ -124,7 +128,7 @@ See also the list of [contributors](https://git.compbiol.bio.tu-darmstadt.de/kus
 
 ## License
 
-This project is licensed under the AGPL License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the AGPL License - see the [LICENSE](LICENSE) file for details
 
 ## Acknowledgments
 
