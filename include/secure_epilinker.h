@@ -44,14 +44,20 @@ class SecureEpilinker {
    * specifying the inputs, as all circuits start with the InputGates. Hence,
    * the actual circuit building will happen in run_as_*.
    */
-  void build_circuit();
+  void build_circuit(const uint32_t nvals);
+
   /*
    * TODO The separation of setup and online phase is currently not possible in
    * ABY. Until it is, this will all happen in the run_as_* methods...
    */
   void run_setup_phase();
-  // interactively runs the circuit with given inputs and returns max index as
-  // XOR share to be sent to linkage service by the caller
+
+  /**
+   * Interactively runs the circuit with given inputs and returns max index as
+   * XOR share to be sent to linkage service by the caller.
+   * database size must match on both sides and be smaller than used nvals
+   * during build_circuit()
+   */
   uint32_t run_as_client(const EpilinkClientInput& input);
   uint32_t run_as_server(const EpilinkServerInput& input);
 

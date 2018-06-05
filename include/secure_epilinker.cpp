@@ -410,9 +410,10 @@ SecureEpilinker::SecureEpilinker(ABYConfig config, EpilinkConfig epi_config) :
 // TODO when ABY can separate circuit building/setup/online phases, we create
 // different SELCircuits per build_circuit()...
 
-void SecureEpilinker::build_circuit() {
+void SecureEpilinker::build_circuit(const uint32_t) {
   // TODO When separation of setup, online phase and input setting is done in
   // ABY, call selc->build_circuit() here instead of in run()
+  // nvals is currently ignored as nvals is just taken from EpilinkInputs
   is_built = true;
 }
 
@@ -424,11 +425,19 @@ void SecureEpilinker::run_setup_phase() {
 }
 
 uint32_t SecureEpilinker::run_as_client(const EpilinkClientInput& input) {
+  if (!is_setup) {
+    cerr << "Warning: Implicitly running setup phase." << endl;
+    run_setup_phase();
+  }
   selc->set_client_input(input);
   return run();
 }
 
 uint32_t SecureEpilinker::run_as_server(const EpilinkServerInput& input) {
+  if (!is_setup) {
+    cerr << "Warning: Implicitly running setup phase." << endl;
+    run_setup_phase();
+  }
   selc->set_server_input(input);
   return run();
 }
