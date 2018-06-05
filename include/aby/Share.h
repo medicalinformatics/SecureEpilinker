@@ -73,7 +73,7 @@ class Share {
    * DummySIMDINGate
    */
   Share(Circuit* circ, uint32_t bitlen, uint32_t nvals) :
-    circ{circ}, sh{circ->PutDummySIMDINGate(bitlen, nvals)} {}
+    circ{circ}, sh{circ->PutDummySIMDINGate(nvals, bitlen)} {}
 
   Share& operator+=(const Share& other) {
     assert(circ == other.circ);
