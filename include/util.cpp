@@ -40,4 +40,8 @@ std::vector<uint8_t> vector_bool_to_bitmask(const std::vector<bool>& vb) {
   return v;
 }
 
+std::vector<uint8_t> repeat_bit(const bool bit, const size_t n) {
+  return std::vector<uint8_t>(bitbytes(n), bit ? 0xffu : 0u);
+}
+
 } // namespace sel
