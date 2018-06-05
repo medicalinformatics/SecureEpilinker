@@ -12,6 +12,10 @@ BoolShare op_max(const BoolShare& a, const BoolShare& b) {
   return (a > b).mux(a, b);
 }
 
+BoolShare op_gt(const BoolShare& a, const BoolShare& b) {
+  return a > b;
+}
+
 BoolShare op_add(const BoolShare& a, const BoolShare& b) {
   return a + b;
 }
@@ -88,6 +92,31 @@ struct ABYTester {
       << endl;
   }
 
+  void test_split_select_target() {
+    vector<uint32_t> vin{2, 40, 1034, 67, 678};
+    vector<uint32_t> xin{1,2,3,4,5};
+
+    BoolShare a_in{bc, vin.data(), bitlen, SERVER, 5};
+    BoolShare b_in{bc, xin.data(), bitlen, CLIENT, 5};
+
+    print_share(a_in, "a_in");
+    print_share(b_in, "b_in");
+
+    split_select_target(a_in, b_in, op_gt);
+
+    print_share(a_in, "max a");
+    print_share(b_in, "selected b");
+
+    OutShare out_a = out(a_in, ALL);
+    OutShare out_b = out(b_in, ALL);
+
+    party.ExecCircuit();
+
+    cout << "max a: " << out_a.get_clear_value<uint32_t>()
+      << " selected b: " << out_b.get_clear_value<uint32_t>()
+      << endl;
+  }
+
   void test_add() {
     constexpr uint32_t _bitlen = 8;
     BoolShare a = (role==SERVER) ? BoolShare{bc, _bitlen} : BoolShare{bc, 43u, _bitlen, CLIENT};
@@ -135,7 +164,7 @@ int main(int argc, char *argv[])
 
   ABYTester tester{role, (e_sharing)sharing, nvals, bitlen, nthreads};
 
-  tester.test_split_accumulate();
+  tester.test_split_select_target();
   //tester.test_add();
   //tester.test_mult_const();
 
