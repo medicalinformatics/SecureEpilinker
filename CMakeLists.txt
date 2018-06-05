@@ -86,8 +86,28 @@ set_property(TARGET sel PROPERTY CXX_STANDARD 17)
 target_compile_options(sel PRIVATE "-Wall" "-Wpedantic" "-Wextra" "-fexceptions")
 #Debug Version
 target_compile_options(sel PRIVATE "-O0" "-ggdb" "-fsanitize=address"
-  "-fsanitize-address-use-after-scope" "-fsanitize=undefined")
+"-fsanitize-address-use-after-scope" "-fsanitize=undefined")
 #target_compile_options(sel PRIVATE "-O2" "-s" "-DNDEBUG"
   #"-fsanitize-address-use-after-scope" "-fsanitize=undefined")
+
+set(SELSOURCES "include/util.cpp" "include/epilink_input.cpp"
+  "include/secure_epilinker.cpp" "include/util.cpp" "include/aby/Share.cpp"
+  "include/aby/gadgets.cpp" "include/aby/util.cpp")
+
+set(SELHEADER "include/epilink_input.h" "include/math.h"
+  "include/secure_epilinker.h" "include/sel.h" "include/util.h"
+  "include/aby/Share.h" "include/aby/circuit_defs.h" "include/aby/gadgets.h"
+  "include/aby/util.h")
+# Test-Targets
+add_executable(test_aby test/test_aby.cpp ${SELSOURCES} ${SELHEADER})
+add_dependencies(test_aby ABY)
+add_dependencies(test_aby OTExtension)
+add_dependencies(test_aby MIRACL)
+add_dependencies(test_aby ENCRYPTO_utils)
+target_link_libraries(test_aby PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
+  OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
+target_link_libraries(test_aby PRIVATE fmt::fmt-header-only cxxopts)
+set_property(TARGET test_aby PROPERTY CXX_STANDARD 14)
+target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
