@@ -57,11 +57,11 @@ struct ABYTester {
 
     BoolShare a_in, b_in;
     if (role == SERVER) {
-      a_in = BoolShare{bc, bc->PutDummySIMDINGate(5, bitlen)};
+      a_in = BoolShare{bc, bitlen, 5};
       b_in = BoolShare{bc, vin.data(), bitlen, SERVER, 5};
     } else {
       a_in = BoolShare{bc, xin.data(), bitlen, CLIENT, 5};
-      b_in = BoolShare{bc, bc->PutDummySIMDINGate(5, bitlen)};
+      b_in = BoolShare{bc, bitlen, 5};
     }
 
     //b_in = constant_simd(bc, 4, 32, 5);
@@ -89,10 +89,9 @@ struct ABYTester {
   }
 
   void test_add() {
-    BoolShare a, b;
-    bitlen = 8;
-    a = (role==SERVER) ? BoolShare{bc, bitlen} : BoolShare{bc, 43u, bitlen, CLIENT};
-    b = (role==CLIENT) ? BoolShare{bc, bitlen} : BoolShare{bc, 67u, bitlen, SERVER};
+    constexpr uint32_t _bitlen = 8;
+    BoolShare a = (role==SERVER) ? BoolShare{bc, _bitlen} : BoolShare{bc, 43u, _bitlen, CLIENT};
+    BoolShare b = (role==CLIENT) ? BoolShare{bc, _bitlen} : BoolShare{bc, 67u, _bitlen, SERVER};
 
     a = a.repeat(10);
     b = b.repeat(10);
