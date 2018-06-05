@@ -176,4 +176,59 @@ BoolShare split_accumulate(BoolShare simd_share, const BinaryOp_BoolShare& op) {
   return simd_share;
 }
 
+void split_select_target(BoolShare& selector, BoolShare& target,
+    const BinaryOp_BoolShare& op_select) {
+  assert (selector.get_nvals() == target.get_nvals());
+#ifdef DEBUG_SEL_GADGETS
+  cout << "==== split-select-target share of nvals: " << selector.get_nvals() << " ====\n";
+#endif
+  BoolShare stack_selector, stack_target;
+  assert (stack_selector.is_null());
+  for(size_t cnvals{selector.get_nvals()/2}, rem{selector.get_nvals()%2};
+      selector.get_nvals() > 1; rem = cnvals%2, cnvals /=2) {
+#ifdef DEBUG_SEL_GADGETS
+    cout << "cnvals: " << cnvals << " rem: " << rem << "\n";
+#endif
+    if (rem && stack_selector) {
+#ifdef DEBUG_SEL_GADGETS
+      cout << "remainder and stack: combining stack and cnvals++\n";
+#endif
+      selector = vcombine({selector, move(stack_selector)});
+      target = vcombine({target, move(stack_target)});
+      assert(stack_selector.is_null());
+      cnvals++;
+      rem = 0;
+    }
+
+    vector<BoolShare> splits = selector.split(cnvals);
+    vector<BoolShare> tsplits = target.split(cnvals);
+
+    // push to stack if remainder
+    if (splits.size() > 2) {
+#ifdef DEBUG_SEL_GADGETS
+      cout << "storing remainder stack\n";
+#endif
+      assert (splits.size() == 3 && tsplits.size() == 3);
+      assert (rem == 1);
+      stack_selector = move(splits.back());
+      stack_target = move(tsplits.back());
+      assert (stack_selector.get_nvals() == 1);
+    }
+    assert (splits[0].get_nvals() == cnvals);
+    assert (splits[1].get_nvals() == cnvals);
+    BoolShare cmp = op_select(splits[0], splits[1]);
+    selector = cmp.mux(splits[0], splits[1]);
+    target = cmp.mux(tsplits[0], tsplits[1]);
+  }
+  // finally accumulate with stack
+  if (!stack_selector.is_null()) {
+#ifdef DEBUG_SEL_GADGETS
+    cout << "stack not empty, final acc" << endl;
+#endif
+    BoolShare cmp = op_select(selector, stack_selector);
+    selector = cmp.mux(selector, stack_selector);
+    target = cmp.mux(target, stack_target);
+  }
+}
+
 } // namespace sel
