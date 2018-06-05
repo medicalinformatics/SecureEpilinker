@@ -54,6 +54,7 @@ class Share {
     circ{c}, sh{c->PutINGate(value, bitlen, role)} {}
     */
   // TODO copy those constructors without role to make SharedINGate
+
   /*
    * Constructor to create new SIMDINGate from plain-text value
    */
@@ -61,12 +62,18 @@ class Share {
     // require T of type uintXX_t or uintXX_t*
   Share(Circuit* c, T value, uint32_t bitlen, e_role role, uint32_t nvals) :
     circ{c}, sh{circ->PutSIMDINGate(nvals, value, bitlen, role)} {}
+
   /*
    * DummyINGate
    */
   Share(Circuit* circ, uint32_t bitlen) :
     circ{circ}, sh{circ->PutDummyINGate(bitlen)} {}
-  // TODO DummySIMDIN was broken, check with DD
+
+  /*
+   * DummySIMDINGate
+   */
+  Share(Circuit* circ, uint32_t bitlen, uint32_t nvals) :
+    circ{circ}, sh{circ->PutDummySIMDINGate(bitlen, nvals)} {}
 
   Share& operator+=(const Share& other) {
     assert(circ == other.circ);
@@ -154,13 +161,10 @@ class BoolShare: public Share {
     Share{static_cast<Circuit*>(bc), bitlen}, bcirc{bc} {}
 
   /*
-   * Assignment to base
-  BoolShare& operator=(const Share& other) {
-    circ = other.get_circuit();
-    bcirc = dynamic_cast<BooleanCircuit*>(circ);
-    sh = share_p{other.get()};
-  }
+   * DummySIMDINGate
    */
+  BoolShare(BooleanCircuit* bc, uint32_t bitlen, uint32_t nvals) :
+    Share{static_cast<Circuit*>(bc), bitlen, nvals}, bcirc{bc} {}
 
   BoolShare& operator&=(const BoolShare& other) {
     assert(bcirc == other.bcirc);
@@ -276,6 +280,12 @@ class ArithShare: public Share {
    */
   ArithShare(ArithmeticCircuit* ac, uint32_t bitlen) :
     Share{static_cast<Circuit*>(ac), bitlen}, acirc{ac} {}
+
+  /*
+   * DummySIMDINGate
+   */
+  ArithShare(ArithmeticCircuit* ac, uint32_t bitlen, uint32_t nvals) :
+    Share{static_cast<Circuit*>(ac), bitlen, nvals}, acirc{ac} {}
 
   protected:
   ArithmeticCircuit* acirc;
