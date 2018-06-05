@@ -249,13 +249,15 @@ private:
     // create constants with nvals
     const_zero = constant_simd(bcirc, 0, 1, nvals);
     // build constant index vector
-    vector<uint32_t> wires;
-    wires.reserve(nvals);
+    vector<BoolShare> numbers;
+    numbers.reserve(nvals);
     for (bin_type i = 0; i != nvals; ++i) {
-      // TODO WRONG?! in bool share only one bit per wire?! so BitLen wires?!
-      wires.emplace_back(constant(bcirc, i, BitLen).get()->get_wire_id(0));
+      // TODO Make true SIMD constants available in ABY and implement offline
+      // AND with constant
+      numbers.emplace_back(constant(bcirc, i, BitLen));
     }
-    const_idx = BoolShare{bcirc, new boolshare{wires, static_cast<Circuit*>(bcirc)}};
+    const_idx = vcombine(numbers);
+    assert(const_idx.get_nvals() == nvals);
 
     uint64_t W{0};
     for (auto& w : cfg.hw_weights_r) W += w;
