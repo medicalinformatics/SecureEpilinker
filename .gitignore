@@ -13,3 +13,4 @@ CTestTestfile.cmake
 *.crt
 *.csr
 *.key
+tags

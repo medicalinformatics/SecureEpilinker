@@ -109,8 +109,5 @@ struct SessionResponse {
   std::string body;
   std::multimap<std::string, std::string> headers;
 };
-
-void run_aby(int role);
 }
-
 #endif // SEL_SELTYPES_H

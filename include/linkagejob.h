@@ -29,6 +29,7 @@
 #include <variant>
 #include <vector>
 #include <map>
+#include "epilink_input.h"
 
 namespace restbed {
 class Service;
@@ -43,7 +44,8 @@ class LinkageJob {
    LinkageJob();
    LinkageJob(std::shared_ptr<LocalConfiguration>);
    void set_callback(CallbackConfig cc) {m_callback = std::move(cc);}
-   void add_data_field(const FieldName& fieldname, DataField field) {m_data.emplace(fieldname, std::move(field));}
+   void add_hw_data_field(const FieldName& fieldname, DataField field, bool);
+   void add_bin_data_field(const FieldName& fieldname, DataField field, bool);
    JobStatus get_status() const { return m_status; }
    JobId get_id() const {return m_id;}
    void run_job();
@@ -52,7 +54,10 @@ class LinkageJob {
    void set_id();
    JobId m_id;
   JobStatus m_status{JobStatus::QUEUED};
-  std::map<FieldName, DataField> m_data;
+  std::map<FieldName, bitmask_type> m_hw_data;
+  std::map<FieldName, bin_type> m_bin_data;
+  std::map<FieldName, bool> m_hw_empty;
+  std::map<FieldName, bool> m_bin_empty;
   CallbackConfig m_callback;
   std::shared_ptr<LocalConfiguration> m_local_config;
 };
