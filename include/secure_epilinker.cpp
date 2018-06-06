@@ -399,10 +399,12 @@ private:
    * @param iright index of y
    */
   BoolShare weight_compare_bin(size_t ileft, size_t iright) {
-    BoolShare comp = compare_bin(hw_client[ileft], hw_server[iright]);
+    BoolShare comp = compare_bin(bin_client[ileft], bin_server[iright]);
 
     comp = (!bin_client_empty[ileft] & !bin_server_empty[iright] & comp);
 #ifdef DEBUG_SEL_CIRCUIT
+    print_share(bin_client[ileft], fmt::format("bin_client[{}]", ileft));
+    print_share(bin_server[iright], fmt::format("bin_server[{}]", iright));
     print_share(comp, fmt::format("^^^^ BIN Comparison of pair ({},{}) ^^^^", ileft, iright));
 #endif
     // If indices match, use precomputed rescaled weights. Otherwise take
