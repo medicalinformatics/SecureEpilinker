@@ -96,7 +96,6 @@ void LocalConfiguration::run_comparison() {
     weights.emplace_back(get_field(field.first).weight);
   }
   try{
-    run_aby(0);
   } catch (const std::exception& e){
     fmt::print(stderr, "Error running MPC server: {}\n", e.what());
   }

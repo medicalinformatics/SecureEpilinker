@@ -21,15 +21,12 @@
 #include <stdexcept>
 #include <cassert>
 
-#include "ENCRYPTO_utils/crypto/crypto.h"
-#include "ENCRYPTO_utils/parse_options.h"
+using sel::FieldType;
+using sel::FieldComparator;
+using sel::AlgorithmType;
+using sel::AuthenticationType;
+using sel::JobStatus;
 
-#include "abycore/aby/abyparty.h"
-#include "millionaire_prob.h"
-
-
-
-using namespace sel;
 FieldType sel::str_to_ftype(const std::string& str) {
     if(str =="bitmask") return FieldType::BITMASK;
     else if(str =="number") return FieldType::NUMBER;
@@ -67,15 +64,4 @@ std::string sel::js_enum_to_string(JobStatus status){
     default:                 {throw std::runtime_error("Invalid Status"); 
                               return "Error!";}
   }
-}
-void sel::run_aby(int role){
-uint32_t bitlen = 32, nvals =31, secparam = 128, nthreads =1;
-uint16_t port = 7766;
-std::string address = "127.0.0.1";
-int32_t test_op = -1;
-e_mt_gen_alg mt_alg = MT_OT;
-
-seclvl seclvl = get_sec_lvl(secparam);
-
-test_millionaire_prob_circuit((e_role)role, (char*) address.c_str(), port, seclvl, 1, 32, nthreads, mt_alg, S_YAO);
 }
