@@ -55,6 +55,32 @@ struct ABYTester {
     cout << "a*c = " << out_ac.get_clear_value_vec() << endl;
   }
 
+  void test_hw() {
+    using datatype = uint64_t;
+    vector<datatype> data = {0xdeadbeef, 0x33333333};
+    vector<datatype> data2 = {0xdeadbee0, 0x03333333};
+    size_t _bitlen = sizeof(datatype)*8;
+
+    BoolShare in;
+    if (role == CLIENT) {
+      in = BoolShare(bc, data.data(), _bitlen, CLIENT, data.size());
+    } else {
+      in = BoolShare(bc, _bitlen, data.size());
+    }
+    print_share(in, "in");
+
+    BoolShare in2(bc, data2.data(), _bitlen, SERVER, data2.size());
+    print_share(in2, "in2");
+
+    BoolShare bAND = in & in2;
+    print_share(bAND, "in & in2");
+
+    in = hammingweight(bAND);
+    print_share(in, "hw");
+
+    party.ExecCircuit();
+  }
+
   void test_split_accumulate() {
     vector<uint32_t> vin{2, 40, 67, 119, 2839};
     vector<uint32_t> xin(5,100);
@@ -164,9 +190,10 @@ int main(int argc, char *argv[])
 
   ABYTester tester{role, (e_sharing)sharing, nvals, bitlen, nthreads};
 
-  tester.test_split_select_target();
+  //tester.test_split_select_target();
   //tester.test_add();
   //tester.test_mult_const();
+  tester.test_hw();
 
   return 0;
 }
