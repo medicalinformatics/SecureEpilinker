@@ -25,9 +25,8 @@
 
 namespace sel {
 
-class SELCircuit; // forward of implementation class ~ pimpl
 class SecureEpilinker {
-  public:
+public:
   struct ABYConfig {
     e_role role; // SERVER or CLIENT
     e_sharing bool_sharing; // S_YAO or S_BOOL for boolean circuit parts?
@@ -37,7 +36,7 @@ class SecureEpilinker {
   };
 
   SecureEpilinker(ABYConfig aby_config, EpilinkConfig epi_config);
-  ~SecureEpilinker() = default;
+  ~SecureEpilinker();
 
   /*
    * TODO It is currently not possible to build an ABY circuit without
@@ -61,12 +60,14 @@ class SecureEpilinker {
   uint32_t run_as_client(const EpilinkClientInput& input);
   uint32_t run_as_server(const EpilinkServerInput& input);
 
-  private:
+private:
   ABYParty party;
   BooleanCircuit* bcirc; // boolean circuit for boolean parts
   BooleanCircuit* ccirc; // intermediate conversion circuit
   ArithmeticCircuit* acirc;
   const EpilinkConfig epicfg;
+
+  class SELCircuit; // forward of implementation class ~ pimpl
   unique_ptr<SELCircuit> selc; // ~pimpl
 
   bool is_built{false};

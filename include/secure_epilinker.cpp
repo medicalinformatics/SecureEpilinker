@@ -72,9 +72,9 @@ BoolShare compare_bin(const BoolShare& x, const BoolShare& y) {
 }
 
 /******************** Circuit Builder ********************/
-class SELCircuit {
+class SecureEpilinker::SELCircuit {
 public:
-  SELCircuit(const EpilinkConfig& cfg,
+  SELCircuit(EpilinkConfig cfg,
     BooleanCircuit* bcirc, BooleanCircuit* ccirc, ArithmeticCircuit* acirc) : cfg{cfg},
     bcirc{bcirc}, ccirc{ccirc}, acirc{acirc},
     hw_client{cfg.nhw_fields}, hw_client_hw{cfg.nhw_fields}, hw_client_empty{cfg.nhw_fields},
@@ -234,7 +234,7 @@ public:
 
 private:
   // Epilink config
-  const EpilinkConfig& cfg;
+  const EpilinkConfig cfg;
   // Circuits
   BooleanCircuit* bcirc; // boolean circuit for boolean parts
   BooleanCircuit* ccirc; // intermediate conversion circuit
@@ -430,9 +430,13 @@ SecureEpilinker::SecureEpilinker(ABYConfig config, EpilinkConfig epi_config) :
   bcirc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[config.bool_sharing]->GetCircuitBuildRoutine())},
   ccirc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[(config.bool_sharing==S_YAO)?S_BOOL:S_YAO]->GetCircuitBuildRoutine())},
   acirc{dynamic_cast<ArithmeticCircuit*>(party.GetSharings()[S_ARITH]->GetCircuitBuildRoutine())},
-  epicfg{epi_config}, selc{make_unique<SELCircuit>(epi_config, bcirc, ccirc, acirc)} {}
+  epicfg{epi_config}, selc{make_unique<SELCircuit>(epicfg, bcirc, ccirc, acirc)} {}
 // TODO when ABY can separate circuit building/setup/online phases, we create
 // different SELCircuits per build_circuit()...
+
+// Need to _declare_ in header but _define_ here because we use a unique_ptr
+// pimpl.
+SecureEpilinker::~SecureEpilinker() = default;
 
 void SecureEpilinker::build_circuit(const uint32_t) {
   // TODO When separation of setup, online phase and input setting is done in
