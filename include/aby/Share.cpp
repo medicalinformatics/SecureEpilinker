@@ -110,7 +110,7 @@ BoolShare constant(BooleanCircuit* c, UGATE_T val, uint32_t bitlen) {
 }
 
 Share constant_simd(Circuit* c, UGATE_T val, uint32_t bitlen, uint32_t nvals) {
-  return Share{c, c->PutSIMDCONSGate(val, bitlen, nvals)};
+  return Share{c, c->PutSIMDCONSGate(nvals, val, bitlen)};
 }
 
 BoolShare constant_simd(BooleanCircuit* c, UGATE_T val, uint32_t bitlen, uint32_t nvals){
