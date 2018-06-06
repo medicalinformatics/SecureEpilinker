@@ -56,9 +56,9 @@ struct ABYTester {
   }
 
   void test_hw() {
-    using datatype = uint64_t;
-    vector<datatype> data = {0xdeadbeef, 0x33333333};
-    vector<datatype> data2 = {0xdeadbee0, 0x03333333};
+    using datatype = uint32_t;
+    vector<datatype> data = {0xdeadbeef, 0x33333333, 0x0};
+    vector<datatype> data2 = {0xdeadbee0, 0x03333333, 0xffffffff};
     size_t _bitlen = sizeof(datatype)*8;
 
     BoolShare in;
@@ -67,6 +67,7 @@ struct ABYTester {
     } else {
       in = BoolShare(bc, _bitlen, data.size());
     }
+    cout << hex;
     print_share(in, "in");
 
     BoolShare in2(bc, data2.data(), _bitlen, SERVER, data2.size());
