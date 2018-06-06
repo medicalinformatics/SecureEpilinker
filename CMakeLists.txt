@@ -98,7 +98,8 @@ set(SELHEADER "include/epilink_input.h" "include/math.h"
   "include/secure_epilinker.h" "include/sel.h" "include/util.h"
   "include/aby/Share.h" "include/aby/circuit_defs.h" "include/aby/gadgets.h"
   "include/aby/util.h")
-# Test-Targets
+
+# Test ABY Stuff
 add_executable(test_aby test/test_aby.cpp ${SELSOURCES} ${SELHEADER})
 add_dependencies(test_aby ABY)
 add_dependencies(test_aby OTExtension)
@@ -109,5 +110,18 @@ target_link_libraries(test_aby PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
 target_link_libraries(test_aby PRIVATE fmt::fmt-header-only cxxopts)
 set_property(TARGET test_aby PROPERTY CXX_STANDARD 14)
 target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3")
+
+# Test Secure Epilinker
+add_executable(test_sel test/test_sel.cpp ${SELSOURCES} ${SELHEADER})
+add_dependencies(test_sel ABY)
+add_dependencies(test_sel OTExtension)
+add_dependencies(test_sel MIRACL)
+add_dependencies(test_sel ENCRYPTO_utils)
+target_link_libraries(test_sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
+  OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
+target_link_libraries(test_sel PRIVATE fmt::fmt-header-only cxxopts)
+set_property(TARGET test_sel PROPERTY CXX_STANDARD 14)
+target_compile_options(test_sel PRIVATE "-O0" "-ggdb" "-g3"
+  "-DDEBUG_SEL_INPUT"  "-DDEBUG_SEL_CIRCUIT")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
