@@ -7,7 +7,7 @@
   "url": "http://localhost:8800/test"
 },
 "connectionProfile": {
-  "url": "http://sel.mhh.de:1664",
+  "url": "127.0.0.1:1664",
   "authentication": {
     "authType": "apikey",
     "sharedkey": "xkcd123"
@@ -53,7 +53,7 @@
     "frequency": 0.0333,
     "errorRate": 0.005,
     "comparator": "binary",
-    "fieldType": "number"
+    "fieldType": "integer"
 
     },
     {
@@ -87,13 +87,6 @@
     "comparator": "nGram",
     "fieldType": "bitmask"
 
-    },
-    {
-    "name": "versichertennummer",
-    "frequency": 0.01,
-    "errorRate": 0.04,
-    "comparator": "binary",
-    "fieldType": "string"
     }]
   }
 }
