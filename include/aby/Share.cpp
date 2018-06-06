@@ -26,9 +26,12 @@ namespace sel {
 BoolShare apply_file_binary(const BoolShare& a, const BoolShare& b,
     uint32_t a_bits, uint32_t b_bits, const string& fn) {
   assert (a.get_nvals() == b.get_nvals());
-  vector<uint32_t> a_wires = a.get()->get_wires(), b_wires = b.get()->get_wires();
-  assert (a_wires.size() >= a_bits);
-  assert (b_wires.size() >= b_bits);
+  // zeropad a and b
+  BoolShare a_pad = a.zeropad(a_bits), b_pad = b.zeropad(b_bits);
+  vector<uint32_t> a_wires = a_pad.get()->get_wires(),
+    b_wires = b_pad.get()->get_wires();
+  assert (a_wires.size() <= a_bits);
+  assert (b_wires.size() <= b_bits);
 
   vector<uint32_t> in;
   in.reserve(a_bits + b_bits);
