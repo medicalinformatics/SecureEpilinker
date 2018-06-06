@@ -177,13 +177,13 @@ void sel::DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
       if (!rec.count("ids")) {
         throw std::runtime_error("Invalid JSON Data");
       }
-      std::unordered_map<std::string, std::string> tempmap;
+    }
+      std::map<std::string, std::string> tempmap;
       for (auto i = rec["ids"].begin(); i != rec["ids"].end(); ++i) {
         tempmap.emplace((*i)["idType"].get<std::string>(),
                         (*i)["idString"].get<std::string>());
       }
       m_ids.emplace_back(std::move(tempmap));
-    }
   }
   for (auto& field : temp_hw_data) {  // Append page data to main data
     m_hw_data[field.first].insert(m_hw_data[field.first].end(),

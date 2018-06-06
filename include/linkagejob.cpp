@@ -75,7 +75,7 @@ void sel::LinkageJob::run_job() {
   
   const auto& algorithm_config{m_local_config->get_algorithm_config()};
 
-  sel::v_hw_type hw_data;
+  std::vector<sel::bitmask_type> hw_data;
   sel::v_bin_type bin_data;
   hw_data.reserve(m_hw_data.size());
   bin_data.reserve(m_bin_data.size());
@@ -118,7 +118,7 @@ void sel::LinkageJob::run_job() {
          algorithm_config.bloom_length, algorithm_config.threshold_match, algorithm_config.threshold_non_match}};
     sepilinker_client.build_circuit(nvals);
     sepilinker_client.run_setup_phase();
-    sel::EpilinkClientInput client_input{std::move(hw_data), std::move(bin_data), std::move(hw_empty), std::move(bin_empty), nvals};
+    sel::EpilinkClientInput client_input{hw_data, bin_data, hw_empty, bin_empty, nvals};
     sepilinker_client.run_as_client(client_input);
   } catch (const std::exception& e) {
     fmt::print(stderr, "Error running MPC Client: {}\n", e.what());

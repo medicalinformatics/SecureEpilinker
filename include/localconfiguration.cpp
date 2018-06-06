@@ -163,9 +163,9 @@ sel::LocalConfiguration::get_exchange_group_indices(
     auto field_iterator{fields.find(exchange_field)};
     if (field_iterator == fields.end()) {
       throw std::runtime_error("Invalid Exchange Group!");
+    }
     tempset.emplace(
         static_cast<size_t>(std::distance(fields.begin(), field_iterator)));
-    }
     }
     tempvec.emplace_back(std::move(tempset));
   }
@@ -178,8 +178,7 @@ void LocalConfiguration::run_comparison() {
   // Get Weights and calcualte # of Records
   sel::v_weight_type hw_weights{get_weights(sel::FieldComparator::NGRAM)};
   sel::v_weight_type bin_weights{get_weights(sel::FieldComparator::BINARY)};
-  const size_t nvals{m_hw_data.begin()->second.size() +
-                     m_bin_data.begin()->second.size()};
+  const size_t nvals{m_hw_data.begin()->second.size()}; // assuming each record has hw and bin
   fmt::print("Number of records: {}\n", nvals);
   // make data and empty map to vectors
   std::vector<std::vector<sel::bitmask_type>> hw_data;
@@ -203,13 +202,13 @@ void LocalConfiguration::run_comparison() {
     bin_empty.emplace_back(field.second);
   }
   try {
-    SecureEpilinker aby_server_party{
-        {SERVER, S_BOOL, "127.0.0.1", 8888, 1},
-        {std::move(hw_weights), std::move(bin_weights),
+    sel::EpilinkConfig epilink_config{std::move(hw_weights), std::move(bin_weights),
          get_exchange_group_indices(sel::FieldComparator::NGRAM),
          get_exchange_group_indices(sel::FieldComparator::BINARY),
          m_algorithm.bloom_length, m_algorithm.threshold_match,
-         m_algorithm.threshold_non_match}};
+         m_algorithm.threshold_non_match};
+    sel::SecureEpilinker aby_server_party{
+        {SERVER, S_BOOL, "127.0.0.1", 8888, 1},epilink_config};
     aby_server_party.build_circuit(nvals);
     aby_server_party.run_setup_phase();
     sel::EpilinkServerInput server_input{hw_data, bin_data, hw_empty, bin_empty};
