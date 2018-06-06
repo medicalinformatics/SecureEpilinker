@@ -65,6 +65,15 @@ vector<BoolShare> BoolShare::split(uint32_t new_nval) {
   return res;
 }
 
+BoolShare BoolShare::zeropad(uint32_t bitlen) const {
+  assert(get_bitlen() <= bitlen);
+
+  vector<uint32_t> wires(sh->get_wires());
+  uint32_t zero = bcirc->PutConstantGate(0, get_nvals());
+  wires.insert(wires.end(), bitlen-wires.size(), zero);
+  return BoolShare{bcirc, wires};
+}
+
 /******************** OutShare ********************/
 
 vector<uint32_t> OutShare::get_clear_value_vec() {

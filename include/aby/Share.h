@@ -231,6 +231,11 @@ class BoolShare: public Share {
     return BoolShare{bcirc, bcirc->PutINVGate(sh.get())};
   }
 
+  /**
+   * Returns this share zeropadded to reach given bitlen
+   */
+  BoolShare zeropad(uint32_t bitlen) const;
+
   friend BoolShare hammingweight(const BoolShare& s) {
     return BoolShare{s.bcirc, s.bcirc->PutHammingWeightGate(s.get())};
   }
