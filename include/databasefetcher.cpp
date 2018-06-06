@@ -29,6 +29,8 @@
 #include "nlohmann/json.hpp"
 #include "restbed"
 #include "seltypes.h"
+#include "util.h"
+#include "epilink_input.h"
 
 sel::PollData sel::DatabaseFetcher::fetch_data(AuthenticationConfig* l_auth) {
   fmt::print("Requesting Database\n");
@@ -53,28 +55,29 @@ sel::PollData sel::DatabaseFetcher::fetch_data(AuthenticationConfig* l_auth) {
   get_page_data(page);
 
   fmt::print("Recieved Inputs:\n");
-  for (auto& p : m_data) {
+  for (auto& p : m_hw_data) {
     fmt::print(
-        "-------------------------------\n{}\n-------------------------------\n",
+        "-------------------------------\n{}\n-------------------------------"
+        "\n",
         p.first);
     for (auto& d : p.second) {
-      if (auto pval = std::get_if<int>(&d)) {
-        fmt::print("{}\n", *pval);
-      }
-      if (auto pval = std::get_if<double>(&d)) {
-        fmt::print("{}\n", *pval);
-      }
-      if (auto pval = std::get_if<std::string>(&d)) {
-        fmt::print("{}\n", *pval);
-      }
-      if (auto pval = std::get_if<std::vector<uint8_t>>(&d)) {
         fmt::print("Bitmask\n");
-        for (const auto& byte : *pval)
+        for (const auto& byte : d)
           fmt::print("{} ", byte);
         fmt::print("\n");
       }
     }
-  }
+  
+  for (auto& p : m_bin_data) {
+    fmt::print(
+        "-------------------------------\n{}\n-------------------------------"
+        "\n",
+        p.first);
+    for (auto& d : p.second) {
+        fmt::print("{}\n", d);
+      }
+    }
+  
   fmt::print(
       "------------------------------\nIDs\n-----------------------------\n");
   for (const auto& m : m_ids) {
@@ -83,7 +86,12 @@ sel::PollData sel::DatabaseFetcher::fetch_data(AuthenticationConfig* l_auth) {
     }
     fmt::print("\n");
   }
-  return {m_todate, std::move(m_data), std::move(m_ids)};
+  return {m_todate,
+          std::move(m_hw_data),
+          std::move(m_bin_data),
+          std::move(m_hw_empty),
+          std::move(m_bin_empty),
+          std::move(m_ids)};
 }
 
 void sel::DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
@@ -93,7 +101,10 @@ void sel::DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
   if (!page_data.count("records")) {
     throw std::runtime_error("Invalid JSON Data");
   }
-  std::map<sel::FieldName, std::vector<sel::DataField>> temp_data;
+  std::map<sel::FieldName, std::vector<sel::bitmask_type>> temp_hw_data;
+  std::map<sel::FieldName, sel::v_bin_type> temp_bin_data;
+  std::map<sel::FieldName, std::vector<bool>> temp_hw_empty;
+  std::map<sel::FieldName, std::vector<bool>> temp_bin_empty;
 
   for (const auto& rec : page_data["records"]) {
     if (!rec.count("fields")) {
@@ -101,39 +112,94 @@ void sel::DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
     }
     for (auto f = rec["fields"].begin(); f != rec["fields"].end(); ++f) {
       switch (m_parent->get_field(f.key()).type) {
-        case sel::FieldType::INTEGER:
-          temp_data[f.key()].emplace_back(f->get<int>());
+        case sel::FieldType::INTEGER: {
+          if (m_parent->get_field(f.key()).comparator ==
+              sel::FieldComparator::BINARY) {
+            if (f->get<int>() == 0) {
+              temp_bin_empty[f.key()].emplace_back(true);
+            } else {
+              temp_bin_empty[f.key()].emplace_back(false);
+            }
+            temp_bin_data[f.key()].emplace_back(static_cast<sel::bin_type>(f->get<int>()));
+          } else {
+            throw std::runtime_error("NGRAM comparison not allowed for non bitmask types");
+          }
           break;
-        case sel::FieldType::NUMBER:
-          temp_data[f.key()].emplace_back(f->get<double>());
+        }
+        case sel::FieldType::NUMBER: {
+          if (m_parent->get_field(f.key()).comparator ==
+              sel::FieldComparator::BINARY) {
+            if (f->get<double>() == 0.) {
+              temp_bin_empty[f.key()].emplace_back(true);
+            } else {
+              temp_bin_empty[f.key()].emplace_back(false);
+            }
+            temp_bin_data[f.key()].emplace_back(std::hash<double>{}(f->get<double>()));
+          } else {
+            throw std::runtime_error("NGRAM comparison not allowed for non bitmask types");
+          }
           break;
-        case sel::FieldType::STRING:
-          temp_data[f.key()].emplace_back(f->get<std::string>());
+        }
+        case sel::FieldType::STRING: {
+          if (m_parent->get_field(f.key()).comparator ==
+              sel::FieldComparator::BINARY) {
+            if (sel::trim_copy(f->get<std::string>()) == "") {
+              temp_bin_empty[f.key()].emplace_back(true);
+            } else {
+              temp_bin_empty[f.key()].emplace_back(false);
+            }
+            temp_bin_data[f.key()].emplace_back(std::hash<std::string>{}(f->get<std::string>()));
+          } else {
+            throw std::runtime_error("NGRAM comparison not allowed for non bitmask types");
+          }
           break;
-        case sel::FieldType::BITMASK:
+        }
+        case sel::FieldType::BITMASK: {
           auto temp = f->get<std::string>();
           auto bloom = base64_decode(temp);
           if (!check_bloom_length(bloom, m_parent->get_bloom_length())) {
             fmt::print(
                 "Warning: Set bits after bloomfilterlength. Set to zero.\n");
           }
-          temp_data[f.key()].emplace_back(std::move(bloom));
+          if (m_parent->get_field(f.key()).comparator ==
+              sel::FieldComparator::NGRAM) {
+            if (sel::trim_copy(temp) == "") {
+              temp_hw_empty[f.key()].emplace_back(true);
+            } else {
+              temp_hw_empty[f.key()].emplace_back(false);
+            }
+            temp_hw_data[f.key()].emplace_back(std::move(bloom));
+          } else {
+            throw std::runtime_error("BINARY comparison for bitmasks not allowed");
+          }
+        }
       }
+      if (!rec.count("ids")) {
+        throw std::runtime_error("Invalid JSON Data");
+      }
+      std::unordered_map<std::string, std::string> tempmap;
+      for (auto i = rec["ids"].begin(); i != rec["ids"].end(); ++i) {
+        tempmap.emplace((*i)["idType"].get<std::string>(),
+                        (*i)["idString"].get<std::string>());
+      }
+      m_ids.emplace_back(std::move(tempmap));
     }
-    if (!rec.count("ids")) {
-      throw std::runtime_error("Invalid JSON Data");
-    }
-    std::unordered_map<std::string, std::string> tempmap;
-    for (auto i = rec["ids"].begin(); i != rec["ids"].end(); ++i) {
-      tempmap.emplace((*i)["idType"].get<std::string>(),
-                      (*i)["idString"].get<std::string>());
-    }
-    m_ids.emplace_back(std::move(tempmap));
   }
-
-  for (auto& field : temp_data) {  // Append page data to main data
-    m_data[field.first].insert(m_data[field.first].end(), field.second.begin(),
-                               field.second.end());
+  for (auto& field : temp_hw_data) {  // Append page data to main data
+    m_hw_data[field.first].insert(m_hw_data[field.first].end(),
+                                  field.second.begin(), field.second.end());
+  }
+  for (auto& field : temp_bin_data) {  // Append page data to main data
+    m_bin_data[field.first].insert(m_bin_data[field.first].end(),
+                                   field.second.begin(), field.second.end());
+  }
+  for (auto& field : temp_hw_empty) {  // Append page empty to main data
+    m_hw_empty[field.first].insert(m_hw_empty[field.first].end(),
+                                   field.second.begin(), field.second.end());
+  }
+  for (auto& field : temp_bin_empty) {  // Append page data to main data
+    m_bin_empty[field.first].insert(m_bin_empty[field.first].end(),
+                                    field.second.begin(), field.second.end());
   }
 }
 
