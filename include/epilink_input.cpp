@@ -35,7 +35,7 @@ EpilinkConfig::EpilinkConfig(v_weight_type hw_weights, v_weight_type bin_weights
   hw_weights{hw_weights}, bin_weights{bin_weights},
   hw_exchange_groups{hw_exchange_groups}, bin_exchange_groups{bin_exchange_groups},
   size_bitmask{size_bitmask}, bytes_bitmask{bits_in_bytes(size_bitmask)},
-  size_hw{ceil_log2(size_bitmask)},
+  size_hw{ceil_log2(size_bitmask+1)},
   threshold{threshold}, tthreshold{tthreshold},
   nhw_fields{hw_weights.size()}, nbin_fields{bin_weights.size()},
   max_weight{max( *max_element(hw_weights.cbegin(), hw_weights.cend()),
