@@ -28,6 +28,7 @@
 #include "aby/gadgets.h"
 
 using namespace std;
+using fmt::format;
 
 constexpr uint32_t BitLen{32};
 constexpr size_t QuotPrecisionBits{6};
@@ -94,12 +95,14 @@ public:
           repeat_vec(input.hw_record[i], input.nvals).data(),
           cfg.size_bitmask, CLIENT, input.nvals);
 
+      vector<hw_type> hw_rec_rep(input.nvals, hw(input.hw_record[i]));
       hw_client_hw[i] = BoolShare(bcirc,
-          vector<hw_type>(input.nvals, hw(input.hw_record[i])).data(),
+          hw_rec_rep.data(),
           cfg.size_hw, CLIENT, input.nvals);
 
+      auto hw_client_empty_rep = repeat_bit(input.hw_rec_empty[i], input.nvals);
       hw_client_empty[i] = BoolShare(bcirc,
-          repeat_bit(input.hw_rec_empty[i], input.nvals).data(),
+          hw_client_empty_rep.data(),
           1, CLIENT, input.nvals);
 
       hw_server[i] = BoolShare(bcirc, cfg.size_bitmask, input.nvals); //dummy
@@ -107,19 +110,35 @@ public:
       hw_server_hw[i] = BoolShare(bcirc, cfg.size_hw, input.nvals); //dummy
 
       hw_server_empty[i] = BoolShare(bcirc, 1, input.nvals); // dummy
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(hw_client[i], format("hw_client[{}]", i));
+      print_share(hw_client_hw[i], format("hw_client_hw[{}]", i));
+      print_share(hw_client_empty[i], format("hw_client_empty[{}]", i));
+      print_share(hw_server[i], format("hw_server[{}]", i));
+      print_share(hw_server_hw[i], format("hw_server_hw[{}]", i));
+      print_share(hw_server_empty[i], format("hw_server_empty[{}]", i));
+#endif
     }
     for (size_t i = 0; i != cfg.nbin_fields; ++i) {
+      vector<bin_type> bin_rec_rep(input.nvals, input.bin_record[i]);
       bin_client[i] = BoolShare(bcirc,
-          vector<bin_type>(input.nvals, input.bin_record[i]).data(),
+          bin_rec_rep.data(),
           BitLen, CLIENT, input.nvals);
 
+      auto bin_rec_empty_rep = repeat_bit(input.bin_rec_empty[i], input.nvals);
       bin_client_empty[i] = BoolShare(bcirc,
-        repeat_bit(input.bin_rec_empty[i], input.nvals).data(),
+        bin_rec_empty_rep.data(),
         1, CLIENT, input.nvals);
 
       bin_server[i] = BoolShare(bcirc, BitLen, input.nvals); //dummy
 
       bin_server_empty[i] = BoolShare(bcirc, 1, input.nvals); // dummy
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(bin_client[i], format("bin_client[{}]", i));
+      print_share(bin_client_empty[i], format("bin_client_empty[{}]", i));
+      print_share(bin_server[i], format("bin_server[{}]", i));
+      print_share(bin_server_empty[i], format("bin_server_empty[{}]", i));
+#endif
     }
     is_input_set = true;
   }
@@ -146,6 +165,14 @@ public:
       hw_server_hw[i] = BoolShare(bcirc, hw_database_hw[i].data(), cfg.size_hw, SERVER, input.nvals);
       hw_server_empty[i] = BoolShare(bcirc,
          vector_bool_to_bitmask(input.hw_db_empty[i]).data(), 1, CLIENT, input.nvals);
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(hw_client[i], format("hw_client[{}]", i));
+      print_share(hw_client_hw[i], format("hw_client_hw[{}]", i));
+      print_share(hw_client_empty[i], format("hw_client_empty[{}]", i));
+      print_share(hw_server[i], format("hw_server[{}]", i));
+      print_share(hw_server_hw[i], format("hw_server_hw[{}]", i));
+      print_share(hw_server_empty[i], format("hw_server_empty[{}]", i));
+#endif
     }
     for (size_t i = 0; i != cfg.nbin_fields; ++i) {
       bin_client[i] = BoolShare(bcirc, BitLen, input.nvals); //dummy
@@ -158,6 +185,12 @@ public:
 
       bin_server_empty[i] = BoolShare(bcirc,
           vector_bool_to_bitmask(input.bin_db_empty[i]).data(), 1, CLIENT, input.nvals);
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(bin_client[i], format("bin_client[{}]", i));
+      print_share(bin_client_empty[i], format("bin_client_empty[{}]", i));
+      print_share(bin_server[i], format("bin_server[{}]", i));
+      print_share(bin_server_empty[i], format("bin_server_empty[{}]", i));
+#endif
     }
     is_input_set = true;
   }
@@ -288,6 +321,12 @@ private:
 
     const_w_threshold = constant(bcirc, W*T, BitLen);
     const_w_tthreshold = constant(bcirc, W*Tt, BitLen);
+#ifdef DEBUG_SEL_CIRCUIT
+    print_share(const_zero, "const_zero");
+    print_share(const_idx, "const_idx");
+    print_share(const_w_threshold , "const_w_threshold ");
+    print_share(const_w_tthreshold , "const_w_tthreshold ");
+#endif
   }
 
   /* Not needed, can compute those values offline
@@ -404,8 +443,6 @@ private:
 
     comp = (!bin_client_empty[ileft] & !bin_server_empty[iright] & comp);
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(bin_client[ileft], fmt::format("bin_client[{}]", ileft));
-    print_share(bin_server[iright], fmt::format("bin_server[{}]", iright));
     print_share(comp, fmt::format("^^^^ BIN Comparison of pair ({},{}) ^^^^", ileft, iright));
 #endif
     // If indices match, use precomputed rescaled weights. Otherwise take
@@ -419,6 +456,7 @@ private:
     BoolShare b_field_weight{comp.mux(b_weight, const_zero)};
 
 #ifdef DEBUG_SEL_CIRCUIT
+    print_share(b_weight, format("b_weight({},{})", ileft, iright));
     print_share(b_field_weight, "b_field_weight");
 #endif
     return b_field_weight;
