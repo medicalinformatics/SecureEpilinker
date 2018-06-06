@@ -35,6 +35,7 @@
 #include "restbed"
 #include "seltypes.h"
 #include "valijson/validation_results.hpp"
+#include "util.h"
 
 using namespace sel;
 nlohmann::json sel::read_json_from_disk(
@@ -95,12 +96,14 @@ sel::SessionResponse sel::valid_linkrecord_json_handler(
         for (auto f = j["fields"].begin(); f != j["fields"].end(); ++f) {
           const auto& field_config = handler->get_field(f.key());
           DataField tempfield;
+          bool empty{false};
           switch (field_config.type) {
             case FieldType::BITMASK: {
               if (!(f->is_string())) {
                 throw std::runtime_error("Invalid Field Type");
               }
               const auto b64string{f->get<std::string>()};
+              if(sel::trim_copy(b64string) == "") empty = true;
               auto tempbytearray{base64_decode(b64string)};
 //              fmt::print("Bitstring: {}\n", print_bytearray(tempbytearray));
               if(!check_bloom_length(tempbytearray,(handler->get_local_configuration())->get_bloom_length())){
@@ -115,6 +118,7 @@ sel::SessionResponse sel::valid_linkrecord_json_handler(
                 throw std::runtime_error("Invalid Field Type");
               }
               tempfield = f->get<int>();
+              if(!f->get<int>()) empty = true;
               break;
             }
             case FieldType::NUMBER: {
@@ -122,6 +126,7 @@ sel::SessionResponse sel::valid_linkrecord_json_handler(
                 throw std::runtime_error("Invalid Field Type");
               }
               tempfield = f->get<double>();
+              if(!f->get<double>()) empty = true;
               break;
             }
             case FieldType::STRING: {
@@ -129,11 +134,16 @@ sel::SessionResponse sel::valid_linkrecord_json_handler(
                 throw std::runtime_error("Invalid Field Type");
               }
               tempfield = f->get<std::string>();
+              if(sel::trim_copy(f->get<std::string>()) == "") empty = true;
               break;
             }
             default: { throw std::runtime_error("Invalid Field Type"); }
           }  // Switch
-          job->add_data_field(field_config.name, std::move(tempfield));
+          if(field_config.comparator == sel::FieldComparator::NGRAM){
+            job->add_hw_data_field(field_config.name, std::move(tempfield), empty);
+          } else {
+            job->add_bin_data_field(field_config.name, std::move(tempfield), empty);
+          }
         }
 
         handler->add_job(remote_id, std::move(job));
