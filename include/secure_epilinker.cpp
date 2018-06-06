@@ -52,8 +52,7 @@ BoolShare compare_hw(const BoolShare& x, const BoolShare& y,
 #endif
 
   // int-divide
-  // TODO may need to zero-pad; maybe do that in apply_...
-  BoolShare hw_div = apply_file_binary(hw_and_shifted, hw_plus, 16, 16, "int_div_16");
+  BoolShare hw_div = apply_file_binary(hw_and_shifted, hw_plus, 16, 16, "circ/int_div_16.aby");
 #ifdef DEBUG_SEL_CIRCUIT
   print_share(hw_div, "hw_div");
 #endif
