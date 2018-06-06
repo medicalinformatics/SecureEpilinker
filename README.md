@@ -14,6 +14,7 @@ What things you need to install the software and how to install them
 git
 cmake
 c++ 17 compatible compiler (gcc >= 8)
+boost developement headers (for restbed)
 ```
 
 ### Installing
@@ -22,22 +23,21 @@ The buildprocess is not fully automated yet. First you need to clone this
 repository (because the usage of submodules *do not* download zip)
 
 ```
-git clone git@git.compbiol.bio.tu-darmstadt.de:kussel/ABY-build.git
+git@git.compbiol.bio.tu-darmstadt.de:kussel/secure_epilink.git
 ```
 
 Checkout the Secure EpiLinker branch and initialize the submodules. Depending on
 your internet connection this may take some time. After that prepare the build directory for an out-of-code build:
 
 ```
-cd ABY-build
-git checkout sel-setup && git submodule update --init --recursive
+cd secure_epilink
+git submodule update --init --recursive
 mkdir build
 ```
 Restbed needs some custom built OpenSSL, which is not automated (yet).
 ```
 cd extern/restbed/dependency/openssl
-./config --prefix=$(pwd)/../../../build/prefix
-make && make install
+./config && make
 ```
 Further more Restbed has some missing link libraries for it's tests in the CMake
 Configuration, which need to be patched.
@@ -57,12 +57,11 @@ make
 To conclude all steps in one codeblock for convenience:
 
 ```
-git clone git@git.compbiol.bio.tu-darmstadt.de:kussel/ABY-build.git
-cd ABY-build && mkdir build
-git checkout sel-setup && git submodule update --init --recursive
+git@git.compbiol.bio.tu-darmstadt.de:kussel/secure_epilink.git
+cd secure_epilink && mkdir build
+git submodule update --init --recursive
 cd extern/restbed/dependency/openssl
-./config --prefix=$(pwd)/../../../build/prefix
-make && make install
+./config && make 
 cd ../..
 git apply ../../cmake/restbed.patch
 cd ../../build
@@ -98,12 +97,11 @@ Add additional notes about how to deploy this on a live system
 
 ## REST interface
 
-Informatino on how to use the API
+Information on how to use the API
 
 ## Built With
 
-* [ABY](https://github.com/encryptogroup/ABY/) - The multi party computation
-  framework used
+* [ABY](https://github.com/encryptogroup/ABY/) - The multi party computation framework used
 * [Restbed](https://github.com/Corvusoft/restbed/) - The REST Framework used
 * [libfmt](https://github.com/fmtlib/fmt/) - Used to format and print text
 * [nlohmann/json](https://github.com/nlohmann/json/) - The JSON library used
@@ -117,14 +115,14 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://git.compbiol.bio.tu-darmstadt.de/kussel/ABY-build/tags). 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://git.compbiol.bio.tu-darmstadt.de/kussel/secure_epilink/tags). 
 
 ## Authors
 
 * **Tobias Kussel** - *Initial work* - Github Link?
 * **Sebastian Stammler** - *Initial work* - Github Link?
 
-See also the list of [contributors](https://git.compbiol.bio.tu-darmstadt.de/kussel/ABY-build/graphs/sel-setup) who participated in this project.
+See also the list of [contributors](https://git.compbiol.bio.tu-darmstadt.de/kussel/secure_epilink/graphs/dev) who participated in this project.
 
 ## License
 
@@ -133,4 +131,5 @@ This project is licensed under the AGPL License - see the [LICENSE](LICENSE) fil
 ## Acknowledgments
 
 * Thanks to [Lennard Braun](https://github.com/lenerd/ABY-build) for a sane ABY build process
+* This work has been supported by the German Federal Ministry of Education and Research (BMBF) and by the Hessian State Ministry for Higher Education, Research and the Arts (HMWK) within the [HiGHmed Consortium](http://www.highmed.org) and [CRISP](http://www.crisp-da.de).
 
