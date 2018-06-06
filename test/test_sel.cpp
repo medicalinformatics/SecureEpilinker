@@ -40,8 +40,12 @@ int main(int argc, char *argv[])
     1 // nvals
   };
 
+  //EpilinkServerInput in_server {
+    //{ {{0x33}, {0x44}} }, {{0xdeadbeef, 0xabbaabba}}, // hw/bin database
+    //{{false, false}}, {{false, false}}, // hw/bin empty
+  //};
   EpilinkServerInput in_server {
-    {{{0x34}}}, {{0xdeadbeef}}, // hw/bin database
+    { {{0x33}} }, {{0xdeadbeef}}, // hw/bin database
     {{false}}, {{false}}, // hw/bin empty
   };
 
