@@ -273,9 +273,10 @@ private:
   BooleanCircuit* ccirc; // intermediate conversion circuit
   ArithmeticCircuit* acirc;
   // Input shares
-  vector<BoolShare> hw_client, hw_client_hw, hw_client_empty,
-    bin_client, bin_client_empty,
+  vector<BoolShare>
+    hw_client, hw_client_hw, hw_client_empty,
     hw_server, hw_server_hw, hw_server_empty,
+    bin_client, bin_client_empty,
     bin_server, bin_server_empty;
   // Constant shares
   BoolShare const_zero, const_idx;
