@@ -66,7 +66,6 @@ void sel::LinkageJob::run_job() {
   }
   try {
     // Construct ABY Client
-    sel::run_aby(1);
   } catch (const std::exception& e) {
     fmt::print(stderr, "Error running MPC Client: {}\n", e.what());
     m_status = JobStatus::FAULT;
