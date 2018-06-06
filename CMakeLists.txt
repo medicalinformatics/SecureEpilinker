@@ -17,38 +17,49 @@ file(MAKE_DIRECTORY ${SecureEpiLinker_INSTALL_PREFIX})
 add_subdirectory(extern)
 
 # build main application
-add_executable (sel sepilinker.cpp 
-      include/resourcehandler.h 
+set(EPIRESTSRC 
       include/resourcehandler.cpp
-      include/validator.h 
       include/validator.cpp
+      include/jsonmethodhandler.cpp
+      include/remoteconfiguration.cpp
+      include/localconfiguration.cpp
+      include/connectionhandler.cpp
+      include/databasefetcher.cpp
+      include/jsonhandlerfunctions.cpp
+      include/seltypes.cpp
+      include/linkagejob.cpp
+      include/base64.cpp
+      include/monitormethodhandler.cpp
+      include/tempselmethodhandler.cpp)
+
+    set(EPIRESTHEAD 
+      include/resourcehandler.h 
+      include/validator.h 
       include/methodhandler.hpp
       include/jsonmethodhandler.h
-      include/jsonmethodhandler.cpp
       include/remoteconfiguration.h
-      include/remoteconfiguration.cpp
       include/localconfiguration.h
-      include/localconfiguration.cpp
       include/authenticationconfig.hpp
       include/apikeyconfig.hpp
       include/connectionhandler.h
-      include/connectionhandler.cpp
       include/databasefetcher.h
-      include/databasefetcher.cpp
       include/jsonhandlerfunctions.h
-      include/jsonhandlerfunctions.cpp
       include/seltypes.h
-      include/seltypes.cpp
       include/linkagejob.h
-      include/linkagejob.cpp
       include/base64.h
-      include/base64.cpp
       include/monitormethodhandler.h
-      include/monitormethodhandler.cpp
-      include/tempselmethodhandler.h
-      include/tempselmethodhandler.cpp
-      include/millionaire_prob.h
-      include/millionaire_prob.cpp)
+      include/tempselmethodhandler.h)
+
+set(SELSOURCES "include/util.cpp" "include/epilink_input.cpp"
+  "include/secure_epilinker.cpp" "include/util.cpp" "include/aby/Share.cpp"
+  "include/aby/gadgets.cpp" "include/aby/util.cpp")
+
+set(SELHEADER "include/epilink_input.h" "include/math.h"
+  "include/secure_epilinker.h" "include/sel.h" "include/util.h"
+  "include/aby/Share.h" "include/aby/circuit_defs.h" "include/aby/gadgets.h"
+  "include/aby/util.h")
+
+add_executable (sel sepilinker.cpp ${EPIRESTSRC} ${EPIRESTHEAD} ${SELSOURCES} ${SELHEADER})
 add_dependencies(sel ABY)
 add_dependencies(sel OTExtension)
 add_dependencies(sel MIRACL)
@@ -90,16 +101,8 @@ target_compile_options(sel PRIVATE "-O0" "-ggdb" "-fsanitize=address"
 #target_compile_options(sel PRIVATE "-O2" "-s" "-DNDEBUG"
   #"-fsanitize-address-use-after-scope" "-fsanitize=undefined")
 
-set(SELSOURCES "include/util.cpp" "include/epilink_input.cpp"
-  "include/secure_epilinker.cpp" "include/util.cpp" "include/aby/Share.cpp"
-  "include/aby/gadgets.cpp" "include/aby/util.cpp")
-
-set(SELHEADER "include/epilink_input.h" "include/math.h"
-  "include/secure_epilinker.h" "include/sel.h" "include/util.h"
-  "include/aby/Share.h" "include/aby/circuit_defs.h" "include/aby/gadgets.h"
-  "include/aby/util.h")
-
 # Test ABY Stuff
+# Test-Targets
 add_executable(test_aby test/test_aby.cpp ${SELSOURCES} ${SELHEADER})
 add_dependencies(test_aby ABY)
 add_dependencies(test_aby OTExtension)
