@@ -40,10 +40,11 @@ BoolShare compare_hw(const BoolShare& x, const BoolShare& y,
   // calc HW of AND and bit-shift to multiply with 2 and get QuotPrecisionBits precision
   // for integer-divivision
   BoolShare hw_and = hammingweight(x & y);
+  BoolShare hw_and_shifted = hw_and << (QuotPrecisionBits + 1);
 #ifdef DEBUG_SEL_CIRCUIT
   print_share(hw_and, "hw_and");
+  print_share(hw_and_shifted, "hw_and_shifted");
 #endif
-  BoolShare hw_and_shifted = hw_and << (QuotPrecisionBits + 1);
 
   // Add single HWs
   BoolShare hw_plus = hw_x + hw_y;
