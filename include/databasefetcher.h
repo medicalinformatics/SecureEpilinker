@@ -20,19 +20,22 @@
 #define SEL_DATABASEFETCHER_H
 
 #include <map>
-#include <unordered_map>
 #include <string>
 #include <vector>
 #include "nlohmann/json.hpp"
 #include "seltypes.h"
+#include "epilink_input.h"
 
 namespace sel {
 class LocalConfiguration;
 
 struct PollData {
   size_t todate;
-  std::map<FieldName, std::vector<sel::DataField>> data;
-  std::vector<std::unordered_map<std::string, std::string>> ids;
+  std::map<FieldName, std::vector<sel::bitmask_type>> hw_data;
+  std::map<FieldName, sel::v_bin_type> bin_data;
+  std::map<FieldName, std::vector<bool>> hw_empty;
+  std::map<FieldName, std::vector<bool>> bin_empty;
+  std::vector<std::map<std::string, std::string>> ids;
 };
 
 class DatabaseFetcher {
@@ -51,8 +54,11 @@ class DatabaseFetcher {
   nlohmann::json request_page(const std::string& url,
                               AuthenticationConfig* l_auth) const;
   void get_page_data(const nlohmann::json&);
-  std::map<FieldName, std::vector<DataField>> m_data;
-  std::vector<std::unordered_map<std::string, std::string>> m_ids;
+  std::map<FieldName, std::vector<sel::bitmask_type>> m_hw_data;
+  std::map<FieldName, sel::v_bin_type> m_bin_data;
+  std::map<FieldName, std::vector<bool>> m_hw_empty;
+  std::map<FieldName, std::vector<bool>> m_bin_empty;
+  std::vector<std::map<std::string, std::string>> m_ids;
   unsigned m_page_size{25u};
   unsigned m_last_page{1u};
   unsigned m_page{1u};

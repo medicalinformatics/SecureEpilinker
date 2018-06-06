@@ -26,10 +26,11 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <set>
 
 #include "authenticationconfig.hpp"
+#include "epilink_input.h"
+#include "epilink_input.h"
 
 namespace sel {
 //class AuthenticationConfig;
@@ -43,30 +44,40 @@ class LocalConfiguration {
   void add_field(ML_Field field);
 
   const ML_Field& get_field(const FieldName& fieldname);
+  std::vector<double> get_weights(FieldComparator) const;
   void add_exchange_group(std::set<FieldName> group);
 
   bool field_exists(const FieldName& fieldname);
+  bool field_hw_exists(const FieldName& fieldname);
+  bool field_bin_exists(const FieldName& fieldname);
   void set_algorithm_config(AlgorithmConfig aconfig);
 
   void set_data_service_url(std::string&& url);
   void set_local_auth(std::unique_ptr<AuthenticationConfig> auth);
   void poll_data();
   void poll_differential_data();
-  std::vector<std::set<FieldName>> const& get_exchange_group() const;
+  std::vector<std::set<FieldName>> const& get_exchange_group(FieldComparator) const;
+  std::vector<std::set<size_t>> get_exchange_group_indices(FieldComparator) const;
 
   void run_comparison();
   std::string print_auth_type() const {return m_local_authentication->print_type();}
   unsigned get_bloom_length() const {return m_algorithm.bloom_length;}
+  AlgorithmConfig const& get_algorithm_config() const {return m_algorithm;}
 
  private:
   void start_aby_server() const;
   std::unique_ptr<AuthenticationConfig> m_local_authentication;
-  std::unordered_map<FieldName, ML_Field> m_fields;
-  std::vector<std::set<FieldName>> m_exchange_groups;
+  std::map<FieldName, ML_Field> m_bin_fields;
+  std::map<FieldName, ML_Field> m_hw_fields;
+  std::vector<std::set<FieldName>> m_hw_exchange_groups;
+  std::vector<std::set<FieldName>> m_bin_exchange_groups;
   AlgorithmConfig m_algorithm;
   std::string m_data_service;
-  std::map<FieldName, std::vector<DataField>> m_data;
-  std::vector<std::unordered_map<std::string,std::string>> m_ids;
+  std::map<FieldName, std::vector<sel::bitmask_type>> m_hw_data;
+  std::map<FieldName, std::vector<bool>> m_hw_empty;
+  std::map<FieldName, v_bin_type> m_bin_data;
+  std::map<FieldName, std::vector<bool>> m_bin_empty;
+  std::vector<std::map<std::string,std::string>> m_ids;
   size_t m_todate;
   std::unique_ptr<DatabaseFetcher> m_database_fetcher{std::make_unique<DatabaseFetcher>(this)};
 };
