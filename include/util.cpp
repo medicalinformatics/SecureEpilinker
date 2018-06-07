@@ -17,6 +17,11 @@
 */
 
 #include "util.h"
+#include <sstream>
+#include <iterator>
+#include <algorithm>
+#include <iterator>
+#include <functional>
 
 using namespace std;
 
@@ -43,5 +48,9 @@ std::vector<uint8_t> vector_bool_to_bitmask(const std::vector<bool>& vb) {
 std::vector<uint8_t> repeat_bit(const bool bit, const size_t n) {
   return std::vector<uint8_t>(bitbytes(n), bit ? 0xffu : 0u);
 }
-
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, std::back_inserter(elems));
+    return elems;
+}
 } // namespace sel

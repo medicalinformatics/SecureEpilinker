@@ -131,7 +131,7 @@ void LocalConfiguration::set_local_auth(
 }
 
 void LocalConfiguration::poll_data() {
-  m_database_fetcher->set_url(m_data_service);
+  m_database_fetcher->set_url(m_data_service_url);
   m_database_fetcher->set_page_size(25u);  // TODO(TK): Magic number raus!
   auto&& data{m_database_fetcher->fetch_data(m_local_authentication.get())};
   m_todate = data.todate;

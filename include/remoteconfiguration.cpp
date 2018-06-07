@@ -42,5 +42,5 @@ uint16_t sel::RemoteConfiguration::get_remote_port() const {
 std::string sel::RemoteConfiguration::get_remote_host() const {
   auto parts{sel::split(m_connection_profile.url,':')};
   // {{192.168.1.1},{8080}}
-  return std::stoi(part.front());
+  return parts.front();
 }

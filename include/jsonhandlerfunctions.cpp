@@ -188,7 +188,7 @@ sel::SessionResponse sel::valid_init_json_handler(
       local_config->set_local_auth(std::move(l_auth));
       // Get Dataservice
       auto url{j["dataService"]["url"].get<std::string>()};
-      local_config->set_data_service_url(std::move(url));
+      local_config->set_data_service(std::move(url));
       // Get Field Descriptions
       std::unordered_set<sel::FieldName> fieldnames;
       for (const auto& f : j["algorithm"]["fields"]) {

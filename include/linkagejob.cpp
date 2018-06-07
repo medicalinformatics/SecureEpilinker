@@ -43,7 +43,7 @@ sel::LinkageJob::LinkageJob() {
   set_id();
 }
 
-sel::LinkageJob::LinkageJob(std::shared_ptr<sel::LocalConfiguration> l_conf, sel::RemoteConfiguration* parent)
+sel::LinkageJob::LinkageJob(std::shared_ptr<sel::LocalConfiguration> l_conf, std::shared_ptr<sel::RemoteConfiguration> parent)
     : m_local_config(std::move(l_conf)), m_parent(parent) {
   set_id();
 }
