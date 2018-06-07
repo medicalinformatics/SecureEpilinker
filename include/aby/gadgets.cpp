@@ -193,9 +193,11 @@ void split_select_target(BoolShare& selector, BoolShare& target,
 #ifdef DEBUG_SEL_GADGETS
       cout << "remainder and stack: combining stack and cnvals++\n";
 #endif
-      selector = vcombine({selector, move(stack_selector)});
-      target = vcombine({target, move(stack_target)});
-      assert(stack_selector.is_null());
+      selector = vcombine({selector, stack_selector});
+      target = vcombine({target, stack_target});
+      stack_selector.reset(); // need to reset, move doesn't work :(
+      stack_target.reset(); // need to reset
+      assert (stack_selector.is_null());
       cnvals++;
       rem = 0;
     }
