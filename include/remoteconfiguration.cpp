@@ -1,4 +1,5 @@
 #include "remoteconfiguration.h"
+#include "util.h"
 
 sel::RemoteConfiguration::RemoteConfiguration()
     : m_worker_thread(&sel::RemoteConfiguration::run_queued_jobs, this) {}
@@ -30,4 +31,16 @@ void sel::RemoteConfiguration::remove_job(const sel::JobId& j_id){
   auto job = m_job_queue.find(j_id);
   if(job!= m_job_queue.end()){
     m_job_queue.erase(job);}
+}
+
+uint16_t sel::RemoteConfiguration::get_remote_port() const {
+  auto parts{sel::split(m_connection_profile.url, ':')};
+  // {{192.168.1.1},{8080}}
+  return std::stoi(parts.back());
+}
+
+std::string sel::RemoteConfiguration::get_remote_host() const {
+  auto parts{sel::split(m_connection_profile.url,':')};
+  // {{192.168.1.1},{8080}}
+  return std::stoi(part.front());
 }

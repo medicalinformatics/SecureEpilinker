@@ -61,7 +61,8 @@ class RemoteConfiguration {
   JobId get_id() const { return m_connection_id; }
 
   void run_setup_phase();  // TODO(TK): Not implemented in ABY
-
+  uint16_t get_remote_port() const;
+  std::string get_remote_host() const;
  protected:
  private:
   void run_queued_jobs();
