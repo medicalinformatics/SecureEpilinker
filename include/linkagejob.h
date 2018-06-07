@@ -38,11 +38,12 @@ class Service;
 namespace sel {
 class ConnectionHandler;
 class LocalConfiguration;
+class RemoteConfiguration;
 
 class LinkageJob {
  public:
    LinkageJob();
-   LinkageJob(std::shared_ptr<LocalConfiguration>);
+   LinkageJob(std::shared_ptr<LocalConfiguration>, RemoteConfiguration*);
    void set_callback(CallbackConfig cc) {m_callback = std::move(cc);}
    void add_hw_data_field(const FieldName& fieldname, DataField field, bool);
    void add_bin_data_field(const FieldName& fieldname, DataField field, bool);
@@ -60,6 +61,7 @@ class LinkageJob {
   std::map<FieldName, bool> m_bin_empty;
   CallbackConfig m_callback;
   std::shared_ptr<LocalConfiguration> m_local_config;
+  RemoteConfiguration* m_parent;
 };
 
 }  // namespace sel

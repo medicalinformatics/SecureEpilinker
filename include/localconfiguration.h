@@ -52,7 +52,7 @@ class LocalConfiguration {
   bool field_bin_exists(const FieldName& fieldname);
   void set_algorithm_config(AlgorithmConfig aconfig);
 
-  void set_data_service_url(std::string&& url);
+  void set_data_service(std::string&& url);
   void set_local_auth(std::unique_ptr<AuthenticationConfig> auth);
   void poll_data();
   void poll_differential_data();
@@ -72,7 +72,7 @@ class LocalConfiguration {
   std::vector<std::set<FieldName>> m_hw_exchange_groups;
   std::vector<std::set<FieldName>> m_bin_exchange_groups;
   AlgorithmConfig m_algorithm;
-  std::string m_data_service;
+  std::string m_data_service_url;
   std::map<FieldName, std::vector<sel::bitmask_type>> m_hw_data;
   std::map<FieldName, std::vector<bool>> m_hw_empty;
   std::map<FieldName, v_bin_type> m_bin_data;

@@ -84,7 +84,7 @@ sel::SessionResponse sel::valid_linkrecord_json_handler(
   try {
     sel::JobId job_id;
     if (handler->num_connections()) {
-      auto job{std::make_shared<LinkageJob>(handler->get_local_configuration())};
+      auto job{std::make_shared<LinkageJob>(handler->get_local_configuration(), handler->get_remote_configuration(remote_id))};
       job_id = job->get_id();
       fmt::print("Ressource Path: {}\n", job_id);
       try {
