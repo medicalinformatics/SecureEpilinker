@@ -212,10 +212,10 @@ nlohmann::json sel::DatabaseFetcher::request_page(
     const std::string& url,
     AuthenticationConfig* l_auth) const {
   auto request{std::make_shared<restbed::Request>(restbed::Uri(url))};
-  request->set_method("POST");
+  request->set_method("GET");
   request->set_version(1.1);
   request->set_protocol("HTTP");
-
+  fmt::print("DB address: {}\n", url);
   if (l_auth->get_type() == sel::AuthenticationType::API_KEY) {
     auto apiauth = dynamic_cast<sel::APIKeyConfig*>(l_auth);
     request->add_header("Authorization",
