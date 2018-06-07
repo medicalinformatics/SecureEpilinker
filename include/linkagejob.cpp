@@ -32,6 +32,8 @@
 #include "secure_epilinker.h"
 #include "remoteconfiguration.h"
 
+#include <iostream>
+
 void sel::LinkageJob::set_id() {
   const auto timestamp{std::chrono::system_clock::now().time_since_epoch()};
   m_id = std::to_string(
@@ -110,8 +112,10 @@ void sel::LinkageJob::run_job() {
     // Construct ABY Client
     // FIXME(TK): Magicnumbers
     const e_sharing booleantype{S_BOOL};
-    const uint32_t nthreads{1}, nvals{6};
-
+    const uint32_t nthreads{1};
+    size_t nvals;
+    fmt::print("Please insert number of records (no worries, this is only temporary)\n");
+    std::cin >> nvals;
     sel::SecureEpilinker sepilinker_client{
         {CLIENT, booleantype, m_parent->get_remote_host(), m_parent->get_remote_port(), nthreads},
         {hw_weights, bin_weights, m_local_config->get_exchange_group_indices(sel::FieldComparator::NGRAM), m_local_config->get_exchange_group_indices(sel::FieldComparator::BINARY),
