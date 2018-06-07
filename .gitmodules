@@ -9,7 +9,7 @@
 	url = https://github.com/encryptogroup/OTExtension.git
 [submodule "extern/ABY"]
 	path = extern/ABY
-	url = git@git.compbiol.bio.tu-darmstadt.de:crisp/ABY.git 
+	url = https://github.com/sebastianst/ABY.git
 [submodule "extern/json"]
 	path = extern/json
 	url = https://github.com/nlohmann/json
