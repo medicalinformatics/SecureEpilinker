@@ -54,6 +54,14 @@ cmake ..
 make
 ```
 
+For now, the path from which `test_sel` or `sel` is called needs to have a
+symlink to the `ABY/bin/circ` folder, where it can find the `int_div_16`
+circuit description. E.g. for running from `build/`:
+
+```
+ln -s ../extern/ABY/bin/circ/
+```
+
 To conclude all steps in one codeblock for convenience:
 
 ```
@@ -66,6 +74,7 @@ cd ../..
 git apply ../../cmake/restbed.patch
 cd ../../build
 cmake .. && make
+ln -s ../extern/ABY/bin/circ/
 ```
 
 We hope to integrate all external builds and patches in the main build process
