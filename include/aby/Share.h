@@ -102,6 +102,7 @@ class Share {
   uint32_t get_bitlen() const { return sh.get()->get_bitlength(); }
   uint32_t get_nvals() const { return sh.get()->get_nvals(); }
   e_sharing get_type() const { return sh.get()->get_share_type(); }
+  virtual void reset() { circ = nullptr; sh.reset(); }
   bool is_null() const { return !(bool)sh; }
 
   explicit operator bool() const noexcept { return (bool)sh; };
@@ -135,6 +136,8 @@ class BoolShare: public Share {
   BoolShare(Share&& s) :
     Share{s}, bcirc{dynamic_cast<BooleanCircuit*>(circ)} {};
   ~BoolShare() = default;
+
+  void reset() { bcirc = nullptr; Share::reset(); }
 
   BooleanCircuit* get_circuit() const { return bcirc; };
 
@@ -263,6 +266,8 @@ class ArithShare: public Share {
   ArithShare(Share&& s) :
     Share{std::move(s)}, acirc{dynamic_cast<ArithmeticCircuit*>(circ)} {};
   ~ArithShare() = default;
+
+  void reset() { acirc = nullptr; Share::reset(); }
 
   /*
    * Constructor to create new INGate from plain-text value
