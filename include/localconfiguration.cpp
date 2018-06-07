@@ -31,7 +31,7 @@ using namespace sel;
 sel::LocalConfiguration::LocalConfiguration(
     std::string&& url,
     std::unique_ptr<sel::AuthenticationConfig> local_auth)
-    : m_local_authentication(std::move(local_auth)), m_data_service(url) {}
+    : m_local_authentication(std::move(local_auth)), m_data_service_url{std::move(url)} { }
 
 void sel::LocalConfiguration::add_field(sel::ML_Field field) {
   sel::FieldName fieldname{field.name};
@@ -121,8 +121,8 @@ void LocalConfiguration::set_algorithm_config(AlgorithmConfig aconfig) {
   m_algorithm = aconfig;
 }
 
-void LocalConfiguration::set_data_service_url(std::string&& url) {
-  m_data_service = std::move(url);
+void LocalConfiguration::set_data_service(std::string&& url) {
+  m_data_service_url = url;
 }
 
 void LocalConfiguration::set_local_auth(
@@ -212,8 +212,9 @@ void LocalConfiguration::run_comparison() {
     aby_server_party.build_circuit(nvals);
     aby_server_party.run_setup_phase();
     sel::EpilinkServerInput server_input{hw_data, bin_data, hw_empty, bin_empty};
-    const auto server_share{aby_server_party.run_as_server(server_input)};
-    fmt::print("Server Share: {}\n", server_share);
+    fmt::print("Server running!\n");
+    //const auto server_share{aby_server_party.run_as_server(server_input)};
+    //fmt::print("Server Share: {}\n", server_share);
   } catch (const std::exception& e) {
     fmt::print(stderr, "Error running MPC server: {}\n", e.what());
   }

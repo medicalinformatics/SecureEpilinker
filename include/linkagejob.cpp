@@ -30,6 +30,8 @@
 
 #include "epilink_input.h"
 #include "secure_epilinker.h"
+#include "remoteconfiguration.h"
+
 void sel::LinkageJob::set_id() {
   const auto timestamp{std::chrono::system_clock::now().time_since_epoch()};
   m_id = std::to_string(
@@ -41,8 +43,8 @@ sel::LinkageJob::LinkageJob() {
   set_id();
 }
 
-sel::LinkageJob::LinkageJob(std::shared_ptr<sel::LocalConfiguration> l_conf)
-    : m_local_config(std::move(l_conf)) {
+sel::LinkageJob::LinkageJob(std::shared_ptr<sel::LocalConfiguration> l_conf, sel::RemoteConfiguration* parent)
+    : m_local_config(std::move(l_conf)), m_parent(parent) {
   set_id();
 }
 
@@ -107,19 +109,18 @@ void sel::LinkageJob::run_job() {
   try {
     // Construct ABY Client
     // FIXME(TK): Magicnumbers
-    const std::string remote_ip{"127.0.0.1"};
     const e_sharing booleantype{S_BOOL};
-    const uint16_t port{8888};
     const uint32_t nthreads{1}, nvals{6};
 
     sel::SecureEpilinker sepilinker_client{
-        {CLIENT, booleantype, remote_ip, port, nthreads},
+        {CLIENT, booleantype, m_parent->get_remote_host(), m_parent->get_remote_port(), nthreads},
         {hw_weights, bin_weights, m_local_config->get_exchange_group_indices(sel::FieldComparator::NGRAM), m_local_config->get_exchange_group_indices(sel::FieldComparator::BINARY),
          algorithm_config.bloom_length, algorithm_config.threshold_match, algorithm_config.threshold_non_match}};
     sepilinker_client.build_circuit(nvals);
     sepilinker_client.run_setup_phase();
     sel::EpilinkClientInput client_input{hw_data, bin_data, hw_empty, bin_empty, nvals};
-    sepilinker_client.run_as_client(client_input);
+    fmt::print("Client Running\n");
+    //sepilinker_client.run_as_client(client_input);
   } catch (const std::exception& e) {
     fmt::print(stderr, "Error running MPC Client: {}\n", e.what());
     m_status = JobStatus::FAULT;

@@ -70,6 +70,7 @@ class ConnectionHandler {
     m_local_configuration->run_comparison();
   };
   std::shared_ptr<LocalConfiguration> get_local_configuration() const;
+  std::shared_ptr<RemoteConfiguration> get_remote_configuration(const RemoteId&);
 
  private:
   void insert_connection(RemoteId&& remote_id,

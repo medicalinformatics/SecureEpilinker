@@ -101,3 +101,10 @@ void sel::ConnectionHandler::update_connection(
 std::shared_ptr<sel::LocalConfiguration> sel::ConnectionHandler::get_local_configuration() const {
   return m_local_configuration;
 }
+
+std::shared_ptr<sel::RemoteConfiguration> sel::ConnectionHandler::get_remote_configuration(const sel::RemoteId& r_id){
+  if(!connection_exists(r_id)){
+    throw std::runtime_error("Invalid Connection");
+  }
+  return m_connections.at(r_id); 
+}
