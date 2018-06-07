@@ -4,7 +4,7 @@
   "sharedkey": "123abc"
 },
 "dataService": {
-  "url": "http://localhost:8800/test"
+  "url": "http://192.168.12.8:8084/Communicator/getAllRecords"
 },
 "connectionProfile": {
   "url": "127.0.0.1:1664",
