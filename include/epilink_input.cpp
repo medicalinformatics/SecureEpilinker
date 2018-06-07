@@ -38,8 +38,10 @@ EpilinkConfig::EpilinkConfig(v_weight_type hw_weights, v_weight_type bin_weights
   size_hw{ceil_log2(size_bitmask+1)},
   threshold{threshold}, tthreshold{tthreshold},
   nhw_fields{hw_weights.size()}, nbin_fields{bin_weights.size()},
-  max_weight{max( *max_element(hw_weights.cbegin(), hw_weights.cend()),
-      *max_element(bin_weights.cbegin(), bin_weights.cend()) )},
+  max_weight{max(
+      nhw_fields ? *max_element(hw_weights.cbegin(), hw_weights.cend()) : 0.0,
+      nbin_fields ? *max_element(bin_weights.cbegin(), bin_weights.cend()) :0.0
+      )},
   hw_weights_r{rescale_weights(hw_weights, max_weight)},
   bin_weights_r{rescale_weights(bin_weights, max_weight)}
   {}
@@ -49,7 +51,8 @@ EpilinkServerInput::EpilinkServerInput(
   vector<vector<bool>> hw_db_empty, vector<vector<bool>> bin_db_empty) :
   hw_database{hw_database}, bin_database{bin_database},
   hw_db_empty{hw_db_empty}, bin_db_empty{bin_db_empty},
-  nvals{hw_database.at(0).size()}
+  nvals{hw_database.empty() ?
+    bin_database.at(0).size() : hw_database.at(0).size()}
 {
   // check that all vectors over records have same size
   check_vectors_size(hw_database, nvals, "hw_database");
