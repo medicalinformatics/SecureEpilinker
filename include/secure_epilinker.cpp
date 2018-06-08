@@ -96,7 +96,7 @@ public:
           cfg.size_bitmask, CLIENT, nvals);
 
       hw_client_hw[i] = BoolShare(bcirc,
-          vector<hw_type>(nvals, hw(input.hw_record[i])).data(),
+          vector<CircUnit>(nvals, hw(input.hw_record[i])).data(),
           cfg.size_hw, CLIENT, nvals);
 
       // need to convert bool into uint8_t array
@@ -120,7 +120,7 @@ public:
     }
     for (size_t i = 0; i != cfg.nbin_fields; ++i) {
       bin_client[i] = BoolShare(bcirc,
-          vector<bin_type>(nvals, input.bin_record[i]).data(),
+          vector<CircUnit>(nvals, input.bin_record[i]).data(),
           BitLen, CLIENT, nvals);
 
       bin_client_empty[i] = BoolShare(bcirc,
@@ -181,7 +181,7 @@ public:
       bin_client_empty[i] = BoolShare(bcirc, 1, nvals); // dummy
 
       bin_server[i] = BoolShare(bcirc,
-          const_cast<bin_type*>(input.bin_database[i].data()),
+          const_cast<CircUnit*>(input.bin_database[i].data()),
           BitLen, SERVER, nvals);
 
       bin_server_empty[i] = BoolShare(bcirc,
@@ -215,7 +215,7 @@ public:
           cfg.size_bitmask, CLIENT, nvals);
 
       hw_client_hw[i] = BoolShare(bcirc,
-          vector<hw_type>(nvals, hw(in_client.hw_record[i])).data(),
+          vector<CircUnit>(nvals, hw(in_client.hw_record[i])).data(),
           cfg.size_hw, CLIENT, nvals);
 
       // need to convert bool into uint8_t array
@@ -248,7 +248,7 @@ public:
 
     for (size_t i = 0; i != cfg.nbin_fields; ++i) {
       bin_client[i] = BoolShare(bcirc,
-          vector<bin_type>(nvals, in_client.bin_record[i]).data(),
+          vector<CircUnit>(nvals, in_client.bin_record[i]).data(),
           BitLen, CLIENT, nvals);
 
       bin_client_empty[i] = BoolShare(bcirc,
@@ -256,7 +256,7 @@ public:
           1, CLIENT, nvals);
 
       bin_server[i] = BoolShare(bcirc,
-          const_cast<bin_type*>(in_server.bin_database[i].data()),
+          const_cast<CircUnit*>(in_server.bin_database[i].data()),
           BitLen, SERVER, nvals);
 
       bin_server_empty[i] = BoolShare(bcirc,
@@ -384,7 +384,7 @@ private:
     // build constant index vector
     vector<BoolShare> numbers;
     numbers.reserve(nvals);
-    for (bin_type i = 0; i != nvals; ++i) {
+    for (CircUnit i = 0; i != nvals; ++i) {
       // TODO Make true SIMD constants available in ABY and implement offline
       // AND with constant
       numbers.emplace_back(constant(bcirc, i, BitLen));
@@ -416,7 +416,7 @@ private:
   auto threshold_weights() {
     // 4.1 sum rescaled weights
     vector<ArithShare> a_weights = transform_vec( cfg.hw_weights_r,
-        function<ArithShare(const hw_type&)>([this](const auto& w)
+        function<ArithShare(const CircUnit&)>([this](const auto& w)
           {return constant(acirc, w, BitLen);}) );
     ArithShare sum_weights{sum(a_weights)};
 #ifdef DEBUG_SEL_CIRCUIT
@@ -499,7 +499,7 @@ private:
     ArithShare a_comp{to_arith(comp)};
     // If indices match, use precomputed rescaled weights. Otherwise take
     // arithmetic average of both weights
-    hw_type weight_r = (ileft == iright) ? cfg.hw_weights_r[ileft] :
+    CircUnit weight_r = (ileft == iright) ? cfg.hw_weights_r[ileft] :
       rescale_weight((cfg.hw_weights[ileft] + cfg.hw_weights[iright])/2, cfg.max_weight);
 
     ArithShare a_weight{constant_simd(acirc, weight_r, BitLen, nvals)};
@@ -530,7 +530,7 @@ private:
 #endif
     // If indices match, use precomputed rescaled weights. Otherwise take
     // arithmetic average of both weights
-    bin_type weight_r = (ileft == iright) ? cfg.bin_weights_r[ileft] :
+    CircUnit weight_r = (ileft == iright) ? cfg.bin_weights_r[ileft] :
       rescale_weight((cfg.bin_weights[ileft] + cfg.bin_weights[iright])/2, cfg.max_weight);
 
     weight_r <<= QuotPrecisionBits; // same shift as in HW field-weights
@@ -610,18 +610,18 @@ uint32_t SecureEpilinker::run() {
 
   is_setup = false; // need to run new setup phase
 
-  return res.max_idx.get_clear_value<bin_type>();
+  return res.max_idx.get_clear_value<CircUnit>();
 }
 
 /*
   * Takes rescaled weights and makes Contant Input Shares on the given circuit
-  * run v_hw_type weights_rsc = rescale_weights(weights); before
+  * run VCircUnit weights_rsc = rescale_weights(weights); before
   */
-vector<Share> make_weight_inputs(Circuit* circ, const v_hw_type& weights_rsc,
+vector<Share> make_weight_inputs(Circuit* circ, const VCircUnit& weights_rsc,
     uint32_t bitlen, uint32_t nvals) {
   vector<Share> inputs(weights_rsc.size());
   transform(weights_rsc.cbegin(), weights_rsc.cend(), inputs.begin(),
-      [&circ, &bitlen, &nvals](hw_type w) {
+      [&circ, &bitlen, &nvals](CircUnit w) {
         return constant_simd(circ, w, bitlen, nvals);
       });
   return inputs;

@@ -35,12 +35,9 @@ using VWeight = std::vector<Weight>;
 using BitmaskUnit = uint8_t;
 using Bitmask = std::vector<BitmaskUnit>;
 using VBitmask = std::vector<Bitmask>;
-// type for storing hamming weights - usually must hold 9 bit (>log2(501))
-using hw_type = uint16_t;
-using v_hw_type = std::vector<hw_type>;
-// binary comparison fields
-using bin_type = uint32_t;
-using v_bin_type = std::vector<bin_type>;
+// Circuit unit
+using CircUnit = uint32_t;
+using VCircUnit = std::vector<CircUnit>;
 
 struct EpilinkConfig {
   // vector of weights
@@ -65,8 +62,8 @@ struct EpilinkConfig {
   const double max_weight;
 
   // must come after max_weight because of initializer list
-  const v_hw_type hw_weights_r;
-  const v_hw_type bin_weights_r;
+  const VCircUnit hw_weights_r;
+  const VCircUnit bin_weights_r;
 
   EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
       std::vector<IndexSet> hw_exchange_groups,
@@ -79,7 +76,7 @@ struct EpilinkClientInput {
   // nfields vector of input record to link
   // cannot be const because ABY doens't know what const is
   const VBitmask hw_record;
-  const v_bin_type bin_record;
+  const VCircUnit bin_record;
 
   // corresponding empty-field-flags
   const std::vector<bool> hw_rec_empty;
@@ -93,7 +90,7 @@ struct EpilinkServerInput {
   // Outer vector by fields, inner by records!
   // Need to model like this for SIMD
   const std::vector<VBitmask> hw_database;
-  const std::vector<v_bin_type> bin_database;
+  const std::vector<VCircUnit> bin_database;
 
   // corresponding empty-field-flags
   const std::vector<std::vector<bool>> hw_db_empty;
@@ -103,26 +100,26 @@ struct EpilinkServerInput {
   // default constructor - checks that all records have same size
   // TODO: make it a move && constructor instead?
   EpilinkServerInput(std::vector<VBitmask> hw_database,
-      std::vector<v_bin_type> bin_database,
+      std::vector<VCircUnit> bin_database,
       std::vector<std::vector<bool>> hw_db_empty,
       std::vector<std::vector<bool>> bin_db_empty);
   ~EpilinkServerInput() = default;
 };
 
 // hamming weights
-hw_type hw(const Bitmask&);
-std::vector<hw_type> hw(const std::vector<Bitmask>&);
-std::vector<std::vector<hw_type>> hw(const std::vector<std::vector<Bitmask>>&);
+CircUnit hw(const Bitmask&);
+std::vector<CircUnit> hw(const std::vector<Bitmask>&);
+std::vector<std::vector<CircUnit>> hw(const std::vector<std::vector<Bitmask>>&);
 
 /*
  * Rescales the weights so that the maximum weight is the maximum element
- * of hw_type, i.e., 0xff...
+ * of CircUnit, i.e., 0xff...
  * This should lead to the best possible precision during calculation.
  */
-std::vector<hw_type> rescale_weights(const std::vector<Weight>& weights,
+std::vector<CircUnit> rescale_weights(const std::vector<Weight>& weights,
     Weight max_weight = 0);
 
-hw_type rescale_weight(Weight weight, Weight max_weight);
+CircUnit rescale_weight(Weight weight, Weight max_weight);
 
 // random data generator
 // TODO adopt new API
