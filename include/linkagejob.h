@@ -56,7 +56,7 @@ class LinkageJob {
    JobId m_id;
   JobStatus m_status{JobStatus::QUEUED};
   std::map<FieldName, Bitmask> m_hw_data;
-  std::map<FieldName, bin_type> m_bin_data;
+  std::map<FieldName, CircUnit> m_bin_data;
   std::map<FieldName, bool> m_hw_empty;
   std::map<FieldName, bool> m_bin_empty;
   CallbackConfig m_callback;

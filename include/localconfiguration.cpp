@@ -182,7 +182,7 @@ void LocalConfiguration::run_comparison() {
   fmt::print("Number of records: {}\n", nvals);
   // make data and empty map to vectors
   std::vector<std::vector<sel::Bitmask>> hw_data;
-  std::vector<sel::v_bin_type> bin_data;
+  std::vector<sel::VCircUnit> bin_data;
   hw_data.reserve(m_hw_fields.size());
   bin_data.reserve(m_bin_fields.size());
   std::vector<std::vector<bool>> hw_empty;

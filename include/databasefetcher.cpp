@@ -102,7 +102,7 @@ void sel::DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
     throw std::runtime_error("Invalid JSON Data");
   }
   std::map<sel::FieldName, std::vector<sel::Bitmask>> temp_hw_data;
-  std::map<sel::FieldName, sel::v_bin_type> temp_bin_data;
+  std::map<sel::FieldName, sel::VCircUnit> temp_bin_data;
   std::map<sel::FieldName, std::vector<bool>> temp_hw_empty;
   std::map<sel::FieldName, std::vector<bool>> temp_bin_empty;
 
@@ -120,7 +120,7 @@ void sel::DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
             } else {
               temp_bin_empty[f.key()].emplace_back(false);
             }
-            temp_bin_data[f.key()].emplace_back(static_cast<sel::bin_type>(f->get<int>()));
+            temp_bin_data[f.key()].emplace_back(static_cast<sel::CircUnit>(f->get<int>()));
           } else {
             throw std::runtime_error("NGRAM comparison not allowed for non bitmask types");
           }

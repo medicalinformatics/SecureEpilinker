@@ -57,9 +57,9 @@ void sel::LinkageJob::add_hw_data_field(const sel::FieldName& fieldname, sel::Da
 }
 
 void sel::LinkageJob::add_bin_data_field(const sel::FieldName& fieldname, sel::DataField datafield, bool empty){
- bin_type tempfield;
+ CircUnit tempfield;
  if(std::holds_alternative<int>(datafield)){
-  tempfield = static_cast<bin_type>(std::get<int>(datafield));
+  tempfield = static_cast<CircUnit>(std::get<int>(datafield));
  } else if (std::holds_alternative<double>(datafield)){
   tempfield = std::hash<double>{}(std::get<double>(datafield));
  } else if(std::holds_alternative<std::string>(datafield)){
@@ -80,7 +80,7 @@ void sel::LinkageJob::run_job() {
   const auto& algorithm_config{m_local_config->get_algorithm_config()};
 
   std::vector<sel::Bitmask> hw_data;
-  sel::v_bin_type bin_data;
+  sel::VCircUnit bin_data;
   hw_data.reserve(m_hw_data.size());
   bin_data.reserve(m_bin_data.size());
 

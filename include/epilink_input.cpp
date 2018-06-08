@@ -48,7 +48,7 @@ EpilinkConfig::EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
   {}
 
 EpilinkServerInput::EpilinkServerInput(
-  vector<VBitmask> hw_database, vector<v_bin_type> bin_database,
+  vector<VBitmask> hw_database, vector<VCircUnit> bin_database,
   vector<vector<bool>> hw_db_empty, vector<vector<bool>> bin_db_empty) :
   hw_database{hw_database}, bin_database{bin_database},
   hw_db_empty{hw_db_empty}, bin_db_empty{bin_db_empty},
@@ -82,9 +82,9 @@ VBitmask gen_random_hw_vec(const mt19937& gen, const uint32_t size, const uint32
   return ret;
 }
 
-v_bin_type gen_random_bin_vec(const mt19937& gen, const uint32_t size) {
-  uniform_int_distribution<bin_type> dis{};
-  vector<bin_type> ret(size);
+VCircUnit gen_random_bin_vec(const mt19937& gen, const uint32_t size) {
+  uniform_int_distribution<CircUnit> dis{};
+  vector<CircUnit> ret(size);
   generate(ret.begin(), ret.end(), [&gen, &dis](){ return dis(gen); });
   return ret;
 }
@@ -116,7 +116,7 @@ EpilinkServerInput gen_random_server_input(
   for (auto& col: hw_database) {
     col = gen_random_hw_vec(gen, nvals, bitmask_size);
   }
-  vector<vector<bin_type>> bin_database(nbin_fields);
+  vector<vector<CircUnit>> bin_database(nbin_fields);
   for (auto& col: bin_database) {
     col = gen_random_bin_vec(gen, nvals);
   }
@@ -127,8 +127,8 @@ EpilinkServerInput gen_random_server_input(
 */
 
 // hammingweight of bitmasks
-hw_type hw(const Bitmask& bm) {
-  hw_type n = 0;
+CircUnit hw(const Bitmask& bm) {
+  CircUnit n = 0;
   for (auto& b : bm) {
     n += __builtin_popcount(b);
   }
@@ -136,33 +136,33 @@ hw_type hw(const Bitmask& bm) {
 }
 
 // hammingweight over vectors
-vector<hw_type> hw(const vector<Bitmask>& v_bm) {
-  vector<hw_type> res(v_bm.size());
+vector<CircUnit> hw(const vector<Bitmask>& v_bm) {
+  vector<CircUnit> res(v_bm.size());
   transform(v_bm.cbegin(), v_bm.cend(), res.begin(),
-      [] (const Bitmask& x) -> hw_type { return hw(x); });
+      [] (const Bitmask& x) -> CircUnit { return hw(x); });
   return res;
 }
 
 // hammingweight over vectors of vectors
-vector<vector<hw_type>> hw(const vector<vector<Bitmask>>& v_bm) {
-  vector<vector<hw_type>> res(v_bm.size());
+vector<vector<CircUnit>> hw(const vector<vector<Bitmask>>& v_bm) {
+  vector<vector<CircUnit>> res(v_bm.size());
   transform(v_bm.cbegin(), v_bm.cend(), res.begin(),
-      [] (const vector<Bitmask>& x) -> vector<hw_type> { return hw(x); });
+      [] (const vector<Bitmask>& x) -> vector<CircUnit> { return hw(x); });
   return res;
 }
 
 // rescale all weights to an integer, max weight being b111...
-vector<hw_type> rescale_weights(const vector<Weight>& weights,
+vector<CircUnit> rescale_weights(const vector<Weight>& weights,
     Weight max_weight) {
   if (!max_weight)
     max_weight = *max_element(weights.cbegin(), weights.cend());
-  constexpr hw_type max_element = numeric_limits<hw_type>::max();
+  constexpr CircUnit max_element = numeric_limits<CircUnit>::max();
 
   // rescale weights so that max_weight is max_element (b111...)
-  vector<hw_type> ret(weights.size());
+  vector<CircUnit> ret(weights.size());
   transform(weights.cbegin(), weights.cend(), ret.begin(),
       [&max_weight] (double w) ->
-      hw_type { return (w/max_weight) * max_element; });
+      CircUnit { return (w/max_weight) * max_element; });
 
 #if DEBUG_SEL_INPUT
   cout << "Transformed weights: ";
@@ -174,8 +174,8 @@ vector<hw_type> rescale_weights(const vector<Weight>& weights,
   return ret;
 }
 
-hw_type rescale_weight(Weight weight, Weight max_weight) {
-  constexpr hw_type max_element = numeric_limits<hw_type>::max();
+CircUnit rescale_weight(Weight weight, Weight max_weight) {
+  constexpr CircUnit max_element = numeric_limits<CircUnit>::max();
   return (weight/max_weight) * max_element;
 }
 
