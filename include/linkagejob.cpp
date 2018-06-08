@@ -51,8 +51,8 @@ sel::LinkageJob::LinkageJob(std::shared_ptr<sel::LocalConfiguration> l_conf, std
 }
 
 void sel::LinkageJob::add_hw_data_field(const sel::FieldName& fieldname, sel::DataField datafield, bool empty){
- assert(std::holds_alternative<bitmask_type>(datafield)); 
- m_hw_data.emplace(fieldname, std::get<bitmask_type>(datafield));
+ assert(std::holds_alternative<Bitmask>(datafield));
+ m_hw_data.emplace(fieldname, std::get<Bitmask>(datafield));
  m_hw_empty.emplace(fieldname, empty);
 }
 
@@ -79,7 +79,7 @@ void sel::LinkageJob::run_job() {
   
   const auto& algorithm_config{m_local_config->get_algorithm_config()};
 
-  std::vector<sel::bitmask_type> hw_data;
+  std::vector<sel::Bitmask> hw_data;
   sel::v_bin_type bin_data;
   hw_data.reserve(m_hw_data.size());
   bin_data.reserve(m_bin_data.size());
@@ -102,8 +102,8 @@ void sel::LinkageJob::run_job() {
     bin_empty.emplace_back(field.second);
   }
 
-  sel::v_weight_type hw_weights{m_local_config->get_weights(sel::FieldComparator::NGRAM)};
-  sel::v_weight_type bin_weights{m_local_config->get_weights(sel::FieldComparator::BINARY)};
+  sel::VWeight hw_weights{m_local_config->get_weights(sel::FieldComparator::NGRAM)};
+  sel::VWeight bin_weights{m_local_config->get_weights(sel::FieldComparator::BINARY)};
   
   // TODO(TK): To get: remote_ip, remote_port, nvals,
   // threads

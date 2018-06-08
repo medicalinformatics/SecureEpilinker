@@ -29,12 +29,12 @@ namespace sel {
 // index type
 using v_idx = std::set<size_t>;
 // weight type
-using weight_type = double;
-using v_weight_type = std::vector<weight_type>;
+using Weight = double;
+using VWeight = std::vector<Weight>;
 // nGram field types of which hamming weights are computed
-using bitmask_unit = uint8_t;
-using bitmask_type = std::vector<bitmask_unit>;
-using v_bitmask_type = std::vector<bitmask_type>;
+using BitmaskUnit = uint8_t;
+using Bitmask = std::vector<BitmaskUnit>;
+using VBitmask = std::vector<Bitmask>;
 // type for storing hamming weights - usually must hold 9 bit (>log2(501))
 using hw_type = uint16_t;
 using v_hw_type = std::vector<hw_type>;
@@ -44,8 +44,8 @@ using v_bin_type = std::vector<bin_type>;
 
 struct EpilinkConfig {
   // vector of weights
-  const v_weight_type hw_weights;
-  const v_weight_type bin_weights;
+  const VWeight hw_weights;
+  const VWeight bin_weights;
 
   // exchange groups by index
   const std::vector<v_idx> hw_exchange_groups;
@@ -68,7 +68,7 @@ struct EpilinkConfig {
   const v_hw_type hw_weights_r;
   const v_hw_type bin_weights_r;
 
-  EpilinkConfig(v_weight_type hw_weights, v_weight_type bin_weights,
+  EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
       std::vector<v_idx> hw_exchange_groups,
       std::vector<v_idx> bin_exchange_groups,
       uint32_t size_bitmask, double threshold, double tthreshold);
@@ -78,7 +78,7 @@ struct EpilinkConfig {
 struct EpilinkClientInput {
   // nfields vector of input record to link
   // cannot be const because ABY doens't know what const is
-  const v_bitmask_type hw_record;
+  const VBitmask hw_record;
   const v_bin_type bin_record;
 
   // corresponding empty-field-flags
@@ -92,7 +92,7 @@ struct EpilinkClientInput {
 struct EpilinkServerInput {
   // Outer vector by fields, inner by records!
   // Need to model like this for SIMD
-  const std::vector<v_bitmask_type> hw_database;
+  const std::vector<VBitmask> hw_database;
   const std::vector<v_bin_type> bin_database;
 
   // corresponding empty-field-flags
@@ -102,7 +102,7 @@ struct EpilinkServerInput {
   const size_t nvals;
   // default constructor - checks that all records have same size
   // TODO: make it a move && constructor instead?
-  EpilinkServerInput(std::vector<v_bitmask_type> hw_database,
+  EpilinkServerInput(std::vector<VBitmask> hw_database,
       std::vector<v_bin_type> bin_database,
       std::vector<std::vector<bool>> hw_db_empty,
       std::vector<std::vector<bool>> bin_db_empty);
@@ -110,19 +110,19 @@ struct EpilinkServerInput {
 };
 
 // hamming weights
-hw_type hw(const bitmask_type&);
-std::vector<hw_type> hw(const std::vector<bitmask_type>&);
-std::vector<std::vector<hw_type>> hw(const std::vector<std::vector<bitmask_type>>&);
+hw_type hw(const Bitmask&);
+std::vector<hw_type> hw(const std::vector<Bitmask>&);
+std::vector<std::vector<hw_type>> hw(const std::vector<std::vector<Bitmask>>&);
 
 /*
  * Rescales the weights so that the maximum weight is the maximum element
  * of hw_type, i.e., 0xff...
  * This should lead to the best possible precision during calculation.
  */
-std::vector<hw_type> rescale_weights(const std::vector<weight_type>& weights,
-    weight_type max_weight = 0);
+std::vector<hw_type> rescale_weights(const std::vector<Weight>& weights,
+    Weight max_weight = 0);
 
-hw_type rescale_weight(weight_type weight, weight_type max_weight);
+hw_type rescale_weight(Weight weight, Weight max_weight);
 
 // random data generator
 // TODO adopt new API

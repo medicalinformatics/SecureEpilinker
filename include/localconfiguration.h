@@ -73,7 +73,7 @@ class LocalConfiguration {
   std::vector<std::set<FieldName>> m_bin_exchange_groups;
   AlgorithmConfig m_algorithm;
   std::string m_data_service_url;
-  std::map<FieldName, std::vector<sel::bitmask_type>> m_hw_data;
+  std::map<FieldName, std::vector<sel::Bitmask>> m_hw_data;
   std::map<FieldName, std::vector<bool>> m_hw_empty;
   std::map<FieldName, v_bin_type> m_bin_data;
   std::map<FieldName, std::vector<bool>> m_bin_empty;
