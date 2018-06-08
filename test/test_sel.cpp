@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
   };
 
   EpilinkServerInput in_server {
-    {vector<bitmask_type>(nvals, {0x33})}, {vector<bin_type>(nvals, 0xdeadbeef)}, // hw/bin database
+    {vector<Bitmask>(nvals, {0x33})}, {vector<bin_type>(nvals, 0xdeadbeef)}, // hw/bin database
     {vector<bool>(nvals, false)}, {vector<bool>(nvals, false)}, // hw/bin empty
   };
   //EpilinkServerInput in_server {

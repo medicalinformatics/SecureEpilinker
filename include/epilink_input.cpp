@@ -29,7 +29,7 @@ using namespace std;
 
 namespace sel {
 
-EpilinkConfig::EpilinkConfig(v_weight_type hw_weights, v_weight_type bin_weights,
+EpilinkConfig::EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
       vector<v_idx> hw_exchange_groups, vector<v_idx> bin_exchange_groups,
       uint32_t size_bitmask, double threshold, double tthreshold) :
   hw_weights{hw_weights}, bin_weights{bin_weights},
@@ -48,7 +48,7 @@ EpilinkConfig::EpilinkConfig(v_weight_type hw_weights, v_weight_type bin_weights
   {}
 
 EpilinkServerInput::EpilinkServerInput(
-  vector<v_bitmask_type> hw_database, vector<v_bin_type> bin_database,
+  vector<VBitmask> hw_database, vector<v_bin_type> bin_database,
   vector<vector<bool>> hw_db_empty, vector<vector<bool>> bin_db_empty) :
   hw_database{hw_database}, bin_database{bin_database},
   hw_db_empty{hw_db_empty}, bin_db_empty{bin_db_empty},
@@ -62,19 +62,19 @@ EpilinkServerInput::EpilinkServerInput(
   check_vectors_size(bin_db_empty, nvals, "bin_db_empty");
 }
 /*
-vector<weight_type> gen_random_weights(const mt19937& gen, const uint32_t nfields) {
+vector<Weight> gen_random_weights(const mt19937& gen, const uint32_t nfields) {
   // random weights between 1.0 and 24.0
-  uniform_real_distribution<weight_type> weight_dis(1.0, 24.0);
-  vector<weight_type> weights(nfields);
+  uniform_real_distribution<Weight> weight_dis(1.0, 24.0);
+  vector<Weight> weights(nfields);
   generate(weights.begin(), weights.end(),
       [&weight_dis, &gen](){return weight_dis(gen);});
   return weights;
 }
 
-v_bitmask_type gen_random_hw_vec(const mt19937& gen, const uint32_t size, const uint32_t bitmask_size) {
-  uniform_int_distribution<bitmask_unit> dis{};
+VBitmask gen_random_hw_vec(const mt19937& gen, const uint32_t size, const uint32_t bitmask_size) {
+  uniform_int_distribution<BitmaskUnit> dis{};
   uint32_t bitmask_bytes = bits_in_bytes(bitmask_size);
-  vector<bitmask_type> ret(size);
+  vector<Bitmask> ret(size);
   for (auto& bm : ret) {
     bm.resize(bitmask_bytes);
     generate(bm.begin(), bm.end(), [&gen, &dis](){ return dis(gen); });
@@ -109,10 +109,10 @@ EpilinkServerInput gen_random_server_input(
   mt19937 gen(seed);
 
   // random weights
-  vector<weight_type> hw_weights = gen_random_weights(gen, nhw_fields);
-  vector<weight_type> bin_weights = gen_random_weights(gen, nbin_fields);
+  vector<Weight> hw_weights = gen_random_weights(gen, nhw_fields);
+  vector<Weight> bin_weights = gen_random_weights(gen, nbin_fields);
   // random database
-  vector<vector<bitmask_type>> hw_database(nhw_fields);
+  vector<vector<Bitmask>> hw_database(nhw_fields);
   for (auto& col: hw_database) {
     col = gen_random_hw_vec(gen, nvals, bitmask_size);
   }
@@ -127,7 +127,7 @@ EpilinkServerInput gen_random_server_input(
 */
 
 // hammingweight of bitmasks
-hw_type hw(const bitmask_type& bm) {
+hw_type hw(const Bitmask& bm) {
   hw_type n = 0;
   for (auto& b : bm) {
     n += __builtin_popcount(b);
@@ -136,24 +136,24 @@ hw_type hw(const bitmask_type& bm) {
 }
 
 // hammingweight over vectors
-vector<hw_type> hw(const vector<bitmask_type>& v_bm) {
+vector<hw_type> hw(const vector<Bitmask>& v_bm) {
   vector<hw_type> res(v_bm.size());
   transform(v_bm.cbegin(), v_bm.cend(), res.begin(),
-      [] (const bitmask_type& x) -> hw_type { return hw(x); });
+      [] (const Bitmask& x) -> hw_type { return hw(x); });
   return res;
 }
 
 // hammingweight over vectors of vectors
-vector<vector<hw_type>> hw(const vector<vector<bitmask_type>>& v_bm) {
+vector<vector<hw_type>> hw(const vector<vector<Bitmask>>& v_bm) {
   vector<vector<hw_type>> res(v_bm.size());
   transform(v_bm.cbegin(), v_bm.cend(), res.begin(),
-      [] (const vector<bitmask_type>& x) -> vector<hw_type> { return hw(x); });
+      [] (const vector<Bitmask>& x) -> vector<hw_type> { return hw(x); });
   return res;
 }
 
 // rescale all weights to an integer, max weight being b111...
-vector<hw_type> rescale_weights(const vector<weight_type>& weights,
-    weight_type max_weight) {
+vector<hw_type> rescale_weights(const vector<Weight>& weights,
+    Weight max_weight) {
   if (!max_weight)
     max_weight = *max_element(weights.cbegin(), weights.cend());
   constexpr hw_type max_element = numeric_limits<hw_type>::max();
@@ -174,7 +174,7 @@ vector<hw_type> rescale_weights(const vector<weight_type>& weights,
   return ret;
 }
 
-hw_type rescale_weight(weight_type weight, weight_type max_weight) {
+hw_type rescale_weight(Weight weight, Weight max_weight) {
   constexpr hw_type max_element = numeric_limits<hw_type>::max();
   return (weight/max_weight) * max_element;
 }

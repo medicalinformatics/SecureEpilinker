@@ -176,12 +176,12 @@ void LocalConfiguration::run_comparison() {
   // Fill Member variables
   poll_data();
   // Get Weights and calcualte # of Records
-  sel::v_weight_type hw_weights{get_weights(sel::FieldComparator::NGRAM)};
-  sel::v_weight_type bin_weights{get_weights(sel::FieldComparator::BINARY)};
+  sel::VWeight hw_weights{get_weights(sel::FieldComparator::NGRAM)};
+  sel::VWeight bin_weights{get_weights(sel::FieldComparator::BINARY)};
   const size_t nvals{m_hw_data.begin()->second.size()}; // assuming each record has hw and bin
   fmt::print("Number of records: {}\n", nvals);
   // make data and empty map to vectors
-  std::vector<std::vector<sel::bitmask_type>> hw_data;
+  std::vector<std::vector<sel::Bitmask>> hw_data;
   std::vector<sel::v_bin_type> bin_data;
   hw_data.reserve(m_hw_fields.size());
   bin_data.reserve(m_bin_fields.size());

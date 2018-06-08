@@ -631,10 +631,10 @@ vector<Share> make_weight_inputs(Circuit* circ, const v_hw_type& weights_rsc,
   * Create BoolShare inputs of client bitmasks
   */
 vector<BoolShare> make_client_bitmask_inputs(BooleanCircuit* circ,
-    const v_bitmask_type& bitmasks, uint32_t bitlen, uint32_t nvals) {
+    const VBitmask& bitmasks, uint32_t bitlen, uint32_t nvals) {
   vector<BoolShare> inputs(bitmasks.size());
   transform(bitmasks.cbegin(), bitmasks.cend(), inputs.begin(),
-      [&circ, &bitlen, &nvals](bitmask_type b) {
+      [&circ, &bitlen, &nvals](Bitmask b) {
         return BoolShare{circ, b.data(), bitlen, CLIENT}.repeat(nvals);
       });
   return inputs;
