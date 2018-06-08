@@ -30,7 +30,7 @@ using namespace std;
 namespace sel {
 
 EpilinkConfig::EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
-      vector<v_idx> hw_exchange_groups, vector<v_idx> bin_exchange_groups,
+      vector<IndexSet> hw_exchange_groups, vector<IndexSet> bin_exchange_groups,
       uint32_t size_bitmask, double threshold, double tthreshold) :
   hw_weights{hw_weights}, bin_weights{bin_weights},
   hw_exchange_groups{hw_exchange_groups}, bin_exchange_groups{bin_exchange_groups},

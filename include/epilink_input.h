@@ -27,7 +27,7 @@
 namespace sel {
 
 // index type
-using v_idx = std::set<size_t>;
+using IndexSet = std::set<size_t>;
 // weight type
 using Weight = double;
 using VWeight = std::vector<Weight>;
@@ -48,8 +48,8 @@ struct EpilinkConfig {
   const VWeight bin_weights;
 
   // exchange groups by index
-  const std::vector<v_idx> hw_exchange_groups;
-  const std::vector<v_idx> bin_exchange_groups;
+  const std::vector<IndexSet> hw_exchange_groups;
+  const std::vector<IndexSet> bin_exchange_groups;
 
   // bitlength of bitmasks
   const uint32_t size_bitmask;
@@ -69,8 +69,8 @@ struct EpilinkConfig {
   const v_hw_type bin_weights_r;
 
   EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
-      std::vector<v_idx> hw_exchange_groups,
-      std::vector<v_idx> bin_exchange_groups,
+      std::vector<IndexSet> hw_exchange_groups,
+      std::vector<IndexSet> bin_exchange_groups,
       uint32_t size_bitmask, double threshold, double tthreshold);
   ~EpilinkConfig() = default;
 };
