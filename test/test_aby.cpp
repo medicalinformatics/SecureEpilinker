@@ -55,6 +55,27 @@ struct ABYTester {
     cout << "a*c = " << out_ac.get_clear_value_vec() << endl;
   }
 
+  void test_max_bits() {
+    size_t bytes = 64;
+    vector<uint8_t> data(bytes, 0xc3u);
+    vector<uint8_t> data2(bytes, 0x95u);
+    cout << "data: " << data << endl;
+    cout << "data2: " << data << endl;
+
+    BoolShare in(bc, data.data(), bytes*8-1, CLIENT, 1);
+    BoolShare in2(bc, data2.data(), bytes*8-1, CLIENT, 1);
+    print_share(in, "in");
+    print_share(in2, "in2");
+
+    BoolShare x = in & in2;
+    print_share(x, "in & in2");
+
+    x = hammingweight(x);
+    print_share(x, "HW");
+
+    party.ExecCircuit();
+  }
+
   void test_hw() {
     using datatype = uint32_t;
     vector<datatype> data = {0xdeadbeef, 0x33333333, 0x0};
@@ -194,7 +215,8 @@ int main(int argc, char *argv[])
   //tester.test_split_select_target();
   //tester.test_add();
   //tester.test_mult_const();
-  tester.test_hw();
+  //tester.test_hw();
+  tester.test_max_bits();
 
   return 0;
 }
