@@ -30,8 +30,6 @@
 using namespace std;
 using fmt::format;
 
-constexpr size_t QuotPrecisionBits{6};
-
 namespace sel {
 
 /***************** Circuit gadgets *******************/
@@ -410,38 +408,6 @@ private:
     print_share(const_w_tthreshold , "const_w_tthreshold ");
 #endif
   }
-
-  /* Not needed, can compute those values offline
-  auto threshold_weights() {
-    // 4.1 sum rescaled weights
-    vector<ArithShare> a_weights = transform_vec( cfg.hw_weights_r,
-        function<ArithShare(const CircUnit&)>([this](const auto& w)
-          {return constant(acirc, w, BitLen);}) );
-    ArithShare sum_weights{sum(a_weights)};
-#ifdef DEBUG_SEL_CIRCUIT
-    for (auto& w : a_weights) print_share(w, "a_weight");
-    print_share(sum_weights, "sum_weights");
-#endif
-    // 4.2 Use thresholds with QuotPrecision
-    ArithShare a_threshold = constant(acirc,
-        static_cast<uint32_t>(cfg.threshold * (1 << QuotPrecisionBits)), BitLen);
-    ArithShare a_tthreshold = constant(acirc,
-        static_cast<uint32_t>(cfg.tthreshold * (1 << QuotPrecisionBits)), BitLen);
-
-    ArithShare threshold_weight = sum_weights * a_threshold;
-    ArithShare tthreshold_weight = sum_weights * a_tthreshold;
-#ifdef DEBUG_SEL_CIRCUIT
-    print_share(a_threshold, "a_threshold");
-    print_share(a_tthreshold, "a_tthreshold");
-    print_share(threshold_weight, "threshold_weight");
-    print_share(tthreshold_weight, "tthreshold_weight");
-#endif
-    threshold_weight = threshold_weight.repeat(nvals);
-    tthreshold_weight = tthreshold_weight.repeat(nvals);
-    struct ret { ArithShare t; ArithShare tt; };
-    return ret {threshold_weight, tthreshold_weight};
-  }
-  */
 
   BoolShare best_group_weight_hw(const IndexSet& group_set) {
     vector<size_t> group{begin(group_set), end(group_set)};
