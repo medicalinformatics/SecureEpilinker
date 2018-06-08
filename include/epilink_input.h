@@ -35,6 +35,7 @@ using v_weight_type = std::vector<weight_type>;
 using bitmask_unit = uint8_t;
 using bitmask_type = std::vector<bitmask_unit>;
 using v_bitmask_type = std::vector<bitmask_type>;
+// type for storing hamming weights - usually must hold 9 bit (>log2(501))
 using hw_type = uint16_t;
 using v_hw_type = std::vector<hw_type>;
 // binary comparison fields
@@ -60,7 +61,7 @@ struct EpilinkConfig {
   double tthreshold; // threshold for tentative match
 
   // calculated fields for faster access
-  const size_t nhw_fields, nbin_fields;
+  const size_t nhw_fields, nbin_fields, nfields;
   const double max_weight;
 
   // must come after max_weight because of initializer list
