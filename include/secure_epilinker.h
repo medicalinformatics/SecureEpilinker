@@ -59,6 +59,9 @@ public:
    */
   uint32_t run_as_client(const EpilinkClientInput& input);
   uint32_t run_as_server(const EpilinkServerInput& input);
+#ifdef DEBUG_SEL_CIRCUIT
+  uint32_t run_as_both(const EpilinkClientInput& in_client, const EpilinkServerInput& in_server);
+#endif
 
 private:
   ABYParty party;
