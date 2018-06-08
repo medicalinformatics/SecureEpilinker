@@ -337,6 +337,8 @@ public:
     BoolShare match = const_w_threshold < sum_field_weights;
     BoolShare tmatch = const_w_tthreshold < sum_field_weights;
 #ifdef DEBUG_SEL_CIRCUIT
+    print_share(sum_field_weights, "best score");
+    print_share(max_idx, "index of best score");
     print_share(match, "match?");
     print_share(tmatch, "tentative match?");
 #endif
