@@ -55,11 +55,12 @@ struct EpilinkConfig {
   const uint32_t size_hw;
 
   // thresholds
-  double threshold; // threshold for definitive match
-  double tthreshold; // threshold for tentative match
+  const double threshold; // threshold for definitive match
+  const double tthreshold; // threshold for tentative match
 
   // calculated fields for faster access
-  const size_t nhw_fields, nbin_fields, nfields;
+  const size_t nhw_fields, nbin_fields, nfields; // field counters
+  size_t dice_prec, weight_prec; // bit precisions
   const double max_weight;
 
   // must come after max_weight because of initializer list
@@ -71,6 +72,12 @@ struct EpilinkConfig {
       std::vector<IndexSet> bin_exchange_groups,
       uint32_t size_bitmask, double threshold, double tthreshold);
   ~EpilinkConfig() = default;
+
+  /**
+   * Manually set bit precisions for dice-coefficients and weight fields
+   * Sum of both must be smaller than (BitLen - ceil_log2(nfields))
+   */
+  void set_precisions(size_t dice_prec_, size_t weight_prec_);
 };
 
 struct EpilinkClientInput {
@@ -114,13 +121,13 @@ std::vector<std::vector<CircUnit>> hw(const std::vector<std::vector<Bitmask>>&);
 
 /*
  * Rescales the weights so that the maximum weight is the maximum element
- * of CircUnit, i.e., 0xff...
+ * of given precision bits, i.e., 0xff...
  * This should lead to the best possible precision during calculation.
  */
 std::vector<CircUnit> rescale_weights(const std::vector<Weight>& weights,
-    Weight max_weight = 0);
+    size_t prec, Weight max_weight = 0);
 
-CircUnit rescale_weight(Weight weight, Weight max_weight);
+CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight);
 
 // random data generator
 // TODO adopt new API
