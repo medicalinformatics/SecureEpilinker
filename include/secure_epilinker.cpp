@@ -444,7 +444,7 @@ private:
   }
   */
 
-  BoolShare best_group_weight_hw(const v_idx& group_set) {
+  BoolShare best_group_weight_hw(const IndexSet& group_set) {
     vector<size_t> group{begin(group_set), end(group_set)};
     // copy group to store permutations
     vector<size_t> groupPerm{group.begin(), group.end()};
