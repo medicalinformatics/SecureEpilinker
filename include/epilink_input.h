@@ -38,6 +38,7 @@ using VBitmask = std::vector<Bitmask>;
 // Circuit unit
 using CircUnit = uint32_t;
 using VCircUnit = std::vector<CircUnit>;
+constexpr size_t BitLen = sizeof(CircUnit)*8;
 
 struct EpilinkConfig {
   // vector of weights

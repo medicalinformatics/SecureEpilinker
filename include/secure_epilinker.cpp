@@ -30,7 +30,6 @@
 using namespace std;
 using fmt::format;
 
-constexpr uint32_t BitLen{32};
 constexpr size_t QuotPrecisionBits{6};
 
 namespace sel {
