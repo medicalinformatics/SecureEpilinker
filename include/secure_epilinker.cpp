@@ -92,24 +92,23 @@ public:
       // bitmask records are saved as vector<uint8_t>, so need to access raw data
       check_vector_size(input.hw_record[i], cfg.bytes_bitmask, "rec bitmask byte vector");
       hw_client[i] = BoolShare(bcirc,
-          repeat_vec(input.hw_record[i], input.nvals).data(),
-          cfg.size_bitmask, CLIENT, input.nvals);
+          repeat_vec(input.hw_record[i], nvals).data(),
+          cfg.size_bitmask, CLIENT, nvals);
 
-      vector<hw_type> hw_rec_rep(input.nvals, hw(input.hw_record[i]));
       hw_client_hw[i] = BoolShare(bcirc,
-          hw_rec_rep.data(),
-          cfg.size_hw, CLIENT, input.nvals);
+          vector<hw_type>(nvals, hw(input.hw_record[i])).data(),
+          cfg.size_hw, CLIENT, nvals);
 
-      auto hw_client_empty_rep = repeat_bit(input.hw_rec_empty[i], input.nvals);
+      // need to convert bool into uint8_t array
       hw_client_empty[i] = BoolShare(bcirc,
-          hw_client_empty_rep.data(),
-          1, CLIENT, input.nvals);
+          vector<uint8_t>(nvals, input.hw_rec_empty[i]).data(),
+          1, CLIENT, nvals);
 
-      hw_server[i] = BoolShare(bcirc, cfg.size_bitmask, input.nvals); //dummy
+      hw_server[i] = BoolShare(bcirc, cfg.size_bitmask, nvals); //dummy
 
-      hw_server_hw[i] = BoolShare(bcirc, cfg.size_hw, input.nvals); //dummy
+      hw_server_hw[i] = BoolShare(bcirc, cfg.size_hw, nvals); //dummy
 
-      hw_server_empty[i] = BoolShare(bcirc, 1, input.nvals); // dummy
+      hw_server_empty[i] = BoolShare(bcirc, 1, nvals); // dummy
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(hw_client[i], format("hw_client[{}]", i));
       print_share(hw_client_hw[i], format("hw_client_hw[{}]", i));
@@ -120,19 +119,17 @@ public:
 #endif
     }
     for (size_t i = 0; i != cfg.nbin_fields; ++i) {
-      vector<bin_type> bin_rec_rep(input.nvals, input.bin_record[i]);
       bin_client[i] = BoolShare(bcirc,
-          bin_rec_rep.data(),
-          BitLen, CLIENT, input.nvals);
+          vector<bin_type>(nvals, input.bin_record[i]).data(),
+          BitLen, CLIENT, nvals);
 
-      auto bin_rec_empty_rep = repeat_bit(input.bin_rec_empty[i], input.nvals);
       bin_client_empty[i] = BoolShare(bcirc,
-        bin_rec_empty_rep.data(),
-        1, CLIENT, input.nvals);
+          vector<uint8_t>(nvals, input.bin_rec_empty[i]).data(),
+          1, CLIENT, nvals);
 
-      bin_server[i] = BoolShare(bcirc, BitLen, input.nvals); //dummy
+      bin_server[i] = BoolShare(bcirc, BitLen, nvals); //dummy
 
-      bin_server_empty[i] = BoolShare(bcirc, 1, input.nvals); // dummy
+      bin_server_empty[i] = BoolShare(bcirc, 1, nvals); // dummy
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(bin_client[i], format("bin_client[{}]", i));
       print_share(bin_client_empty[i], format("bin_client_empty[{}]", i));
@@ -148,23 +145,27 @@ public:
     // First create the server and input shares, which differ for client and
     // server run. Then pass to the joint routine.
     // concatenated hw input garbage - needs to be in scope until circuit has executed
-    vector<bitmask_type> hw_database_cc(cfg.nhw_fields);
-    vector<v_hw_type> hw_database_hw(cfg.nhw_fields);
     for (size_t i = 0; i != cfg.nhw_fields; ++i) {
-      hw_client[i] = BoolShare(bcirc, cfg.size_bitmask, input.nvals); //dummy
+      hw_client[i] = BoolShare(bcirc, cfg.size_bitmask, nvals); //dummy
 
-      hw_client_hw[i] = BoolShare(bcirc, cfg.size_hw, input.nvals); //dummy
+      hw_client_hw[i] = BoolShare(bcirc, cfg.size_hw, nvals); //dummy
 
-      hw_client_empty[i] = BoolShare(bcirc, 1, input.nvals); // dummy
+      hw_client_empty[i] = BoolShare(bcirc, 1, nvals); // dummy
 
       check_vectors_size(input.hw_database[i], cfg.bytes_bitmask, " db bitmask byte vectors");
-      hw_database_cc[i] = concat_vec(input.hw_database[i]);
-      hw_server[i] = BoolShare(bcirc, hw_database_cc[i].data(), cfg.size_bitmask, SERVER, input.nvals);
+      hw_server[i] = BoolShare(bcirc,
+          concat_vec(input.hw_database[i]).data(),
+          cfg.size_bitmask, SERVER, nvals);
 
-      hw_database_hw[i] = hw(input.hw_database[i]);
-      hw_server_hw[i] = BoolShare(bcirc, hw_database_hw[i].data(), cfg.size_hw, SERVER, input.nvals);
+      hw_server_hw[i] = BoolShare(bcirc,
+          hw(input.hw_database[i]).data(),
+          cfg.size_hw, SERVER, nvals);
+
+      // need to convert bool array into uint8_t array
       hw_server_empty[i] = BoolShare(bcirc,
-         vector_bool_to_bitmask(input.hw_db_empty[i]).data(), 1, SERVER, input.nvals);
+         vector<uint8_t>(input.hw_db_empty[i].cbegin(),
+           input.hw_db_empty[i].cend()).data(),
+         1, SERVER, nvals);
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(hw_client[i], format("hw_client[{}]", i));
       print_share(hw_client_hw[i], format("hw_client_hw[{}]", i));
@@ -175,16 +176,18 @@ public:
 #endif
     }
     for (size_t i = 0; i != cfg.nbin_fields; ++i) {
-      bin_client[i] = BoolShare(bcirc, BitLen, input.nvals); //dummy
+      bin_client[i] = BoolShare(bcirc, BitLen, nvals); //dummy
 
-      bin_client_empty[i] = BoolShare(bcirc, 1, input.nvals); // dummy
+      bin_client_empty[i] = BoolShare(bcirc, 1, nvals); // dummy
 
       bin_server[i] = BoolShare(bcirc,
           const_cast<bin_type*>(input.bin_database[i].data()),
-          BitLen, SERVER, input.nvals);
+          BitLen, SERVER, nvals);
 
       bin_server_empty[i] = BoolShare(bcirc,
-          vector_bool_to_bitmask(input.bin_db_empty[i]).data(), 1, SERVER, input.nvals);
+         vector<uint8_t>(input.bin_db_empty[i].cbegin(),
+           input.bin_db_empty[i].cend()).data(),
+          1, SERVER, nvals);
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(bin_client[i], format("bin_client[{}]", i));
       print_share(bin_client_empty[i], format("bin_client_empty[{}]", i));
@@ -204,36 +207,36 @@ public:
     // First create the client and input shares, which differ for client and
     // server run. Then pass to the joint routine.
     // concatenated hw input garbage - needs to be in scope until circuit has executed
-    vector<bitmask_type> hw_database_cc(cfg.nhw_fields);
-    vector<v_hw_type> hw_database_hw(cfg.nhw_fields);
     for (size_t i = 0; i != cfg.nhw_fields; ++i) {
       // bitmask records are saved as vector<uint8_t>, so need to access raw data
       check_vector_size(in_client.hw_record[i], cfg.bytes_bitmask, "rec bitmask byte vector");
       hw_client[i] = BoolShare(bcirc,
-          repeat_vec(in_client.hw_record[i], in_client.nvals).data(),
-          cfg.size_bitmask, CLIENT, in_client.nvals);
+          repeat_vec(in_client.hw_record[i], nvals).data(),
+          cfg.size_bitmask, CLIENT, nvals);
 
-      vector<hw_type> hw_rec_rep(in_client.nvals, hw(in_client.hw_record[i]));
       hw_client_hw[i] = BoolShare(bcirc,
-          hw_rec_rep.data(),
-          cfg.size_hw, CLIENT, in_client.nvals);
+          vector<hw_type>(nvals, hw(in_client.hw_record[i])).data(),
+          cfg.size_hw, CLIENT, nvals);
 
-      auto hw_client_empty_rep = repeat_bit(in_client.hw_rec_empty[i], in_client.nvals);
-      cout << "hw_client_empty: " << hex << hw_client_empty_rep << endl;
+      // need to convert bool into uint8_t array
       hw_client_empty[i] = BoolShare(bcirc,
-          hw_client_empty_rep.data(),
-          1, CLIENT, in_client.nvals);
+          vector<uint8_t>(nvals, in_client.hw_rec_empty[i]).data(),
+          1, CLIENT, nvals);
 
       check_vectors_size(in_server.hw_database[i], cfg.bytes_bitmask, " db bitmask byte vectors");
-      hw_database_cc[i] = concat_vec(in_server.hw_database[i]);
-      hw_server[i] = BoolShare(bcirc, hw_database_cc[i].data(), cfg.size_bitmask, SERVER, in_server.nvals);
+      hw_server[i] = BoolShare(bcirc,
+          concat_vec(in_server.hw_database[i]).data(),
+          cfg.size_bitmask, SERVER, nvals);
 
-      hw_database_hw[i] = hw(in_server.hw_database[i]);
-      hw_server_hw[i] = BoolShare(bcirc, hw_database_hw[i].data(), cfg.size_hw, SERVER, in_server.nvals);
-      auto hw_db_empty_bm = vector_bool_to_bitmask(in_server.hw_db_empty[i]);
-      cout << "hw_server_empty: " << hw_db_empty_bm << endl;
+      hw_server_hw[i] = BoolShare(bcirc,
+          hw(in_server.hw_database[i]).data(),
+          cfg.size_hw, SERVER, nvals);
+
+      // need to convert bool array into uint8_t array
       hw_server_empty[i] = BoolShare(bcirc,
-         hw_db_empty_bm.data(), 1, SERVER, in_server.nvals);
+         vector<uint8_t>(in_server.hw_db_empty[i].cbegin(),
+           in_server.hw_db_empty[i].cend()).data(),
+         1, SERVER, nvals);
 
       print_share(hw_client[i], format("hw_client[{}]", i));
       print_share(hw_client_hw[i], format("hw_client_hw[{}]", i));
@@ -244,25 +247,22 @@ public:
     }
 
     for (size_t i = 0; i != cfg.nbin_fields; ++i) {
-      vector<bin_type> bin_rec_rep(in_client.nvals, in_client.bin_record[i]);
       bin_client[i] = BoolShare(bcirc,
-          bin_rec_rep.data(),
-          BitLen, CLIENT, in_client.nvals);
+          vector<bin_type>(nvals, in_client.bin_record[i]).data(),
+          BitLen, CLIENT, nvals);
 
-      auto bin_rec_empty_rep = repeat_bit(in_client.bin_rec_empty[i], in_client.nvals);
-      cout << "bin_client_empty: " << bin_rec_empty_rep << endl;
       bin_client_empty[i] = BoolShare(bcirc,
-        bin_rec_empty_rep.data(),
-        1, CLIENT, in_client.nvals);
+          vector<uint8_t>(nvals, in_client.bin_rec_empty[i]).data(),
+          1, CLIENT, nvals);
 
       bin_server[i] = BoolShare(bcirc,
           const_cast<bin_type*>(in_server.bin_database[i].data()),
-          BitLen, SERVER, in_server.nvals);
+          BitLen, SERVER, nvals);
 
-      auto bin_db_empty_bm = vector_bool_to_bitmask(in_server.bin_db_empty[i]);
-      cout << "bin_server_empty" << bin_db_empty_bm << endl;
       bin_server_empty[i] = BoolShare(bcirc,
-          bin_db_empty_bm.data(), 1, SERVER, in_server.nvals);
+         vector<uint8_t>(in_server.bin_db_empty[i].cbegin(),
+           in_server.bin_db_empty[i].cend()).data(),
+          1, SERVER, nvals);
 
       print_share(bin_client[i], format("bin_client[{}]", i));
       print_share(bin_client_empty[i], format("bin_client_empty[{}]", i));
