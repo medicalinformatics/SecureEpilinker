@@ -70,4 +70,38 @@ std::ostream& operator<< (std::ostream& out, const std::vector<uint8_t>& v) {
     return out;
 }
 
+std::string print_aby_config(const SecureEpilinker::ABYConfig& conf) {
+  return ((conf.role == SERVER) ? "Server Config\n"s : "Client Config:\n"s) +
+    "Sharing: "s + ((conf.bool_sharing == S_YAO) ? "Yao\n"s : "GMW\n"s ) +
+    "Remote Host: "s + conf.remote_host + ":"s + to_string(conf.port) + "\n"s +
+    "Threads: "s + to_string(conf.nthreads) + '\n';
+
+}
+
+string print_epilink_config(const EpilinkConfig& conf){
+  string returnstring{"Epilink Configuration\n"};
+  returnstring += "Bitmask size (in Bit):\t"s + to_string(conf.size_bitmask) + '\n';
+  returnstring += "Threshold match: "s + to_string(conf.threshold) + '\n';
+  returnstring += "Threshold tentatice match: " + to_string(conf.tthreshold) + '\n';
+  returnstring += "Number of bitmask field weights: " + to_string(conf.hw_weights.size()) + '\n';
+  returnstring += "Number of binary field weights: " + to_string(conf.bin_weights.size()) + '\n';
+  return returnstring;
+}
+string print_epilink_input(const EpilinkServerInput& in){
+  return "Server Input printing not ready yet!\n";
+}
+string print_epilink_input(const EpilinkClientInput& in){
+  string returnstring{"Client Input\n-----\nBitmask Records:\n-----\n"};
+  for (size_t i = 0; i != in.hw_record.size(); ++i){
+    for(const auto& byte : in.hw_record[i]) {
+      returnstring += to_string(byte)+' ';
+    }
+    returnstring += "Empty: "s+(in.hw_rec_empty[i]? "Yes\n" : "No\n");
+  }
+  returnstring += "-----\nBinary Records\n-----\n";
+  for (size_t i = 0; i != in.bin_record.size(); ++i){
+    returnstring += to_string(in.bin_record[i])+" Empty: "+(in.bin_rec_empty[i]? "Yes\n" : "No\n");
+  }
+  return returnstring + "Number of database records: " + to_string(in.nvals) +'\n';
+}
 } // namespace sel
