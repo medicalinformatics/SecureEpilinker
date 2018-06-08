@@ -164,7 +164,7 @@ public:
       hw_database_hw[i] = hw(input.hw_database[i]);
       hw_server_hw[i] = BoolShare(bcirc, hw_database_hw[i].data(), cfg.size_hw, SERVER, input.nvals);
       hw_server_empty[i] = BoolShare(bcirc,
-         vector_bool_to_bitmask(input.hw_db_empty[i]).data(), 1, CLIENT, input.nvals);
+         vector_bool_to_bitmask(input.hw_db_empty[i]).data(), 1, SERVER, input.nvals);
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(hw_client[i], format("hw_client[{}]", i));
       print_share(hw_client_hw[i], format("hw_client_hw[{}]", i));
@@ -184,7 +184,7 @@ public:
           BitLen, SERVER, input.nvals);
 
       bin_server_empty[i] = BoolShare(bcirc,
-          vector_bool_to_bitmask(input.bin_db_empty[i]).data(), 1, CLIENT, input.nvals);
+          vector_bool_to_bitmask(input.bin_db_empty[i]).data(), 1, SERVER, input.nvals);
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(bin_client[i], format("bin_client[{}]", i));
       print_share(bin_client_empty[i], format("bin_client_empty[{}]", i));
