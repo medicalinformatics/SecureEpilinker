@@ -1,0 +1,4 @@
+--exclude=@.gitignore
+--exclude=build
+--exclude=extern
+--exclude=cmake
