@@ -317,7 +317,8 @@ public:
     // best_group_weight_*() and weight_compare_bin() return BoolShares and we
     // don't need arithmetic representation afterwards, so we sum those in the
     // boolean circuit.
-    b_field_weights.emplace_back(to_bool(sum(a_field_weights)));
+    if (!a_field_weights.empty())
+      b_field_weights.emplace_back(to_bool(sum(a_field_weights)));
     BoolShare sum_field_weights{sum(b_field_weights)};
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(sum_field_weights, "sum_field_weights");
