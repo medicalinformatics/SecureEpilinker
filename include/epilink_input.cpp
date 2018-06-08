@@ -26,6 +26,7 @@
 #include "util.h"
 
 using namespace std;
+using fmt::print;
 
 namespace sel {
 
@@ -39,13 +40,34 @@ EpilinkConfig::EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
   threshold{threshold}, tthreshold{tthreshold},
   nhw_fields{hw_weights.size()}, nbin_fields{bin_weights.size()},
   nfields{nhw_fields + nbin_fields},
+  // evenly distribute precision bits between weight and dice-coeff
+  //dice_prec{(BitLen - ceil_log2(nfields))/2}, // TODO better this one and
+  //custom integer division
+  dice_prec{16 - 1 - ceil_log2(size_bitmask + 1)},
+  //weight_prec{ceil_divide((BitLen - ceil_log2(nfields)), 2)}, // TODO ^^^
+  weight_prec{BitLen - ceil_log2(nfields) - dice_prec},
   max_weight{max(
       nhw_fields ? *max_element(hw_weights.cbegin(), hw_weights.cend()) : 0.0,
       nbin_fields ? *max_element(bin_weights.cbegin(), bin_weights.cend()) :0.0
       )},
-  hw_weights_r{rescale_weights(hw_weights, max_weight)},
-  bin_weights_r{rescale_weights(bin_weights, max_weight)}
-  {}
+  hw_weights_r{rescale_weights(hw_weights, weight_prec, max_weight)},
+  bin_weights_r{rescale_weights(bin_weights, weight_prec, max_weight)}
+  {
+    // We sum up nfields products of dice_prec+weight_prec values, so they must
+    // fit into the total BitLen
+    assert (dice_prec + weight_prec + ceil_log2(nfields) == BitLen);
+#ifdef DEBUG_SEL_INPUT
+    print("BitLen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
+        BitLen, nfields, dice_prec, weight_prec);
+#endif
+  }
+
+void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
+  assert (dice_prec_ + weight_prec_ + ceil_log2(nfields) <= BitLen);
+
+  dice_prec = dice_prec_;
+  weight_prec = weight_prec_;
+}
 
 EpilinkServerInput::EpilinkServerInput(
   vector<VBitmask> hw_database, vector<VCircUnit> bin_database,
@@ -153,16 +175,15 @@ vector<vector<CircUnit>> hw(const vector<vector<Bitmask>>& v_bm) {
 
 // rescale all weights to an integer, max weight being b111...
 vector<CircUnit> rescale_weights(const vector<Weight>& weights,
-    Weight max_weight) {
+    size_t prec, Weight max_weight) {
   if (!max_weight)
     max_weight = *max_element(weights.cbegin(), weights.cend());
-  constexpr CircUnit max_element = numeric_limits<CircUnit>::max();
 
   // rescale weights so that max_weight is max_element (b111...)
   vector<CircUnit> ret(weights.size());
   transform(weights.cbegin(), weights.cend(), ret.begin(),
-      [&max_weight] (double w) ->
-      CircUnit { return (w/max_weight) * max_element; });
+      [&max_weight, &prec] (double w) ->
+      CircUnit { return rescale_weight(w, prec, max_weight); });
 
 #if DEBUG_SEL_INPUT
   cout << "Transformed weights: ";
@@ -174,9 +195,9 @@ vector<CircUnit> rescale_weights(const vector<Weight>& weights,
   return ret;
 }
 
-CircUnit rescale_weight(Weight weight, Weight max_weight) {
-  constexpr CircUnit max_element = numeric_limits<CircUnit>::max();
-  return (weight/max_weight) * max_element;
+CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight) {
+  CircUnit max_el = (1ULL << prec) - 1ULL;
+  return (weight/max_weight) * max_el;
 }
 
 } // namespace sel

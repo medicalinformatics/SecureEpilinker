@@ -34,11 +34,11 @@ namespace sel {
 
 /***************** Circuit gadgets *******************/
 BoolShare compare_hw(const BoolShare& x, const BoolShare& y,
-    const BoolShare& hw_x, const BoolShare& hw_y) {
-  // calc HW of AND and bit-shift to multiply with 2 and get QuotPrecisionBits precision
+    const BoolShare& hw_x, const BoolShare& hw_y, size_t prec) {
+  // calc HW of AND and bit-shift to multiply with 2 and get dice precision
   // for integer-divivision
   BoolShare hw_and = hammingweight(x & y);
-  BoolShare hw_and_shifted = hw_and << (QuotPrecisionBits + 1);
+  BoolShare hw_and_shifted = hw_and << (prec + 1);
 #ifdef DEBUG_SEL_CIRCUIT
   print_share(hw_and, "hw_and");
   print_share(hw_and_shifted, "hw_and_shifted");
@@ -384,17 +384,17 @@ private:
     for (CircUnit i = 0; i != nvals; ++i) {
       // TODO Make true SIMD constants available in ABY and implement offline
       // AND with constant
-      numbers.emplace_back(constant(bcirc, i, BitLen));
+      numbers.emplace_back(constant(bcirc, i, ceil_log2(nvals)));
     }
     const_idx = vcombine(numbers);
     assert(const_idx.get_nvals() == nvals);
 
-    uint64_t W{0};
+    CircUnit W{0};
     for (auto& w : cfg.hw_weights_r) W += w;
     for (auto& w : cfg.bin_weights_r) W += w;
 
-    uint64_t T = cfg.threshold * (1 << QuotPrecisionBits);
-    uint64_t Tt = cfg.tthreshold * (1 << QuotPrecisionBits);
+    CircUnit T = cfg.threshold * (1 << cfg.dice_prec);
+    CircUnit Tt = cfg.tthreshold * (1 << cfg.dice_prec);
 #ifdef DEBUG_SEL_INPUT
     cout << "W: " << hex << W << " T: " << hex << T << " Tt: " << hex << Tt << endl;
 #endif
@@ -453,7 +453,7 @@ private:
    */
   ArithShare weight_compare_hw(size_t ileft, size_t iright) {
     BoolShare comp = compare_hw(hw_client[ileft], hw_server[iright],
-        hw_client_hw[ileft], hw_server_hw[iright]);
+        hw_client_hw[ileft], hw_server_hw[iright], cfg.dice_prec);
 
     // TODO or first convert to Arith, then multiply with 1/0
     comp = (hw_client_empty[ileft] | hw_server_empty[iright]).mux(const_zero, comp);
@@ -465,7 +465,8 @@ private:
     // If indices match, use precomputed rescaled weights. Otherwise take
     // arithmetic average of both weights
     CircUnit weight_r = (ileft == iright) ? cfg.hw_weights_r[ileft] :
-      rescale_weight((cfg.hw_weights[ileft] + cfg.hw_weights[iright])/2, cfg.max_weight);
+      rescale_weight((cfg.hw_weights[ileft] + cfg.hw_weights[iright])/2,
+          cfg.weight_prec, cfg.max_weight);
 
     ArithShare a_weight{constant_simd(acirc, weight_r, BitLen, nvals)};
 
@@ -496,9 +497,10 @@ private:
     // If indices match, use precomputed rescaled weights. Otherwise take
     // arithmetic average of both weights
     CircUnit weight_r = (ileft == iright) ? cfg.bin_weights_r[ileft] :
-      rescale_weight((cfg.bin_weights[ileft] + cfg.bin_weights[iright])/2, cfg.max_weight);
+      rescale_weight((cfg.bin_weights[ileft] + cfg.bin_weights[iright])/2,
+          cfg.weight_prec, cfg.max_weight);
 
-    weight_r <<= QuotPrecisionBits; // same shift as in HW field-weights
+    weight_r <<= cfg.dice_prec; // same shift as in HW field-weights
 
     BoolShare b_weight{constant_simd(bcirc, weight_r, BitLen, nvals)};
     BoolShare b_field_weight{comp.mux(b_weight, const_zero)};
