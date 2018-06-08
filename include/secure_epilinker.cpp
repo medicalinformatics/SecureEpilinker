@@ -195,6 +195,85 @@ public:
     is_input_set = true;
   }
 
+#ifdef DEBUG_SEL_CIRCUIT
+  /**
+   * Debugging test_both_inputs() to test exactly mirrored inputs.
+   */
+  void set_both_inputs(const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
+    set_constants(in_client.nvals);
+    // First create the client and input shares, which differ for client and
+    // server run. Then pass to the joint routine.
+    // concatenated hw input garbage - needs to be in scope until circuit has executed
+    vector<bitmask_type> hw_database_cc(cfg.nhw_fields);
+    vector<v_hw_type> hw_database_hw(cfg.nhw_fields);
+    for (size_t i = 0; i != cfg.nhw_fields; ++i) {
+      // bitmask records are saved as vector<uint8_t>, so need to access raw data
+      check_vector_size(in_client.hw_record[i], cfg.bytes_bitmask, "rec bitmask byte vector");
+      hw_client[i] = BoolShare(bcirc,
+          repeat_vec(in_client.hw_record[i], in_client.nvals).data(),
+          cfg.size_bitmask, CLIENT, in_client.nvals);
+
+      vector<hw_type> hw_rec_rep(in_client.nvals, hw(in_client.hw_record[i]));
+      hw_client_hw[i] = BoolShare(bcirc,
+          hw_rec_rep.data(),
+          cfg.size_hw, CLIENT, in_client.nvals);
+
+      auto hw_client_empty_rep = repeat_bit(in_client.hw_rec_empty[i], in_client.nvals);
+      cout << "hw_client_empty: " << hex << hw_client_empty_rep << endl;
+      hw_client_empty[i] = BoolShare(bcirc,
+          hw_client_empty_rep.data(),
+          1, CLIENT, in_client.nvals);
+
+      check_vectors_size(in_server.hw_database[i], cfg.bytes_bitmask, " db bitmask byte vectors");
+      hw_database_cc[i] = concat_vec(in_server.hw_database[i]);
+      hw_server[i] = BoolShare(bcirc, hw_database_cc[i].data(), cfg.size_bitmask, SERVER, in_server.nvals);
+
+      hw_database_hw[i] = hw(in_server.hw_database[i]);
+      hw_server_hw[i] = BoolShare(bcirc, hw_database_hw[i].data(), cfg.size_hw, SERVER, in_server.nvals);
+      auto hw_db_empty_bm = vector_bool_to_bitmask(in_server.hw_db_empty[i]);
+      cout << "hw_server_empty: " << hw_db_empty_bm << endl;
+      hw_server_empty[i] = BoolShare(bcirc,
+         hw_db_empty_bm.data(), 1, SERVER, in_server.nvals);
+
+      print_share(hw_client[i], format("hw_client[{}]", i));
+      print_share(hw_client_hw[i], format("hw_client_hw[{}]", i));
+      print_share(hw_client_empty[i], format("hw_client_empty[{}]", i));
+      print_share(hw_server[i], format("hw_server[{}]", i));
+      print_share(hw_server_hw[i], format("hw_server_hw[{}]", i));
+      print_share(hw_server_empty[i], format("hw_server_empty[{}]", i));
+    }
+
+    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
+      vector<bin_type> bin_rec_rep(in_client.nvals, in_client.bin_record[i]);
+      bin_client[i] = BoolShare(bcirc,
+          bin_rec_rep.data(),
+          BitLen, CLIENT, in_client.nvals);
+
+      auto bin_rec_empty_rep = repeat_bit(in_client.bin_rec_empty[i], in_client.nvals);
+      cout << "bin_client_empty: " << bin_rec_empty_rep << endl;
+      bin_client_empty[i] = BoolShare(bcirc,
+        bin_rec_empty_rep.data(),
+        1, CLIENT, in_client.nvals);
+
+      bin_server[i] = BoolShare(bcirc,
+          const_cast<bin_type*>(in_server.bin_database[i].data()),
+          BitLen, SERVER, in_server.nvals);
+
+      auto bin_db_empty_bm = vector_bool_to_bitmask(in_server.bin_db_empty[i]);
+      cout << "bin_server_empty" << bin_db_empty_bm << endl;
+      bin_server_empty[i] = BoolShare(bcirc,
+          bin_db_empty_bm.data(), 1, SERVER, in_server.nvals);
+
+      print_share(bin_client[i], format("bin_client[{}]", i));
+      print_share(bin_client_empty[i], format("bin_client_empty[{}]", i));
+      print_share(bin_server[i], format("bin_server[{}]", i));
+      print_share(bin_server_empty[i], format("bin_server_empty[{}]", i));
+    }
+
+    is_input_set = true;
+  }
+#endif
+
   struct result_shares {
     OutShare max_idx, match, tmatch;
   };
@@ -510,6 +589,17 @@ uint32_t SecureEpilinker::run_as_server(const EpilinkServerInput& input) {
   selc->set_server_input(input);
   return run();
 }
+
+#ifdef DEBUG_SEL_CIRCUIT
+uint32_t SecureEpilinker::run_as_both(const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
+  if (!is_setup) {
+    cerr << "Warning: Implicitly running setup phase." << endl;
+    run_setup_phase();
+  }
+  selc->set_both_inputs(in_client, in_server);
+  return run();
+}
+#endif
 
 uint32_t SecureEpilinker::run() {
   SELCircuit::result_shares res = selc->build_circuit();
