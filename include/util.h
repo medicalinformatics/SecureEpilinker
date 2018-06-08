@@ -124,7 +124,8 @@ void check_vectors_size(const std::vector<std::vector<T>>& vec,
  */
 template<typename T>
 std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
-    out << "[";
+    std::ios_base::fmtflags outf( out.flags() ); // save cout flags
+    out << "[" << std::hex;
     size_t last = v.size() - 1;
     for(size_t i = 0; i < v.size(); ++i) {
         out << v[i];
@@ -132,8 +133,12 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
             out << ", ";
     }
     out << "]";
+    out.flags(outf); // restore old flags
     return out;
 }
+
+// specialization for uint8_t / unsigned char
+std::ostream& operator<< (std::ostream& out, const std::vector<uint8_t>& v);
 
 // trim from start (in place)
 static inline void ltrim(std::string &s) {

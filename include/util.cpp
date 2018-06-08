@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <iterator>
 #include <functional>
+#include <iomanip>
 
 using namespace std;
 
@@ -48,9 +49,25 @@ std::vector<uint8_t> vector_bool_to_bitmask(const std::vector<bool>& vb) {
 std::vector<uint8_t> repeat_bit(const bool bit, const size_t n) {
   return std::vector<uint8_t>(bitbytes(n), bit ? 0xffu : 0u);
 }
+
 std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> elems;
     split(s, delim, std::back_inserter(elems));
     return elems;
 }
+
+std::ostream& operator<< (std::ostream& out, const std::vector<uint8_t>& v) {
+    std::ios_base::fmtflags outf( out.flags() ); // save cout flags
+    out << "[" << std::hex;
+    size_t last = v.size() - 1;
+    for(size_t i = 0; i < v.size(); ++i) {
+        out << setw(2) << setfill('0') << static_cast<int>(v[i]);
+        if (i != last)
+            out << ", ";
+    }
+    out << "]";
+    out.flags(outf); // restore old flags
+    return out;
+}
+
 } // namespace sel
