@@ -38,6 +38,7 @@ EpilinkConfig::EpilinkConfig(v_weight_type hw_weights, v_weight_type bin_weights
   size_hw{ceil_log2(size_bitmask+1)},
   threshold{threshold}, tthreshold{tthreshold},
   nhw_fields{hw_weights.size()}, nbin_fields{bin_weights.size()},
+  nfields{nhw_fields + nbin_fields},
   max_weight{max(
       nhw_fields ? *max_element(hw_weights.cbegin(), hw_weights.cend()) : 0.0,
       nbin_fields ? *max_element(bin_weights.cbegin(), bin_weights.cend()) :0.0
