@@ -30,8 +30,6 @@
 using namespace std;
 using fmt::format;
 
-constexpr size_t QuotPrecisionBits{6};
-
 namespace sel {
 
 /***************** Circuit gadgets *******************/
