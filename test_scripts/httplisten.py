@@ -7,7 +7,7 @@ from optparse import OptionParser
 
 class RequestHandler(BaseHTTPRequestHandler):
     
-    def do_GET(self):
+    def do_POST(self):
         
         request_path = self.path
         
@@ -19,7 +19,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Set-Cookie", "foo=bar")
         
-    def do_POST(self):
+    def do_GET(self):
         
         request_path = self.path
         
