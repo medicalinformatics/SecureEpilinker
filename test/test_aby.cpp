@@ -51,9 +51,12 @@ struct ABYTester {
   void test_conversion() {
     vector<uint32_t> data(nvals, 42);
     BoolShare in(bc, data.data(), bitlen, SERVER, nvals);
+    BoolShare in2(bc, data.data(), bitlen, SERVER, nvals);
     print_share(in, "bool in");
     ArithShare ain = to_arith(in);
+    ArithShare ain2 = to_arith(in2);
     print_share(ain, "arithmetic in");
+    print_share(ain2, "arithmetic in2");
 
     party.ExecCircuit();
   }
