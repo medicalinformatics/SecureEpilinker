@@ -4,10 +4,10 @@
   "sharedkey": "123abc"
 },
 "dataService": {
-  "url": "http://192.168.12.8:8084/Communicator/getAllRecords"
+  "url": "http://localhost:8800/Communicator/getAllRecords"
 },
 "connectionProfile": {
-  "url": "127.0.0.1:1664",
+  "url": "127.0.0.1:1337",
   "authentication": {
     "authType": "apikey",
     "sharedkey": "xkcd123"
