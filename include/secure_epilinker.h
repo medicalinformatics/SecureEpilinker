@@ -35,6 +35,22 @@ public:
     uint32_t nthreads;
   };
 
+  /**
+   * Result of the secure epilink protocol as returend by run_as_*()
+   * Fields hold XOR shares to be assembled by the LinkageService
+   *
+   * If DEBUG_SEL_RESULT is set, fields hold plain text values and the numerator
+   * and denominator of the score.
+   */
+  struct Result {
+    CircUnit index; // XOR share of matching index
+    bool match; // XOR share of match bit
+    bool tmatch; // XOR share of tentative match bit
+#ifdef DEBUG_SEL_RESULT
+    CircUnit score_numerator, score_denominator;
+#endif
+  };
+
   SecureEpilinker(ABYConfig aby_config, EpilinkConfig epi_config);
   ~SecureEpilinker();
 
@@ -57,10 +73,11 @@ public:
    * database size must match on both sides and be smaller than used nvals
    * during build_circuit()
    */
-  uint32_t run_as_client(const EpilinkClientInput& input);
-  uint32_t run_as_server(const EpilinkServerInput& input);
+  Result run_as_client(const EpilinkClientInput& input);
+  Result run_as_server(const EpilinkServerInput& input);
 #ifdef DEBUG_SEL_CIRCUIT
-  uint32_t run_as_both(const EpilinkClientInput& in_client, const EpilinkServerInput& in_server);
+  Result run_as_both(const EpilinkClientInput& in_client,
+      const EpilinkServerInput& in_server);
 #endif
 
 private:
@@ -77,7 +94,7 @@ private:
   bool is_setup{false};
 
   // called by run_as_*() after inputs are set
-  uint32_t run();
+  Result run();
 };
 
 } // namespace sel

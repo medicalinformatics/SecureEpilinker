@@ -272,7 +272,10 @@ public:
 #endif
 
   struct result_shares {
-    OutShare max_idx, match, tmatch;
+    OutShare index, match, tmatch;
+#ifdef DEBUG_SEL_RESULT
+    OutShare score_numerator, score_denominator;
+#endif
   };
   /*
   * Builds the shared component of the circuit after initial input shares of
@@ -341,7 +344,13 @@ public:
     print_share(tmatch, "tentative match?");
 #endif
 
-    return {out(max_idx, ALL), out(match, ALL), out(tmatch, ALL)};
+#ifdef DEBUG_SEL_RESULT
+      //TODO Actually return W, not WT
+    return {out(max_idx, ALL), out(match, ALL), out(tmatch, ALL),
+      out(sum_field_weights, ALL), out(const_w_threshold, ALL)};
+#else
+    return {out_shared(max_idx), out_shared(match), out_shared(tmatch)};
+#endif
   }
 
 private:
@@ -542,7 +551,8 @@ void SecureEpilinker::run_setup_phase() {
   is_setup = true;
 }
 
-uint32_t SecureEpilinker::run_as_client(const EpilinkClientInput& input) {
+SecureEpilinker::Result SecureEpilinker::run_as_client(
+    const EpilinkClientInput& input) {
   if (!is_setup) {
     cerr << "Warning: Implicitly running setup phase." << endl;
     run_setup_phase();
@@ -551,7 +561,8 @@ uint32_t SecureEpilinker::run_as_client(const EpilinkClientInput& input) {
   return run();
 }
 
-uint32_t SecureEpilinker::run_as_server(const EpilinkServerInput& input) {
+SecureEpilinker::Result SecureEpilinker::run_as_server(
+    const EpilinkServerInput& input) {
   if (!is_setup) {
     cerr << "Warning: Implicitly running setup phase." << endl;
     run_setup_phase();
@@ -561,7 +572,8 @@ uint32_t SecureEpilinker::run_as_server(const EpilinkServerInput& input) {
 }
 
 #ifdef DEBUG_SEL_CIRCUIT
-uint32_t SecureEpilinker::run_as_both(const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
+SecureEpilinker::Result SecureEpilinker::run_as_both(
+    const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
   if (!is_setup) {
     cerr << "Warning: Implicitly running setup phase." << endl;
     run_setup_phase();
@@ -571,13 +583,21 @@ uint32_t SecureEpilinker::run_as_both(const EpilinkClientInput& in_client, const
 }
 #endif
 
-uint32_t SecureEpilinker::run() {
+SecureEpilinker::Result SecureEpilinker::run() {
   SELCircuit::result_shares res = selc->build_circuit();
   party.ExecCircuit();
 
   is_setup = false; // need to run new setup phase
 
-  return res.max_idx.get_clear_value<CircUnit>();
+  return {
+    res.index.get_clear_value<CircUnit>(),
+    res.match.get_clear_value<bool>(),
+    res.tmatch.get_clear_value<bool>()
+#ifdef DEBUG_SEL_RESULT
+    ,res.score_denominator.get_clear_value<CircUnit>()
+    ,res.score_numerator.get_clear_value<CircUnit>()
+#endif
+  };
 }
 
 /*

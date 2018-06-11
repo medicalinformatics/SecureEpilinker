@@ -96,7 +96,8 @@ target_link_libraries(sel PRIVATE fmt::fmt-header-only nlohmann_json
 set_property(TARGET sel PROPERTY CXX_STANDARD 17)
 target_compile_options(sel PRIVATE "-Wall" "-Wpedantic" "-Wextra" "-fexceptions")
 #Debug Version
-target_compile_options(sel PRIVATE "-O0" "-ggdb" "-g3")
+target_compile_options(sel PRIVATE "-O0" "-ggdb" "-g3"
+  "-DDEBUG_SEL_RESULT")
 #target_compile_options(sel PRIVATE "-O2" "-s" "-DNDEBUG"
   #"-fsanitize-address-use-after-scope" "-fsanitize=undefined")
 
@@ -124,6 +125,6 @@ target_link_libraries(test_sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
 target_link_libraries(test_sel PRIVATE fmt::fmt-header-only cxxopts)
 set_property(TARGET test_sel PROPERTY CXX_STANDARD 14)
 target_compile_options(test_sel PRIVATE "-O0" "-ggdb" "-g3"
-  "-DDEBUG_SEL_INPUT"  "-DDEBUG_SEL_CIRCUIT")
+  "-DDEBUG_SEL_INPUT"  "-DDEBUG_SEL_CIRCUIT" "-DDEBUG_SEL_RESULT")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
