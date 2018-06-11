@@ -602,8 +602,8 @@ SecureEpilinker::Result SecureEpilinker::run_circuit() {
     res.match.get_clear_value<bool>(),
     res.tmatch.get_clear_value<bool>()
 #ifdef DEBUG_SEL_RESULT
-    ,res.score_denominator.get_clear_value<CircUnit>()
     ,res.score_numerator.get_clear_value<CircUnit>()
+    ,res.score_denominator.get_clear_value<CircUnit>()
 #endif
   };
 }
