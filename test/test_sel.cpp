@@ -5,6 +5,43 @@
 
 using namespace sel;
 using namespace std;
+using Result = SecureEpilinker::Result;
+
+Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
+    uint32_t nvals) {
+  // First test: only one bin field, single byte bitmask
+  EpilinkConfig epi_cfg {
+    {4.0}, {1.0}, // hw/bin weights
+    {}, {}, // hw/bin exchange groups
+    8, 0.9, 0.7 // size_bitmask, (tent.) thresholds
+  };
+
+  EpilinkClientInput in_client {
+    {{0x33}}, {0xdeadbeef}, // hw/bin record
+    {false}, {false}, // hw/bin empty
+    nvals // nvals
+  };
+
+  EpilinkServerInput in_server {
+    {vector<Bitmask>(nvals, {0x33})}, {vector<CircUnit>(nvals, 0xdeadbeef)}, // hw/bin database
+    {vector<bool>(nvals, false)}, {vector<bool>(nvals, false)}, // hw/bin empty
+  };
+
+  SecureEpilinker linker{aby_cfg, epi_cfg};
+
+  linker.build_circuit(nvals);
+  linker.run_setup_phase();
+
+  Result res;
+  if (aby_cfg.role == SERVER) {
+    res = linker.run_as_server(in_server);
+  } else {
+    res = linker.run_as_client(in_client);
+  }
+  linker.reset();
+
+  return res;
+}
 
 int main(int argc, char *argv[])
 {
@@ -28,50 +65,11 @@ int main(int argc, char *argv[])
 
   e_role role = role_server ? SERVER : CLIENT;
 
-  // First test: only one bin field, single byte bitmask
-  EpilinkConfig epi_cfg {
-    //{2.0}, {1.0}, // hw/bin weights
-    {4.0}, {1.0}, // hw/bin weights
-    {}, {}, // hw/bin exchange groups
-    8, 0.9, 0.7 // size_bitmask, (tent.) thresholds
-  };
-
-  //EpilinkClientInput in_client {
-    //{{0x33}}, {0xdeadbeef}, // hw/bin record
-    //{false}, {false}, // hw/bin empty
-    //2 // nvals
-  //};
-  EpilinkClientInput in_client {
-    {{0x33}}, {0xdeadbeef}, // hw/bin record
-    {false}, {false}, // hw/bin empty
-    nvals // nvals
-  };
-
-  EpilinkServerInput in_server {
-    {vector<Bitmask>(nvals, {0x33})}, {vector<CircUnit>(nvals, 0xdeadbeef)}, // hw/bin database
-    {vector<bool>(nvals, false)}, {vector<bool>(nvals, false)}, // hw/bin empty
-  };
-  //EpilinkServerInput in_server {
-    //{ {{0x33}} }, {{0xdeadbeef}}, // hw/bin database
-    //{{false}}, {{false}}, // hw/bin empty
-  //};
-
   SecureEpilinker::ABYConfig aby_cfg {
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  SecureEpilinker linker{aby_cfg, epi_cfg};
-
-  linker.build_circuit(nvals);
-  linker.run_setup_phase();
-
-  if (role == SERVER) {
-    linker.run_as_server(in_server);
-  } else {
-    linker.run_as_client(in_client);
-  }
-
-  //linker.run_as_both(in_client, in_server);
+  auto res = test_simple(aby_cfg, nvals);
 
   return 0;
 }
