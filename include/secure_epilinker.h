@@ -80,6 +80,11 @@ public:
       const EpilinkServerInput& in_server);
 #endif
 
+  /**
+   * Resets the ABY Party and states.
+   */
+  void reset();
+
 private:
   ABYParty party;
   BooleanCircuit* bcirc; // boolean circuit for boolean parts
