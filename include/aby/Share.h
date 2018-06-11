@@ -308,11 +308,11 @@ class OutShare: private Share {
   template<typename T>
     // require T of type uint*_t
   T get_clear_value() {
-    return sh.get()->get_clear_value<T>();
+    return sh->get_clear_value<T>();
   }
 
   void write_clear_value_vec(uint32_t** vec, uint32_t* bitlen, uint32_t* nvals) {
-    return sh.get()->get_clear_value_vec(vec, bitlen, nvals);
+    return sh->get_clear_value_vec(vec, bitlen, nvals);
   }
 
   vector<uint32_t> get_clear_value_vec();
@@ -321,8 +321,16 @@ class OutShare: private Share {
 /******************** Factories ********************/
 /*
  * OutShare factory
+ * Clear value will be learned by dst
  */
 OutShare out(const Share& share, e_role dst);
+
+/*
+ * OutShare factory
+ * Clear value of OutShare will actually hold a share of the underlying value
+ * for each party, for assemblage at a later stage.
+ */
+OutShare out_shared(const Share& share);
 
 /*
  * Debugging PrintValueGate
@@ -340,6 +348,7 @@ BoolShare constant_simd(BooleanCircuit* c, UGATE_T val, uint32_t bitlen, uint32_
 BoolShare constant_simd(ArithmeticCircuit* c, UGATE_T val, uint32_t bitlen, uint32_t nvals);
 
 /******************** Conversions ********************/
+
 BoolShare a2y(BooleanCircuit* ycirc, const ArithShare& s);
 
 ArithShare y2a(ArithmeticCircuit* acirc, BooleanCircuit* bcirc, const BoolShare& s);
