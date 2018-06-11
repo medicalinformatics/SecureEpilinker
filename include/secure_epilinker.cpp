@@ -499,7 +499,7 @@ private:
   BoolShare weight_compare_bin(size_t ileft, size_t iright) {
     BoolShare comp = compare_bin(bin_client[ileft], bin_server[iright]);
 
-    comp = (!bin_client_empty[ileft] & !bin_server_empty[iright] & comp);
+    comp = (~bin_client_empty[ileft] & ~bin_server_empty[iright] & comp);
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(comp, fmt::format("^^^^ BIN Comparison of pair ({},{}) ^^^^", ileft, iright));
 #endif
