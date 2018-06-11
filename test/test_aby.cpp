@@ -26,16 +26,36 @@ struct ABYTester {
   uint32_t nvals;
   ABYParty party;
   BooleanCircuit* bc;
+  BooleanCircuit* cc;
   ArithmeticCircuit* ac;
 
   ABYTester(e_role role, e_sharing sharing, uint32_t nvals, uint32_t bitlen, uint32_t nthreads) :
     role{role}, bitlen{bitlen}, nvals{nvals}, party{role, "127.0.0.1", 5676, LT, bitlen, nthreads},
     bc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[sharing]->GetCircuitBuildRoutine())},
+    cc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[(sharing==S_YAO)?S_BOOL:S_YAO]->GetCircuitBuildRoutine())},
     ac{dynamic_cast<ArithmeticCircuit*>(party.GetSharings()[S_ARITH]->GetCircuitBuildRoutine())}
   {
     cout << "Testing ABY with role: " << get_role_name(role) <<
      " with sharing: " << get_sharing_name(sharing) << " nvals: " << nvals <<
      " bitlen: " << bitlen << endl;
+  }
+
+  // Dynamic converters, dependent on main bool sharing
+  BoolShare to_bool(const ArithShare& s) {
+    return (bc->GetContext() == S_YAO) ? a2y(bc, s) : a2b(bc, cc, s);
+  }
+  ArithShare to_arith(const BoolShare& s) {
+    return (bc->GetContext() == S_YAO) ? y2a(ac, cc, s) : b2a(ac, s);
+  }
+
+  void test_conversion() {
+    vector<uint32_t> data(nvals, 42);
+    BoolShare in(bc, data.data(), bitlen, SERVER, nvals);
+    print_share(in, "bool in");
+    ArithShare ain = to_arith(in);
+    print_share(ain, "arithmetic in");
+
+    party.ExecCircuit();
   }
 
   void test_mult_const() {
@@ -216,7 +236,8 @@ int main(int argc, char *argv[])
   //tester.test_add();
   //tester.test_mult_const();
   //tester.test_hw();
-  tester.test_max_bits();
+  //tester.test_max_bits();
+  tester.test_conversion();
 
   return 0;
 }
