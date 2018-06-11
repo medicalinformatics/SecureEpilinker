@@ -224,17 +224,7 @@ void LocalConfiguration::run_comparison() {
                print_epilink_config(epilink_config),
                print_epilink_input(server_input));
     const auto server_share{aby_server_party.run_as_server(server_input)};
-    fmt::print("Server result:\n"
-        "best index: {}; match(/tent.)? {}/{}\n",
-#ifdef DEBUG_SEL_RESULT
-        "score.numerator: {}; score.denominator: {}; score: {}\n",
-#endif
-        server_share.index, server_share.match, server_share.tmatch
-#ifdef DEBUG_SEL_RESULT
-        , server_share.score_numerator, server_share.score_denominator,
-        ((double)server_share.score_numerator)/server_share.score_denominator
-#endif
-        );
+    fmt::print("Server result:\n{}", server_share);
     fmt::print("IDs (in Order):\n");
     for (size_t i = 0; i != m_ids.size(); ++i) {
       fmt::print("{} IDs: ", i);
