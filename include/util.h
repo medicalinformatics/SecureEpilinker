@@ -194,5 +194,28 @@ std::string print_epilink_input(const EpilinkServerInput&);
 std::string print_epilink_input(const EpilinkClientInput&);
 } // namespace sel
 
+// Custom fmt formatters for our types
+namespace fmt {
+template <>
+struct formatter<sel::SecureEpilinker::Result> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::SecureEpilinker::Result& r, FormatContext &ctx) {
+    return format_to(ctx.begin(),
+        "best index: {}; match(/tent.)? {}/{}\n"
+#ifdef DEBUG_SEL_RESULT
+        "score.numerator: {:x}; score.denominator: {:x}; score: {}\n"
+#endif
+        , r.index, r.match, r.tmatch
+#ifdef DEBUG_SEL_RESULT
+        , r.score_numerator, r.score_denominator,
+        (((double)r.score_numerator)/r.score_denominator)
+#endif
+        );
+  }
+};
+} // namespace fmt
 
 #endif /* end of include guard: SEL_UTIL_H */
