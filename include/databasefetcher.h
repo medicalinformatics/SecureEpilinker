@@ -31,8 +31,8 @@ class LocalConfiguration;
 
 struct PollData {
   size_t todate;
-  std::map<FieldName, std::vector<sel::Bitmask>> hw_data;
-  std::map<FieldName, sel::VCircUnit> bin_data;
+  std::map<FieldName, std::vector<Bitmask>> hw_data;
+  std::map<FieldName, VCircUnit> bin_data;
   std::map<FieldName, std::vector<bool>> hw_empty;
   std::map<FieldName, std::vector<bool>> bin_empty;
   std::vector<std::map<std::string, std::string>> ids;
@@ -54,7 +54,7 @@ class DatabaseFetcher {
   nlohmann::json request_page(const std::string& url,
                               AuthenticationConfig* l_auth) const;
   void get_page_data(const nlohmann::json&);
-  std::map<FieldName, std::vector<sel::Bitmask>> m_hw_data;
+  std::map<FieldName, std::vector<Bitmask>> m_hw_data;
   std::map<FieldName, sel::VCircUnit> m_bin_data;
   std::map<FieldName, std::vector<bool>> m_hw_empty;
   std::map<FieldName, std::vector<bool>> m_bin_empty;
