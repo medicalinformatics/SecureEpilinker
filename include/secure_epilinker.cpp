@@ -477,7 +477,7 @@ private:
     print_share(comp, fmt::format("^^^^ HW Comparison of pair ({},{}) ^^^^", ileft, iright));
 #endif
     // now go arithmetic
-    ArithShare a_comp{to_arith(comp)};
+    ArithShare a_comp{to_arith(comp.zeropad(BitLen))};
     // If indices match, use precomputed rescaled weights. Otherwise take
     // arithmetic average of both weights
     CircUnit weight_r = (ileft == iright) ? cfg.hw_weights_r[ileft] :
@@ -488,6 +488,8 @@ private:
 
     ArithShare a_field_weight{a_comp * a_weight};
 #ifdef DEBUG_SEL_CIRCUIT
+    print_share(a_comp, format("a_comp({},{})", ileft, iright));
+    print_share(a_weight, format("a_weight({},{})", ileft, iright));
     print_share(a_field_weight, "a_field_weight");
 #endif
     return a_field_weight;
