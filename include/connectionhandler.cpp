@@ -18,93 +18,96 @@ computations
 */
 
 #include "connectionhandler.h"
-#include "seltypes.h"
+#include <memory>
+#include <unordered_map>
 #include "localconfiguration.h"
 #include "remoteconfiguration.h"
 #include "restbed"
-#include <memory>
-#include <unordered_map>
+#include "seltypes.h"
 
-sel::ConnectionHandler::ConnectionHandler(restbed::Service* service)
+using namespace std;
+namespace sel {
+ConnectionHandler::ConnectionHandler(restbed::Service* service)
     : m_service(service) {}
 
-void sel::ConnectionHandler::upsert_connection(
-    std::shared_ptr<sel::RemoteConfiguration> connection) {
-  sel::RemoteId remote_id{connection->get_id()};
+void ConnectionHandler::upsert_connection(
+    shared_ptr<RemoteConfiguration> connection) {
+  RemoteId remote_id{connection->get_id()};
   if (connection_exists(remote_id)) {
-    update_connection(remote_id, std::move(connection));
+    update_connection(remote_id, move(connection));
   } else {
-    insert_connection(std::move(remote_id), std::move(connection));
+    insert_connection(move(remote_id), move(connection));
   }
 }
 
-size_t sel::ConnectionHandler::num_connections() const {
+size_t ConnectionHandler::num_connections() const {
   return m_connections.size();
 }
 
-void sel::ConnectionHandler::set_local_configuration(
-    std::shared_ptr<LocalConfiguration>&& l_conf) {
-  std::lock_guard<std::mutex> lock(m_local_data_mutex);
-  m_local_configuration = std::move(l_conf);
+void ConnectionHandler::set_local_configuration(
+    shared_ptr<LocalConfiguration>&& l_conf) {
+  lock_guard<mutex> lock(m_local_data_mutex);
+  m_local_configuration = move(l_conf);
 }
 
-bool sel::ConnectionHandler::connection_exists(const sel::RemoteId& c_id) const {
-  auto it = m_connections.find(c_id); 
-   return (it != m_connections.end());
+bool ConnectionHandler::connection_exists(const RemoteId& c_id) const {
+  auto it = m_connections.find(c_id);
+  return (it != m_connections.end());
 }
 
-const sel::ML_Field& sel::ConnectionHandler::get_field(
-    const sel::FieldName& name) {
+const ML_Field& ConnectionHandler::get_field(const FieldName& name) {
   return m_local_configuration->get_field(name);
 }
 
-std::shared_ptr<restbed::Service> sel::ConnectionHandler::get_service() const {
+shared_ptr<restbed::Service> ConnectionHandler::get_service() const {
   return m_service;
 }
 
-void sel::ConnectionHandler::add_job(const sel::RemoteId& remote_id,
-                                     std::shared_ptr<sel::LinkageJob> job) {
+void ConnectionHandler::add_job(const RemoteId& remote_id,
+                                shared_ptr<LinkageJob> job) {
   if (connection_exists(remote_id)) {
     auto job_id{job->get_id()};
-    m_connections[remote_id]->add_job(std::move(job));
+    m_connections[remote_id]->add_job(move(job));
     m_job_id_to_remote_id.emplace(job_id, remote_id);
   } else {
-    throw std::runtime_error("Invalid Remote ID");
+    throw runtime_error("Invalid Remote ID");
   }
 }
 
-std::pair<
-    std::unordered_map<sel::JobId, std::shared_ptr<sel::LinkageJob>>::iterator,
-    std::unordered_map<sel::JobId, std::shared_ptr<sel::LinkageJob>>::iterator>
-sel::ConnectionHandler::find_job(const sel::JobId& id) {
+pair<unordered_map<JobId, shared_ptr<LinkageJob>>::iterator,
+     unordered_map<JobId, shared_ptr<LinkageJob>>::iterator>
+ConnectionHandler::find_job(const JobId& id) {
   if (auto it = m_job_id_to_remote_id.find(id);
       it != m_job_id_to_remote_id.end()) {
     auto& remote = m_connections[it->second];
     return remote->find_job(id);
   } else {
-    throw std::runtime_error("Invalid Job ID");
+    throw runtime_error("Invalid Job ID");
   }
 }
 
-void sel::ConnectionHandler::insert_connection(
-    sel::RemoteId&& remote_id,
-    std::shared_ptr<sel::RemoteConfiguration> connection) {
-  m_connections.emplace(std::move(remote_id), std::move(connection));
+void ConnectionHandler::insert_connection(
+    RemoteId&& remote_id,
+    shared_ptr<RemoteConfiguration> connection) {
+  m_connections.emplace(move(remote_id), move(connection));
 }
 
-void sel::ConnectionHandler::update_connection(
-    const sel::JobId& remote_id,
-    std::shared_ptr<sel::RemoteConfiguration> connection) {
-  m_connections[remote_id] = std::move(connection);
+void ConnectionHandler::update_connection(
+    const JobId& remote_id,
+    shared_ptr<RemoteConfiguration> connection) {
+  m_connections[remote_id] = move(connection);
 }
 
-std::shared_ptr<sel::LocalConfiguration> sel::ConnectionHandler::get_local_configuration() const {
+shared_ptr<LocalConfiguration> ConnectionHandler::get_local_configuration()
+    const {
   return m_local_configuration;
 }
 
-std::shared_ptr<sel::RemoteConfiguration> sel::ConnectionHandler::get_remote_configuration(const sel::RemoteId& r_id){
-  if(!connection_exists(r_id)){
-    throw std::runtime_error("Invalid Connection");
+shared_ptr<RemoteConfiguration> ConnectionHandler::get_remote_configuration(
+    const RemoteId& r_id) {
+  if (!connection_exists(r_id)) {
+    throw runtime_error("Invalid Connection");
   }
-  return m_connections.at(r_id); 
+  return m_connections.at(r_id);
 }
+}  // namespace sel

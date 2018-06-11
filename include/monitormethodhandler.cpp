@@ -17,19 +17,20 @@
 */
 
 #include "monitormethodhandler.h"
-#include "connectionhandler.h"
-#include "linkagejob.h"
-#include "fmt/format.h"
 #include <memory>
 #include <string>
+#include "connectionhandler.h"
+#include "fmt/format.h"
+#include "linkagejob.h"
 #include "restbed"
 
-
-void sel::MonitorMethodHandler::handle_method(
-    std::shared_ptr<restbed::Session> session) const {
+using namespace std;
+namespace sel {
+void MonitorMethodHandler::handle_method(
+    shared_ptr<restbed::Session> session) const {
   auto request{session->get_request()};
   auto headers{request->get_headers()};
-  sel::JobId job_id{request->get_path_parameter("job_id", "0")};
+  JobId job_id{request->get_path_parameter("job_id", "0")};
   fmt::print("Requested Job ID: {}\n", job_id);
   fmt::print("Recieved headers:\n");
   for (const auto& h : headers) {
@@ -37,15 +38,17 @@ void sel::MonitorMethodHandler::handle_method(
   }
   SessionResponse response;
   const auto id_iterators{m_connection_handler->find_job(job_id)};
-  if(id_iterators.first != id_iterators.second) { // Job ID found
-    const   auto status{js_enum_to_string(((*(id_iterators.first)).second)->get_status())};
+  if (id_iterators.first != id_iterators.second) {  // Job ID found
+    const auto status{
+        js_enum_to_string(((*(id_iterators.first)).second)->get_status())};
     response.return_code = restbed::OK;
     response.body = status;
   } else {
     response.return_code = restbed::BAD_REQUEST;
     response.body = "Invalid job id";
   }
-  response.headers = {{"Content-Length", std::to_string(response.body.length())},
-                                                        {"Connection", "Close"}};
+  response.headers = {{"Content-Length", to_string(response.body.length())},
+                      {"Connection", "Close"}};
   session->close(response.return_code, response.body, response.headers);
 }
+}  // namespace sel
