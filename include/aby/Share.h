@@ -230,7 +230,7 @@ class BoolShare: public Share {
   }
 
   // Unary functions
-  BoolShare operator!() const {
+  BoolShare operator~() const {
     return BoolShare{bcirc, bcirc->PutINVGate(sh.get())};
   }
 
