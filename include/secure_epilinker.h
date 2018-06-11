@@ -81,6 +81,12 @@ public:
 #endif
 
   /**
+   * Shortcut for run_as_*() depending on input
+   */
+  Result run(const EpilinkClientInput& input) { return run_as_client(input); }
+  Result run(const EpilinkServerInput& input) { return run_as_server(input); }
+
+  /**
    * Resets the ABY Party and states.
    */
   void reset();
@@ -99,7 +105,7 @@ private:
   bool is_setup{false};
 
   // called by run_as_*() after inputs are set
-  Result run();
+  Result run_circuit();
 };
 
 } // namespace sel

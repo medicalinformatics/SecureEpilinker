@@ -271,7 +271,7 @@ public:
   }
 #endif
 
-  struct result_shares {
+  struct ResultShares {
     OutShare index, match, tmatch;
 #ifdef DEBUG_SEL_RESULT
     OutShare score_numerator, score_denominator;
@@ -281,7 +281,7 @@ public:
   * Builds the shared component of the circuit after initial input shares of
   * client and server have been created.
   */
-  result_shares build_circuit() {
+  ResultShares build_circuit() {
     // Where we store all group and individual comparison weights as ariths
     vector<ArithShare> a_field_weights;
     vector<BoolShare> b_field_weights;
@@ -511,7 +511,8 @@ private:
 
     weight_r <<= cfg.dice_prec; // same shift as in HW field-weights
 
-    BoolShare b_weight{constant_simd(bcirc, weight_r, BitLen, nvals)};
+    BoolShare b_weight{constant_simd(bcirc, weight_r,
+        cfg.dice_prec + cfg.weight_prec, nvals)};
     BoolShare b_field_weight{comp.mux(b_weight, const_zero)};
 
 #ifdef DEBUG_SEL_CIRCUIT
@@ -558,7 +559,7 @@ SecureEpilinker::Result SecureEpilinker::run_as_client(
     run_setup_phase();
   }
   selc->set_client_input(input);
-  return run();
+  return run_circuit();
 }
 
 SecureEpilinker::Result SecureEpilinker::run_as_server(
@@ -568,7 +569,7 @@ SecureEpilinker::Result SecureEpilinker::run_as_server(
     run_setup_phase();
   }
   selc->set_server_input(input);
-  return run();
+  return run_circuit();
 }
 
 #ifdef DEBUG_SEL_CIRCUIT
@@ -579,12 +580,12 @@ SecureEpilinker::Result SecureEpilinker::run_as_both(
     run_setup_phase();
   }
   selc->set_both_inputs(in_client, in_server);
-  return run();
+  return run_circuit();
 }
 #endif
 
-SecureEpilinker::Result SecureEpilinker::run() {
-  SELCircuit::result_shares res = selc->build_circuit();
+SecureEpilinker::Result SecureEpilinker::run_circuit() {
+  SELCircuit::ResultShares res = selc->build_circuit();
   party.ExecCircuit();
 
   is_setup = false; // need to run new setup phase
