@@ -149,8 +149,18 @@ void LinkageJob::run_job() {
     fmt::print("Client running\n{}{}{}", print_aby_config(aby_config),
                print_epilink_config(epi_config),
                print_epilink_input(client_input));
-    auto client_share = sepilinker_client.run_as_client(client_input);
-    fmt::print("Client Share: {}\n", client_share);
+    const auto client_share{sepilinker_client.run_as_client(client_input)};
+    fmt::print("Client result:\n"
+        "best index: {}; match(/tent.)? {}/{}\n",
+#ifdef DEBUG_SEL_RESULT
+        "score.numerator: {}; score.denominator: {}; score: {}\n",
+#endif
+        client_share.index, client_share.match, client_share.tmatch
+#ifdef DEBUG_SEL_RESULT
+        , client_share.score_numerator, client_share.score_denominator,
+        ((double)client_share.score_numerator)/client_share.score_denominator
+#endif
+        );
   } catch (const exception& e) {
     fmt::print(stderr, "Error running MPC Client: {}\n", e.what());
     m_status = JobStatus::FAULT;
