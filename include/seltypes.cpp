@@ -17,51 +17,74 @@
 */
 
 #include "seltypes.h"
-#include <string>
-#include <stdexcept>
 #include <cassert>
+#include <stdexcept>
+#include <string>
 
-using sel::FieldType;
-using sel::FieldComparator;
-using sel::AlgorithmType;
-using sel::AuthenticationType;
-using sel::JobStatus;
-
-FieldType sel::str_to_ftype(const std::string& str) {
-    if(str =="bitmask") return FieldType::BITMASK;
-    else if(str =="number") return FieldType::NUMBER;
-    else if(str =="string") return FieldType::STRING;
-    else if(str =="integer") return FieldType::INTEGER;
-    assert(!"This should never be reached!");
-    throw std::runtime_error("Invalid Field Type");
+using namespace std;
+namespace sel {
+FieldType str_to_ftype(const string& str) {
+  if (str == "bitmask")
+    return FieldType::BITMASK;
+  else if (str == "number")
+    return FieldType::NUMBER;
+  else if (str == "string")
+    return FieldType::STRING;
+  else if (str == "integer")
+    return FieldType::INTEGER;
+  assert(!"This should never be reached!");
+  throw runtime_error("Invalid Field Type");
 }
 
-FieldComparator sel::str_to_fcomp(const std::string& str) {
-    if(str =="nGram") return FieldComparator::NGRAM;
-    else if(str =="binary") return FieldComparator::BINARY;
-    assert(!"This should never be reached!");
-    throw std::runtime_error("Invalid Comparator Type");
+FieldComparator str_to_fcomp(const string& str) {
+  if (str == "nGram")
+    return FieldComparator::NGRAM;
+  else if (str == "binary")
+    return FieldComparator::BINARY;
+  assert(!"This should never be reached!");
+  throw runtime_error("Invalid Comparator Type");
 }
-AlgorithmType sel::str_to_atype(const std::string& str) {
-    if(str =="epilink") return AlgorithmType::EPILINK;
-    assert(!"This should never be reached!");
-    throw std::runtime_error("Invalid Algorithm Type");
+AlgorithmType str_to_atype(const string& str) {
+  if (str == "epilink")
+    return AlgorithmType::EPILINK;
+  assert(!"This should never be reached!");
+  throw runtime_error("Invalid Algorithm Type");
 }
-AuthenticationType sel::str_to_authtype(const std::string& str) {
-    if(str =="apikey") return AuthenticationType::API_KEY;
-    else if(str =="none") return AuthenticationType::NONE;
-    assert(!"This should never be reached!");
-    throw std::runtime_error("Invalid Authentication Type");
+AuthenticationType str_to_authtype(const string& str) {
+  if (str == "apikey")
+    return AuthenticationType::API_KEY;
+  else if (str == "none")
+    return AuthenticationType::NONE;
+  assert(!"This should never be reached!");
+  throw runtime_error("Invalid Authentication Type");
 }
 
-std::string sel::js_enum_to_string(JobStatus status){
-  switch (status){
-    case JobStatus::RUNNING: {return "Running"; break;}
-    case JobStatus::QUEUED:  {return "Queued"; break;}
-    case JobStatus::DONE:    {return "Done"; break;}
-    case JobStatus::HOLD:    {return "Hold"; break;}
-    case JobStatus::FAULT:   {return "Fault"; break;}
-    default:                 {throw std::runtime_error("Invalid Status"); 
-                              return "Error!";}
+string js_enum_to_string(JobStatus status) {
+  switch (status) {
+    case JobStatus::RUNNING: {
+      return "Running";
+      break;
+    }
+    case JobStatus::QUEUED: {
+      return "Queued";
+      break;
+    }
+    case JobStatus::DONE: {
+      return "Done";
+      break;
+    }
+    case JobStatus::HOLD: {
+      return "Hold";
+      break;
+    }
+    case JobStatus::FAULT: {
+      return "Fault";
+      break;
+    }
+    default: {
+      throw runtime_error("Invalid Status");
+      return "Error!";
+    }
   }
 }
+}  // namespace sel

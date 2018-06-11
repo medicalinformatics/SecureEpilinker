@@ -17,61 +17,63 @@
 */
 
 #include "jsonmethodhandler.h"
-#include "restbed"
-#include "fmt/format.h"
 #include <memory>
 #include <string>
+#include "fmt/format.h"
+#include "restbed"
 
-//void sel::JsonMethodHandler::handle_continue(
+using namespace std;
+namespace sel {
+// void JsonMethodHandler::handle_continue(
 
-    //std::shared_ptr<restbed::Session> session) const {
-  //auto request{session->get_request()};
-  //auto headers{request->get_headers()};
-  //std::string remote_id{request->get_path_parameter("remote_id", "")};
-  //size_t content_length = request->get_header("Content-Length", 0);
-  //fmt::print("Remote ID: {}", remote_id);
-  //fmt::print("Continue Recieved headers:\n");
-  //for (const auto& h : headers) {
-    //fmt::print("{} -- {}\n", h.first, h.second);
-  //}
-  //if (content_length) {
-    //session->fetch(
-        //content_length,
-        //[&](const std::shared_ptr<restbed::Session> session[[maybe_unused]],
-            //const restbed::Bytes& body) {
-          //std::string bodystring = std::string(body.begin(), body.end());
-          //nlohmann::json data = nlohmann::json::parse(bodystring);
-          //use_data(session, data, remote_id);
-        //});
-  //} else {
-    //session->close(restbed::LENGTH_REQUIRED);
-  //}
+// shared_ptr<restbed::Session> session) const {
+// auto request{session->get_request()};
+// auto headers{request->get_headers()};
+// string remote_id{request->get_path_parameter("remote_id", "")};
+// size_t content_length = request->get_header("Content-Length", 0);
+// fmt::print("Remote ID: {}", remote_id);
+// fmt::print("Continue Recieved headers:\n");
+// for (const auto& h : headers) {
+// fmt::print("{} -- {}\n", h.first, h.second);
+//}
+// if (content_length) {
+// session->fetch(
+// content_length,
+//[&](const shared_ptr<restbed::Session> session[[maybe_unused]],
+// const restbed::Bytes& body) {
+// string bodystring = string(body.begin(), body.end());
+// nlohmann::json data = nlohmann::json::parse(bodystring);
+// use_data(session, data, remote_id);
+//});
+//} else {
+// session->close(restbed::LENGTH_REQUIRED);
+//}
 //}
 
-void sel::JsonMethodHandler::handle_method(
-    std::shared_ptr<restbed::Session> session) const {
+void JsonMethodHandler::handle_method(
+    shared_ptr<restbed::Session> session) const {
   auto request{session->get_request()};
   auto headers{request->get_headers()};
-  sel::RemoteId remote_id{request->get_path_parameter("remote_id", "")};
+  RemoteId remote_id{request->get_path_parameter("remote_id", "")};
   size_t content_length = request->get_header("Content-Length", 0);
   fmt::print("Remote ID: {}\n", remote_id);
   fmt::print("Recieved headers:\n");
   for (const auto& h : headers) {
     fmt::print("{} -- {}\n", h.first, h.second);
   }
-  //if (request->get_header("Expect", restbed::String::lowercase) ==
-      //"100-continue") {
-    //fmt::print("Continuing\n");
-    //auto fun = std::bind(&sel::JsonMethodHandler::handle_continue, this,
-                         //std::placeholders::_1);
-    //session->yield(restbed::CONTINUE, restbed::Bytes(), fun);
+  // if (request->get_header("Expect", restbed::String::lowercase) ==
+  //"100-continue") {
+  // fmt::print("Continuing\n");
+  // auto fun = bind(&JsonMethodHandler::handle_continue, this,
+  // placeholders::_1);
+  // session->yield(restbed::CONTINUE, restbed::Bytes(), fun);
   //}
   if (content_length) {
     session->fetch(
         content_length,
-        [=](const std::shared_ptr<restbed::Session> session[[maybe_unused]],
+        [=](const shared_ptr<restbed::Session> session[[maybe_unused]],
             const restbed::Bytes& body) {
-          std::string bodystring = std::string(body.begin(), body.end());
+          string bodystring = string(body.begin(), body.end());
           nlohmann::json data = nlohmann::json::parse(bodystring);
           use_data(session, data, remote_id);
         });
@@ -80,9 +82,9 @@ void sel::JsonMethodHandler::handle_method(
   }
 }
 
-void sel::JsonMethodHandler::use_data(
-    const std::shared_ptr<restbed::Session>& session,
-    const nlohmann::json& bodydata, const sel::RemoteId& remote_id) const {
+void JsonMethodHandler::use_data(const shared_ptr<restbed::Session>& session,
+                                 const nlohmann::json& bodydata,
+                                 const RemoteId& remote_id) const {
 #ifdef DEBUG
   fmt::print("Data recieved:\n{}\n", bodydata.dump(4));
 #endif
@@ -90,16 +92,17 @@ void sel::JsonMethodHandler::use_data(
   SessionResponse response;
   if (validation.first) {
     if (m_valid_callback) {
-      response = m_valid_callback(bodydata,remote_id, m_connection_handler);
+      response = m_valid_callback(bodydata, remote_id, m_connection_handler);
     } else {
-      throw std::runtime_error("Invalid valid_callback!");
+      throw runtime_error("Invalid valid_callback!");
     }
   } else {
     if (m_invalid_callback) {
       response = m_invalid_callback(validation.second);
     } else {
-      throw std::runtime_error("Invalid invalid_callback");
+      throw runtime_error("Invalid invalid_callback");
     }
   }
-  session->close(response.return_code,response.body ,response.headers);
+  session->close(response.return_code, response.body, response.headers);
 }
+}  // namespace sel

@@ -18,32 +18,33 @@
 
 #include "resourcehandler.h"
 
+#include <functional>
+#include <memory>
+#include <string>
+#include <vector>
 #include "jsonmethodhandler.h"
 #include "methodhandler.hpp"
 #include "nlohmann/json.hpp"
 #include "restbed"
-#include <memory>
-#include <string>
-#include <vector>
-#include <functional>
 
-sel::ResourceHandler::ResourceHandler(const std::string& uri)
-    : m_resource(std::make_shared<restbed::Resource>()) {
+using namespace std;
+namespace sel {
+ResourceHandler::ResourceHandler(const string& uri)
+    : m_resource(make_shared<restbed::Resource>()) {
   m_resource->set_path(uri);
 }
 
-void sel::ResourceHandler::add_method(
-    std::shared_ptr<sel::MethodHandler> method_handler) {
+void ResourceHandler::add_method(shared_ptr<MethodHandler> method_handler) {
   m_methods.emplace_back(method_handler);
   m_resource->set_method_handler(
       method_handler->get_method(),
-      std::bind(&sel::MethodHandler::handle_method, method_handler,
-                std::placeholders::_1));
+      bind(&MethodHandler::handle_method, method_handler, placeholders::_1));
 }
 
-void sel::ResourceHandler::publish(restbed::Service& service) const {
+void ResourceHandler::publish(restbed::Service& service) const {
   service.publish(m_resource);
 }
-void sel::ResourceHandler::suppress(restbed::Service& service) const {
+void ResourceHandler::suppress(restbed::Service& service) const {
   service.suppress(m_resource);
 }
+}  // namespace sel

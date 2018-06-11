@@ -18,27 +18,27 @@
 
 #include "validator.h"
 
+#include <tuple>
+#include "fmt/format.h"
 #include "nlohmann/json.hpp"
 #include "valijson/adapters/nlohmann_json_adapter.hpp"
 #include "valijson/schema.hpp"
 #include "valijson/schema_parser.hpp"
 #include "valijson/utils/nlohmann_json_utils.hpp"
 #include "valijson/validator.hpp"
-#include "fmt/format.h"
-#include <tuple>
 
 using json = nlohmann::json;
 using valijson::Schema;
 using valijson::SchemaParser;
 using valijson::ValidationResults;
 using valijson::adapters::NlohmannJsonAdapter;
-
-sel::Validator::Validator() {
- m_schema = "{}"_json; // Accept everything
+using namespace std;
+namespace sel {
+Validator::Validator() {
+  m_schema = "{}"_json;  // Accept everything
 }
 
-std::pair<bool, ValidationResults> sel::Validator::validate_json(
-    const json& data) const {
+pair<bool, ValidationResults> Validator::validate_json(const json& data) const {
   /**
    * Validate JSON schema compatibility and data logic
    */
@@ -53,16 +53,17 @@ std::pair<bool, ValidationResults> sel::Validator::validate_json(
   ValidationResults results;
 
   if (!validator.validate(json_schema, doc, &results)) {
-    return std::make_pair(false, results);
+    return make_pair(false, results);
   }
-  return std::make_pair(logic_validation(data),
-                        results);  // Does the data make sense?
+  return make_pair(logic_validation(data),
+                   results);  // Does the data make sense?
 }
 
-bool sel::Validator::logic_validation(const json& data) const {
+bool Validator::logic_validation(const json& data) const {
   /**
    * Validata data logic
    */
   // TODO(TK) Write logic
   return true;
 }
+}  // namespace sel
