@@ -95,17 +95,17 @@ vector<uint32_t> OutShare::get_clear_value_vec() {
 }
 
 /******************** Factories ********************/
-/*
- * OutShare factory
- */
+
 OutShare out(const Share& share, e_role dst) {
   return OutShare(share.get_circuit(),
       share.get_circuit()->PutOUTGate(share.get(), dst));
 }
 
-/*
- * Debugging PrintValueGate
- */
+OutShare out_shared(const Share& share) {
+  return OutShare(share.get_circuit(),
+      share.get_circuit()->PutSharedOUTGate(share.get()));
+}
+
 OutShare print_share(const Share& share, const string& msg) {
   string desc = fmt::format("({},{} {}) ",
       share.get_bitlen(), share.get_nvals(), msg);
