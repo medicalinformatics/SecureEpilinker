@@ -600,6 +600,12 @@ SecureEpilinker::Result SecureEpilinker::run() {
   };
 }
 
+void SecureEpilinker::reset() {
+  party.Reset();
+  is_built = false;
+  is_setup = false;
+}
+
 /*
   * Takes rescaled weights and makes Contant Input Shares on the given circuit
   * run VCircUnit weights_rsc = rescale_weights(weights); before
