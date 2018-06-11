@@ -87,9 +87,11 @@ string print_epilink_config(const EpilinkConfig& conf){
   returnstring += "Number of binary field weights: " + to_string(conf.bin_weights.size()) + '\n';
   return returnstring;
 }
+
 string print_epilink_input(const EpilinkServerInput& in){
   return "Server Input printing not ready yet!\n";
 }
+
 string print_epilink_input(const EpilinkClientInput& in){
   string returnstring{"Client Input\n-----\nBitmask Records:\n-----\n"};
   for (size_t i = 0; i != in.hw_record.size(); ++i){
@@ -104,4 +106,5 @@ string print_epilink_input(const EpilinkClientInput& in){
   }
   return returnstring + "Number of database records: " + to_string(in.nvals) +'\n';
 }
+
 } // namespace sel
