@@ -345,9 +345,10 @@ public:
 #endif
 
 #ifdef DEBUG_SEL_RESULT
-      //TODO Actually return W, not WT
+      //TODO Actually return W = sum of non-empty field weights
     return {out(max_idx, ALL), out(match, ALL), out(tmatch, ALL),
-      out(sum_field_weights, ALL), out(const_w_threshold, ALL)};
+      out(sum_field_weights, ALL),
+      out(constant(bcirc, W<<cfg.dice_prec, BitLen), ALL)};
 #else
     return {out_shared(max_idx), out_shared(match), out_shared(tmatch)};
 #endif
@@ -370,6 +371,10 @@ private:
   BoolShare const_zero, const_idx;
   // Left side of inequality: T * sum(weights)
   BoolShare const_w_threshold, const_w_tthreshold;
+
+#ifdef DEBUG_SEL_RESULT
+  CircUnit W{0};
+#endif
 
   // state variables
   uint32_t nvals{0};
@@ -398,7 +403,9 @@ private:
     const_idx = vcombine(numbers);
     assert(const_idx.get_nvals() == nvals);
 
+#ifndef DEBUG_SEL_RESULT
     CircUnit W{0};
+#endif
     for (auto& w : cfg.hw_weights_r) W += w;
     for (auto& w : cfg.bin_weights_r) W += w;
 
