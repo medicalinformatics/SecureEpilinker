@@ -6,6 +6,10 @@
 using namespace sel;
 using namespace std;
 using Result = SecureEpilinker::Result;
+using fmt::print;
+
+constexpr double Threshold = 0.9;
+constexpr double TThreshold = 0.7;
 
 Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
     uint32_t nvals) {
@@ -13,7 +17,7 @@ Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
   EpilinkConfig epi_cfg {
     {4.0}, {1.0}, // hw/bin weights
     {}, {}, // hw/bin exchange groups
-    8, 0.9, 0.7 // size_bitmask, (tent.) thresholds
+    8, Threshold, TThreshold // size_bitmask, (tent.) thresholds
   };
 
   EpilinkClientInput in_client {
@@ -43,6 +47,52 @@ Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
   return res;
 }
 
+Result test_exchange_grp(const SecureEpilinker::ABYConfig& aby_cfg,
+    uint32_t nvals) {
+  // First test: only one bin field, single byte bitmask
+  EpilinkConfig epi_cfg {
+    {4.0, 1.0}, {2.0, 1.0}, // hw/bin weights
+    {{0,1}}, {}, // hw/bin exchange groups
+    8, Threshold, TThreshold // size_bitmask, (tent.) thresholds
+  };
+
+  EpilinkClientInput in_client {
+    {{0x33},{0x44}}, // hw records
+    {0xdeadbeef, 0xdecea5ed}, // bin records
+    {false, false}, {false, false}, // hw/bin empty
+    nvals // nvals
+  };
+
+  EpilinkServerInput in_server {
+    {vector<Bitmask>(nvals, {0x44}), vector<Bitmask>(nvals, {0x33})}, // hw db
+    {vector<CircUnit>(nvals, 0xdeadbeef), vector<CircUnit>(nvals, 0xdecea5ed)}, // bin database
+    {vector<bool>(nvals, false), vector<bool>(nvals, false)},// hw empty
+    {vector<bool>(nvals, false), vector<bool>(nvals, false)} // bin empty
+  };
+
+  SecureEpilinker linker{aby_cfg, epi_cfg};
+
+  linker.build_circuit(nvals);
+  linker.run_setup_phase();
+
+  Result res;
+  /*
+  if (aby_cfg.role == SERVER) {
+    res = linker.run_as_server(in_server);
+  } else {
+    res = linker.run_as_client(in_client);
+  }
+  */
+  res = linker.run_as_both(in_client, in_server);
+  linker.reset();
+
+  return res;
+}
+
+void print_result(Result result) {
+  print("Result:\n{}", result);
+}
+
 int main(int argc, char *argv[])
 {
   bool role_server = false;
@@ -69,7 +119,10 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  auto res = test_simple(aby_cfg, nvals);
+  //auto res = test_simple(aby_cfg, nvals);
+  Result res = test_exchange_grp(aby_cfg, nvals);
+
+  print_result(res);
 
   return 0;
 }
