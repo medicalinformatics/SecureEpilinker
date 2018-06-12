@@ -167,10 +167,16 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
           }
           if (m_parent->get_field(f.key()).comparator ==
               FieldComparator::NGRAM) {
-            if (trim_copy(temp) == "") {
+            bool bloomempty{true};
+            for(const auto& byte : bloom){
+              if(bool byte_empty = (byte == 0x00); !byte_empty){
+                  temp_hw_empty[f.key()].emplace_back(false);
+                  bloomempty = false;
+                  break;
+              }
+            }
+            if (bloomempty) {
               temp_hw_empty[f.key()].emplace_back(true);
-            } else {
-              temp_hw_empty[f.key()].emplace_back(false);
             }
             temp_hw_data[f.key()].emplace_back(move(bloom));
           } else {
