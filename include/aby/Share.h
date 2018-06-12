@@ -83,6 +83,12 @@ class Share {
     return *this;
   }
 
+  Share& operator-=(const Share& other) {
+    assert(circ == other.circ);
+    sh = share_p{circ->PutSUBGate(sh.get(), other.sh.get())};
+    return *this;
+  }
+
   Share& operator*=(const Share& other) {
     assert(circ == other.circ);
     sh = share_p{circ->PutMULGate(sh.get(), other.sh.get())};
@@ -91,6 +97,11 @@ class Share {
 
   friend Share operator+(Share me, const Share& other) {
     me += other;
+    return me;
+  }
+
+  friend Share operator-(Share me, const Share& other) {
+    me -= other;
     return me;
   }
 
