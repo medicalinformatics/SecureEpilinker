@@ -401,7 +401,7 @@ private:
       // AND with constant
       numbers.emplace_back(constant(bcirc, i, ceil_log2(nvals)));
     }
-    const_idx = vcombine(numbers);
+    const_idx = vcombine_bool(numbers);
     assert(const_idx.get_nvals() == nvals);
 
 #ifndef DEBUG_SEL_RESULT

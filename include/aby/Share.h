@@ -382,7 +382,10 @@ BoolShare b2y(BooleanCircuit* ycirc, const BoolShare& s);
  * Vertically Combines the given shares to a new share having the same number of
  * wires=bitlen and nvals the sum of the individual nvals
  */
-BoolShare vcombine(const vector<BoolShare>& shares);
+Share vcombine(const vector<Share>& shares);
+inline BoolShare vcombine_bool(const vector<BoolShare>& shares) {
+  return vcombine(vector<Share>(shares.cbegin(), shares.cend()));
+}
 
 } // namespace sel
 
