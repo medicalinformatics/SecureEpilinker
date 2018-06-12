@@ -26,12 +26,18 @@
 
 namespace sel {
 
+struct ArithQuotient { ArithShare num, den; };
+struct BoolQuotient { BoolShare num, den; };
+
 using UnaryOp_Share = std::function<Share (const Share&)>;
 using UnaryOp_BoolShare = std::function<BoolShare (const BoolShare&)>;
 using UnaryOp_ArithShare = std::function<ArithShare (const ArithShare&)>;
 using BinaryOp_Share = std::function<Share (const Share&, const Share&)>;
 using BinaryOp_BoolShare = std::function<BoolShare (const BoolShare&, const BoolShare&)>;
 using BinaryOp_ArithShare = std::function<ArithShare (const ArithShare&, const ArithShare&)>;
+
+using A2BConverter = std::function<BoolShare (const ArithShare&)>;
+using B2AConverter = std::function<ArithShare (const BoolShare&)>;
 
 /*
 Share binary_accumulate(vector<Share> vals,
@@ -68,6 +74,11 @@ void split_select_target(BoolShare& selector, BoolShare& target,
 BoolShare max(const vector<BoolShare>&);
 BoolShare sum(const vector<BoolShare>&);
 ArithShare sum(const vector<ArithShare>&);
+
+BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool);
+ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool, const B2AConverter& to_arith);
 
 } // namespace sel
 #endif /* end of include guard: SEL_ABY_GADGETS_H */
