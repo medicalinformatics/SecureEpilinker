@@ -41,7 +41,7 @@ BoolShare apply_file_binary(const BoolShare& a, const BoolShare& b,
   return BoolShare{a.bcirc, a.bcirc->PutGateFromFile(fn, in, a.get_nvals())};
 }
 
-vector<BoolShare> BoolShare::split(uint32_t new_nval) {
+vector<BoolShare> BoolShare::split(uint32_t new_nval) const {
   const size_t bitlen{get_bitlen()}, nvals{get_nvals()},
       numshares{ceil_divide(nvals, new_nval)};
   vector<vector<uint32_t>> split_wires;
@@ -64,6 +64,23 @@ vector<BoolShare> BoolShare::split(uint32_t new_nval) {
     }
     res.emplace_back(BoolShare(bcirc, new boolshare(wires, bcirc)));
   }
+
+  return res;
+}
+
+vector<ArithShare> ArithShare::split(uint32_t new_nval) const {
+  const size_t nvals{get_nvals()}, numshares{ceil_divide(nvals, new_nval)};
+  vector<uint32_t> new_nvals(numshares, new_nval);
+  if (nvals%new_nval) new_nvals.back() = nvals%new_nval;
+
+  auto split_wires = acirc->PutSplitterGate(sh.get()->get_wire_id(0), new_nvals);
+  assert (numshares == split_wires.size());
+
+  vector<ArithShare> res;
+  res.reserve(numshares);
+  for(uint32_t w : split_wires)
+    res.emplace_back(ArithShare(acirc,
+          new arithshare(vector<uint32_t>(1,w), acirc)));
 
   return res;
 }

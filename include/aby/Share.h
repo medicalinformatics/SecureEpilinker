@@ -129,7 +129,7 @@ class Share {
    * nvals=1
    * TODO directly build nvals shares instead?
    */
-  Share split() {
+  Share split() const {
     return Share{circ, circ->PutSplitterGate(sh.get())};
   }
 
@@ -238,7 +238,7 @@ class BoolShare: public Share {
     return me;
   }
 
-  BoolShare mux(const BoolShare& sh_true, const BoolShare& sh_false) {
+  BoolShare mux(const BoolShare& sh_true, const BoolShare& sh_false) const {
     return BoolShare{bcirc, bcirc->PutMUXGate(sh_true.sh.get(), sh_false.sh.get(), sh.get())};
   }
 
@@ -263,7 +263,7 @@ class BoolShare: public Share {
   /**
    * Spits a simd share into ceil(nvals/new_nvals) shares
    */
-  vector<BoolShare> split(uint32_t new_nval);
+  vector<BoolShare> split(uint32_t new_nval) const;
 
 
   protected:
@@ -283,6 +283,8 @@ class ArithShare: public Share {
   ~ArithShare() = default;
 
   void reset() { acirc = nullptr; Share::reset(); }
+
+  ArithmeticCircuit* get_circuit() const { return acirc; };
 
   /*
    * Constructor to create new INGate from plain-text value
@@ -311,6 +313,11 @@ class ArithShare: public Share {
    */
   ArithShare(ArithmeticCircuit* ac, uint32_t bitlen, uint32_t nvals) :
     Share{static_cast<Circuit*>(ac), bitlen, nvals}, acirc{ac} {}
+
+  /**
+   * Spits a simd share into ceil(nvals/new_nvals) shares
+   */
+  vector<ArithShare> split(uint32_t new_nval) const;
 
   protected:
   ArithmeticCircuit* acirc;
