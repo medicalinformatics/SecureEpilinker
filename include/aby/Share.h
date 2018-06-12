@@ -35,6 +35,8 @@ class Share {
    */
   Share(Circuit* c, share* s) : circ{c}, sh{s} {};
   Share(Circuit* c, const share_p& sp) : circ{c}, sh{sp} {};
+  Share(Circuit* c, const vector<uint32_t>& gates) :
+    Share{c, new boolshare(gates, static_cast<Circuit*>(c))} {};
   ~Share() = default;
   /*
    * Constructor to create new INGate from plain-text value
@@ -262,6 +264,8 @@ class ArithShare: public Share {
   ArithShare(): Share{}, acirc{} {};
   ArithShare(ArithmeticCircuit* ac, share* s) :
     Share(static_cast<Circuit*>(ac), s), acirc{ac} {};
+  ArithShare(ArithmeticCircuit* ac, const vector<uint32_t>& gates) :
+    ArithShare{ac, new arithshare(gates, static_cast<Circuit*>(ac))} {};
   // Consume Share move contructor
   ArithShare(Share&& s) :
     Share{std::move(s)}, acirc{dynamic_cast<ArithmeticCircuit*>(circ)} {};
