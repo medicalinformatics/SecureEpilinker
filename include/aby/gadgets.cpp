@@ -233,4 +233,28 @@ void split_select_target(BoolShare& selector, BoolShare& target,
   }
 }
 
+// TODO#13 If we can mux with ArithShares, use it here.
+ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool, const B2AConverter& to_arith) {
+  BoolQuotient q = max(a, b, to_bool);
+  return {to_arith(q.num), to_arith(q.den)};
+}
+
+BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool) {
+  uint32_t nvals  = a.num.get_nvals();
+  assert(a.den.get_nvals() == nvals);
+  assert(b.num.get_nvals() == nvals);
+  assert(b.den.get_nvals() == nvals);
+  ArithShare ax = a.num * b.den;
+  ArithShare bx = b.num * a.den;
+  // convert to bool
+  BoolShare b_ax = to_bool(ax), b_bx = to_bool(bx);
+  BoolShare cmp = (b_ax > b_bx);
+
+  BoolShare num = cmp.mux(to_bool(a.num), to_bool(b.num));
+  BoolShare den = cmp.mux(to_bool(a.den), to_bool(b.den));
+  return {num, den};
+}
+
 } // namespace sel
