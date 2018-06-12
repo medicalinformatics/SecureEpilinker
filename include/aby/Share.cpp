@@ -164,17 +164,13 @@ BoolShare b2y(BooleanCircuit* ycirc, const BoolShare& s) {
 
 /******************** SIMD stuff ********************/
 
-/**
- * Vertically Combines the given shares to a new share having the same number of
- * wires=bitlen and nvals the sum of the individual nvals
- */
-BoolShare vcombine(const vector<BoolShare>& shares) {
+Share vcombine(const vector<Share>& shares) {
   // TODO handle size() == 0 ?
   size_t bitlen = shares.at(0).get_bitlen();
   vector<vector<uint32_t>> combwires{bitlen};
   vector<uint32_t> reswires;
   reswires.reserve(bitlen);
-  BooleanCircuit* circ = shares.at(0).get_circuit();
+  auto circ = shares.at(0).get_circuit();
   for (const auto& share : shares) {
     vector<uint32_t> wires{share.get()->get_wires()};
     for (size_t i{0}; i != wires.size(); ++i) {
@@ -184,7 +180,7 @@ BoolShare vcombine(const vector<BoolShare>& shares) {
   for (vector<uint32_t>& cw : combwires) {
     reswires.emplace_back(circ->PutCombinerGate(cw));
   }
-  return BoolShare{circ, reswires};
+  return Share{circ, reswires};
 }
 
 // TODO sum, all, any, prod -> gadgets
