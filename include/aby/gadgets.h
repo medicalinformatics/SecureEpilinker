@@ -35,6 +35,7 @@ using UnaryOp_ArithShare = std::function<ArithShare (const ArithShare&)>;
 using BinaryOp_Share = std::function<Share (const Share&, const Share&)>;
 using BinaryOp_BoolShare = std::function<BoolShare (const BoolShare&, const BoolShare&)>;
 using BinaryOp_ArithShare = std::function<ArithShare (const ArithShare&, const ArithShare&)>;
+using ArithQuotientSelector = std::function<BoolShare (const ArithQuotient&, const ArithQuotient&)>;
 
 using A2BConverter = std::function<BoolShare (const ArithShare&)>;
 using B2AConverter = std::function<ArithShare (const BoolShare&)>;
@@ -76,6 +77,11 @@ BoolShare split_accumulate(BoolShare simd_share, const BinaryOp_BoolShare& op);
  */
 void split_select_target(BoolShare& selector, BoolShare& target,
     const BinaryOp_BoolShare& op_select);
+
+void split_select_quotient_target(
+    ArithShare& selector_num, ArithShare& selector_den,
+    std::vector<BoolShare>& targets,
+    const ArithQuotientSelector& op_select, const B2AConverter& to_arith);
 
 BoolShare max(const vector<BoolShare>&);
 BoolShare sum(const vector<BoolShare>&);
