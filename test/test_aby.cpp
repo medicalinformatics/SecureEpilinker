@@ -48,6 +48,25 @@ struct ABYTester {
     return (bc->GetContext() == S_YAO) ? y2a(ac, cc, s) : b2a(ac, s);
   }
 
+  void test_reinterpret() {
+    ArithShare a{ac, vector<uint32_t>(bitlen, 0xdeadbeef).data(), bitlen, SERVER, bitlen};
+    ArithShare azero{ac, vector<uint32_t>(bitlen, 0).data(), bitlen, SERVER, bitlen};
+    print_share(a, "a");
+
+    BoolShare b{bc, new boolshare(a.get()->get_wires(), bc)};
+    BoolShare bzero{bc, new boolshare(azero.get()->get_wires(), bc)};
+
+    BoolShare btrue{bc, 1u, bitlen, CLIENT};
+    BoolShare bmux = btrue.mux(b, bzero);
+    print_share(bmux, "bmux");
+    //print_share(amux, "amux");
+
+    //BoolShare b = reinterpret_share(a, bc);
+    //print_share(b, "b");
+
+    party.ExecCircuit();
+  }
+
   void test_conversion() {
     vector<uint32_t> data(nvals, 42);
     BoolShare in(bc, data.data(), bitlen, SERVER, nvals);
@@ -240,7 +259,8 @@ int main(int argc, char *argv[])
   //tester.test_mult_const();
   //tester.test_hw();
   //tester.test_max_bits();
-  tester.test_conversion();
+  //tester.test_conversion();
+  tester.test_reinterpret();
 
   return 0;
 }
