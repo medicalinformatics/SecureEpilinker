@@ -51,6 +51,12 @@ ArithShare binary_accumulate(vector<ArithShare> vals,
 */
 
 /**
+ * Creates a BoolShare with bitlen wires from an arith share with 1 wire and
+ * bitlen-sized values - to be used with MUX to add flow to arithmetic shares
+ */
+BoolShare reinterpret_share(const ArithShare& a, BooleanCircuit* bc);
+
+/**
  * Accumulates all values in simd_share as if it was first split and then
  * binary-accumulated using op. Returns a share of same bitlen and nvals=1.
  *
