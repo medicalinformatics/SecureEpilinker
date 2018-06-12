@@ -384,7 +384,8 @@ private:
   BoolShare to_bool(const ArithShare& s) {
     return (bcirc->GetContext() == S_YAO) ? a2y(bcirc, s) : a2b(bcirc, ccirc, s);
   }
-  ArithShare to_arith(const BoolShare& s) {
+  ArithShare to_arith(const BoolShare& s_) {
+    BoolShare s{s_.zeropad(BitLen)}; // fix for aby issue #46
     return (bcirc->GetContext() == S_YAO) ? y2a(acirc, ccirc, s) : b2a(acirc, s);
   }
 
@@ -477,7 +478,7 @@ private:
     print_share(comp, fmt::format("^^^^ HW Comparison of pair ({},{}) ^^^^", ileft, iright));
 #endif
     // now go arithmetic
-    ArithShare a_comp{to_arith(comp.zeropad(BitLen))};
+    ArithShare a_comp{to_arith(comp)};
     // If indices match, use precomputed rescaled weights. Otherwise take
     // arithmetic average of both weights
     CircUnit weight_r = (ileft == iright) ? cfg.hw_weights_r[ileft] :
