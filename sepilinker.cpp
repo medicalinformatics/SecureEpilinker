@@ -42,7 +42,7 @@ using namespace sel;
 
 int main(int argc, char* argv[]) {
   // Commandline Parser
-  cxxopts::Options options("Secure EpiLinker", "Secure Multi Party Recard Linkage via EpiLink algorithm");
+  cxxopts::Options options("Secure EpiLinker", "Secure Multi Party Recard Linkage via EpiLink algorithm, Version 0.1.0");
   options.add_options()
     ("c,config", "Config file name", cxxopts::value<std::string>()->default_value("../data/serverconf.json"))
     ("i,initschema", "File name of initializeation schema", cxxopts::value<std::string>())
