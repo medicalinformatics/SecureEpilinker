@@ -4,6 +4,7 @@ project(SecureEpiLinker)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 option(BUILD_SHARED_LIBS "Build libraries as SHARED" OFF)
+option(BUILD_ABY_EXE "Build executable tests for ABY" OFF)
 
 set(SecureEpiLinker_INSTALL_PREFIX "${SecureEpiLinker_BINARY_DIR}/prefix")
 set(SecureEpiLinker_DEFAULT_ARGS
@@ -14,6 +15,7 @@ set(SecureEpiLinker_DEFAULT_ARGS
 file(MAKE_DIRECTORY ${SecureEpiLinker_INSTALL_PREFIX})
 
 # build external dependencies
+
 add_subdirectory(extern)
 
 # build main application
