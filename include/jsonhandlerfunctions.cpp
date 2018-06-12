@@ -102,10 +102,12 @@ SessionResponse valid_linkrecord_json_handler(
               if (!(f->is_string())) {
                 throw runtime_error("Invalid Field Type");
               }
+              empty =true;
               const auto b64string{f->get<string>()};
-              if (trim_copy(b64string) == "")
-                empty = true;
               auto tempbytearray{base64_decode(b64string)};
+              for(const auto& byte : tempbytearray){
+                empty = empty && (byte == 0x00);
+              }
               //              fmt::print("Bitstring: {}\n",
               //              print_bytearray(tempbytearray));
               if (!check_bloom_length(tempbytearray,
