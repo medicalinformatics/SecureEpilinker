@@ -21,6 +21,12 @@
 #include "gadgets.h"
 #include "../util.h"
 
+#ifdef DEBUG_SEL_GADGETS
+#include <fmt/format.h>
+using fmt::format;
+using fmt::print;
+#endif
+
 using namespace std;
 
 namespace sel {
@@ -237,14 +243,17 @@ void split_select_quotient_target(
     const ArithQuotientSelector& op_select, const B2AConverter& to_arith) {
   size_t nvals0 = selector.den.get_nvals(), ntargets = targets.size();
   ArithmeticCircuit* ac = selector.num.get_circuit();
+  uint32_t bitlen = ac->GetShareBitLen();
   assert (selector.num.get_nvals() == nvals0);
   for (const auto& t : targets) assert(t.get_nvals() == nvals0);
 #ifdef DEBUG_SEL_GADGETS
-  cout << "==== split-select-quotient-target shares of nvals: " << selector.get_nvals() << " ====\n";
+  cout << "==== split-select-quotient-target shares of nvals: " << nvals0 << " ====\n";
+  cout << "#targets:" << ntargets << "; bitlen: " << bitlen << "\n";
 #endif
   ArithQuotient stack_selector;
   vector<BoolShare> stack_targets(targets.size());
   assert (stack_selector.num.is_null() && stack_selector.den.is_null());
+  ArithShare one;
   for(size_t cnvals{selector.num.get_nvals()/2}, rem{selector.num.get_nvals()%2};
       selector.num.get_nvals() > 1; rem = cnvals%2, cnvals /=2) {
 #ifdef DEBUG_SEL_GADGETS
@@ -294,12 +303,18 @@ void split_select_quotient_target(
     BoolShare cmp = op_select({splits_num[0], splits_den[0]},
         {splits_num[1], splits_den[1]});
     ArithShare acmp = to_arith(cmp);
-    ArithShare one = constant_simd(ac, 1u, ac->GetShareBitLen(), acmp.get_nvals());
+    one = constant_simd(ac, 1u, bitlen, cnvals);
     ArithShare notacmp = one - acmp;
     selector.num = acmp * splits_num[0] + notacmp * splits_num[1];
     selector.den = acmp * splits_den[0] + notacmp * splits_den[1];
     for(size_t i=0; i!=ntargets; ++i)
       targets[i] = cmp.mux(tsplits[i][0], tsplits[i][1]);
+#ifdef DEBUG_SEL_GADGETS
+    print_share(cmp, format("cmp ({})", cnvals));
+    print_share(acmp, format("acmp ({})", cnvals));
+    print_share(one, format("one ({})", cnvals));
+    print_share(notacmp, format("notacmp ({})", cnvals));
+#endif
   }
   // finally accumulate with stack
   if (!stack_selector.num.is_null()) {
@@ -308,12 +323,18 @@ void split_select_quotient_target(
 #endif
     BoolShare cmp = op_select(selector, stack_selector);
     ArithShare acmp = to_arith(cmp);
-    ArithShare one = constant_simd(ac, 1u, ac->GetShareBitLen(), acmp.get_nvals());
+    if (one.is_null()) one = constant(ac, 1u, bitlen);
     ArithShare notacmp = one - acmp;
     selector.num = acmp * selector.num + notacmp * stack_selector.num;
     selector.den = acmp * selector.den + notacmp * stack_selector.den;
     for(size_t i=0; i!=ntargets; ++i)
       targets[i] = cmp.mux(targets[i], stack_targets[i]);
+#ifdef DEBUG_SEL_GADGETS
+    print_share(cmp, "cmp (final)");
+    print_share(acmp, "acmp (final)");
+    print_share(one, "one (final)");
+    print_share(notacmp, "notacmp (final)");
+#endif
   }
 }
 

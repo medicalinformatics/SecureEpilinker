@@ -79,8 +79,7 @@ void split_select_target(BoolShare& selector, BoolShare& target,
     const BinaryOp_BoolShare& op_select);
 
 void split_select_quotient_target(
-    ArithShare& selector_num, ArithShare& selector_den,
-    std::vector<BoolShare>& targets,
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
     const ArithQuotientSelector& op_select, const B2AConverter& to_arith);
 
 BoolShare max(const vector<BoolShare>&);
