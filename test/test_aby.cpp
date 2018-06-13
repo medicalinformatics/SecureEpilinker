@@ -212,6 +212,36 @@ struct ABYTester {
       << endl;
   }
 
+  void test_split_select_quotient_target() {
+    vector<uint32_t> data_num(nvals), data_den(nvals);
+    // 1/4, 2/5, 3/6, ...
+    iota(data_num.begin(), data_num.end(), 1);
+    iota(data_den.begin(), data_den.end(), 4);
+    cout << "numerators: " << data_num << "\ndenominators: " << data_den << endl;
+
+    ArithQuotient inq = {ArithShare{ac, data_num.data(), bitlen, SERVER, nvals},
+      ArithShare{ac, data_den.data(), bitlen, CLIENT, nvals}};
+    print_share(inq.num, "num");
+    print_share(inq.den, "den");
+
+    vector<BoolShare> targets;
+    ArithQuotientSelector op_select = [this](auto a, auto b) {
+      ArithShare ax = a.num * b.den;
+      ArithShare bx = b.num * a.den;
+      return to_bool(ax) > to_bool(bx);
+    };
+
+    B2AConverter lto_arith = [this](auto x){return to_arith(x);};
+
+    split_select_quotient_target(inq, targets, op_select, lto_arith);
+
+    print_share(inq.num, "max.num");
+    print_share(inq.den, "max.den");
+
+    party.ExecCircuit();
+  }
+
+
   void test_add() {
     constexpr uint32_t _bitlen = 8;
     BoolShare a = (role==SERVER) ? BoolShare{bc, _bitlen} : BoolShare{bc, 43u, _bitlen, CLIENT};
@@ -265,7 +295,8 @@ int main(int argc, char *argv[])
   //tester.test_hw();
   //tester.test_max_bits();
   //tester.test_conversion();
-  tester.test_reinterpret();
+  //tester.test_reinterpret();
+  tester.test_split_select_quotient_target();
 
   return 0;
 }
