@@ -69,12 +69,16 @@ struct ABYTester {
   }
 
   void test_conversion() {
-    vector<uint32_t> data(nvals, 42);
-    BoolShare in(bc, data.data(), bitlen, SERVER, nvals);
-    BoolShare in2(bc, data.data(), bitlen, SERVER, nvals);
-    print_share(in, "bool in");
+    vector<uint32_t> data(nvals);
+    iota(data.begin(), data.end(), 0);
+    size_t data_bitlen = ceil_log2(nvals);
+    BoolShare in(bc, data.data(), data_bitlen, SERVER, nvals);
+    BoolShare in2(bc, data.data(), data_bitlen, SERVER, 2);
     ArithShare ain = to_arith(in);
     ArithShare ain2 = to_arith(in2);
+
+    print_share(in, "bool in");
+    print_share(in2, "bool in2");
     print_share(ain, "arithmetic in");
     print_share(ain2, "arithmetic in2");
 
