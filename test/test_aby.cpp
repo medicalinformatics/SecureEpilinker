@@ -44,7 +44,8 @@ struct ABYTester {
   BoolShare to_bool(const ArithShare& s) {
     return (bc->GetContext() == S_YAO) ? a2y(bc, s) : a2b(bc, cc, s);
   }
-  ArithShare to_arith(const BoolShare& s) {
+  ArithShare to_arith(const BoolShare& s_) {
+    BoolShare s{s_.zeropad(bitlen)}; // fix for aby issue #46
     return (bc->GetContext() == S_YAO) ? y2a(ac, cc, s) : b2a(ac, s);
   }
 
