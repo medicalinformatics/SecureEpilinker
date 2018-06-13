@@ -19,7 +19,6 @@
 #include <memory>
 #include <type_traits>
 #include "gadgets.h"
-#include "circuit_defs.h"
 #include "../util.h"
 
 using namespace std;

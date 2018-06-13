@@ -22,9 +22,10 @@
 
 #include <memory>
 #include "abycore/aby/abyparty.h"
-#include "circuit_defs.h"
 
 namespace sel {
+
+using share_p = std::shared_ptr<share>;
 
 class Share {
   public:
