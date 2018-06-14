@@ -81,6 +81,14 @@ public:
     bin_server{cfg.nbin_fields}, bin_server_empty{cfg.nbin_fields}
   {}
 
+  /**
+   * Return type of weight_compare_*()
+   * fw - field weight = weight * comparison * empty-flags
+   * w - weight for weight sum = weight * empyt-flags
+   */
+  struct FieldWeight { ArithShare fw, w; };
+  using Comparator = function<BoolShare (const BoolShare&, const BoolShare&)>;
+
   void set_client_input(const EpilinkClientInput& input) {
     set_constants(input.nvals);
     // First create the client and input shares, which differ for client and
@@ -101,11 +109,17 @@ public:
           vector<uint8_t>(nvals, input.hw_rec_empty[i]).data(),
           1, CLIENT, nvals);
 
+      hw_client_delta[i] = ArithShare(acirc,
+          vector<CircUnit>(nvals, !input.hw_rec_empty[i]).data(),
+          BitLen, CLIENT, nvals);
+
       hw_server[i] = BoolShare(bcirc, cfg.size_bitmask, nvals); //dummy
 
       hw_server_hw[i] = BoolShare(bcirc, cfg.size_hw, nvals); //dummy
 
       hw_server_empty[i] = BoolShare(bcirc, 1, nvals); // dummy
+
+      hw_server_delta[i] = ArithShare(acirc, BitLen, nvals); // dummy
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(hw_client[i], format("hw_client[{}]", i));
       print_share(hw_client_hw[i], format("hw_client_hw[{}]", i));
@@ -124,9 +138,15 @@ public:
           vector<uint8_t>(nvals, input.bin_rec_empty[i]).data(),
           1, CLIENT, nvals);
 
+      bin_client_delta[i] = ArithShare(acirc,
+          vector<CircUnit>(nvals, !input.bin_rec_empty[i]).data(),
+          BitLen, CLIENT, nvals);
+
       bin_server[i] = BoolShare(bcirc, BitLen, nvals); //dummy
 
       bin_server_empty[i] = BoolShare(bcirc, 1, nvals); // dummy
+
+      bin_server_delta[i] = ArithShare(acirc, BitLen, nvals); // dummy
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(bin_client[i], format("bin_client[{}]", i));
       print_share(bin_client_empty[i], format("bin_client_empty[{}]", i));
@@ -139,15 +159,19 @@ public:
 
   void set_server_input(const EpilinkServerInput& input) {
     set_constants(input.nvals);
+
     // First create the server and input shares, which differ for client and
     // server run. Then pass to the joint routine.
     // concatenated hw input garbage - needs to be in scope until circuit has executed
+    vector<CircUnit> hw_db_delta(nvals);
     for (size_t i = 0; i != cfg.nhw_fields; ++i) {
       hw_client[i] = BoolShare(bcirc, cfg.size_bitmask, nvals); //dummy
 
       hw_client_hw[i] = BoolShare(bcirc, cfg.size_hw, nvals); //dummy
 
       hw_client_empty[i] = BoolShare(bcirc, 1, nvals); // dummy
+
+      hw_client_delta[i] = ArithShare(acirc, BitLen, nvals); // dummy
 
       check_vectors_size(input.hw_database[i], cfg.bytes_bitmask, " db bitmask byte vectors");
       hw_server[i] = BoolShare(bcirc,
@@ -163,6 +187,10 @@ public:
          vector<uint8_t>(input.hw_db_empty[i].cbegin(),
            input.hw_db_empty[i].cend()).data(),
          1, SERVER, nvals);
+
+      for (size_t j=0; j!=nvals; ++j) hw_db_delta[j] = !input.hw_db_empty[i][j];
+      hw_server_delta[i] = ArithShare(acirc, hw_db_delta.data(),
+          BitLen, SERVER, nvals);
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(hw_client[i], format("hw_client[{}]", i));
       print_share(hw_client_hw[i], format("hw_client_hw[{}]", i));
@@ -172,10 +200,14 @@ public:
       print_share(hw_server_empty[i], format("hw_server_empty[{}]", i));
 #endif
     }
+
+    vector<CircUnit> bin_db_delta(nvals);
     for (size_t i = 0; i != cfg.nbin_fields; ++i) {
       bin_client[i] = BoolShare(bcirc, BitLen, nvals); //dummy
 
       bin_client_empty[i] = BoolShare(bcirc, 1, nvals); // dummy
+
+      bin_client_delta[i] = ArithShare(acirc, BitLen, nvals); // dummy
 
       bin_server[i] = BoolShare(bcirc,
           const_cast<CircUnit*>(input.bin_database[i].data()),
@@ -185,6 +217,10 @@ public:
          vector<uint8_t>(input.bin_db_empty[i].cbegin(),
            input.bin_db_empty[i].cend()).data(),
           1, SERVER, nvals);
+
+      for (size_t j=0; j!=nvals; ++j) bin_db_delta[j] = !input.bin_db_empty[i][j];
+      bin_server_delta[i] = ArithShare(acirc, bin_db_delta.data(),
+          BitLen, SERVER, nvals);
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(bin_client[i], format("bin_client[{}]", i));
       print_share(bin_client_empty[i], format("bin_client_empty[{}]", i));
@@ -362,11 +398,23 @@ private:
   BooleanCircuit* ccirc; // intermediate conversion circuit
   ArithmeticCircuit* acirc;
   // Input shares
+  struct ValueShare {
+    BoolShare val; // value as bool
+    ArithShare delta; // 1 if non-empty
+    BoolShare hw; // precomputed HW of val - not used for bin
+  };
+  struct InputShares {
+    ValueShare client, server;
+  };
+  InputShares bm, bin;
   vector<BoolShare>
     hw_client, hw_client_hw, hw_client_empty,
     hw_server, hw_server_hw, hw_server_empty,
     bin_client, bin_client_empty,
     bin_server, bin_server_empty;
+  vector<ArithShare>
+    hw_client_delta, hw_server_delta,
+    bin_client_delta, bin_server_delta;
   // Constant shares
   BoolShare const_zero, const_idx;
   // Left side of inequality: T * sum(weights)
@@ -458,9 +506,52 @@ private:
     return max_perm_weight;
   }
 
+  FieldWeight field_weight_hw(size_t ileft, size_t iright) {
+    // 1. Calculate weight * delta(i,j)
+    // If indices match, use precomputed rescaled weights. Otherwise take
+    // arithmetic average of both weights
+    CircUnit weight_r = (ileft == iright) ? cfg.hw_weights_r[ileft] :
+      rescale_weight((cfg.hw_weights[ileft] + cfg.hw_weights[iright])/2,
+          cfg.weight_prec, cfg.max_weight);
+
+    ArithShare a_weight{constant_simd(acirc, weight_r, BitLen, nvals)};
+    ArithShare delta = hw_client_delta[ileft] * hw_server_delta[iright];
+    ArithShare weight = a_weight * delta; // free constant multiplication
+
+    // 2. Compare values (output dice precision) and multiply with weight
+    BoolShare b_comp = compare_hw(hw_client[ileft], hw_server[iright],
+        hw_client_hw[ileft], hw_server_hw[iright], cfg.dice_prec);
+    ArithShare comp = to_arith(b_comp);
+    ArithShare field_weight = weight * comp;
+
+    return {field_weight, weight};
+  }
+
+  FieldWeight field_weight_bin(size_t ileft, size_t iright) {
+    // 1. Calculate weight * delta(i,j)
+    // If indices match, use precomputed rescaled weights. Otherwise take
+    // arithmetic average of both weights
+    CircUnit weight_r = (ileft == iright) ? cfg.bin_weights_r[ileft] :
+      rescale_weight((cfg.bin_weights[ileft] + cfg.bin_weights[iright])/2,
+          cfg.weight_prec, cfg.max_weight);
+
+    ArithShare a_weight{constant_simd(acirc, weight_r, BitLen, nvals)};
+    ArithShare delta = bin_client_delta[ileft] * bin_server_delta[iright];
+    ArithShare weight = a_weight * delta; // free constant multiplication
+
+    // 2. Compare values (shift by dice precision) and multiply with weight
+    BoolShare b_comp = compare_bin(bin_client[ileft], bin_server[iright]);
+    b_comp = b_comp << cfg.dice_prec;
+    ArithShare comp = to_arith(b_comp);
+    ArithShare field_weight = weight * comp;
+
+    return {field_weight, weight};
+  }
+
   /*
    * Calculate a single hw summand in the weight sum:
    *  - compare_hw (2 * HW(x & y) / (HW(x) + HW(y))
+   *  - mux to zero if any field is empty
    *  - convert compare_hw to arith
    *  - arith-const of weight_r (simd nvals)
    *  - multiply and return
