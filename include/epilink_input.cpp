@@ -30,16 +30,16 @@ using fmt::print;
 
 namespace sel {
 
-EpilinkConfig::EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
-      vector<IndexSet> hw_exchange_groups, vector<IndexSet> bin_exchange_groups,
+EpilinkConfig::EpilinkConfig(VWeight bm_weights, VWeight bin_weights,
+      vector<IndexSet> bm_exchange_groups, vector<IndexSet> bin_exchange_groups,
       uint32_t size_bitmask, double threshold, double tthreshold) :
-  hw_weights{hw_weights}, bin_weights{bin_weights},
-  hw_exchange_groups{hw_exchange_groups}, bin_exchange_groups{bin_exchange_groups},
+  bm_weights{bm_weights}, bin_weights{bin_weights},
+  bm_exchange_groups{bm_exchange_groups}, bin_exchange_groups{bin_exchange_groups},
   size_bitmask{size_bitmask}, bytes_bitmask{bits_in_bytes(size_bitmask)},
   size_hw{ceil_log2(size_bitmask+1)},
   threshold{threshold}, tthreshold{tthreshold},
-  nhw_fields{hw_weights.size()}, nbin_fields{bin_weights.size()},
-  nfields{nhw_fields + nbin_fields},
+  nbm_fields{bm_weights.size()}, nbin_fields{bin_weights.size()},
+  nfields{nbm_fields + nbin_fields},
   // evenly distribute precision bits between weight and dice-coeff
   //dice_prec{(BitLen - ceil_log2(nfields))/2}, // TODO better this one and
   //custom integer division
@@ -47,10 +47,10 @@ EpilinkConfig::EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
   //weight_prec{ceil_divide((BitLen - ceil_log2(nfields)), 2)}, // TODO ^^^
   weight_prec{BitLen - ceil_log2(nfields) - dice_prec},
   max_weight{max(
-      nhw_fields ? *max_element(hw_weights.cbegin(), hw_weights.cend()) : 0.0,
+      nbm_fields ? *max_element(bm_weights.cbegin(), bm_weights.cend()) : 0.0,
       nbin_fields ? *max_element(bin_weights.cbegin(), bin_weights.cend()) :0.0
       )},
-  hw_weights_r{rescale_weights(hw_weights, weight_prec, max_weight)},
+  bm_weights_r{rescale_weights(bm_weights, weight_prec, max_weight)},
   bin_weights_r{rescale_weights(bin_weights, weight_prec, max_weight)}
   {
     // We sum up nfields products of dice_prec+weight_prec values, so they must
@@ -70,17 +70,17 @@ void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
 }
 
 EpilinkServerInput::EpilinkServerInput(
-  vector<VBitmask> hw_database, vector<VCircUnit> bin_database,
-  vector<vector<bool>> hw_db_empty, vector<vector<bool>> bin_db_empty) :
-  hw_database{hw_database}, bin_database{bin_database},
-  hw_db_empty{hw_db_empty}, bin_db_empty{bin_db_empty},
-  nvals{hw_database.empty() ?
-    bin_database.at(0).size() : hw_database.at(0).size()}
+  vector<VBitmask> bm_database, vector<VCircUnit> bin_database,
+  vector<vector<bool>> bm_db_empty, vector<vector<bool>> bin_db_empty) :
+  bm_database{bm_database}, bin_database{bin_database},
+  bm_db_empty{bm_db_empty}, bin_db_empty{bin_db_empty},
+  nvals{bm_database.empty() ?
+    bin_database.at(0).size() : bm_database.at(0).size()}
 {
   // check that all vectors over records have same size
-  check_vectors_size(hw_database, nvals, "hw_database");
+  check_vectors_size(bm_database, nvals, "bm_database");
   check_vectors_size(bin_database, nvals, "bin_database");
-  check_vectors_size(hw_db_empty, nvals, "hw_db_empty");
+  check_vectors_size(bm_db_empty, nvals, "bm_db_empty");
   check_vectors_size(bin_db_empty, nvals, "bin_db_empty");
 }
 /*
@@ -93,7 +93,7 @@ vector<Weight> gen_random_weights(const mt19937& gen, const uint32_t nfields) {
   return weights;
 }
 
-VBitmask gen_random_hw_vec(const mt19937& gen, const uint32_t size, const uint32_t bitmask_size) {
+VBitmask gen_random_bm_vec(const mt19937& gen, const uint32_t size, const uint32_t bitmask_size) {
   uniform_int_distribution<BitmaskUnit> dis{};
   uint32_t bitmask_bytes = bits_in_bytes(bitmask_size);
   vector<Bitmask> ret(size);
@@ -113,38 +113,38 @@ VCircUnit gen_random_bin_vec(const mt19937& gen, const uint32_t size) {
 
 EpilinkClientInput gen_random_client_input(
     const uint32_t seed, const uint32_t bitmask_size,
-    const uint32_t nhw_fields, const uint32_t nbin_fields) {
+    const uint32_t nbm_fields, const uint32_t nbin_fields) {
   mt19937 gen(seed);
 
   return EpilinkClientInput{
-    gen_random_weights(gen, nhw_fields),
+    gen_random_weights(gen, nbm_fields),
     gen_random_weights(gen, nbin_fields),
-    gen_random_hw_vec(gen, nhw_fields, bitmask_size),
+    gen_random_bm_vec(gen, nbm_fields, bitmask_size),
     gen_random_bin_vec(gen, nbin_fields)};
 }
 
 
 EpilinkServerInput gen_random_server_input(
     const uint32_t seed, const uint32_t bitmask_size,
-    const uint32_t nhw_fields, const uint32_t nbin_fields,
+    const uint32_t nbm_fields, const uint32_t nbin_fields,
     const uint32_t nvals) {
   mt19937 gen(seed);
 
   // random weights
-  vector<Weight> hw_weights = gen_random_weights(gen, nhw_fields);
+  vector<Weight> bm_weights = gen_random_weights(gen, nbm_fields);
   vector<Weight> bin_weights = gen_random_weights(gen, nbin_fields);
   // random database
-  vector<vector<Bitmask>> hw_database(nhw_fields);
-  for (auto& col: hw_database) {
-    col = gen_random_hw_vec(gen, nvals, bitmask_size);
+  vector<vector<Bitmask>> bm_database(nbm_fields);
+  for (auto& col: bm_database) {
+    col = gen_random_bm_vec(gen, nvals, bitmask_size);
   }
   vector<vector<CircUnit>> bin_database(nbin_fields);
   for (auto& col: bin_database) {
     col = gen_random_bin_vec(gen, nvals);
   }
 
-  return EpilinkServerInput{hw_weights, bin_weights,
-    hw_database, bin_database};
+  return EpilinkServerInput{bm_weights, bin_weights,
+    bm_database, bin_database};
 }
 */
 

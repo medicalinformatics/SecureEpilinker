@@ -42,11 +42,11 @@ constexpr size_t BitLen = sizeof(CircUnit)*8;
 
 struct EpilinkConfig {
   // vector of weights
-  const VWeight hw_weights;
+  const VWeight bm_weights;
   const VWeight bin_weights;
 
   // exchange groups by index
-  const std::vector<IndexSet> hw_exchange_groups;
+  const std::vector<IndexSet> bm_exchange_groups;
   const std::vector<IndexSet> bin_exchange_groups;
 
   // bitlength of bitmasks
@@ -59,16 +59,16 @@ struct EpilinkConfig {
   const double tthreshold; // threshold for tentative match
 
   // calculated fields for faster access
-  const size_t nhw_fields, nbin_fields, nfields; // field counters
+  const size_t nbm_fields, nbin_fields, nfields; // field counters
   size_t dice_prec, weight_prec; // bit precisions
   const double max_weight;
 
   // must come after max_weight because of initializer list
-  const VCircUnit hw_weights_r;
+  const VCircUnit bm_weights_r;
   const VCircUnit bin_weights_r;
 
-  EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
-      std::vector<IndexSet> hw_exchange_groups,
+  EpilinkConfig(VWeight bm_weights, VWeight bin_weights,
+      std::vector<IndexSet> bm_exchange_groups,
       std::vector<IndexSet> bin_exchange_groups,
       uint32_t size_bitmask, double threshold, double tthreshold);
   ~EpilinkConfig() = default;
@@ -83,11 +83,11 @@ struct EpilinkConfig {
 struct EpilinkClientInput {
   // nfields vector of input record to link
   // cannot be const because ABY doens't know what const is
-  const VBitmask hw_record;
+  const VBitmask bm_record;
   const VCircUnit bin_record;
 
   // corresponding empty-field-flags
-  const std::vector<bool> hw_rec_empty;
+  const std::vector<bool> bm_rec_empty;
   const std::vector<bool> bin_rec_empty;
 
   // need to know database size of remote during circuit building
@@ -97,19 +97,19 @@ struct EpilinkClientInput {
 struct EpilinkServerInput {
   // Outer vector by fields, inner by records!
   // Need to model like this for SIMD
-  const std::vector<VBitmask> hw_database;
+  const std::vector<VBitmask> bm_database;
   const std::vector<VCircUnit> bin_database;
 
   // corresponding empty-field-flags
-  const std::vector<std::vector<bool>> hw_db_empty;
+  const std::vector<std::vector<bool>> bm_db_empty;
   const std::vector<std::vector<bool>> bin_db_empty;
 
   const size_t nvals;
   // default constructor - checks that all records have same size
   // TODO: make it a move && constructor instead?
-  EpilinkServerInput(std::vector<VBitmask> hw_database,
+  EpilinkServerInput(std::vector<VBitmask> bm_database,
       std::vector<VCircUnit> bin_database,
-      std::vector<std::vector<bool>> hw_db_empty,
+      std::vector<std::vector<bool>> bm_db_empty,
       std::vector<std::vector<bool>> bin_db_empty);
   ~EpilinkServerInput() = default;
 };
@@ -134,10 +134,10 @@ CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight);
 /*
 EpilinkClientInput gen_random_client_input(
   const uint32_t seed, const uint32_t bitmask_size,
-  const uint32_t nhw_fields, const uint32_t nbin_fields);
+  const uint32_t nbm_fields, const uint32_t nbin_fields);
 EpilinkServerInput gen_random_server_input(
     const uint32_t seed, const uint32_t bitmask_size,
-    const uint32_t nhw_fields, const uint32_t nbin_fields,
+    const uint32_t nbm_fields, const uint32_t nbin_fields,
     const uint32_t nvals);
 */
 
