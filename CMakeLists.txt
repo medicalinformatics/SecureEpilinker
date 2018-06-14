@@ -114,7 +114,8 @@ target_link_libraries(test_aby PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
   OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
 target_link_libraries(test_aby PRIVATE fmt::fmt-header-only cxxopts)
 set_property(TARGET test_aby PROPERTY CXX_STANDARD 14)
-target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3")
+target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3"
+  "-DDEBUG_SEL_GADGETS")
 
 # Test Secure Epilinker
 add_executable(test_sel test/test_sel.cpp ${SELSOURCES} ${SELHEADER})
