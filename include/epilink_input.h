@@ -63,10 +63,6 @@ struct EpilinkConfig {
   size_t dice_prec, weight_prec; // bit precisions
   const double max_weight;
 
-  // must come after max_weight because of initializer list
-  const VCircUnit bm_weights_r;
-  const VCircUnit bin_weights_r;
-
   EpilinkConfig(VWeight bm_weights, VWeight bin_weights,
       std::vector<IndexSet> bm_exchange_groups,
       std::vector<IndexSet> bin_exchange_groups,

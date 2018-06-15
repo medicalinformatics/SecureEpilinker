@@ -47,9 +47,7 @@ EpilinkConfig::EpilinkConfig(VWeight bm_weights, VWeight bin_weights,
   max_weight{max(
       nbm_fields ? *max_element(bm_weights.cbegin(), bm_weights.cend()) : 0.0,
       nbin_fields ? *max_element(bin_weights.cbegin(), bin_weights.cend()) :0.0
-      )},
-  bm_weights_r{rescale_weights(bm_weights, weight_prec, max_weight)},
-  bin_weights_r{rescale_weights(bin_weights, weight_prec, max_weight)}
+      )}
   {
     // We sum up nfields products of dice_prec+weight_prec values, so they must
     // fit into the total BitLen
