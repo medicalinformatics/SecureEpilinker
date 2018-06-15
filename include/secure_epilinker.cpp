@@ -1,4 +1,3 @@
-
 /**
  \file    secure_epilinker.cpp
  \author  Sebastian Stammler <sebastian.stammler@cysec.de>
@@ -26,11 +25,15 @@
 #include "util.h"
 #include "aby/Share.h"
 #include "aby/gadgets.h"
+#include "seltypes.h"
 
 using namespace std;
 using fmt::format;
 
 namespace sel {
+
+constexpr auto BIN = FieldComparator::BINARY;
+constexpr auto BM = FieldComparator::NGRAM;
 
 /***************** Circuit gadgets *******************/
 BoolShare dice_coefficient(const BoolShare& x, const BoolShare& y,
@@ -75,7 +78,10 @@ public:
   SELCircuit(EpilinkConfig cfg,
     BooleanCircuit* bcirc, BooleanCircuit* ccirc, ArithmeticCircuit* acirc) :
     cfg{cfg}, bcirc{bcirc}, ccirc{ccirc}, acirc{acirc},
-    bm{cfg.nbm_fields}, bin{cfg.nbin_fields}
+    ins{
+      {BM, vector<InputShares>{cfg.nbm_fields}},
+      {BIN, vector<InputShares>{cfg.nbin_fields}}
+    }
   {}
 
   /**
@@ -88,143 +94,17 @@ public:
 
   void set_client_input(const EpilinkClientInput& input) {
     set_constants(input.nvals);
-    // First create the client and input shares, which differ for client and
-    // server run. Then pass to the joint routine.
-    for (size_t i = 0; i != cfg.nbm_fields; ++i) {
-      // bitmask records are saved as vector<uint8_t>, so need to access raw data
-      check_vector_size(input.bm_record[i], cfg.bytes_bitmask, "rec bitmask byte vector");
-      bm[i].client.val = BoolShare(bcirc,
-          repeat_vec(input.bm_record[i], nvals).data(),
-          cfg.size_bitmask, CLIENT, nvals);
+    set_real_client_input(input);
+    set_dummy_server_input();
 
-      bm[i].client.hw = BoolShare(bcirc,
-          vector<CircUnit>(nvals, hw(input.bm_record[i])).data(),
-          cfg.size_hw, CLIENT, nvals);
-
-      // need to convert bool into uint8_t array
-      bm[i].client.empty = BoolShare(bcirc,
-          vector<uint8_t>(nvals, input.bm_rec_empty[i]).data(),
-          1, CLIENT, nvals);
-
-      bm[i].client.delta = ArithShare(acirc,
-          vector<CircUnit>(nvals, !input.bm_rec_empty[i]).data(),
-          BitLen, CLIENT, nvals);
-
-      bm[i].server.val = BoolShare(bcirc, cfg.size_bitmask, nvals); //dummy
-
-      bm[i].server.hw = BoolShare(bcirc, cfg.size_hw, nvals); //dummy
-
-      bm[i].server.empty = BoolShare(bcirc, 1, nvals); // dummy
-
-      bm[i].server.delta = ArithShare(acirc, BitLen, nvals); // dummy
-#ifdef DEBUG_SEL_CIRCUIT
-      print_share(bm[i].client.val, format("bm.client.val[{}]", i));
-      print_share(bm[i].client.hw, format("bm.client.hw[{}]", i));
-      print_share(bm[i].client.empty, format("bm.client.empty[{}]", i));
-      print_share(bm[i].server.val, format("bm.server.val[{}]", i));
-      print_share(bm[i].server.hw, format("bm.server.hw[{}]", i));
-      print_share(bm[i].server.empty, format("bm.server.empty[{}]", i));
-#endif
-    }
-    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
-      bin[i].client.val = BoolShare(bcirc,
-          vector<CircUnit>(nvals, input.bin_record[i]).data(),
-          BitLen, CLIENT, nvals);
-
-      bin[i].client.empty = BoolShare(bcirc,
-          vector<uint8_t>(nvals, input.bin_rec_empty[i]).data(),
-          1, CLIENT, nvals);
-
-      bin[i].client.delta = ArithShare(acirc,
-          vector<CircUnit>(nvals, !input.bin_rec_empty[i]).data(),
-          BitLen, CLIENT, nvals);
-
-      bin[i].server.val = BoolShare(bcirc, BitLen, nvals); //dummy
-
-      bin[i].server.empty = BoolShare(bcirc, 1, nvals); // dummy
-
-      bin[i].server.delta = ArithShare(acirc, BitLen, nvals); // dummy
-#ifdef DEBUG_SEL_CIRCUIT
-      print_share(bin[i].client.val, format("bin.client.val[{}]", i));
-      print_share(bin[i].client.empty, format("bin.client.empty[{}]", i));
-      print_share(bin[i].server.val, format("bin.server.val[{}]", i));
-      print_share(bin[i].server.empty, format("bin.server.empty[{}]", i));
-#endif
-    }
     is_input_set = true;
   }
 
   void set_server_input(const EpilinkServerInput& input) {
     set_constants(input.nvals);
+    set_real_server_input(input);
+    set_dummy_client_input();
 
-    // First create the server and input shares, which differ for client and
-    // server run. Then pass to the joint routine.
-    // concatenated hw input garbage - needs to be in scope until circuit has executed
-    vector<CircUnit> bm_db_delta(nvals);
-    for (size_t i = 0; i != cfg.nbm_fields; ++i) {
-      bm[i].client.val = BoolShare(bcirc, cfg.size_bitmask, nvals); //dummy
-
-      bm[i].client.hw = BoolShare(bcirc, cfg.size_hw, nvals); //dummy
-
-      bm[i].client.empty = BoolShare(bcirc, 1, nvals); // dummy
-
-      bm[i].client.delta = ArithShare(acirc, BitLen, nvals); // dummy
-
-      check_vectors_size(input.bm_database[i], cfg.bytes_bitmask, " db bitmask byte vectors");
-      bm[i].server.val = BoolShare(bcirc,
-          concat_vec(input.bm_database[i]).data(),
-          cfg.size_bitmask, SERVER, nvals);
-
-      bm[i].server.hw = BoolShare(bcirc,
-          hw(input.bm_database[i]).data(),
-          cfg.size_hw, SERVER, nvals);
-
-      // need to convert bool array into uint8_t array
-      bm[i].server.empty = BoolShare(bcirc,
-         vector<uint8_t>(input.bm_db_empty[i].cbegin(),
-           input.bm_db_empty[i].cend()).data(),
-         1, SERVER, nvals);
-
-      for (size_t j=0; j!=nvals; ++j) bm_db_delta[j] = !input.bm_db_empty[i][j];
-      bm[i].server.delta = ArithShare(acirc, bm_db_delta.data(),
-          BitLen, SERVER, nvals);
-#ifdef DEBUG_SEL_CIRCUIT
-      print_share(bm[i].client.val, format("bm.client.val[{}]", i));
-      print_share(bm[i].client.hw, format("bm.client.hw[{}]", i));
-      print_share(bm[i].client.empty, format("bm.client.empty[{}]", i));
-      print_share(bm[i].server.val, format("bm.server.val[{}]", i));
-      print_share(bm[i].server.hw, format("bm.server.hw[{}]", i));
-      print_share(bm[i].server.empty, format("bm.server.empty[{}]", i));
-#endif
-    }
-
-    vector<CircUnit> bin_db_delta(nvals);
-    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
-      bin[i].client.val = BoolShare(bcirc, BitLen, nvals); //dummy
-
-      bin[i].client.empty = BoolShare(bcirc, 1, nvals); // dummy
-
-      bin[i].client.delta = ArithShare(acirc, BitLen, nvals); // dummy
-
-      bin[i].server.val = BoolShare(bcirc,
-          const_cast<CircUnit*>(input.bin_database[i].data()),
-          BitLen, SERVER, nvals);
-
-      bin[i].server.empty = BoolShare(bcirc,
-         vector<uint8_t>(input.bin_db_empty[i].cbegin(),
-           input.bin_db_empty[i].cend()).data(),
-          1, SERVER, nvals);
-
-      for (size_t j=0; j!=nvals; ++j) bin_db_delta[j] = !input.bin_db_empty[i][j];
-      bin[i].server.delta = ArithShare(acirc, bin_db_delta.data(),
-          BitLen, SERVER, nvals);
-#ifdef DEBUG_SEL_CIRCUIT
-      print_share(bin[i].client.val, format("bin.client.val[{}]", i));
-      print_share(bin[i].client.empty, format("bin.client.empty[{}]", i));
-      print_share(bin[i].server.val, format("bin.server.val[{}]", i));
-      print_share(bin[i].server.empty, format("bin.server.empty[{}]", i));
-#endif
-    }
     is_input_set = true;
   }
 
@@ -234,71 +114,8 @@ public:
    */
   void set_both_inputs(const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
     set_constants(in_client.nvals);
-    // First create the client and input shares, which differ for client and
-    // server run. Then pass to the joint routine.
-    // concatenated hw input garbage - needs to be in scope until circuit has executed
-    for (size_t i = 0; i != cfg.nbm_fields; ++i) {
-      // bitmask records are saved as vector<uint8_t>, so need to access raw data
-      check_vector_size(in_client.bm_record[i], cfg.bytes_bitmask, "rec bitmask byte vector");
-      bm[i].client.val = BoolShare(bcirc,
-          repeat_vec(in_client.bm_record[i], nvals).data(),
-          cfg.size_bitmask, CLIENT, nvals);
-
-      bm[i].client.hw = BoolShare(bcirc,
-          vector<CircUnit>(nvals, hw(in_client.bm_record[i])).data(),
-          cfg.size_hw, CLIENT, nvals);
-
-      // need to convert bool into uint8_t array
-      bm[i].client.empty = BoolShare(bcirc,
-          vector<uint8_t>(nvals, in_client.bm_rec_empty[i]).data(),
-          1, CLIENT, nvals);
-
-      check_vectors_size(in_server.bm_database[i], cfg.bytes_bitmask, " db bitmask byte vectors");
-      bm[i].server.val = BoolShare(bcirc,
-          concat_vec(in_server.bm_database[i]).data(),
-          cfg.size_bitmask, SERVER, nvals);
-
-      bm[i].server.hw = BoolShare(bcirc,
-          hw(in_server.bm_database[i]).data(),
-          cfg.size_hw, SERVER, nvals);
-
-      // need to convert bool array into uint8_t array
-      bm[i].server.empty = BoolShare(bcirc,
-         vector<uint8_t>(in_server.bm_db_empty[i].cbegin(),
-           in_server.bm_db_empty[i].cend()).data(),
-         1, SERVER, nvals);
-
-      print_share(bm[i].client.val, format("bm.client.val[{}]", i));
-      print_share(bm[i].client.hw, format("bm.client.hw[{}]", i));
-      print_share(bm[i].client.empty, format("bm.client.empty[{}]", i));
-      print_share(bm[i].server.val, format("bm.server.val[{}]", i));
-      print_share(bm[i].server.hw, format("bm.server.hw[{}]", i));
-      print_share(bm[i].server.empty, format("bm.server.empty[{}]", i));
-    }
-
-    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
-      bin[i].client.val = BoolShare(bcirc,
-          vector<CircUnit>(nvals, in_client.bin_record[i]).data(),
-          BitLen, CLIENT, nvals);
-
-      bin[i].client.empty = BoolShare(bcirc,
-          vector<uint8_t>(nvals, in_client.bin_rec_empty[i]).data(),
-          1, CLIENT, nvals);
-
-      bin[i].server.val = BoolShare(bcirc,
-          const_cast<CircUnit*>(in_server.bin_database[i].data()),
-          BitLen, SERVER, nvals);
-
-      bin[i].server.empty = BoolShare(bcirc,
-         vector<uint8_t>(in_server.bin_db_empty[i].cbegin(),
-           in_server.bin_db_empty[i].cend()).data(),
-          1, SERVER, nvals);
-
-      print_share(bin[i].client.val, format("bin.client.val[{}]", i));
-      print_share(bin[i].client.empty, format("bin.client.empty[{}]", i));
-      print_share(bin[i].server.val, format("bin.server.val[{}]", i));
-      print_share(bin[i].server.empty, format("bin.server.empty[{}]", i));
-    }
+    set_real_client_input(in_client);
+    set_real_server_input(in_server);
 
     is_input_set = true;
   }
@@ -336,7 +153,7 @@ public:
     }
     // 1.2 Remaining HW indices
     for (size_t i : no_x_group_hw) {
-      a_field_weights.emplace_back(weight_compare_bm(i, i));
+      a_field_weights.emplace_back(weight_compare_hw(i, i));
     }
 
     // 2. Binary fields
@@ -347,7 +164,7 @@ public:
     }
 
     // 3. Sum up all field weights.
-    // best_group_weight_*() and weight_compare_bin() return BoolShares and we
+    // best_group_weight_*() and weight_equality() return BoolShares and we
     // don't need arithmetic representation afterwards, so we sum those in the
     // boolean circuit.
     if (!a_field_weights.empty())
@@ -404,7 +221,15 @@ private:
   struct InputShares {
     ValueShare client, server;
   };
-  vector<InputShares> bm, bin;
+  /**
+   * All input shares are stored in this map, keyed by field/comparator type
+   * (BIN = equality test; BM = Hammingweight dice coefficient)
+   * Value is a vector over all fields, and each field holds the ValueShare for
+   * client and server. A ValueShare holds the value of the field itself, a
+   * delta flag, which is 1 if the field is non-empty, and the precalculated
+   * hammingweight for bitmasks.
+   */
+  map<FieldComparator, vector<InputShares>> ins;
   // Constant shares
   BoolShare const_zero, const_idx;
   // Left side of inequality: T * sum(weights)
@@ -422,6 +247,7 @@ private:
   BoolShare to_bool(const ArithShare& s) {
     return (bcirc->GetContext() == S_YAO) ? a2y(bcirc, s) : a2b(bcirc, ccirc, s);
   }
+
   ArithShare to_arith(const BoolShare& s_) {
     BoolShare s{s_.zeropad(BitLen)}; // fix for aby issue #46
     return (bcirc->GetContext() == S_YAO) ? y2a(acirc, ccirc, s) : b2a(acirc, s);
@@ -464,6 +290,167 @@ private:
 #endif
   }
 
+  void set_real_client_input(const EpilinkClientInput& input) {
+    assert (nvals > 0 && "call set_constants() before set_*_input()");
+
+    for (size_t i = 0; i != cfg.nbm_fields; ++i) {
+      // bitmask records are saved as vector<uint8_t>, so need to access raw data
+      check_vector_size(input.bm_record[i], cfg.bytes_bitmask, "rec bitmask byte vector");
+      ins[BM][i].client.val = BoolShare(bcirc,
+          repeat_vec(input.bm_record[i], nvals).data(),
+          cfg.size_bitmask, CLIENT, nvals);
+
+      ins[BM][i].client.hw = BoolShare(bcirc,
+          vector<CircUnit>(nvals, hw(input.bm_record[i])).data(),
+          cfg.size_hw, CLIENT, nvals);
+
+      // need to convert bool into uint8_t array
+      ins[BM][i].client.empty = BoolShare(bcirc,
+          vector<uint8_t>(nvals, input.bm_rec_empty[i]).data(),
+          1, CLIENT, nvals);
+
+      ins[BM][i].client.delta = ArithShare(acirc,
+          vector<CircUnit>(nvals, !input.bm_rec_empty[i]).data(),
+          BitLen, CLIENT, nvals);
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(ins[BM][i].client.val, format("bm.client.val[{}]", i));
+      print_share(ins[BM][i].client.hw, format("bm.client.hw[{}]", i));
+      print_share(ins[BM][i].client.empty, format("bm.client.empty[{}]", i));
+#endif
+    }
+
+    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
+      ins[BIN][i].client.val = BoolShare(bcirc,
+          vector<CircUnit>(nvals, input.bin_record[i]).data(),
+          BitLen, CLIENT, nvals);
+
+      ins[BIN][i].client.empty = BoolShare(bcirc,
+          vector<uint8_t>(nvals, input.bin_rec_empty[i]).data(),
+          1, CLIENT, nvals);
+
+      ins[BIN][i].client.delta = ArithShare(acirc,
+          vector<CircUnit>(nvals, !input.bin_rec_empty[i]).data(),
+          BitLen, CLIENT, nvals);
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(ins[BIN][i].client.val, format("bin.client.val[{}]", i));
+      print_share(ins[BIN][i].client.empty, format("bin.client.empty[{}]", i));
+#endif
+    }
+  }
+
+  void set_real_server_input(const EpilinkServerInput& input) {
+    assert (nvals > 0 && "call set_constants() before set_*_input()");
+
+    vector<CircUnit> bm_db_delta(nvals);
+    for (size_t i = 0; i != cfg.nbm_fields; ++i) {
+      check_vectors_size(input.bm_database[i], cfg.bytes_bitmask, " db bitmask byte vectors");
+      ins[BM][i].server.val = BoolShare(bcirc,
+          concat_vec(input.bm_database[i]).data(),
+          cfg.size_bitmask, SERVER, nvals);
+
+      ins[BM][i].server.hw = BoolShare(bcirc,
+          hw(input.bm_database[i]).data(),
+          cfg.size_hw, SERVER, nvals);
+
+      // need to convert bool array into uint8_t array
+      ins[BM][i].server.empty = BoolShare(bcirc,
+         vector<uint8_t>(input.bm_db_empty[i].cbegin(),
+           input.bm_db_empty[i].cend()).data(),
+         1, SERVER, nvals);
+
+      for (size_t j=0; j!=nvals; ++j) bm_db_delta[j] = !input.bm_db_empty[i][j];
+      ins[BM][i].server.delta = ArithShare(acirc, bm_db_delta.data(),
+          BitLen, SERVER, nvals);
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(ins[BM][i].server.val, format("bm.server.val[{}]", i));
+      print_share(ins[BM][i].server.hw, format("bm.server.hw[{}]", i));
+      print_share(ins[BM][i].server.empty, format("bm.server.empty[{}]", i));
+#endif
+    }
+
+    vector<CircUnit> bin_db_delta(nvals);
+    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
+      ins[BIN][i].server.val = BoolShare(bcirc,
+          const_cast<CircUnit*>(input.bin_database[i].data()),
+          BitLen, SERVER, nvals);
+
+      ins[BIN][i].server.empty = BoolShare(bcirc,
+         vector<uint8_t>(input.bin_db_empty[i].cbegin(),
+           input.bin_db_empty[i].cend()).data(),
+          1, SERVER, nvals);
+
+      for (size_t j=0; j!=nvals; ++j) bin_db_delta[j] = !input.bin_db_empty[i][j];
+      ins[BIN][i].server.delta = ArithShare(acirc, bin_db_delta.data(),
+          BitLen, SERVER, nvals);
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(ins[BIN][i].server.val, format("bin.server.val[{}]", i));
+      print_share(ins[BIN][i].server.empty, format("bin.server.empty[{}]", i));
+#endif
+    }
+  }
+
+  void set_dummy_client_input() {
+    assert (nvals > 0 && "call set_constants() before set_*_input()");
+
+    for (size_t i = 0; i != cfg.nbm_fields; ++i) {
+      ins[BM][i].client.val = BoolShare(bcirc, cfg.size_bitmask, nvals); //dummy
+
+      ins[BM][i].client.hw = BoolShare(bcirc, cfg.size_hw, nvals); //dummy
+
+      ins[BM][i].client.empty = BoolShare(bcirc, 1, nvals); // dummy
+
+      ins[BM][i].client.delta = ArithShare(acirc, BitLen, nvals); // dummy
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(ins[BM][i].client.val, format("bm.client.val[{}]", i));
+      print_share(ins[BM][i].client.hw, format("bm.client.hw[{}]", i));
+      print_share(ins[BM][i].client.empty, format("bm.client.empty[{}]", i));
+#endif
+    }
+
+    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
+      ins[BIN][i].client.val = BoolShare(bcirc, BitLen, nvals); //dummy
+
+      ins[BIN][i].client.empty = BoolShare(bcirc, 1, nvals); // dummy
+
+      ins[BIN][i].client.delta = ArithShare(acirc, BitLen, nvals); // dummy
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(ins[BIN][i].client.val, format("bin.client.val[{}]", i));
+      print_share(ins[BIN][i].client.empty, format("bin.client.empty[{}]", i));
+#endif
+    }
+  }
+
+  void set_dummy_server_input() {
+    assert (nvals > 0 && "call set_constants() before set_*_input()");
+
+    for (size_t i = 0; i != cfg.nbm_fields; ++i) {
+      ins[BM][i].server.val = BoolShare(bcirc, cfg.size_bitmask, nvals); //dummy
+
+      ins[BM][i].server.hw = BoolShare(bcirc, cfg.size_hw, nvals); //dummy
+
+      ins[BM][i].server.empty = BoolShare(bcirc, 1, nvals); // dummy
+
+      ins[BM][i].server.delta = ArithShare(acirc, BitLen, nvals); // dummy
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(ins[BM][i].server.val, format("bm.server.val[{}]", i));
+      print_share(ins[BM][i].server.hw, format("bm.server.hw[{}]", i));
+      print_share(ins[BM][i].server.empty, format("bm.server.empty[{}]", i));
+#endif
+    }
+
+    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
+      ins[BIN][i].server.val = BoolShare(bcirc, BitLen, nvals); //dummy
+
+      ins[BIN][i].server.empty = BoolShare(bcirc, 1, nvals); // dummy
+
+      ins[BIN][i].server.delta = ArithShare(acirc, BitLen, nvals); // dummy
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(ins[BIN][i].server.val, format("bin.server.val[{}]", i));
+      print_share(ins[BIN][i].server.empty, format("bin.server.empty[{}]", i));
+#endif
+    }
+  }
+
   BoolShare best_group_weight_hw(const IndexSet& group_set) {
     vector<size_t> group{begin(group_set), end(group_set)};
     // copy group to store permutations
@@ -478,7 +465,7 @@ private:
       for (size_t i = 0; i != size; ++i) {
         size_t ileft = group[i];
         size_t iright = groupPerm[i];
-        a_field_weights.emplace_back(weight_compare_bm(ileft, iright));
+        a_field_weights.emplace_back(weight_compare_hw(ileft, iright));
       }
       // sum all field-weights for this permutation
       ArithShare sum_perm_weight{sum(a_field_weights)};
@@ -496,7 +483,17 @@ private:
     return max_perm_weight;
   }
 
-  FieldWeight field_weight_hw(size_t ileft, size_t iright) {
+  /**
+   * Calculates the field weight and addend to the total weight.
+   * - Set rescaled weight as arithmetic constant
+   * - Set weight to 0 if any field on either side is empty
+   * - Run comparison, dependent on field type:
+   *   - Bitmasks: Dice coefficient with precision dice_prec
+   *   - Binary: Simple Equality, but 0/1 shifted to the left by same dice_prec
+   * - Multiply result of comparison with weight -> field weight
+   * - Return field weight and weight
+   */
+  FieldWeight field_weight(size_t ileft, size_t iright, FieldComparator ftype) {
     // 1. Calculate weight * delta(i,j)
     // If indices match, use precomputed rescaled weights. Otherwise take
     // arithmetic average of both weights
@@ -505,112 +502,43 @@ private:
           cfg.weight_prec, cfg.max_weight);
 
     ArithShare a_weight{constant_simd(acirc, weight_r, BitLen, nvals)};
-    ArithShare delta = bm[ileft].client.delta * bm[iright].server.delta;
+
+    auto client_field = ins[ftype][ileft].client;
+    auto server_field = ins[ftype][iright].server;
+    ArithShare delta = client_field.delta * server_field.delta;
     ArithShare weight = a_weight * delta; // free constant multiplication
 
-    // 2. Compare values (output dice precision) and multiply with weight
-    BoolShare b_comp = compare_bm(bm[ileft].client.val, bm[iright].server.val,
-        bm[ileft].client.hw, bm[iright].server.hw, cfg.dice_prec);
-    ArithShare comp = to_arith(b_comp);
+    // 2. Compare values (with dice precision) and multiply with weight
+    BoolShare b_comp;
+    ArithShare comp;
+    switch(ftype) {
+      case BM: {
+        b_comp = dice_coefficient(client_field.val, server_field.val,
+          client_field.hw, server_field.hw, cfg.dice_prec);
+        comp = to_arith(b_comp);
+        break;
+      }
+      case BIN: {
+        b_comp = equality(client_field.val, server_field.val);
+        // Instead of left-shifting the bool share, it is cheaper to first do a
+        // single-bit conversion into an arithmetic share and then a free
+        // multiplication with a constant 2^dice_prec
+        comp = to_arith(b_comp);
+        comp *= constant_simd(acirc, (1 << cfg.dice_prec), BitLen, nvals);
+        break;
+      }
+    }
+
     ArithShare field_weight = weight * comp;
 
-    return {field_weight, weight};
-  }
-
-  FieldWeight field_weight_bin(size_t ileft, size_t iright) {
-    // 1. Calculate weight * delta(i,j)
-    // If indices match, use precomputed rescaled weights. Otherwise take
-    // arithmetic average of both weights
-    CircUnit weight_r = (ileft == iright) ? cfg.bin_weights_r[ileft] :
-      rescale_weight((cfg.bin_weights[ileft] + cfg.bin_weights[iright])/2,
-          cfg.weight_prec, cfg.max_weight);
-
-    ArithShare a_weight{constant_simd(acirc, weight_r, BitLen, nvals)};
-    ArithShare delta = bin[ileft].client.delta * bin[iright].server.delta;
-    ArithShare weight = a_weight * delta; // free constant multiplication
-
-    // 2. Compare values (shift by dice precision) and multiply with weight
-    BoolShare b_comp = compare_bin(bin[ileft].client.val, bin[iright].server.val);
-    b_comp = b_comp << cfg.dice_prec;
-    ArithShare comp = to_arith(b_comp);
-    ArithShare field_weight = weight * comp;
+#ifdef DEBUG_SEL_CIRCUIT
+    print_share(weight, format("weight({},{},{})", ftype, ileft, iright));
+    print_share(b_comp, format("bool comp({},{},{})", ftype, ileft, iright));
+    print_share(comp, format("arith comp({},{},{})", ftype, ileft, iright));
+    print_share(field_weight, format("^^^^ field weight({},{},{}) ^^^^", ftype, ileft, iright));
+#endif
 
     return {field_weight, weight};
-  }
-
-  /*
-   * Calculate a single hw summand in the weight sum:
-   *  - compare_bm (2 * HW(x & y) / (HW(x) + HW(y))
-   *  - mux to zero if any field is empty
-   *  - convert compare_bm to arith
-   *  - arith-const of weight_r (simd nvals)
-   *  - multiply and return
-   *
-   * @param ileft index of x
-   * @param iright index of y
-   */
-  ArithShare weight_compare_bm(size_t ileft, size_t iright) {
-    BoolShare comp = compare_bm(bm[ileft].client.val, bm[iright].server.val,
-        bm[ileft].client.hw, bm[iright].server.hw, cfg.dice_prec);
-
-    // TODO or first convert to Arith, then multiply with 1/0
-    comp = (bm[ileft].client.empty | bm[iright].server.empty).mux(const_zero, comp);
-#ifdef DEBUG_SEL_CIRCUIT
-    print_share(comp, fmt::format("^^^^ HW Comparison of pair ({},{}) ^^^^", ileft, iright));
-#endif
-    // now go arithmetic
-    ArithShare a_comp{to_arith(comp)};
-    // If indices match, use precomputed rescaled weights. Otherwise take
-    // arithmetic average of both weights
-    CircUnit weight_r = (ileft == iright) ? cfg.bm_weights_r[ileft] :
-      rescale_weight((cfg.bm_weights[ileft] + cfg.bm_weights[iright])/2,
-          cfg.weight_prec, cfg.max_weight);
-
-    ArithShare a_weight{constant_simd(acirc, weight_r, BitLen, nvals)};
-
-    ArithShare a_field_weight{a_comp * a_weight};
-#ifdef DEBUG_SEL_CIRCUIT
-    print_share(a_comp, format("a_comp({},{})", ileft, iright));
-    print_share(a_weight, format("a_weight({},{})", ileft, iright));
-    print_share(a_field_weight, "a_field_weight");
-#endif
-    return a_field_weight;
-  }
-
-  /*
-   * Calculate a single bin summand in the weight sum:
-   *  - compare_bin (x == y)
-   *  - convert compare_bin to arith
-   *  - arith-const of weight_r (simd nvals)
-   *  - multiply and return
-   *
-   * @param ileft index of x
-   * @param iright index of y
-   */
-  BoolShare weight_compare_bin(size_t ileft, size_t iright) {
-    BoolShare comp = compare_bin(bin[ileft].client.val, bin[iright].server.val);
-
-    comp = (~bin[ileft].client.empty & ~bin[iright].server.empty & comp);
-#ifdef DEBUG_SEL_CIRCUIT
-    print_share(comp, fmt::format("^^^^ BIN Comparison of pair ({},{}) ^^^^", ileft, iright));
-#endif
-    // If indices match, use precomputed rescaled weights. Otherwise take
-    // arithmetic average of both weights
-    CircUnit weight_r = (ileft == iright) ? cfg.bin_weights_r[ileft] :
-      rescale_weight((cfg.bin_weights[ileft] + cfg.bin_weights[iright])/2,
-          cfg.weight_prec, cfg.max_weight);
-
-    weight_r <<= cfg.dice_prec; // same shift as in HW field-weights
-
-    BoolShare b_weight{constant_simd(bcirc, weight_r,
-        cfg.dice_prec + cfg.weight_prec, nvals)};
-    BoolShare b_field_weight{comp.mux(b_weight, const_zero)};
-
-#ifdef DEBUG_SEL_CIRCUIT
-    print_share(b_weight, format("b_weight({},{})", ileft, iright));
-    print_share(b_field_weight, "b_field_weight");
-#endif
-    return b_field_weight;
   }
 
 };
