@@ -109,4 +109,30 @@ private:
 };
 
 } // namespace sel
+
+#ifdef FMT_FORMAT_H_
+// Custom fmt formatters for our types
+namespace fmt {
+template <>
+struct formatter<sel::SecureEpilinker::Result> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::SecureEpilinker::Result& r, FormatContext &ctx) {
+    return format_to(ctx.begin(),
+        "best index: {}; match(/tent.)? {}/{}\n"
+#ifdef DEBUG_SEL_RESULT
+        "score.numerator: {:x}; score.denominator: {:x}; score: {}\n"
+#endif
+        , r.index, r.match, r.tmatch
+#ifdef DEBUG_SEL_RESULT
+        , r.score_numerator, r.score_denominator,
+        (((double)r.score_numerator)/r.score_denominator)
+#endif
+        );
+  }
+};
+} // namespace fmt
+#endif // FMT_FORMAT_H_
 #endif /* end of include guard: SEL_SECURE_EPILINKER_H */
