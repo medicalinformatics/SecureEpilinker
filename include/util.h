@@ -188,10 +188,6 @@ void split(const std::string &s, char delim, Out result) {
 }
 std::vector<std::string> split(const std::string &s, char delim);
 
-std::string print_aby_config(const SecureEpilinker::ABYConfig&);
-std::string print_epilink_config(const EpilinkConfig&);
-std::string print_epilink_input(const EpilinkServerInput&);
-std::string print_epilink_input(const EpilinkClientInput&);
 } // namespace sel
 
 #endif /* end of include guard: SEL_UTIL_H */

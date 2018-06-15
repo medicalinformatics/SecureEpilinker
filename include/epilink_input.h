@@ -126,4 +126,68 @@ std::vector<CircUnit> rescale_weights(const std::vector<Weight>& weights,
 CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight);
 
 } // namespace sel
+
+#ifdef FMT_FORMAT_H_
+// To use ostream&operator<< overloads
+#include "fmt/ostream.h"
+// Custom fmt formatters for our types
+namespace fmt {
+
+template <>
+struct formatter<sel::EpilinkConfig> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::EpilinkConfig& r, FormatContext &ctx) {
+    return format_to(ctx.begin(),"Epilink Configuration"
+      "\nBitmask size (in Bit):\t{}"
+      "\nThreshold match: {}"
+      "\nThreshold tentative match: {}"
+      "\nNumber of bitmask field weights: {}"
+      "\nNumber of binary field weights: {}",
+      conf.size_bitmask, conf.threshold, conf.tthreshold,
+      conf.nfields.at(FieldComparator::NGRAM),
+      conf.nfields.at(FieldComparator::NGRAM)
+    );
+  }
+};
+
+template <>
+struct formatter<sel::EpilinkClientInput> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::EpilinkClientInput& input, FormatContext &ctx) {
+    string returnstring{"Client Input\n-----\nBitmask Records:\n-----\n"};
+    for (size_t i = 0; i != in.bm_record.size(); ++i){
+      for(const auto& byte : in.bm_record[i]) {
+        returnstring += to_string(byte)+' ';
+      }
+      returnstring += "Empty: "s+(in.bm_rec_empty[i]? "Yes\n" : "No\n");
+    }
+    returnstring += "-----\nBinary Records\n-----\n";
+    for (size_t i = 0; i != in.bin_record.size(); ++i){
+      returnstring += to_string(in.bin_record[i])+" Empty: "+(in.bin_rec_empty[i]? "Yes\n" : "No\n");
+    }
+    returnstring += "Number of database records: " + to_string(in.nvals);
+    return format_to(ctx.begin(), returnstring);
+  }
+};
+
+template <>
+struct formatter<sel::EpilinkServerInput> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::EpilinkServerInput& input, FormatContext &ctx) {
+    return format_to(ctx.begin(), "Server Input printing not ready yet!");
+  }
+};
+
+} // namespace fmt
+#endif // FMT_FORMAT_H_
+
 #endif /* end of include guard: SEL_EPILINKINPUT_H */

@@ -133,6 +133,22 @@ struct formatter<sel::SecureEpilinker::Result> {
         );
   }
 };
+
+template <>
+struct formatter<sel::SecureEpilinker::ABYConfig> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::SecureEpilinker::ABYConfig& conf, FormatContext &ctx) {
+    return format_to(ctx.begin(),
+      ((conf.role == SERVER) ? "Server Config\n"s : "Client Config:\n"s) +
+      "Sharing: "s + ((conf.bool_sharing == S_YAO) ? "Yao\n"s : "GMW\n"s ) +
+      "Remote Host: "s + conf.remote_host + ":"s + to_string(conf.port) + "\n"s +
+      "Threads: "s + to_string(conf.nthreads) + '\n');
+  }
+};
+
 } // namespace fmt
 #endif // FMT_FORMAT_H_
 #endif /* end of include guard: SEL_SECURE_EPILINKER_H */
