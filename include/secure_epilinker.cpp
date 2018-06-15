@@ -33,7 +33,7 @@ using fmt::format;
 namespace sel {
 
 /***************** Circuit gadgets *******************/
-BoolShare compare_bm(const BoolShare& x, const BoolShare& y,
+BoolShare dice_coefficient(const BoolShare& x, const BoolShare& y,
     const BoolShare& hw_x, const BoolShare& hw_y, size_t prec) {
   // calc HW of AND and bit-shift to multiply with 2 and get dice precision
   // for integer-divivision
@@ -61,10 +61,10 @@ BoolShare compare_bm(const BoolShare& x, const BoolShare& y,
 /*
  * Binary-compares two shares
  */
-BoolShare compare_bin(const BoolShare& x, const BoolShare& y) {
+BoolShare equality(const BoolShare& x, const BoolShare& y) {
   BoolShare cmp{(x == y)};
 #ifdef DEBUG_SEL_CIRCUIT
-  print_share(cmp, "compare_bin");
+  print_share(cmp, "equality");
 #endif
   return cmp;
 }
