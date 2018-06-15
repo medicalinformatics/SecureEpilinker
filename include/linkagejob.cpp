@@ -146,11 +146,10 @@ void LinkageJob::run_job() {
     sepilinker_client.run_setup_phase();
     EpilinkClientInput client_input{hw_data, bin_data, hw_empty, bin_empty,
                                     nvals};
-    fmt::print("Client running\n{}{}{}", print_aby_config(aby_config),
-               print_epilink_config(epi_config),
-               print_epilink_input(client_input));
+    fmt::print("Client running\n{}\n{}\n{}\n",
+        aby_config, epi_config, client_input);
     const auto client_share{sepilinker_client.run_as_client(client_input)};
-    fmt::print("Client result:\n{}", client_share);
+    fmt::print("Client result:\n{}\n", client_share);
   } catch (const exception& e) {
     fmt::print(stderr, "Error running MPC Client: {}\n", e.what());
     m_status = JobStatus::FAULT;
