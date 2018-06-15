@@ -17,9 +17,7 @@
 */
 
 #include <memory>
-#include <random>
 #include <algorithm>
-#include <limits>
 #include <fmt/format.h>
 #include "abycore/circuit/abycircuit.h"
 #include "epilink_input.h"
@@ -83,70 +81,6 @@ EpilinkServerInput::EpilinkServerInput(
   check_vectors_size(bm_db_empty, nvals, "bm_db_empty");
   check_vectors_size(bin_db_empty, nvals, "bin_db_empty");
 }
-/*
-vector<Weight> gen_random_weights(const mt19937& gen, const uint32_t nfields) {
-  // random weights between 1.0 and 24.0
-  uniform_real_distribution<Weight> weight_dis(1.0, 24.0);
-  vector<Weight> weights(nfields);
-  generate(weights.begin(), weights.end(),
-      [&weight_dis, &gen](){return weight_dis(gen);});
-  return weights;
-}
-
-VBitmask gen_random_bm_vec(const mt19937& gen, const uint32_t size, const uint32_t bitmask_size) {
-  uniform_int_distribution<BitmaskUnit> dis{};
-  uint32_t bitmask_bytes = bits_in_bytes(bitmask_size);
-  vector<Bitmask> ret(size);
-  for (auto& bm : ret) {
-    bm.resize(bitmask_bytes);
-    generate(bm.begin(), bm.end(), [&gen, &dis](){ return dis(gen); });
-  }
-  return ret;
-}
-
-VCircUnit gen_random_bin_vec(const mt19937& gen, const uint32_t size) {
-  uniform_int_distribution<CircUnit> dis{};
-  vector<CircUnit> ret(size);
-  generate(ret.begin(), ret.end(), [&gen, &dis](){ return dis(gen); });
-  return ret;
-}
-
-EpilinkClientInput gen_random_client_input(
-    const uint32_t seed, const uint32_t bitmask_size,
-    const uint32_t nbm_fields, const uint32_t nbin_fields) {
-  mt19937 gen(seed);
-
-  return EpilinkClientInput{
-    gen_random_weights(gen, nbm_fields),
-    gen_random_weights(gen, nbin_fields),
-    gen_random_bm_vec(gen, nbm_fields, bitmask_size),
-    gen_random_bin_vec(gen, nbin_fields)};
-}
-
-
-EpilinkServerInput gen_random_server_input(
-    const uint32_t seed, const uint32_t bitmask_size,
-    const uint32_t nbm_fields, const uint32_t nbin_fields,
-    const uint32_t nvals) {
-  mt19937 gen(seed);
-
-  // random weights
-  vector<Weight> bm_weights = gen_random_weights(gen, nbm_fields);
-  vector<Weight> bin_weights = gen_random_weights(gen, nbin_fields);
-  // random database
-  vector<vector<Bitmask>> bm_database(nbm_fields);
-  for (auto& col: bm_database) {
-    col = gen_random_bm_vec(gen, nvals, bitmask_size);
-  }
-  vector<vector<CircUnit>> bin_database(nbin_fields);
-  for (auto& col: bin_database) {
-    col = gen_random_bin_vec(gen, nvals);
-  }
-
-  return EpilinkServerInput{bm_weights, bin_weights,
-    bm_database, bin_database};
-}
-*/
 
 // hammingweight of bitmasks
 CircUnit hw(const Bitmask& bm) {
