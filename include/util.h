@@ -30,8 +30,6 @@
 #include <cctype>
 #include <locale>
 #include <sstream>
-#include "epilink_input.h"
-#include "secure_epilinker.h"
 
 namespace sel {
 
