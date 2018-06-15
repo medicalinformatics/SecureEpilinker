@@ -129,17 +129,5 @@ std::vector<CircUnit> rescale_weights(const std::vector<Weight>& weights,
 
 CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight);
 
-// random data generator
-// TODO adopt new API
-/*
-EpilinkClientInput gen_random_client_input(
-  const uint32_t seed, const uint32_t bitmask_size,
-  const uint32_t nbm_fields, const uint32_t nbin_fields);
-EpilinkServerInput gen_random_server_input(
-    const uint32_t seed, const uint32_t bitmask_size,
-    const uint32_t nbm_fields, const uint32_t nbin_fields,
-    const uint32_t nvals);
-*/
-
 } // namespace sel
 #endif /* end of include guard: SEL_EPILINKINPUT_H */
