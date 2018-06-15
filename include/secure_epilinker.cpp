@@ -497,8 +497,8 @@ private:
     // 1. Calculate weight * delta(i,j)
     // If indices match, use precomputed rescaled weights. Otherwise take
     // arithmetic average of both weights
-    CircUnit weight_r = (ileft == iright) ? cfg.bm_weights_r[ileft] :
-      rescale_weight((cfg.bm_weights[ileft] + cfg.bm_weights[iright])/2,
+    CircUnit weight_r = rescale_weight(
+        (cfg.bm_weights[ileft] + cfg.bm_weights[iright])/2,
           cfg.weight_prec, cfg.max_weight);
 
     ArithShare a_weight{constant_simd(acirc, weight_r, BitLen, nvals)};
