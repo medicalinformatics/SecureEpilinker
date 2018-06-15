@@ -126,6 +126,7 @@ void check_vectors_size(const std::vector<std::vector<T>>& vec,
 /**
  * Transforms the values of the given map with the given transformation function
  * and returns the transformed map.
+ * https://stackoverflow.com/questions/50881383/stdmap-transformer-template
  */
 template <class Key, class FromValue, class Transformer,
   class ToValue = decltype(std::declval<Transformer>()(std::declval<FromValue>()))>
