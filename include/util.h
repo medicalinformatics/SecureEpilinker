@@ -36,6 +36,11 @@ namespace sel {
 constexpr size_t bitbytes(size_t b) { return (b + 7)/8; }
 
 /**
+ * Ceiling of integer log2
+ */
+int ceil_log2(unsigned long long x);
+
+/**
  * Concatenates the vectors to a single vector, i.e., it flattenes the given
  * vector of vectors.
  */
