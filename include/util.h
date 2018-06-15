@@ -21,6 +21,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <iterator>
 #include <functional>
@@ -105,7 +106,6 @@ OutContainer<OutType> transform_vec(const InContainer<InType>& vec,
   return out;
 }
 
-
 template <typename T>
 void check_vector_size(const std::vector<T>& r,
     const size_t& size, const std::string& name) {
@@ -121,6 +121,22 @@ void check_vectors_size(const std::vector<std::vector<T>>& vec,
   for (auto& r : vec) {
     check_vector_size(r, size, name);
   }
+}
+
+/**
+ * Transforms the values of the given map with the given transformation function
+ * and returns the transformed map.
+ */
+template <class Key, class FromValue, class Transformer,
+  class ToValue = decltype(std::declval<Transformer>()(std::declval<FromValue>()))>
+std::map<Key, ToValue> transform_map(const std::map<Key, FromValue>& _map,
+    Transformer _tr) {
+  std::map<Key, ToValue> res;
+  std::for_each(_map.cbegin(), _map.cend(),
+      [&res, &_tr](const std::pair<const Key, FromValue>& kv) {
+        res[kv.first] = _tr(kv.second);
+      });
+  return res;
 }
 
 /**
