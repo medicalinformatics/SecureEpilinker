@@ -1,4 +1,4 @@
-#include "../sel/util.h"
+#include "../include/util.h"
 
 using namespace std;
 
@@ -18,8 +18,32 @@ void test_vector_bool_to_bitmask() {
   assert (bm[1] == 1);
 }
 
-void test_util() {
-  test_vector_bool_to_bitmask();
+void test_ceil_log2() {
+  for (int i = 0; i != sizeof(unsigned long long)*8-1; ++i) {
+    unsigned long long x = (1ULL << i);
+    assert (sel::ceil_log2(x) == i);
+    assert (sel::ceil_log2(x+1) == i+1);
+  }
+}
+
+void test_map() {
+  map<int, double> nums{{0,3.4}, {1,4.1}, {2,16.9}};
+  auto numsi = transform_map(nums, [](double x){
+      return static_cast<int>(x);
+      });
+
+  map<int, int> numst{{0,3}, {1,4}, {2,16}};
+  assert (numsi ==  numst);
 }
 
 } // namespace sel
+
+using namespace sel;
+
+int main(int argc, char *argv[])
+{
+  test_vector_bool_to_bitmask();
+  test_ceil_log2();
+  test_map();
+  return 0;
+}
