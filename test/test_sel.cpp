@@ -1,6 +1,6 @@
 #include "cxxopts.hpp"
-#include "../include/secure_epilinker.h"
 #include "../include/util.h"
+#include "../include/secure_epilinker.h"
 #include "abycore/aby/abyparty.h"
 
 using namespace sel;
