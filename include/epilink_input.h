@@ -22,7 +22,9 @@
 
 #include <vector>
 #include <set>
+#include <map>
 #include <cstdint>
+#include "seltypes.h"
 
 namespace sel {
 
@@ -42,14 +44,12 @@ constexpr size_t BitLen = sizeof(CircUnit)*8;
 
 struct EpilinkConfig {
   // vector of weights
-  const VWeight bm_weights;
-  const VWeight bin_weights;
+  const std::map<FieldComparator, VWeight> weights;
 
   // exchange groups by index
-  const std::vector<IndexSet> bm_exchange_groups;
-  const std::vector<IndexSet> bin_exchange_groups;
+  const std::map<FieldComparator, std::vector<IndexSet>> exchange_groups;
 
-  // bitlength of bitmasks
+  // bitlength of bitmasks and required bits of HWs
   const uint32_t size_bitmask;
   const uint32_t bytes_bitmask;
   const uint32_t size_hw;
@@ -59,14 +59,16 @@ struct EpilinkConfig {
   const double tthreshold; // threshold for tentative match
 
   // calculated fields for faster access
-  const size_t nbm_fields, nbin_fields, nfields; // field counters
+  const std::map<FieldComparator, size_t> nfields; // number of fields
+  const size_t nfields_total; // total number of field
   size_t dice_prec, weight_prec; // bit precisions
   const double max_weight;
 
-  EpilinkConfig(VWeight bm_weights, VWeight bin_weights,
-      std::vector<IndexSet> bm_exchange_groups,
-      std::vector<IndexSet> bin_exchange_groups,
-      uint32_t size_bitmask, double threshold, double tthreshold);
+  EpilinkConfig(
+      std::map<FieldComparator, VWeight> weights,
+      std::map<FieldComparator, std::vector<IndexSet>> exchange_groups,
+      uint32_t size_bitmask, double threshold, double tthreshold
+  );
   ~EpilinkConfig() = default;
 
   /**
@@ -139,7 +141,7 @@ struct formatter<sel::EpilinkConfig> {
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const sel::EpilinkConfig& r, FormatContext &ctx) {
+  auto format(const sel::EpilinkConfig& conf, FormatContext &ctx) {
     return format_to(ctx.begin(),"Epilink Configuration"
       "\nBitmask size (in Bit):\t{}"
       "\nThreshold match: {}"
@@ -147,8 +149,8 @@ struct formatter<sel::EpilinkConfig> {
       "\nNumber of bitmask field weights: {}"
       "\nNumber of binary field weights: {}",
       conf.size_bitmask, conf.threshold, conf.tthreshold,
-      conf.nfields.at(FieldComparator::NGRAM),
-      conf.nfields.at(FieldComparator::NGRAM)
+      conf.nfields.at(sel::FieldComparator::NGRAM),
+      conf.nfields.at(sel::FieldComparator::NGRAM)
     );
   }
 };

@@ -79,8 +79,8 @@ public:
     BooleanCircuit* bcirc, BooleanCircuit* ccirc, ArithmeticCircuit* acirc) :
     cfg{cfg}, bcirc{bcirc}, ccirc{ccirc}, acirc{acirc},
     ins{
-      {BM, vector<InputShares>{cfg.nbm_fields}},
-      {BIN, vector<InputShares>{cfg.nbin_fields}}
+      {BM, vector<InputShares>{cfg.nfields.at(BM)}},
+      {BIN, vector<InputShares>{cfg.nfields.at(BIN)}}
     }
   {}
 
@@ -141,10 +141,10 @@ public:
     // 1.1 For all HW exchange groups, find the permutation with the highest weight
     set<size_t> no_x_group_hw; // where we save remaining indices
     // fill with ascending indices, remove used ones later
-    for (size_t i = 0; i != cfg.nbm_fields; ++i)
+    for (size_t i = 0; i != cfg.nfields.at(BM); ++i)
       no_x_group_hw.insert(no_x_group_hw.end(), i);
     // for each group, store the best permutation's weight into field_weights
-    for (auto& group : cfg.bm_exchange_groups) {
+    for (auto& group : cfg.exchange_groups.at(BM)) {
       // add this group's weight to vector
       BoolShare group_weight{best_group_weight_hw(group)};
       b_field_weights.emplace_back(group_weight);
@@ -159,7 +159,7 @@ public:
     // 2. Binary fields
     // TODO we ignore exchange groups for now, as there are none in
     // Mainzelliste's current config
-    for (size_t i{0}; i != cfg.nbin_fields; ++i) {
+    for (size_t i{0}; i != cfg.nfields.at(BIN); ++i) {
       b_field_weights.emplace_back(weight_compare_bin(i, i));
     }
 
@@ -271,8 +271,10 @@ private:
 #ifndef DEBUG_SEL_RESULT
     CircUnit W{0};
 #endif
-    for (auto& w : cfg.bm_weights_r) W += w;
-    for (auto& w : cfg.bin_weights_r) W += w;
+    for (auto& w : cfg.weights.at(BM))
+      W += rescale_weight(w, cfg.weight_prec, cfg.max_weight);
+    for (auto& w : cfg.weights.at(BIN))
+      W += rescale_weight(w, cfg.weight_prec, cfg.max_weight);
 
     CircUnit T = cfg.threshold * (1 << cfg.dice_prec);
     CircUnit Tt = cfg.tthreshold * (1 << cfg.dice_prec);
@@ -293,7 +295,7 @@ private:
   void set_real_client_input(const EpilinkClientInput& input) {
     assert (nvals > 0 && "call set_constants() before set_*_input()");
 
-    for (size_t i = 0; i != cfg.nbm_fields; ++i) {
+    for (size_t i = 0; i != cfg.nfields.at(BM); ++i) {
       // bitmask records are saved as vector<uint8_t>, so need to access raw data
       check_vector_size(input.bm_record[i], cfg.bytes_bitmask, "rec bitmask byte vector");
       ins[BM][i].client.val = BoolShare(bcirc,
@@ -319,7 +321,7 @@ private:
 #endif
     }
 
-    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
+    for (size_t i = 0; i != cfg.nfields.at(BIN); ++i) {
       ins[BIN][i].client.val = BoolShare(bcirc,
           vector<CircUnit>(nvals, input.bin_record[i]).data(),
           BitLen, CLIENT, nvals);
@@ -342,7 +344,7 @@ private:
     assert (nvals > 0 && "call set_constants() before set_*_input()");
 
     vector<CircUnit> bm_db_delta(nvals);
-    for (size_t i = 0; i != cfg.nbm_fields; ++i) {
+    for (size_t i = 0; i != cfg.nfields.at(BM); ++i) {
       check_vectors_size(input.bm_database[i], cfg.bytes_bitmask, " db bitmask byte vectors");
       ins[BM][i].server.val = BoolShare(bcirc,
           concat_vec(input.bm_database[i]).data(),
@@ -369,7 +371,7 @@ private:
     }
 
     vector<CircUnit> bin_db_delta(nvals);
-    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
+    for (size_t i = 0; i != cfg.nfields.at(BIN); ++i) {
       ins[BIN][i].server.val = BoolShare(bcirc,
           const_cast<CircUnit*>(input.bin_database[i].data()),
           BitLen, SERVER, nvals);
@@ -392,7 +394,7 @@ private:
   void set_dummy_client_input() {
     assert (nvals > 0 && "call set_constants() before set_*_input()");
 
-    for (size_t i = 0; i != cfg.nbm_fields; ++i) {
+    for (size_t i = 0; i != cfg.nfields.at(BM); ++i) {
       ins[BM][i].client.val = BoolShare(bcirc, cfg.size_bitmask, nvals); //dummy
 
       ins[BM][i].client.hw = BoolShare(bcirc, cfg.size_hw, nvals); //dummy
@@ -407,7 +409,7 @@ private:
 #endif
     }
 
-    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
+    for (size_t i = 0; i != cfg.nfields.at(BIN); ++i) {
       ins[BIN][i].client.val = BoolShare(bcirc, BitLen, nvals); //dummy
 
       ins[BIN][i].client.empty = BoolShare(bcirc, 1, nvals); // dummy
@@ -423,7 +425,7 @@ private:
   void set_dummy_server_input() {
     assert (nvals > 0 && "call set_constants() before set_*_input()");
 
-    for (size_t i = 0; i != cfg.nbm_fields; ++i) {
+    for (size_t i = 0; i != cfg.nfields.at(BM); ++i) {
       ins[BM][i].server.val = BoolShare(bcirc, cfg.size_bitmask, nvals); //dummy
 
       ins[BM][i].server.hw = BoolShare(bcirc, cfg.size_hw, nvals); //dummy
@@ -438,7 +440,7 @@ private:
 #endif
     }
 
-    for (size_t i = 0; i != cfg.nbin_fields; ++i) {
+    for (size_t i = 0; i != cfg.nfields.at(BIN); ++i) {
       ins[BIN][i].server.val = BoolShare(bcirc, BitLen, nvals); //dummy
 
       ins[BIN][i].server.empty = BoolShare(bcirc, 1, nvals); // dummy
@@ -498,7 +500,7 @@ private:
     // If indices match, use precomputed rescaled weights. Otherwise take
     // arithmetic average of both weights
     CircUnit weight_r = rescale_weight(
-        (cfg.bm_weights[ileft] + cfg.bm_weights[iright])/2,
+        (cfg.weights.at(ftype)[ileft] + cfg.weights.at(ftype)[iright])/2,
           cfg.weight_prec, cfg.max_weight);
 
     ArithShare a_weight{constant_simd(acirc, weight_r, BitLen, nvals)};

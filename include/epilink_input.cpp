@@ -18,8 +18,10 @@
 
 #include <memory>
 #include <algorithm>
+#ifdef DEBUG_SEL_INPUT
 #include <fmt/format.h>
-#include "abycore/circuit/abycircuit.h"
+#include <iostream>
+#endif
 #include "epilink_input.h"
 #include "util.h"
 
@@ -28,38 +30,46 @@ using fmt::print;
 
 namespace sel {
 
-EpilinkConfig::EpilinkConfig(VWeight bm_weights, VWeight bin_weights,
-      vector<IndexSet> bm_exchange_groups, vector<IndexSet> bin_exchange_groups,
+constexpr auto BIN = FieldComparator::BINARY;
+constexpr auto BM = FieldComparator::NGRAM;
+
+EpilinkConfig::EpilinkConfig(
+      std::map<FieldComparator, VWeight> weights_,
+      std::map<FieldComparator, std::vector<IndexSet>> exchange_groups_,
       uint32_t size_bitmask, double threshold, double tthreshold) :
-  bm_weights{bm_weights}, bin_weights{bin_weights},
-  bm_exchange_groups{bm_exchange_groups}, bin_exchange_groups{bin_exchange_groups},
-  size_bitmask{size_bitmask}, bytes_bitmask{bits_in_bytes(size_bitmask)},
-  size_hw{ceil_log2(size_bitmask+1)},
-  threshold{threshold}, tthreshold{tthreshold},
-  nbm_fields{bm_weights.size()}, nbin_fields{bin_weights.size()},
-  nfields{nbm_fields + nbin_fields},
+  weights {weights_},
+  exchange_groups {exchange_groups_},
+  size_bitmask {size_bitmask},
+  bytes_bitmask (bitbytes(size_bitmask)),
+  size_hw (ceil_log2(size_bitmask+1)),
+  threshold {threshold},
+  tthreshold {tthreshold},
+  nfields {transform_map(weights, [](auto ws){return ws.size();})},
+  nfields_total{nfields.at(BM) + nfields.at(BIN)},
   // evenly distribute precision bits between weight and dice-coeff
   //dice_prec{(BitLen - ceil_log2(nfields))/2}, // TODO better this one and
   //custom integer division
-  dice_prec{16 - 1 - ceil_log2(size_bitmask + 1)},
+  dice_prec(16 - 1 - ceil_log2(size_bitmask + 1)),
   //weight_prec{ceil_divide((BitLen - ceil_log2(nfields)), 2)}, // TODO ^^^
-  weight_prec{BitLen - ceil_log2(nfields) - dice_prec},
+  weight_prec{BitLen - ceil_log2(nfields_total) - dice_prec},
   max_weight{max(
-      nbm_fields ? *max_element(bm_weights.cbegin(), bm_weights.cend()) : 0.0,
-      nbin_fields ? *max_element(bin_weights.cbegin(), bin_weights.cend()) :0.0
+      nfields.at(BM) ?
+        *max_element(weights.at(BM).cbegin(), weights.at(BM).cend()) : 0.0,
+      nfields.at(BIN) ?
+        *max_element(weights.at(BIN).cbegin(), weights.at(BIN).cend()) : 0.0
       )}
   {
     // We sum up nfields products of dice_prec+weight_prec values, so they must
     // fit into the total BitLen
-    assert (dice_prec + weight_prec + ceil_log2(nfields) == BitLen);
+    assert (dice_prec + weight_prec + ceil_log2(nfields_total) == BitLen);
 #ifdef DEBUG_SEL_INPUT
     print("BitLen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
-        BitLen, nfields, dice_prec, weight_prec);
+        BitLen, nfields_total, dice_prec, weight_prec);
 #endif
   }
 
 void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
-  assert (dice_prec_ + weight_prec_ + ceil_log2(nfields) <= BitLen);
+  assert (dice_prec_ + weight_prec_ + ceil_log2(nfields_total) <= BitLen);
 
   dice_prec = dice_prec_;
   weight_prec = weight_prec_;

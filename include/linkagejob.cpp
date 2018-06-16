@@ -133,13 +133,20 @@ void LinkageJob::run_job() {
         CLIENT, booleantype, m_parent->get_remote_host(),
         m_parent->get_remote_port(), nthreads};
     EpilinkConfig epi_config{
-        hw_weights,
-        bin_weights,
-        m_local_config->get_exchange_group_indices(FieldComparator::NGRAM),
-        m_local_config->get_exchange_group_indices(FieldComparator::BINARY),
-        algorithm_config.bloom_length,
-        algorithm_config.threshold_match,
-        algorithm_config.threshold_non_match};
+      { // weights
+        {FieldComparator::NGRAM, hw_weights},
+        {FieldComparator::BINARY, bin_weights}
+      },
+      { // exchange groups
+        {FieldComparator::NGRAM,
+          m_local_config->get_exchange_group_indices(FieldComparator::NGRAM)},
+        {FieldComparator::BINARY,
+          m_local_config->get_exchange_group_indices(FieldComparator::BINARY)}
+      },
+      algorithm_config.bloom_length,
+      algorithm_config.threshold_match,
+      algorithm_config.threshold_non_match
+    }; // epi_config
 
     SecureEpilinker sepilinker_client{aby_config, epi_config};
     sepilinker_client.build_circuit(nvals);
