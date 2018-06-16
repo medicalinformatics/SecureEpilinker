@@ -161,17 +161,17 @@ struct formatter<sel::EpilinkClientInput> {
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const sel::EpilinkClientInput& input, FormatContext &ctx) {
-    string returnstring{"Client Input\n-----\nBitmask Records:\n-----\n"};
+  auto format(const sel::EpilinkClientInput& in, FormatContext &ctx) {
+    std::string returnstring{"Client Input\n-----\nBitmask Records:\n-----\n"};
     for (size_t i = 0; i != in.bm_record.size(); ++i){
       for(const auto& byte : in.bm_record[i]) {
         returnstring += to_string(byte)+' ';
       }
-      returnstring += "Empty: "s+(in.bm_rec_empty[i]? "Yes\n" : "No\n");
+      returnstring += format("Empty: {}\n", in.bm_rec_empty[i]);
     }
     returnstring += "-----\nBinary Records\n-----\n";
     for (size_t i = 0; i != in.bin_record.size(); ++i){
-      returnstring += to_string(in.bin_record[i])+" Empty: "+(in.bin_rec_empty[i]? "Yes\n" : "No\n");
+      returnstring += format("{} Empty: {}", in.bin_record[i], in.bin_rec_empty[i]);
     }
     returnstring += "Number of database records: " + to_string(in.nvals);
     return format_to(ctx.begin(), returnstring);
