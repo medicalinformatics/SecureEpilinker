@@ -58,7 +58,7 @@ set(SELSOURCES "include/util.cpp" "include/epilink_input.cpp"
 
 set(SELHEADER "include/epilink_input.h" "include/math.h"
   "include/secure_epilinker.h" "include/sel.h" "include/util.h"
-  "include/aby/Share.h" "include/aby/circuit_defs.h" "include/aby/gadgets.h"
+  "include/aby/Share.h" "include/aby/gadgets.h"
   "include/aby/util.h")
 
 add_executable (sel sepilinker.cpp ${EPIRESTSRC} ${EPIRESTHEAD} ${SELSOURCES} ${SELHEADER})
@@ -126,7 +126,7 @@ add_dependencies(test_sel ENCRYPTO_utils)
 target_link_libraries(test_sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
   OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
 target_link_libraries(test_sel PRIVATE fmt::fmt-header-only cxxopts)
-set_property(TARGET test_sel PROPERTY CXX_STANDARD 14)
+set_property(TARGET test_sel PROPERTY CXX_STANDARD 17)
 target_compile_options(test_sel PRIVATE "-O0" "-ggdb" "-g3"
   "-DDEBUG_SEL_INPUT"  "-DDEBUG_SEL_CIRCUIT" "-DDEBUG_SEL_RESULT")
 
