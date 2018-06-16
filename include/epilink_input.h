@@ -132,6 +132,9 @@ CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight);
 #ifdef FMT_FORMAT_H_
 // To use ostream&operator<< overloads
 #include "fmt/ostream.h"
+
+std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in);
+
 // Custom fmt formatters for our types
 namespace fmt {
 
@@ -155,6 +158,7 @@ struct formatter<sel::EpilinkConfig> {
   }
 };
 
+/*
 template <>
 struct formatter<sel::EpilinkClientInput> {
   template <typename ParseContext>
@@ -177,6 +181,7 @@ struct formatter<sel::EpilinkClientInput> {
     return format_to(ctx.begin(), returnstring);
   }
 };
+*/
 
 template <>
 struct formatter<sel::EpilinkServerInput> {

@@ -143,3 +143,17 @@ CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight) {
 }
 
 } // namespace sel
+
+std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in) {
+  os << "Client Input\n-----\nBitmask Records:\n-----\n";
+  for (size_t i = 0; i != in.bm_record.size(); ++i){
+    os << (in.bm_rec_empty[i] ? "(-) " : "(+) ");
+    for (auto& b : in.bm_record[i]) os << b;
+    os << '\n';
+  }
+  os << "-----\nBinary Records\n-----\n";
+  for (size_t i = 0; i != in.bin_record.size(); ++i){
+    os << (in.bin_rec_empty[i] ? "(-) " : "(+) ") << in.bin_record[i] << '\n';
+  }
+  return os << "Number of database records: " << in.nvals;
+}
