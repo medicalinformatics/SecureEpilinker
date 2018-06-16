@@ -71,7 +71,7 @@ struct ABYTester {
   void test_conversion() {
     vector<uint32_t> data(nvals);
     iota(data.begin(), data.end(), 0);
-    size_t data_bitlen = ceil_log2(nvals);
+    size_t data_bitlen = sel::ceil_log2(nvals);
     BoolShare in(bc, data.data(), data_bitlen, SERVER, nvals);
     BoolShare in2(bc, data.data(), data_bitlen, SERVER, 2);
     ArithShare ain = to_arith(in);
