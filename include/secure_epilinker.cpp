@@ -18,24 +18,60 @@
 
 #include <stdexcept>
 #include <algorithm>
-#include "fmt/format.h"
+#ifdef DEBUG_SEL_CIRCUIT
+#include "fmt/ostream.h"
+using fmt::format, fmt::print;
+#endif
+#include "util.h"
 #include "secure_epilinker.h"
 #include "epilink_input.h"
 #include "math.h"
-#include "util.h"
 #include "aby/Share.h"
 #include "aby/gadgets.h"
 #include "seltypes.h"
 
 using namespace std;
-using fmt::format;
 
 namespace sel {
 
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::NGRAM;
+constexpr auto FieldTypes = {BIN, BM}; // supported field types
 
 /***************** Circuit gadgets *******************/
+/**
+  * Return type of weight_compare_*()
+  * fw - field weight = weight * comparison * empty-flags
+  * w - weight for weight sum = weight * empyt-flags
+  */
+struct FieldWeight { ArithShare fw, w; };
+
+#ifdef DEBUG_SEL_CIRCUIT
+void print_share(const FieldWeight& q, const string& msg) {
+  print_share(q.fw, msg + "(field-w)");
+  print_share(q.w, msg + "(weight)");
+}
+#endif
+
+/**
+ * Sums all fw's and w's in given vector and returns sums as ArithQuotient
+ */
+ArithQuotient sum(const vector<FieldWeight>& fweights) {
+  size_t size = fweights.size();
+  vector<ArithShare> fws, ws;
+  fws.reserve(size);
+  ws.reserve(size);
+  for (const auto& fweight : fweights) {
+    fws.emplace_back(fweight.fw);
+    ws.emplace_back(fweight.w);
+  }
+  return {sum(fws), sum(ws)};
+}
+
+/**
+ * Calculates dice coefficient of given bitmasks and their hamming weights, up
+ * to the specified precision
+ */
 BoolShare dice_coefficient(const BoolShare& x, const BoolShare& y,
     const BoolShare& hw_x, const BoolShare& hw_y, size_t prec) {
   // calc HW of AND and bit-shift to multiply with 2 and get dice precision
@@ -81,16 +117,10 @@ public:
     ins{
       {BM, vector<InputShares>{cfg.nfields.at(BM)}},
       {BIN, vector<InputShares>{cfg.nfields.at(BIN)}}
-    }
+    },
+    to_arith_closure{[this](auto x){return to_arith(x);}},
+    to_bool_closure{[this](auto x){return to_bool(x);}}
   {}
-
-  /**
-   * Return type of weight_compare_*()
-   * fw - field weight = weight * comparison * empty-flags
-   * w - weight for weight sum = weight * empyt-flags
-   */
-  struct FieldWeight { ArithShare fw, w; };
-  using Comparator = function<BoolShare (const BoolShare&, const BoolShare&)>;
 
   void set_client_input(const EpilinkClientInput& input) {
     set_constants(input.nvals);
@@ -127,80 +157,80 @@ public:
     OutShare score_numerator, score_denominator;
 #endif
   };
+
   /*
   * Builds the shared component of the circuit after initial input shares of
   * client and server have been created.
   */
   ResultShares build_circuit() {
     // Where we store all group and individual comparison weights as ariths
-    vector<ArithShare> a_field_weights;
-    vector<BoolShare> b_field_weights;
+    vector<FieldWeight> field_weights;
     //field_weights.reserve(cfg.bm_exchange_groups.size() + cfg.bin_exchange_groups.size());
 
-    // 1. HW fields
-    // 1.1 For all HW exchange groups, find the permutation with the highest weight
-    set<size_t> no_x_group_hw; // where we save remaining indices
-    // fill with ascending indices, remove used ones later
-    for (size_t i = 0; i != cfg.nfields.at(BM); ++i)
-      no_x_group_hw.insert(no_x_group_hw.end(), i);
-    // for each group, store the best permutation's weight into field_weights
-    for (auto& group : cfg.exchange_groups.at(BM)) {
-      // add this group's weight to vector
-      BoolShare group_weight{best_group_weight_hw(group)};
-      b_field_weights.emplace_back(group_weight);
-      // remove all indices that were covered by this index group
-      for (const size_t& i : group) no_x_group_hw.erase(i);
-    }
-    // 1.2 Remaining HW indices
-    for (size_t i : no_x_group_hw) {
-      a_field_weights.emplace_back(weight_compare_hw(i, i));
-    }
-
-    // 2. Binary fields
-    // TODO we ignore exchange groups for now, as there are none in
-    // Mainzelliste's current config
-    for (size_t i{0}; i != cfg.nfields.at(BIN); ++i) {
-      b_field_weights.emplace_back(weight_compare_bin(i, i));
+    // 1. Field weights of individual fields
+    // 1.1 For all exchange groups, find the permutation with the highest score
+    for (const FieldComparator ftype : FieldTypes) {
+      // Where we collect indices not already used in an exchange group
+      set<size_t> no_x_group;
+      // fill with ascending indices, remove used ones later
+      for (size_t i = 0; i != cfg.nfields.at(ftype); ++i) no_x_group.emplace(i);
+      // for each group, store the best permutation's weight into field_weights
+      for (const auto& group : cfg.exchange_groups.at(ftype)) {
+        // add this group's field weight to vector
+        field_weights.emplace_back(best_group_weight(group, ftype));
+        // remove all indices that were covered by this index group
+        for (const size_t& i : group) {
+          size_t r = no_x_group.erase(i);
+          // TODO better check this already in EpilinkConfig constructor
+          if (!r) throw runtime_error("Exchange groups must be distinct!");
+        }
+      }
+      // 1.2 Remaining indices
+      for (size_t i : no_x_group) {
+        field_weights.emplace_back(field_weight(i, i, ftype));
+      }
     }
 
-    // 3. Sum up all field weights.
-    // best_group_weight_*() and weight_equality() return BoolShares and we
-    // don't need arithmetic representation afterwards, so we sum those in the
-    // boolean circuit.
-    if (!a_field_weights.empty())
-      b_field_weights.emplace_back(to_bool(sum(a_field_weights)));
-    BoolShare sum_field_weights{sum(b_field_weights)};
+    // 2. Sum up all field weights.
+    ArithQuotient sum_field_weights{sum(field_weights)};
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(sum_field_weights, "sum_field_weights");
 #endif
 
     // 4. Determine index of max score of all nvals calculations
-    BoolShare max_idx{const_idx};
+    // Create targets vector with const_idx copy to pass to
+    // split_select_quotient_target().
+    vector<BoolShare> max_idx{1, const_idx};
     assert((bool)const_idx); // check that it was copied, not moved
-    split_select_target(sum_field_weights, max_idx,
-        (BinaryOp_BoolShare) [](auto a, auto b) {return a>b;});
+    split_select_quotient_target(sum_field_weights, max_idx,
+        make_max_selector(to_bool_closure), to_arith_closure);
 
     // 5. Left side: sum up all weights and multiply with threshold
     //  Since weights and threshold are public inputs, this can be computed
     //  locally. This is done in set_constants().
     //
     // 6. Set two comparison bits, whether > (tentative) threshold
-    BoolShare match = const_w_threshold < sum_field_weights;
-    BoolShare tmatch = const_w_tthreshold < sum_field_weights;
+    BoolShare threshold_weight = to_bool(const_threshold * sum_field_weights.den);
+    BoolShare tthreshold_weight = to_bool(const_tthreshold * sum_field_weights.den);
+    BoolShare b_sum_field_weight = to_bool(sum_field_weights.num);
+    BoolShare match = threshold_weight < b_sum_field_weight;
+    BoolShare tmatch = tthreshold_weight < b_sum_field_weight;
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(sum_field_weights, "best score");
-    print_share(max_idx, "index of best score");
+    print_share(max_idx[0], "index of best score");
+    print_share(threshold_weight, "T*W");
+    print_share(tthreshold_weight, "Tt*W");
     print_share(match, "match?");
     print_share(tmatch, "tentative match?");
 #endif
 
 #ifdef DEBUG_SEL_RESULT
       //TODO Actually return W = sum of non-empty field weights
-    return {out(max_idx, ALL), out(match, ALL), out(tmatch, ALL),
-      out(sum_field_weights, ALL),
-      out(constant(bcirc, W<<cfg.dice_prec, BitLen), ALL)};
+    return {out(max_idx[0], ALL), out(match, ALL), out(tmatch, ALL),
+      out(sum_field_weights.num, ALL),
+      out(sum_field_weights.den, ALL)};
 #else
-    return {out_shared(max_idx), out_shared(match), out_shared(tmatch)};
+    return {out_shared(max_idx[0]), out_shared(match), out_shared(tmatch)};
 #endif
   }
 
@@ -233,7 +263,7 @@ private:
   // Constant shares
   BoolShare const_zero, const_idx;
   // Left side of inequality: T * sum(weights)
-  BoolShare const_w_threshold, const_w_tthreshold;
+  ArithShare const_threshold, const_tthreshold;
 
 #ifdef DEBUG_SEL_RESULT
   CircUnit W{0};
@@ -252,6 +282,10 @@ private:
     BoolShare s{s_.zeropad(BitLen)}; // fix for aby issue #46
     return (bcirc->GetContext() == S_YAO) ? y2a(acirc, ccirc, s) : b2a(acirc, s);
   }
+
+  // closures
+  const A2BConverter to_bool_closure;
+  const B2AConverter to_arith_closure;
 
   void set_constants(uint32_t nvals) {
     this->nvals = nvals;
@@ -282,13 +316,13 @@ private:
     cout << "W: " << hex << W << " T: " << hex << T << " Tt: " << hex << Tt << endl;
 #endif
 
-    const_w_threshold = constant(bcirc, W*T, BitLen);
-    const_w_tthreshold = constant(bcirc, W*Tt, BitLen);
+    const_threshold = constant(acirc, T, BitLen);
+    const_tthreshold = constant(acirc, Tt, BitLen);
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(const_zero, "const_zero");
     print_share(const_idx, "const_idx");
-    print_share(const_w_threshold , "const_w_threshold ");
-    print_share(const_w_tthreshold , "const_w_tthreshold ");
+    print_share(const_threshold , "const_threshold ");
+    print_share(const_tthreshold , "const_tthreshold ");
 #endif
   }
 
@@ -453,36 +487,42 @@ private:
     }
   }
 
-  BoolShare best_group_weight_hw(const IndexSet& group_set) {
+  FieldWeight best_group_weight(const IndexSet& group_set,
+      const FieldComparator& ftype) {
     vector<size_t> group{begin(group_set), end(group_set)};
     // copy group to store permutations
     vector<size_t> groupPerm{group.begin(), group.end()};
     size_t size = group.size();
-    vector<BoolShare> perm_weights; // where we store all weights before max
+    vector<ArithQuotient> perm_weights; // where we store all weights before max
     perm_weights.reserve(factorial<size_t>(size));
-    // iterate over all group permutations and calc weight
+    // iterate over all group permutations and calc field-weight
     do {
-      vector<ArithShare> a_field_weights;
-      a_field_weights.reserve(size);
+      vector<FieldWeight> field_weights;
+      field_weights.reserve(size);
       for (size_t i = 0; i != size; ++i) {
         size_t ileft = group[i];
         size_t iright = groupPerm[i];
-        a_field_weights.emplace_back(weight_compare_hw(ileft, iright));
+        field_weights.emplace_back(field_weight(ileft, iright, ftype));
       }
       // sum all field-weights for this permutation
-      ArithShare sum_perm_weight{sum(a_field_weights)};
+      ArithQuotient sum_perm_weight{sum(field_weights)};
 #ifdef DEBUG_SEL_CIRCUIT
-      print_share(sum_perm_weight, "sum_perm_weight");
+      print_share(sum_perm_weight,
+          //format("sum_perm_weight ({},{})", ftype, groupPerm)); // TODO#19
+          format("sum_perm_weight ({})", ftype ));
 #endif
-      // convert back to bool and collect for later max
-      perm_weights.emplace_back(to_bool(sum_perm_weight));
+      // collect for later max
+      perm_weights.emplace_back(sum_perm_weight);
     } while(next_permutation(groupPerm.begin(), groupPerm.end()));
     // return max of all perm_weights
-    BoolShare max_perm_weight{max(perm_weights)};
+    ArithQuotient max_perm_weight{max(perm_weights, to_bool_closure, to_arith_closure)};
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(max_perm_weight, "max_perm_weight");
+    print_share(max_perm_weight,
+        //format("max_perm_weight ({},{})", ftype, group)); // TODO#19
+        format("max_perm_weight ({})", ftype));
 #endif
-    return max_perm_weight;
+    // Treat quotient as FieldWeight
+    return {max_perm_weight.num, max_perm_weight.den};
   }
 
   /**
