@@ -297,7 +297,7 @@ private:
     for (CircUnit i = 0; i != nvals; ++i) {
       // TODO Make true SIMD constants available in ABY and implement offline
       // AND with constant
-      numbers.emplace_back(constant(bcirc, i, ceil_log2(nvals)));
+      numbers.emplace_back(constant(bcirc, i, ceil_log2_min1(nvals)));
     }
     const_idx = vcombine_bool(numbers);
     assert(const_idx.get_nvals() == nvals);
