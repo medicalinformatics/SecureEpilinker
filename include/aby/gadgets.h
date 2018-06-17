@@ -35,6 +35,7 @@ using UnaryOp_ArithShare = std::function<ArithShare (const ArithShare&)>;
 using BinaryOp_Share = std::function<Share (const Share&, const Share&)>;
 using BinaryOp_BoolShare = std::function<BoolShare (const BoolShare&, const BoolShare&)>;
 using BinaryOp_ArithShare = std::function<ArithShare (const ArithShare&, const ArithShare&)>;
+using BinaryOp_ArithQuotient = std::function<ArithQuotient (const ArithQuotient&, const ArithQuotient&)>;
 using ArithQuotientSelector = std::function<BoolShare (const ArithQuotient&, const ArithQuotient&)>;
 
 using A2BConverter = std::function<BoolShare (const ArithShare&)>;
@@ -85,6 +86,9 @@ void split_select_quotient_target(
     ArithQuotient& selector, std::vector<BoolShare>& targets,
     const ArithQuotientSelector& op_select, const B2AConverter& to_arith);
 
+ArithQuotientSelector make_max_selector(const A2BConverter& to_bool);
+ArithQuotientSelector make_min_selector(const A2BConverter& to_bool);
+
 BoolShare max(const vector<BoolShare>&);
 BoolShare sum(const vector<BoolShare>&);
 ArithShare sum(const vector<ArithShare>&);
@@ -92,6 +96,8 @@ ArithShare sum(const vector<ArithShare>&);
 BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
     const A2BConverter& to_bool);
 ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool, const B2AConverter& to_arith);
+ArithQuotient max(const vector<ArithQuotient>& qs,
     const A2BConverter& to_bool, const B2AConverter& to_arith);
 
 } // namespace sel
