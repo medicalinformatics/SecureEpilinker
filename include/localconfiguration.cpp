@@ -16,14 +16,14 @@
 \brief Holds Information about a local connection
 */
 
-#include "localconfiguration.h"
 #include <exception>
 #include <set>
 #include <thread>
+#include "fmt/format.h" // needs to be included before local headers for custom formatters
+#include "localconfiguration.h"
 #include "authenticationconfig.hpp"
 #include "databasefetcher.h"
 #include "epilink_input.h"
-#include "fmt/format.h"
 #include "secure_epilinker.h"
 #include "seltypes.h"
 #include "util.h"
@@ -209,22 +209,29 @@ void LocalConfiguration::run_comparison() {
 
     SecureEpilinker::ABYConfig aby_config{SERVER, S_BOOL, host, port, 1};
     EpilinkConfig epilink_config{
-        move(hw_weights),
-        move(bin_weights),
-        get_exchange_group_indices(FieldComparator::NGRAM),
-        get_exchange_group_indices(FieldComparator::BINARY),
-        m_algorithm.bloom_length,
-        m_algorithm.threshold_match,
-        m_algorithm.threshold_non_match};
+      { // weights
+        {FieldComparator::NGRAM, move(hw_weights)},
+        {FieldComparator::BINARY, move(bin_weights)}
+      },
+      { // exchange groups
+        {FieldComparator::NGRAM,
+          get_exchange_group_indices(FieldComparator::NGRAM)},
+        {FieldComparator::BINARY,
+          get_exchange_group_indices(FieldComparator::BINARY)}
+      },
+      m_algorithm.bloom_length,
+      m_algorithm.threshold_match,
+      m_algorithm.threshold_non_match
+    }; // epilink_config
+
     SecureEpilinker aby_server_party{aby_config, epilink_config};
     aby_server_party.build_circuit(nvals);
     aby_server_party.run_setup_phase();
     EpilinkServerInput server_input{hw_data, bin_data, hw_empty, bin_empty};
-    fmt::print("Server running\n{}{}{}", print_aby_config(aby_config),
-               print_epilink_config(epilink_config),
-               print_epilink_input(server_input));
+    fmt::print("Server running\n{}\n{}\n{}\n",
+        aby_config, epilink_config, server_input);
     const auto server_share{aby_server_party.run_as_server(server_input)};
-    fmt::print("Server result:\n{}", server_share);
+    fmt::print("Server result:\n{}\n", server_share);
     fmt::print("IDs (in Order):\n");
     for (size_t i = 0; i != m_ids.size(); ++i) {
       fmt::print("{} IDs: ", i);

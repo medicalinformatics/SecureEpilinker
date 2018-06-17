@@ -109,5 +109,27 @@ struct SessionResponse {
   std::string body;
   std::multimap<std::string, std::string> headers;
 };
-}
+} // namespace sel
+
+#ifdef FMT_FORMAT_H_
+// Custom fmt formatters for our types
+namespace fmt {
+template <>
+struct formatter<sel::FieldComparator> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::FieldComparator& c, FormatContext &ctx) {
+    std::string s;
+    switch(c) {
+      case sel::FieldComparator::BINARY: s = "Binary"; break;
+      case sel::FieldComparator::NGRAM: s = "Bitmask"; break;
+    }
+    return format_to(ctx.begin(), s);
+  }
+};
+} // namespace fmt
+#endif // FMT_FORMAT_H_
+
 #endif // SEL_SELTYPES_H

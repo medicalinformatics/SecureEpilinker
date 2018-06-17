@@ -1,6 +1,6 @@
 #include "cxxopts.hpp"
-#include "../include/secure_epilinker.h"
 #include "../include/util.h"
+#include "../include/secure_epilinker.h"
 #include "abycore/aby/abyparty.h"
 
 using namespace sel;
@@ -8,6 +8,8 @@ using namespace std;
 using Result = SecureEpilinker::Result;
 using fmt::print;
 
+constexpr auto BIN = FieldComparator::BINARY;
+constexpr auto BM = FieldComparator::NGRAM;
 constexpr double Threshold = 0.9;
 constexpr double TThreshold = 0.7;
 
@@ -15,8 +17,11 @@ Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
     uint32_t nvals) {
   // First test: only one bin field, single byte bitmask
   EpilinkConfig epi_cfg {
-    {4.0}, {1.0}, // hw/bin weights
-    {}, {}, // hw/bin exchange groups
+    {
+      {BM, {4.0}},
+      {BIN, {1.0}}
+    }, // bm/bin weights
+    {{BM, {}}, {BIN, {}}}, // bm/bin exchange groups
     8, Threshold, TThreshold // size_bitmask, (tent.) thresholds
   };
 
@@ -51,8 +56,11 @@ Result test_exchange_grp(const SecureEpilinker::ABYConfig& aby_cfg,
     uint32_t nvals) {
   // First test: only one bin field, single byte bitmask
   EpilinkConfig epi_cfg {
-    {4.0, 1.0}, {2.0, 1.0}, // hw/bin weights
-    {{0,1}}, {}, // hw/bin exchange groups
+    {
+      {BM, {4.0, 1.0}},
+      {BIN, {2.0, 1.0}}
+    }, // bm/bin weights
+    {{BM, {{0,1}}}, {BIN, {}}}, // bm/bin exchange groups
     8, Threshold, TThreshold // size_bitmask, (tent.) thresholds
   };
 
