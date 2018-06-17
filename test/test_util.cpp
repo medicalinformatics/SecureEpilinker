@@ -1,8 +1,14 @@
+#include "fmt/ostream.h"
 #include "../include/util.h"
 
 using namespace std;
 
 namespace sel {
+
+void test_format_vector() {
+  vector<size_t>v({3,5,7});
+  assert (fmt::format("{}", v) == "[3, 5, 7]");
+}
 
 void test_vector_bool_to_bitmask() {
   // big endian |00 11 00 00|
@@ -45,5 +51,6 @@ int main(int argc, char *argv[])
   test_vector_bool_to_bitmask();
   test_ceil_log2();
   test_map();
+  test_format_vector();
   return 0;
 }
