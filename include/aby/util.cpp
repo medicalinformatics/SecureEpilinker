@@ -20,7 +20,6 @@
 #include <functional>
 #include "abycore/aby/abyparty.h"
 #include "util.h"
-#include "circuit_defs.h"
 
 #define SEP "\t"
 

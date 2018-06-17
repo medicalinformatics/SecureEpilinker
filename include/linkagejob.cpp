@@ -133,24 +133,30 @@ void LinkageJob::run_job() {
         CLIENT, booleantype, m_parent->get_remote_host(),
         m_parent->get_remote_port(), nthreads};
     EpilinkConfig epi_config{
-        hw_weights,
-        bin_weights,
-        m_local_config->get_exchange_group_indices(FieldComparator::NGRAM),
-        m_local_config->get_exchange_group_indices(FieldComparator::BINARY),
-        algorithm_config.bloom_length,
-        algorithm_config.threshold_match,
-        algorithm_config.threshold_non_match};
+      { // weights
+        {FieldComparator::NGRAM, hw_weights},
+        {FieldComparator::BINARY, bin_weights}
+      },
+      { // exchange groups
+        {FieldComparator::NGRAM,
+          m_local_config->get_exchange_group_indices(FieldComparator::NGRAM)},
+        {FieldComparator::BINARY,
+          m_local_config->get_exchange_group_indices(FieldComparator::BINARY)}
+      },
+      algorithm_config.bloom_length,
+      algorithm_config.threshold_match,
+      algorithm_config.threshold_non_match
+    }; // epi_config
 
     SecureEpilinker sepilinker_client{aby_config, epi_config};
     sepilinker_client.build_circuit(nvals);
     sepilinker_client.run_setup_phase();
     EpilinkClientInput client_input{hw_data, bin_data, hw_empty, bin_empty,
                                     nvals};
-    fmt::print("Client running\n{}{}{}", print_aby_config(aby_config),
-               print_epilink_config(epi_config),
-               print_epilink_input(client_input));
+    fmt::print("Client running\n{}\n{}\n{}\n",
+        aby_config, epi_config, client_input);
     const auto client_share{sepilinker_client.run_as_client(client_input)};
-    fmt::print("Client result:\n{}", client_share);
+    fmt::print("Client result:\n{}\n", client_share);
   } catch (const exception& e) {
     fmt::print(stderr, "Error running MPC Client: {}\n", e.what());
     m_status = JobStatus::FAULT;
