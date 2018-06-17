@@ -113,9 +113,9 @@ class Share {
 
   share* get() const { return sh.get(); }
   Circuit* get_circuit() const { return circ; };
-  uint32_t get_bitlen() const { return sh.get()->get_bitlength(); }
-  uint32_t get_nvals() const { return sh.get()->get_nvals(); }
-  e_sharing get_type() const { return sh.get()->get_share_type(); }
+  uint32_t get_bitlen() const { return sh->get_bitlength(); }
+  uint32_t get_nvals() const { return sh->get_nvals(); }
+  e_sharing get_type() const { return sh->get_share_type(); }
   virtual void reset() { circ = nullptr; sh.reset(); }
   bool is_null() const { return !(bool)sh; }
 
