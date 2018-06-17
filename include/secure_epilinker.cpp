@@ -657,7 +657,9 @@ SecureEpilinker::Result SecureEpilinker::run_circuit() {
     res.tmatch.get_clear_value<bool>()
 #ifdef DEBUG_SEL_RESULT
     ,res.score_numerator.get_clear_value<CircUnit>()
-    ,res.score_denominator.get_clear_value<CircUnit>()
+    // shift by dice-precision to account for precision of threshold, i.e.,
+    // get denominator and numerator to same scale
+    ,(res.score_denominator.get_clear_value<CircUnit>() << epicfg.dice_prec)
 #endif
   };
 }
