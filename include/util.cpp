@@ -54,6 +54,10 @@ int ceil_log2(unsigned long long x)
   return y;
 }
 
+int ceil_log2_min1(unsigned long long x) {
+  return max(1, ceil_log2(x));
+}
+
 std::vector<uint8_t> vector_bool_to_bitmask(const std::vector<bool>& vb) {
   vector<uint8_t> v;
   size_t size_bytes{bitbytes(vb.size())};
