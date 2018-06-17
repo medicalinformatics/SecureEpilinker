@@ -348,6 +348,23 @@ void split_select_quotient_target(
   }
 }
 
+
+ArithQuotientSelector make_max_selector(const A2BConverter& to_bool) {
+  return [&to_bool] (auto a, auto b) {
+      ArithShare ax = a.num * b.den;
+      ArithShare bx = b.num * a.den;
+      return to_bool(ax) > to_bool(bx);
+  };
+}
+
+ArithQuotientSelector make_min_selector(const A2BConverter& to_bool) {
+  return [&to_bool] (auto a, auto b) {
+      ArithShare ax = a.num * b.den;
+      ArithShare bx = b.num * a.den;
+      return to_bool(ax) < to_bool(bx);
+  };
+}
+
 BoolShare reinterpret_share(const ArithShare& a, BooleanCircuit* bc) {
   assert(bc->GetContext() == S_BOOL && "This crazy stuff only works with bool circuits.");
   ArithmeticCircuit* ac = a.get_circuit();
@@ -363,8 +380,35 @@ BoolShare reinterpret_share(const ArithShare& a, BooleanCircuit* bc) {
 // TODO#13 If we can mux with ArithShares, use it here.
 ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
     const A2BConverter& to_bool, const B2AConverter& to_arith) {
+  /* Old implementation uses bool muxing
   BoolQuotient q = max(a, b, to_bool);
   return {to_arith(q.num), to_arith(q.den)};
+  */
+  uint32_t nvals  = a.num.get_nvals();
+  assert(a.den.get_nvals() == nvals);
+  assert(b.num.get_nvals() == nvals);
+  assert(b.den.get_nvals() == nvals);
+  ArithShare ax = a.num * b.den;
+  ArithShare bx = b.num * a.den;
+  // convert to bool
+  BoolShare b_ax = to_bool(ax), b_bx = to_bool(bx);
+  BoolShare cmp = (b_ax > b_bx);
+  ArithShare acmp = to_arith(cmp);
+  ArithmeticCircuit* acirc = acmp.get_circuit();
+  ArithShare one = constant_simd(acirc, 1u, acirc->GetShareBitLen(), nvals);
+  ArithShare notcmp = one - acmp;
+
+  ArithShare num = acmp * a.num + notcmp * b.num;
+  ArithShare den = acmp * a.den + notcmp * b.den;
+  return {num, den};
+}
+
+ArithQuotient max(const vector<ArithQuotient>& qs,
+    const A2BConverter& to_bool, const B2AConverter& to_arith) {
+  return binary_accumulate(qs, (BinaryOp_ArithQuotient)
+      [&to_bool, &to_arith](auto a, auto b) {
+      return max(a, b, to_bool, to_arith);
+      });
 }
 
 BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
