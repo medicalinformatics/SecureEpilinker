@@ -51,6 +51,9 @@ ArithShare binary_accumulate(vector<ArithShare> vals,
     const BinaryOp_ArithShare& op);
 */
 
+void print_share(const ArithQuotient& q, const string& msg);
+void print_share(const BoolQuotient& q, const string& msg);
+
 /**
  * Creates a BoolShare with bitlen wires from an arith share with 1 wire and
  * bitlen-sized values - to be used with MUX to add flow to arithmetic shares

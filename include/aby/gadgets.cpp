@@ -63,6 +63,16 @@ template ArithShare binary_accumulate(vector<ArithShare> vals,
 template BoolShare binary_accumulate(vector<BoolShare> vals,
     const BinaryOp_BoolShare& op);
 
+void print_share(const ArithQuotient& q, const string& msg) {
+  print_share(q.num, msg + "(num)");
+  print_share(q.den, msg + "(den)");
+}
+
+void print_share(const BoolQuotient& q, const string& msg) {
+  print_share(q.num, msg + "(num)");
+  print_share(q.den, msg + "(den)");
+}
+
 /**
  * Accumulates all objects of vector using binary operation op serially by
  * left-fold
