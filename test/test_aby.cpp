@@ -221,11 +221,14 @@ struct ABYTester {
       ArithShare{ac, 5u, bitlen, CLIENT}};
     ArithQuotient b = {ArithShare{ac, 16u, bitlen, SERVER},
       ArithShare{ac, 13u, bitlen, CLIENT}};
+    ArithQuotient c = {ArithShare{ac, 3u, bitlen, SERVER},
+      ArithShare{ac, 155u, bitlen, CLIENT}};
 
-    ArithQuotient maxab = max(a, b, to_bool_closure, to_arith_closure);
+    ArithQuotient maxab = max({a, b, c}, to_bool_closure, to_arith_closure);
 
     print_share(a, "a");
     print_share(b, "b");
+    print_share(c, "c");
     print_share(maxab, "maxab");
 
     party.ExecCircuit();
