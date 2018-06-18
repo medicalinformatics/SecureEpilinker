@@ -65,7 +65,7 @@ Result test_exchange_grp(const SecureEpilinker::ABYConfig& aby_cfg,
   };
 
   EpilinkClientInput in_client {
-    {{0x33},{0x44}}, // hw records
+    {{0x33},{0x43}}, // hw records
     {0xdeadbeef, 0xdecea5ed}, // bin records
     {false, false}, {false, false}, // hw/bin empty
     nvals // nvals
