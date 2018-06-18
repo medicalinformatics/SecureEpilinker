@@ -134,7 +134,8 @@ target_link_libraries(test_sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
 target_link_libraries(test_sel PRIVATE fmt::fmt-header-only cxxopts)
 set_property(TARGET test_sel PROPERTY CXX_STANDARD 17)
 target_compile_options(test_sel PRIVATE "-O0" "-ggdb" "-g3"
-  "-DDEBUG_SEL_INPUT"  "-DDEBUG_SEL_CIRCUIT" "-DDEBUG_SEL_RESULT")
+  "-DDEBUG_SEL_INPUT"  "-DDEBUG_SEL_CIRCUIT" "-DDEBUG_SEL_RESULT"
+  "-DDEBUG_SEL_GADGETS")
 
 # Test utils
 add_executable(test_util test/test_util.cpp include/util.cpp include/util.h)
