@@ -46,12 +46,18 @@ EpilinkConfig::EpilinkConfig(
   tthreshold {tthreshold},
   nfields {transform_map(weights, [](auto ws){return ws.size();})},
   nfields_total{nfields.at(BM) + nfields.at(BIN)},
-  // evenly distribute precision bits between weight and dice-coeff
+  // Evenly distribute precision bits between weight^2 and dice-coeff
+  // When calculating the max of a quotient of the form fw/w, we have to compare
+  // factors of the form fw*w, where the field weight fw is itself a sum of factor of a
+  // weight and dice coefficient d. The denominator w is itself potentially a
+  // sum of weights. So in order for the CircUnit to not overflow for a product
+  // of the form sum_n(d * w) * sum_n(w), it has to hold that
+  // ceil_log2(n^2) + dice_prec + 2*weight_prec <= BitLen = sizeof(CircUnit).
   //dice_prec{(BitLen - ceil_log2(nfields))/2}, // TODO better this one and
   //custom integer division
   dice_prec(16 - 1 - ceil_log2(size_bitmask + 1)),
   //weight_prec{ceil_divide((BitLen - ceil_log2(nfields)), 2)}, // TODO ^^^
-  weight_prec{BitLen - ceil_log2(nfields_total) - dice_prec},
+  weight_prec{(BitLen - ceil_log2(nfields_total^2) - dice_prec)/2},
   max_weight{max(
       nfields.at(BM) ?
         *max_element(weights.at(BM).cbegin(), weights.at(BM).cend()) : 0.0,
@@ -59,9 +65,9 @@ EpilinkConfig::EpilinkConfig(
         *max_element(weights.at(BIN).cbegin(), weights.at(BIN).cend()) : 0.0
       )}
   {
-    // We sum up nfields products of dice_prec+weight_prec values, so they must
-    // fit into the total BitLen
-    assert (dice_prec + weight_prec + ceil_log2(nfields_total) == BitLen);
+    // Division by 2 for weight_prec initialization could have wasted one bit
+    if (dice_prec + 2*weight_prec + ceil_log2(nfields_total^2) < BitLen) ++dice_prec;
+    assert (dice_prec + 2*weight_prec + ceil_log2(nfields_total^2) == BitLen);
 #ifdef DEBUG_SEL_INPUT
     print("BitLen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
         BitLen, nfields_total, dice_prec, weight_prec);
@@ -69,7 +75,9 @@ EpilinkConfig::EpilinkConfig(
   }
 
 void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
-  assert (dice_prec_ + weight_prec_ + ceil_log2(nfields_total) <= BitLen);
+  if (dice_prec_ + 2*weight_prec_ + ceil_log2(nfields_total^2) > BitLen) {
+    throw runtime_error("Given dice and weight precision would potentially let the CircUnit overflow!");
+  }
 
   dice_prec = dice_prec_;
   weight_prec = weight_prec_;
