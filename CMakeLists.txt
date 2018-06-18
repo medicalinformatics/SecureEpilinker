@@ -52,14 +52,20 @@ set(EPIRESTSRC
       include/monitormethodhandler.h
       include/tempselmethodhandler.h)
 
-set(SELSOURCES "include/util.cpp" "include/epilink_input.cpp"
-  "include/secure_epilinker.cpp" "include/util.cpp" "include/aby/Share.cpp"
+set(SELABYSOURCES "include/util.cpp" "include/util.cpp" "include/aby/Share.cpp"
   "include/aby/gadgets.cpp" "include/aby/util.cpp")
 
-set(SELHEADER "include/epilink_input.h" "include/math.h"
-  "include/secure_epilinker.h" "include/sel.h" "include/util.h"
+set(SELSOURCES ${SELABYSOURCES}
+  "include/epilink_input.cpp" "include/secure_epilinker.cpp"
+  "include/seltypes.cpp")
+
+set(SELABYHEADER "include/math.h" "include/util.h"
   "include/aby/Share.h" "include/aby/gadgets.h"
   "include/aby/util.h")
+
+set(SELHEADER ${SELABYHEADER}
+  "include/epilink_input.h" "include/secure_epilinker.h"
+  "include/seltypes.h")
 
 add_executable (sel sepilinker.cpp ${EPIRESTSRC} ${EPIRESTHEAD} ${SELSOURCES} ${SELHEADER})
 add_dependencies(sel ABY)
@@ -105,7 +111,7 @@ target_compile_options(sel PRIVATE "-O0" "-ggdb" "-g3"
 
 # Test-Targets
 # Test ABY Stuff
-add_executable(test_aby test/test_aby.cpp ${SELSOURCES} ${SELHEADER})
+add_executable(test_aby test/test_aby.cpp ${SELABYSOURCES} ${SELABYHEADER})
 add_dependencies(test_aby ABY)
 add_dependencies(test_aby OTExtension)
 add_dependencies(test_aby MIRACL)
