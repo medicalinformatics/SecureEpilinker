@@ -412,6 +412,11 @@ ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
   ArithmeticCircuit* acirc = acmp.get_circuit();
   ArithShare one = constant_simd(acirc, 1u, acirc->GetShareBitLen(), nvals);
   ArithShare notcmp = one - acmp;
+#ifdef DEBUG_SEL_GADGETS
+  print_share(cmp, "max cmp");
+  print_share(acmp, "max acmp");
+  print_share(notcmp, "max notcmp");
+#endif
 
   ArithShare num = acmp * a.num + notcmp * b.num;
   ArithShare den = acmp * a.den + notcmp * b.den;
