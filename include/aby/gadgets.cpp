@@ -365,6 +365,21 @@ ArithQuotientSelector make_min_selector(const A2BConverter& to_bool) {
   };
 }
 
+
+void max_index(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const A2BConverter& to_bool, const B2AConverter& to_arith) {
+  auto op_select= make_max_selector(to_bool);
+  return split_select_quotient_target(selector, targets, op_select, to_arith);
+}
+
+void min_index(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const A2BConverter& to_bool, const B2AConverter& to_arith) {
+  auto op_select= make_min_selector(to_bool);
+  return split_select_quotient_target(selector, targets, op_select, to_arith);
+}
+
 BoolShare reinterpret_share(const ArithShare& a, BooleanCircuit* bc) {
   assert(bc->GetContext() == S_BOOL && "This crazy stuff only works with bool circuits.");
   ArithmeticCircuit* ac = a.get_circuit();

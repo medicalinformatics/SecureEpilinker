@@ -89,6 +89,14 @@ void split_select_quotient_target(
 ArithQuotientSelector make_max_selector(const A2BConverter& to_bool);
 ArithQuotientSelector make_min_selector(const A2BConverter& to_bool);
 
+void max_index(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const A2BConverter& to_bool, const B2AConverter& to_arith);
+
+void min_index(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const A2BConverter& to_bool, const B2AConverter& to_arith);
+
 BoolShare max(const vector<BoolShare>&);
 BoolShare sum(const vector<BoolShare>&);
 ArithShare sum(const vector<ArithShare>&);
