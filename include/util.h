@@ -93,19 +93,6 @@ std::vector<uint8_t> concat_vec(const std::vector<std::vector<uint8_t>>& vs) {
   return c;
 }
 */
-template <typename InType,
-  template <typename U, typename alloc = std::allocator<U>>
-            class InContainer,
-  template <typename V, typename alloc = std::allocator<V>>
-            class OutContainer = InContainer,
-  typename OutType = InType>
-OutContainer<OutType> transform_vec(const InContainer<InType>& vec,
-   std::function<OutType(const InType&)> op) {
-  OutContainer<OutType> out;
-  out.reserve(vec.size());
-  std::transform(vec.cbegin(), vec.cend(), std::back_inserter(out), op);
-  return out;
-}
 
 template <typename T>
 void check_vector_size(const std::vector<T>& r,
@@ -122,6 +109,16 @@ void check_vectors_size(const std::vector<std::vector<T>>& vec,
   for (auto& r : vec) {
     check_vector_size(r, size, name);
   }
+}
+
+template <typename InType, typename Transformer,
+  typename OutType = decltype(std::declval<Transformer>()(std::declval<InType>()))>
+std::vector<OutType> transform_vec(const std::vector<InType>& vec,
+    Transformer op) {
+  std::vector<OutType> out;
+  out.reserve(vec.size());
+  std::transform(vec.cbegin(), vec.cend(), std::back_inserter(out), op);
+  return out;
 }
 
 /**
