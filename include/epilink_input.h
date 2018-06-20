@@ -31,17 +31,19 @@ namespace sel {
 using BitmaskUnit = uint8_t;
 using Bitmask = std::vector<BitmaskUnit>;
 using VBitmask = std::vector<Bitmask>;
+// How we save all input data
+using FieldValue = std::optional<Bitmask>;
 // Circuit unit
 using CircUnit = uint32_t;
 using VCircUnit = std::vector<CircUnit>;
 constexpr size_t BitLen = sizeof(CircUnit)*8;
 
 struct EpilinkConfig {
-  // vector of weights
-  const std::map<FieldComparator, VWeight> weights;
+  // field descriptions
+  const std::map<FieldName, ML_Field> fields;
 
   // exchange groups by index
-  const std::map<FieldComparator, std::vector<IndexSet>> exchange_groups;
+  const std::vector<IndexSet> exchange_groups;
 
   // bitlength of bitmasks and required bits of HWs
   const uint32_t size_bitmask;
@@ -53,14 +55,13 @@ struct EpilinkConfig {
   const double tthreshold; // threshold for tentative match
 
   // calculated fields for faster access
-  const std::map<FieldComparator, size_t> nfields; // number of fields
-  const size_t nfields_total; // total number of field
+  const size_t nfields; // total number of field
   size_t dice_prec, weight_prec; // bit precisions
-  const double max_weight;
+  const Weight max_weight; // maximum weight for rescaling of weights
 
   EpilinkConfig(
-      std::map<FieldComparator, VWeight> weights,
-      std::map<FieldComparator, std::vector<IndexSet>> exchange_groups,
+      std::map<FieldName, ML_Field> fields,
+      std::vector<IndexSet> exchange_groups,
       uint32_t size_bitmask, double threshold, double tthreshold
   );
   ~EpilinkConfig() = default;
