@@ -30,9 +30,6 @@ using fmt::print;
 
 namespace sel {
 
-constexpr auto BIN = FieldComparator::BINARY;
-constexpr auto BM = FieldComparator::NGRAM;
-
 EpilinkConfig::EpilinkConfig(
       std::map<FieldName, ML_Field> fields_,
       std::vector<IndexSet> exchange_groups_,
@@ -79,18 +76,14 @@ void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
 }
 
 EpilinkServerInput::EpilinkServerInput(
-  vector<VBitmask> bm_database, vector<VCircUnit> bin_database,
-  vector<vector<bool>> bm_db_empty, vector<vector<bool>> bin_db_empty) :
-  bm_database{bm_database}, bin_database{bin_database},
-  bm_db_empty{bm_db_empty}, bin_db_empty{bin_db_empty},
-  nvals{bm_database.empty() ?
-    bin_database.at(0).size() : bm_database.at(0).size()}
+    std::map<FieldName, VFieldEntry> database_) :
+  database{database_},
+  nvals{database.cbegin()->second.size()}
 {
   // check that all vectors over records have same size
-  check_vectors_size(bm_database, nvals, "bm_database");
-  check_vectors_size(bin_database, nvals, "bin_database");
-  check_vectors_size(bm_db_empty, nvals, "bm_db_empty");
-  check_vectors_size(bin_db_empty, nvals, "bin_db_empty");
+  for (const auto& row : database) {
+    check_vector_size(row.second, nvals, "database field "s + row.first);
+  }
 }
 
 // hammingweight of bitmasks
@@ -147,16 +140,34 @@ CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight) {
 
 } // namespace sel
 
-std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in) {
-  os << "Client Input\n-----\nBitmask Records:\n-----\n";
-  for (size_t i = 0; i != in.bm_record.size(); ++i){
-    os << (in.bm_rec_empty[i] ? "(-) " : "(+) ");
-    for (auto& b : in.bm_record[i]) os << b;
-    os << '\n';
+std::ostream& operator<<(std::ostream& os,
+    const sel::FieldEntry& val) {
+  if (val) {
+    for (const auto& b : *val) os << b;
+  } else {
+    os << "<empty>";
   }
-  os << "-----\nBinary Records\n-----\n";
-  for (size_t i = 0; i != in.bin_record.size(); ++i){
-    os << (in.bin_rec_empty[i] ? "(-) " : "(+) ") << in.bin_record[i] << '\n';
+}
+
+std::ostream& operator<<(std::ostream& os,
+    const std::pair<const sel::FieldName, sel::FieldEntry>& f) {
+  os << f.first << ": " << f.second;
+}
+
+std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in) {
+  os << "----- Client Input -----\n";
+  for (const auto& f : in.record) {
+    os << f << '\n';
+  }
+  return os << "Number of database records: " << in.nvals;
+}
+
+std::ostream& operator<<(std::ostream& os, const sel::EpilinkServerInput& in) {
+  os << "----- Server Input -----\n";
+  for (const auto& fs : in.database) {
+    for (size_t i = 0; i != fs.second.size(); ++i) {
+      os << fs.first << '[' << i << "]: " << fs.second[i] << '\n';
+    }
   }
   return os << "Number of database records: " << in.nvals;
 }
