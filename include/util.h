@@ -126,7 +126,7 @@ void check_vectors_size(const std::vector<std::vector<T>>& vec,
 
 /**
  * Transforms the values of the given map with the given transformation function
- * and returns the transformed map.
+ * and returns the transformed map with the same keys.
  * https://stackoverflow.com/questions/50881383/stdmap-transformer-template
  */
 template <class Key, class FromValue, class Transformer,
@@ -137,6 +137,25 @@ std::map<Key, ToValue> transform_map(const std::map<Key, FromValue>& _map,
   std::for_each(_map.cbegin(), _map.cend(),
       [&res, &_tr](const std::pair<const Key, FromValue>& kv) {
         res[kv.first] = _tr(kv.second);
+      });
+  return res;
+}
+
+/**
+ * Transforms the values of the given map with the given transformation function
+ * and returns the transformed key-value pairs as vector
+ * https://stackoverflow.com/questions/50881383/stdmap-transformer-template
+ */
+template <class Key, class FromValue, class Transformer,
+  class ToValue = decltype(std::declval<Transformer>()
+      (std::declval<std::pair<const Key, FromValue>>()))>
+std::vector<Key, ToValue> transform_map_vec(const std::map<Key, FromValue>& _map,
+    Transformer _tr) {
+  std::vector<ToValue> res;
+  res.reserve(_map.size());
+  std::for_each(_map.cbegin(), _map.cend(),
+      [&res, &_tr](const std::pair<const Key, FromValue>& kv) {
+        res.emplace_back(_tr(kv));
       });
   return res;
 }
