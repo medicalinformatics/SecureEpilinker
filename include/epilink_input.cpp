@@ -34,18 +34,17 @@ constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::NGRAM;
 
 EpilinkConfig::EpilinkConfig(
-      std::map<FieldComparator, VWeight> weights_,
-      std::map<FieldComparator, std::vector<IndexSet>> exchange_groups_,
+      std::map<FieldName, ML_Field> fields_,
+      std::vector<IndexSet> exchange_groups_,
       uint32_t size_bitmask, double threshold, double tthreshold) :
-  weights {weights_},
+  fields {fields_},
   exchange_groups {exchange_groups_},
   size_bitmask {size_bitmask},
   bytes_bitmask (bitbytes(size_bitmask)),
   size_hw (ceil_log2(size_bitmask+1)),
   threshold {threshold},
   tthreshold {tthreshold},
-  nfields {transform_map(weights, [](auto ws){return ws.size();})},
-  nfields_total{nfields.at(BM) + nfields.at(BIN)},
+  nfields {fields.size()},
   // Evenly distribute precision bits between weight^2 and dice-coeff
   // When calculating the max of a quotient of the form fw/w, we have to compare
   // factors of the form fw*w, where the field weight fw is itself a sum of factor of a
@@ -57,25 +56,21 @@ EpilinkConfig::EpilinkConfig(
   //custom integer division
   dice_prec(16 - 1 - ceil_log2(size_bitmask + 1)),
   //weight_prec{ceil_divide((BitLen - ceil_log2(nfields)), 2)}, // TODO ^^^
-  weight_prec{(BitLen - ceil_log2(nfields_total^2) - dice_prec)/2},
-  max_weight{max(
-      nfields.at(BM) ?
-        *max_element(weights.at(BM).cbegin(), weights.at(BM).cend()) : 0.0,
-      nfields.at(BIN) ?
-        *max_element(weights.at(BIN).cbegin(), weights.at(BIN).cend()) : 0.0
-      )}
+  weight_prec{(BitLen - ceil_log2(nfields^2) - dice_prec)/2},
+  max_weight{ *max_element(transform_map_vec(fields,
+        [](auto f){return f.second.weight;})) }
   {
     // Division by 2 for weight_prec initialization could have wasted one bit
-    if (dice_prec + 2*weight_prec + ceil_log2(nfields_total^2) < BitLen) ++dice_prec;
-    assert (dice_prec + 2*weight_prec + ceil_log2(nfields_total^2) == BitLen);
+    if (dice_prec + 2*weight_prec + ceil_log2(nfields^2) < BitLen) ++dice_prec;
+    assert (dice_prec + 2*weight_prec + ceil_log2(nfields^2) == BitLen);
 #ifdef DEBUG_SEL_INPUT
     print("BitLen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
-        BitLen, nfields_total, dice_prec, weight_prec);
+        BitLen, nfields, dice_prec, weight_prec);
 #endif
   }
 
 void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
-  if (dice_prec_ + 2*weight_prec_ + ceil_log2(nfields_total^2) > BitLen) {
+  if (dice_prec_ + 2*weight_prec_ + ceil_log2(nfields^2) > BitLen) {
     throw runtime_error("Given dice and weight precision would potentially let the CircUnit overflow!");
   }
 
