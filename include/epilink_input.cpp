@@ -64,6 +64,15 @@ EpilinkConfig::EpilinkConfig(
     print("BitLen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
         BitLen, nfields, dice_prec, weight_prec);
 #endif
+    for ( const auto& f : fields ) {
+      if (f.second.comparator == FieldComparator::NGRAM) {
+        if (f.second.bitsize != size_bitmask) {
+          throw runtime_error{fmt::format(
+              "bitmask field '{}' bitsize must be equal to"
+              "size_bitmask in EpilinkConfig", f.first)};
+        }
+      }
+    }
   }
 
 void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
