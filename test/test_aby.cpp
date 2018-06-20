@@ -75,16 +75,22 @@ struct ABYTester {
   void test_conversion() {
     vector<uint32_t> data(nvals);
     iota(data.begin(), data.end(), 0);
-    size_t data_bitlen = sel::ceil_log2(nvals);
+    size_t data_bitlen = sel::ceil_log2_min1(nvals);
     BoolShare in(bc, data.data(), data_bitlen, SERVER, nvals);
-    BoolShare in2(bc, data.data(), data_bitlen, SERVER, 2);
+    //BoolShare in2(bc, data.data(), data_bitlen, SERVER, 2);
     ArithShare ain = to_arith(in);
-    ArithShare ain2 = to_arith(in2);
+    //ArithShare ain2 = to_arith(in2);
+
+    BoolShare bain = to_bool(ain);
+    ArithShare abain = to_arith(bain);
 
     print_share(in, "bool in");
-    print_share(in2, "bool in2");
+    //print_share(in2, "bool in2");
     print_share(ain, "arithmetic in");
-    print_share(ain2, "arithmetic in2");
+    //print_share(ain2, "arithmetic in2");
+
+    print_share(bain, "b(a(in))");
+    print_share(abain, "a(b(a(in)))");
 
     party.ExecCircuit();
   }
@@ -314,10 +320,10 @@ int main(int argc, char *argv[])
   //tester.test_mult_const();
   //tester.test_hw();
   //tester.test_max_bits();
-  //tester.test_conversion();
+  tester.test_conversion();
   //tester.test_reinterpret();
   //tester.test_split_select_quotient_target();
-  tester.test_max_quotient();
+  //tester.test_max_quotient();
 
   return 0;
 }
