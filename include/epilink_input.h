@@ -94,11 +94,6 @@ struct EpilinkServerInput {
   ~EpilinkServerInput() = default;
 };
 
-// hamming weights
-CircUnit hw(const Bitmask&);
-std::vector<CircUnit> hw(const std::vector<Bitmask>&);
-std::vector<std::vector<CircUnit>> hw(const std::vector<std::vector<Bitmask>>&);
-
 /*
  * Rescales the weights so that the maximum weight is the maximum element
  * of given precision bits, i.e., 0xff...

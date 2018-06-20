@@ -95,31 +95,6 @@ EpilinkServerInput::EpilinkServerInput(
   }
 }
 
-// hammingweight of bitmasks
-CircUnit hw(const Bitmask& bm) {
-  CircUnit n = 0;
-  for (auto& b : bm) {
-    n += __builtin_popcount(b);
-  }
-  return n;
-}
-
-// hammingweight over vectors
-vector<CircUnit> hw(const vector<Bitmask>& v_bm) {
-  vector<CircUnit> res(v_bm.size());
-  transform(v_bm.cbegin(), v_bm.cend(), res.begin(),
-      [] (const Bitmask& x) -> CircUnit { return hw(x); });
-  return res;
-}
-
-// hammingweight over vectors of vectors
-vector<vector<CircUnit>> hw(const vector<vector<Bitmask>>& v_bm) {
-  vector<vector<CircUnit>> res(v_bm.size());
-  transform(v_bm.cbegin(), v_bm.cend(), res.begin(),
-      [] (const vector<Bitmask>& x) -> vector<CircUnit> { return hw(x); });
-  return res;
-}
-
 // rescale all weights to an integer, max weight being b111...
 vector<CircUnit> rescale_weights(const vector<Weight>& weights,
     size_t prec, Weight max_weight) {
