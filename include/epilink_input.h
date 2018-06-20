@@ -21,19 +21,13 @@
 #pragma once
 
 #include <vector>
-#include <set>
 #include <map>
 #include <cstdint>
 #include "seltypes.h"
 
 namespace sel {
 
-// index type
-using IndexSet = std::set<size_t>;
-// weight type
-using Weight = double;
-using VWeight = std::vector<Weight>;
-// nGram field types of which hamming weights are computed
+// nGram/bitmask field types of which hamming weights are computed
 using BitmaskUnit = uint8_t;
 using Bitmask = std::vector<BitmaskUnit>;
 using VBitmask = std::vector<Bitmask>;
