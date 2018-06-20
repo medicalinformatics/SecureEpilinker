@@ -616,31 +616,4 @@ void SecureEpilinker::reset() {
   is_setup = false;
 }
 
-/*
-  * Takes rescaled weights and makes Contant Input Shares on the given circuit
-  * run VCircUnit weights_rsc = rescale_weights(weights); before
-  */
-vector<Share> make_weight_inputs(Circuit* circ, const VCircUnit& weights_rsc,
-    uint32_t bitlen, uint32_t nvals) {
-  vector<Share> inputs(weights_rsc.size());
-  transform(weights_rsc.cbegin(), weights_rsc.cend(), inputs.begin(),
-      [&circ, &bitlen, &nvals](CircUnit w) {
-        return constant_simd(circ, w, bitlen, nvals);
-      });
-  return inputs;
-}
-
-/*
-  * Create BoolShare inputs of client bitmasks
-  */
-vector<BoolShare> make_client_bitmask_inputs(BooleanCircuit* circ,
-    const VBitmask& bitmasks, uint32_t bitlen, uint32_t nvals) {
-  vector<BoolShare> inputs(bitmasks.size());
-  transform(bitmasks.cbegin(), bitmasks.cend(), inputs.begin(),
-      [&circ, &bitlen, &nvals](Bitmask b) {
-        return BoolShare{circ, b.data(), bitlen, CLIENT}.repeat(nvals);
-      });
-  return inputs;
-}
-
 } // namespace sel
