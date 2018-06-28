@@ -30,22 +30,18 @@ using fmt::print;
 
 namespace sel {
 
-constexpr auto BIN = FieldComparator::BINARY;
-constexpr auto BM = FieldComparator::NGRAM;
-
 EpilinkConfig::EpilinkConfig(
-      std::map<FieldComparator, VWeight> weights_,
-      std::map<FieldComparator, std::vector<IndexSet>> exchange_groups_,
+      std::map<FieldName, ML_Field> fields_,
+      std::vector<IndexSet> exchange_groups_,
       uint32_t size_bitmask, double threshold, double tthreshold) :
-  weights {weights_},
+  fields {fields_},
   exchange_groups {exchange_groups_},
   size_bitmask {size_bitmask},
   bytes_bitmask (bitbytes(size_bitmask)),
   size_hw (ceil_log2(size_bitmask+1)),
   threshold {threshold},
   tthreshold {tthreshold},
-  nfields {transform_map(weights, [](auto ws){return ws.size();})},
-  nfields_total{nfields.at(BM) + nfields.at(BIN)},
+  nfields {fields.size()},
   // Evenly distribute precision bits between weight^2 and dice-coeff
   // When calculating the max of a quotient of the form fw/w, we have to compare
   // factors of the form fw*w, where the field weight fw is itself a sum of factor of a
@@ -57,25 +53,30 @@ EpilinkConfig::EpilinkConfig(
   //custom integer division
   dice_prec(16 - 1 - ceil_log2(size_bitmask + 1)),
   //weight_prec{ceil_divide((BitLen - ceil_log2(nfields)), 2)}, // TODO ^^^
-  weight_prec{(BitLen - ceil_log2(nfields_total^2) - dice_prec)/2},
-  max_weight{max(
-      nfields.at(BM) ?
-        *max_element(weights.at(BM).cbegin(), weights.at(BM).cend()) : 0.0,
-      nfields.at(BIN) ?
-        *max_element(weights.at(BIN).cbegin(), weights.at(BIN).cend()) : 0.0
-      )}
+  weight_prec{(BitLen - ceil_log2(nfields^2) - dice_prec)/2},
+  max_weight{ *max_element(transform_map_vec(fields,
+        [](auto f){return f.second.weight;})) }
   {
     // Division by 2 for weight_prec initialization could have wasted one bit
-    if (dice_prec + 2*weight_prec + ceil_log2(nfields_total^2) < BitLen) ++dice_prec;
-    assert (dice_prec + 2*weight_prec + ceil_log2(nfields_total^2) == BitLen);
+    if (dice_prec + 2*weight_prec + ceil_log2(nfields^2) < BitLen) ++dice_prec;
+    assert (dice_prec + 2*weight_prec + ceil_log2(nfields^2) == BitLen);
 #ifdef DEBUG_SEL_INPUT
     print("BitLen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
-        BitLen, nfields_total, dice_prec, weight_prec);
+        BitLen, nfields, dice_prec, weight_prec);
 #endif
+    for ( const auto& f : fields ) {
+      if (f.second.comparator == FieldComparator::NGRAM) {
+        if (f.second.bitsize != size_bitmask) {
+          throw runtime_error{fmt::format(
+              "bitmask field '{}' bitsize must be equal to"
+              "size_bitmask in EpilinkConfig", f.first)};
+        }
+      }
+    }
   }
 
 void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
-  if (dice_prec_ + 2*weight_prec_ + ceil_log2(nfields_total^2) > BitLen) {
+  if (dice_prec_ + 2*weight_prec_ + ceil_log2(nfields^2) > BitLen) {
     throw runtime_error("Given dice and weight precision would potentially let the CircUnit overflow!");
   }
 
@@ -84,43 +85,14 @@ void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
 }
 
 EpilinkServerInput::EpilinkServerInput(
-  vector<VBitmask> bm_database, vector<VCircUnit> bin_database,
-  vector<vector<bool>> bm_db_empty, vector<vector<bool>> bin_db_empty) :
-  bm_database{bm_database}, bin_database{bin_database},
-  bm_db_empty{bm_db_empty}, bin_db_empty{bin_db_empty},
-  nvals{bm_database.empty() ?
-    bin_database.at(0).size() : bm_database.at(0).size()}
+    std::map<FieldName, VFieldEntry> database_) :
+  database{database_},
+  nvals{database.cbegin()->second.size()}
 {
   // check that all vectors over records have same size
-  check_vectors_size(bm_database, nvals, "bm_database");
-  check_vectors_size(bin_database, nvals, "bin_database");
-  check_vectors_size(bm_db_empty, nvals, "bm_db_empty");
-  check_vectors_size(bin_db_empty, nvals, "bin_db_empty");
-}
-
-// hammingweight of bitmasks
-CircUnit hw(const Bitmask& bm) {
-  CircUnit n = 0;
-  for (auto& b : bm) {
-    n += __builtin_popcount(b);
+  for (const auto& row : database) {
+    check_vector_size(row.second, nvals, "database field "s + row.first);
   }
-  return n;
-}
-
-// hammingweight over vectors
-vector<CircUnit> hw(const vector<Bitmask>& v_bm) {
-  vector<CircUnit> res(v_bm.size());
-  transform(v_bm.cbegin(), v_bm.cend(), res.begin(),
-      [] (const Bitmask& x) -> CircUnit { return hw(x); });
-  return res;
-}
-
-// hammingweight over vectors of vectors
-vector<vector<CircUnit>> hw(const vector<vector<Bitmask>>& v_bm) {
-  vector<vector<CircUnit>> res(v_bm.size());
-  transform(v_bm.cbegin(), v_bm.cend(), res.begin(),
-      [] (const vector<Bitmask>& x) -> vector<CircUnit> { return hw(x); });
-  return res;
 }
 
 // rescale all weights to an integer, max weight being b111...
@@ -152,16 +124,34 @@ CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight) {
 
 } // namespace sel
 
-std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in) {
-  os << "Client Input\n-----\nBitmask Records:\n-----\n";
-  for (size_t i = 0; i != in.bm_record.size(); ++i){
-    os << (in.bm_rec_empty[i] ? "(-) " : "(+) ");
-    for (auto& b : in.bm_record[i]) os << b;
-    os << '\n';
+std::ostream& operator<<(std::ostream& os,
+    const sel::FieldEntry& val) {
+  if (val) {
+    for (const auto& b : *val) os << b;
+  } else {
+    os << "<empty>";
   }
-  os << "-----\nBinary Records\n-----\n";
-  for (size_t i = 0; i != in.bin_record.size(); ++i){
-    os << (in.bin_rec_empty[i] ? "(-) " : "(+) ") << in.bin_record[i] << '\n';
+}
+
+std::ostream& operator<<(std::ostream& os,
+    const std::pair<const sel::FieldName, sel::FieldEntry>& f) {
+  os << f.first << ": " << f.second;
+}
+
+std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in) {
+  os << "----- Client Input -----\n";
+  for (const auto& f : in.record) {
+    os << f << '\n';
+  }
+  return os << "Number of database records: " << in.nvals;
+}
+
+std::ostream& operator<<(std::ostream& os, const sel::EpilinkServerInput& in) {
+  os << "----- Server Input -----\n";
+  for (const auto& fs : in.database) {
+    for (size_t i = 0; i != fs.second.size(); ++i) {
+      os << fs.first << '[' << i << "]: " << fs.second[i] << '\n';
+    }
   }
   return os << "Number of database records: " << in.nvals;
 }

@@ -1,6 +1,7 @@
 /**
 \file    seltypes.h
 \author  Tobias Kussel <kussel@cbs.tu-darmstadt.de>
+\author  Sebastian Stammler <sebastian.stammler@cysec.de>
 \copyright SEL - Secure EpiLinker
     Copyright (C) 2018 Computational Biology & Simulation Group TU-Darmstadt
     This program is free software: you can redistribute it and/or modify
@@ -25,14 +26,26 @@
 #include <memory>
 #include <string>
 #include <variant>
+<<<<<<< HEAD
 #include <vector>
 #include "secure_epilinker.h"
+=======
+#include <set>
+#include <cmath>
+>>>>>>> refactor-input-data
 
 namespace sel {
 class AuthenticationConfig;
 // class RemoteConfiguration;
 
 using DataField = std::variant<int, double, std::string, std::vector<uint8_t>>;
+using FieldName = std::string;
+using IndexSet = std::set<FieldName>;
+// weight type
+using Weight = double;
+using VWeight = std::vector<Weight>;
+
+// TODO#22 move REST stuff to resttypes.h
 using JobId = std::string;
 using RemoteId = std::string;
 using ClientId = std::string;
@@ -57,14 +70,19 @@ struct ML_Field {
            double f,
            double e,
            const std::string& c,
-           const std::string& t)
-      : name(n), comparator(str_to_fcomp(c)), type(str_to_ftype(t)) {
-    weight = std::log2((1 - e) / f);
-  };
+           const std::string& t,
+           const size_t b)
+      : name{n},
+        weight{std::log2((1-e)/f)},
+        comparator{str_to_fcomp(c)},
+        type{str_to_ftype(t)},
+        bitsize{b}
+        {};
   std::string name;
-  double weight;
+  Weight weight;
   FieldComparator comparator;
   FieldType type;
+  size_t bitsize;
 };
 
 struct ConnectionConfig {
@@ -120,4 +138,4 @@ struct formatter<sel::FieldComparator> {
 } // namespace fmt
 #endif // FMT_FORMAT_H_
 
-#endif // SEL_SELTYPES_H
+
