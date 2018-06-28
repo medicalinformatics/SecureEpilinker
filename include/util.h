@@ -93,19 +93,6 @@ std::vector<uint8_t> concat_vec(const std::vector<std::vector<uint8_t>>& vs) {
   return c;
 }
 */
-template <typename InType,
-  template <typename U, typename alloc = std::allocator<U>>
-            class InContainer,
-  template <typename V, typename alloc = std::allocator<V>>
-            class OutContainer = InContainer,
-  typename OutType = InType>
-OutContainer<OutType> transform_vec(const InContainer<InType>& vec,
-   std::function<OutType(const InType&)> op) {
-  OutContainer<OutType> out;
-  out.reserve(vec.size());
-  std::transform(vec.cbegin(), vec.cend(), std::back_inserter(out), op);
-  return out;
-}
 
 template <typename T>
 void check_vector_size(const std::vector<T>& r,
@@ -124,9 +111,19 @@ void check_vectors_size(const std::vector<std::vector<T>>& vec,
   }
 }
 
+template <typename InType, typename Transformer,
+  typename OutType = decltype(std::declval<Transformer>()(std::declval<InType>()))>
+std::vector<OutType> transform_vec(const std::vector<InType>& vec,
+    Transformer op) {
+  std::vector<OutType> out;
+  out.reserve(vec.size());
+  std::transform(vec.cbegin(), vec.cend(), std::back_inserter(out), op);
+  return out;
+}
+
 /**
  * Transforms the values of the given map with the given transformation function
- * and returns the transformed map.
+ * and returns the transformed map with the same keys.
  * https://stackoverflow.com/questions/50881383/stdmap-transformer-template
  */
 template <class Key, class FromValue, class Transformer,
@@ -137,6 +134,25 @@ std::map<Key, ToValue> transform_map(const std::map<Key, FromValue>& _map,
   std::for_each(_map.cbegin(), _map.cend(),
       [&res, &_tr](const std::pair<const Key, FromValue>& kv) {
         res[kv.first] = _tr(kv.second);
+      });
+  return res;
+}
+
+/**
+ * Transforms the values of the given map with the given transformation function
+ * and returns the transformed key-value pairs as vector
+ * https://stackoverflow.com/questions/50881383/stdmap-transformer-template
+ */
+template <class Key, class FromValue, class Transformer,
+  class ToValue = decltype(std::declval<Transformer>()
+      (std::declval<std::pair<const Key, FromValue>>()))>
+std::vector<Key, ToValue> transform_map_vec(const std::map<Key, FromValue>& _map,
+    Transformer _tr) {
+  std::vector<ToValue> res;
+  res.reserve(_map.size());
+  std::for_each(_map.cbegin(), _map.cend(),
+      [&res, &_tr](const std::pair<const Key, FromValue>& kv) {
+        res.emplace_back(_tr(kv));
       });
   return res;
 }
