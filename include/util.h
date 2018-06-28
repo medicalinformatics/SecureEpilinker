@@ -21,6 +21,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <iterator>
 #include <functional>
@@ -30,12 +31,16 @@
 #include <cctype>
 #include <locale>
 #include <sstream>
-#include "epilink_input.h"
-#include "secure_epilinker.h"
 
 namespace sel {
 
 constexpr size_t bitbytes(size_t b) { return (b + 7)/8; }
+
+/**
+ * Ceiling of integer log2
+ */
+int ceil_log2(unsigned long long x);
+int ceil_log2_min1(unsigned long long x);
 
 /**
  * Concatenates the vectors to a single vector, i.e., it flattenes the given
@@ -102,7 +107,6 @@ OutContainer<OutType> transform_vec(const InContainer<InType>& vec,
   return out;
 }
 
-
 template <typename T>
 void check_vector_size(const std::vector<T>& r,
     const size_t& size, const std::string& name) {
@@ -118,6 +122,23 @@ void check_vectors_size(const std::vector<std::vector<T>>& vec,
   for (auto& r : vec) {
     check_vector_size(r, size, name);
   }
+}
+
+/**
+ * Transforms the values of the given map with the given transformation function
+ * and returns the transformed map.
+ * https://stackoverflow.com/questions/50881383/stdmap-transformer-template
+ */
+template <class Key, class FromValue, class Transformer,
+  class ToValue = decltype(std::declval<Transformer>()(std::declval<FromValue>()))>
+std::map<Key, ToValue> transform_map(const std::map<Key, FromValue>& _map,
+    Transformer _tr) {
+  std::map<Key, ToValue> res;
+  std::for_each(_map.cbegin(), _map.cend(),
+      [&res, &_tr](const std::pair<const Key, FromValue>& kv) {
+        res[kv.first] = _tr(kv.second);
+      });
+  return res;
 }
 
 /**
@@ -187,12 +208,6 @@ void split(const std::string &s, char delim, Out result) {
     }
 }
 std::vector<std::string> split(const std::string &s, char delim);
-
-std::string print_aby_config(const SecureEpilinker::ABYConfig&);
-std::string print_epilink_config(const EpilinkConfig&);
-std::string print_epilink_input(const EpilinkServerInput&);
-std::string print_epilink_input(const EpilinkClientInput&);
-
 std::string generate_id();
 
 std::istream& safeGetline(std::istream&, std::string&);
@@ -203,29 +218,5 @@ class LocalConfiguration;
 struct AlgorithmConfig;
 EpilinkConfig get_epilink_config(std::shared_ptr<const LocalConfiguration>, std::shared_ptr<const AlgorithmConfig>);
 } // namespace sel
-
-// Custom fmt formatters for our types
-namespace fmt {
-template <>
-struct formatter<sel::SecureEpilinker::Result> {
-  template <typename ParseContext>
-  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
-
-  template <typename FormatContext>
-  auto format(const sel::SecureEpilinker::Result& r, FormatContext &ctx) {
-    return format_to(ctx.begin(),
-        "best index: {}; match(/tent.)? {}/{}\n"
-#ifdef DEBUG_SEL_RESULT
-        "score.numerator: {:x}; score.denominator: {:x}; score: {}\n"
-#endif
-        , r.index, r.match, r.tmatch
-#ifdef DEBUG_SEL_RESULT
-        , r.score_numerator, r.score_denominator,
-        (((double)r.score_numerator)/r.score_denominator)
-#endif
-        );
-  }
-};
-} // namespace fmt
 
 #endif /* end of include guard: SEL_UTIL_H */

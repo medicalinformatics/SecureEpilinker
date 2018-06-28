@@ -26,12 +26,20 @@
 
 namespace sel {
 
+struct ArithQuotient { ArithShare num, den; };
+struct BoolQuotient { BoolShare num, den; };
+
 using UnaryOp_Share = std::function<Share (const Share&)>;
 using UnaryOp_BoolShare = std::function<BoolShare (const BoolShare&)>;
 using UnaryOp_ArithShare = std::function<ArithShare (const ArithShare&)>;
 using BinaryOp_Share = std::function<Share (const Share&, const Share&)>;
 using BinaryOp_BoolShare = std::function<BoolShare (const BoolShare&, const BoolShare&)>;
 using BinaryOp_ArithShare = std::function<ArithShare (const ArithShare&, const ArithShare&)>;
+using BinaryOp_ArithQuotient = std::function<ArithQuotient (const ArithQuotient&, const ArithQuotient&)>;
+using ArithQuotientSelector = std::function<BoolShare (const ArithQuotient&, const ArithQuotient&)>;
+
+using A2BConverter = std::function<BoolShare (const ArithShare&)>;
+using B2AConverter = std::function<ArithShare (const BoolShare&)>;
 
 /*
 Share binary_accumulate(vector<Share> vals,
@@ -43,6 +51,15 @@ BoolShare binary_accumulate(vector<BoolShare> vals,
 ArithShare binary_accumulate(vector<ArithShare> vals,
     const BinaryOp_ArithShare& op);
 */
+
+void print_share(const ArithQuotient& q, const string& msg);
+void print_share(const BoolQuotient& q, const string& msg);
+
+/**
+ * Creates a BoolShare with bitlen wires from an arith share with 1 wire and
+ * bitlen-sized values - to be used with MUX to add flow to arithmetic shares
+ */
+BoolShare reinterpret_share(const ArithShare& a, BooleanCircuit* bc);
 
 /**
  * Accumulates all values in simd_share as if it was first split and then
@@ -65,9 +82,31 @@ BoolShare split_accumulate(BoolShare simd_share, const BinaryOp_BoolShare& op);
 void split_select_target(BoolShare& selector, BoolShare& target,
     const BinaryOp_BoolShare& op_select);
 
+void split_select_quotient_target(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const ArithQuotientSelector& op_select, const B2AConverter& to_arith);
+
+ArithQuotientSelector make_max_selector(const A2BConverter& to_bool);
+ArithQuotientSelector make_min_selector(const A2BConverter& to_bool);
+
+void max_index(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const A2BConverter& to_bool, const B2AConverter& to_arith);
+
+void min_index(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const A2BConverter& to_bool, const B2AConverter& to_arith);
+
 BoolShare max(const vector<BoolShare>&);
 BoolShare sum(const vector<BoolShare>&);
 ArithShare sum(const vector<ArithShare>&);
+
+BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool);
+ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool, const B2AConverter& to_arith);
+ArithQuotient max(const vector<ArithQuotient>& qs,
+    const A2BConverter& to_bool, const B2AConverter& to_arith);
 
 } // namespace sel
 #endif /* end of include guard: SEL_ABY_GADGETS_H */

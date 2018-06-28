@@ -22,9 +22,10 @@
 
 #include <memory>
 #include "abycore/aby/abyparty.h"
-#include "circuit_defs.h"
 
 namespace sel {
+
+using share_p = std::shared_ptr<share>;
 
 class Share {
   public:
@@ -35,6 +36,8 @@ class Share {
    */
   Share(Circuit* c, share* s) : circ{c}, sh{s} {};
   Share(Circuit* c, const share_p& sp) : circ{c}, sh{sp} {};
+  Share(Circuit* c, const vector<uint32_t>& gates) :
+    Share{c, new boolshare(gates, static_cast<Circuit*>(c))} {};
   ~Share() = default;
   /*
    * Constructor to create new INGate from plain-text value
@@ -81,6 +84,12 @@ class Share {
     return *this;
   }
 
+  Share& operator-=(const Share& other) {
+    assert(circ == other.circ);
+    sh = share_p{circ->PutSUBGate(sh.get(), other.sh.get())};
+    return *this;
+  }
+
   Share& operator*=(const Share& other) {
     assert(circ == other.circ);
     sh = share_p{circ->PutMULGate(sh.get(), other.sh.get())};
@@ -92,6 +101,11 @@ class Share {
     return me;
   }
 
+  friend Share operator-(Share me, const Share& other) {
+    me -= other;
+    return me;
+  }
+
   friend Share operator*(Share me, const Share& other) {
     me *= other;
     return me;
@@ -99,9 +113,9 @@ class Share {
 
   share* get() const { return sh.get(); }
   Circuit* get_circuit() const { return circ; };
-  uint32_t get_bitlen() const { return sh.get()->get_bitlength(); }
-  uint32_t get_nvals() const { return sh.get()->get_nvals(); }
-  e_sharing get_type() const { return sh.get()->get_share_type(); }
+  uint32_t get_bitlen() const { return sh->get_bitlength(); }
+  uint32_t get_nvals() const { return sh->get_nvals(); }
+  e_sharing get_type() const { return sh->get_share_type(); }
   virtual void reset() { circ = nullptr; sh.reset(); }
   bool is_null() const { return !(bool)sh; }
 
@@ -116,7 +130,7 @@ class Share {
    * nvals=1
    * TODO directly build nvals shares instead?
    */
-  Share split() {
+  Share split() const {
     return Share{circ, circ->PutSplitterGate(sh.get())};
   }
 
@@ -225,7 +239,7 @@ class BoolShare: public Share {
     return me;
   }
 
-  BoolShare mux(const BoolShare& sh_true, const BoolShare& sh_false) {
+  BoolShare mux(const BoolShare& sh_true, const BoolShare& sh_false) const {
     return BoolShare{bcirc, bcirc->PutMUXGate(sh_true.sh.get(), sh_false.sh.get(), sh.get())};
   }
 
@@ -250,7 +264,7 @@ class BoolShare: public Share {
   /**
    * Spits a simd share into ceil(nvals/new_nvals) shares
    */
-  vector<BoolShare> split(uint32_t new_nval);
+  vector<BoolShare> split(uint32_t new_nval) const;
 
 
   protected:
@@ -262,12 +276,16 @@ class ArithShare: public Share {
   ArithShare(): Share{}, acirc{} {};
   ArithShare(ArithmeticCircuit* ac, share* s) :
     Share(static_cast<Circuit*>(ac), s), acirc{ac} {};
+  ArithShare(ArithmeticCircuit* ac, const vector<uint32_t>& gates) :
+    ArithShare{ac, new arithshare(gates, static_cast<Circuit*>(ac))} {};
   // Consume Share move contructor
   ArithShare(Share&& s) :
     Share{std::move(s)}, acirc{dynamic_cast<ArithmeticCircuit*>(circ)} {};
   ~ArithShare() = default;
 
   void reset() { acirc = nullptr; Share::reset(); }
+
+  ArithmeticCircuit* get_circuit() const { return acirc; };
 
   /*
    * Constructor to create new INGate from plain-text value
@@ -296,6 +314,11 @@ class ArithShare: public Share {
    */
   ArithShare(ArithmeticCircuit* ac, uint32_t bitlen, uint32_t nvals) :
     Share{static_cast<Circuit*>(ac), bitlen, nvals}, acirc{ac} {}
+
+  /**
+   * Spits a simd share into ceil(nvals/new_nvals) shares
+   */
+  vector<ArithShare> split(uint32_t new_nval) const;
 
   protected:
   ArithmeticCircuit* acirc;
@@ -367,7 +390,10 @@ BoolShare b2y(BooleanCircuit* ycirc, const BoolShare& s);
  * Vertically Combines the given shares to a new share having the same number of
  * wires=bitlen and nvals the sum of the individual nvals
  */
-BoolShare vcombine(const vector<BoolShare>& shares);
+Share vcombine(const vector<Share>& shares);
+inline BoolShare vcombine_bool(const vector<BoolShare>& shares) {
+  return vcombine(vector<Share>(shares.cbegin(), shares.cend()));
+}
 
 } // namespace sel
 

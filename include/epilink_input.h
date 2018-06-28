@@ -22,7 +22,9 @@
 
 #include <vector>
 #include <set>
+#include <map>
 #include <cstdint>
+#include "seltypes.h"
 
 namespace sel {
 
@@ -42,14 +44,12 @@ constexpr size_t BitLen = sizeof(CircUnit)*8;
 
 struct EpilinkConfig {
   // vector of weights
-  const VWeight hw_weights;
-  const VWeight bin_weights;
+  const std::map<FieldComparator, VWeight> weights;
 
   // exchange groups by index
-  const std::vector<IndexSet> hw_exchange_groups;
-  const std::vector<IndexSet> bin_exchange_groups;
+  const std::map<FieldComparator, std::vector<IndexSet>> exchange_groups;
 
-  // bitlength of bitmasks
+  // bitlength of bitmasks and required bits of HWs
   const uint32_t size_bitmask;
   const uint32_t bytes_bitmask;
   const uint32_t size_hw;
@@ -59,18 +59,16 @@ struct EpilinkConfig {
   const double tthreshold; // threshold for tentative match
 
   // calculated fields for faster access
-  const size_t nhw_fields, nbin_fields, nfields; // field counters
+  const std::map<FieldComparator, size_t> nfields; // number of fields
+  const size_t nfields_total; // total number of field
   size_t dice_prec, weight_prec; // bit precisions
   const double max_weight;
 
-  // must come after max_weight because of initializer list
-  const VCircUnit hw_weights_r;
-  const VCircUnit bin_weights_r;
-
-  EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
-      std::vector<IndexSet> hw_exchange_groups,
-      std::vector<IndexSet> bin_exchange_groups,
-      uint32_t size_bitmask, double threshold, double tthreshold);
+  EpilinkConfig(
+      std::map<FieldComparator, VWeight> weights,
+      std::map<FieldComparator, std::vector<IndexSet>> exchange_groups,
+      uint32_t size_bitmask, double threshold, double tthreshold
+  );
   ~EpilinkConfig() = default;
 
   /**
@@ -83,11 +81,11 @@ struct EpilinkConfig {
 struct EpilinkClientInput {
   // nfields vector of input record to link
   // cannot be const because ABY doens't know what const is
-  const VBitmask hw_record;
+  const VBitmask bm_record;
   const VCircUnit bin_record;
 
   // corresponding empty-field-flags
-  const std::vector<bool> hw_rec_empty;
+  const std::vector<bool> bm_rec_empty;
   const std::vector<bool> bin_rec_empty;
 
   // need to know database size of remote during circuit building
@@ -97,19 +95,19 @@ struct EpilinkClientInput {
 struct EpilinkServerInput {
   // Outer vector by fields, inner by records!
   // Need to model like this for SIMD
-  const std::vector<VBitmask> hw_database;
+  const std::vector<VBitmask> bm_database;
   const std::vector<VCircUnit> bin_database;
 
   // corresponding empty-field-flags
-  const std::vector<std::vector<bool>> hw_db_empty;
+  const std::vector<std::vector<bool>> bm_db_empty;
   const std::vector<std::vector<bool>> bin_db_empty;
 
   const size_t nvals;
   // default constructor - checks that all records have same size
   // TODO: make it a move && constructor instead?
-  EpilinkServerInput(std::vector<VBitmask> hw_database,
+  EpilinkServerInput(std::vector<VBitmask> bm_database,
       std::vector<VCircUnit> bin_database,
-      std::vector<std::vector<bool>> hw_db_empty,
+      std::vector<std::vector<bool>> bm_db_empty,
       std::vector<std::vector<bool>> bin_db_empty);
   ~EpilinkServerInput() = default;
 };
@@ -129,17 +127,74 @@ std::vector<CircUnit> rescale_weights(const std::vector<Weight>& weights,
 
 CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight);
 
-// random data generator
-// TODO adopt new API
+} // namespace sel
+
+#ifdef FMT_FORMAT_H_
+// To use ostream&operator<< overloads
+#include "fmt/ostream.h"
+
+std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in);
+
+// Custom fmt formatters for our types
+namespace fmt {
+
+template <>
+struct formatter<sel::EpilinkConfig> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::EpilinkConfig& conf, FormatContext &ctx) {
+    return format_to(ctx.begin(),"Epilink Configuration"
+      "\nBitmask size (in Bit):\t{}"
+      "\nThreshold match: {}"
+      "\nThreshold tentative match: {}"
+      "\nNumber of bitmask field weights: {}"
+      "\nNumber of binary field weights: {}",
+      conf.size_bitmask, conf.threshold, conf.tthreshold,
+      conf.nfields.at(sel::FieldComparator::NGRAM),
+      conf.nfields.at(sel::FieldComparator::NGRAM)
+    );
+  }
+};
+
 /*
-EpilinkClientInput gen_random_client_input(
-  const uint32_t seed, const uint32_t bitmask_size,
-  const uint32_t nhw_fields, const uint32_t nbin_fields);
-EpilinkServerInput gen_random_server_input(
-    const uint32_t seed, const uint32_t bitmask_size,
-    const uint32_t nhw_fields, const uint32_t nbin_fields,
-    const uint32_t nvals);
+template <>
+struct formatter<sel::EpilinkClientInput> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::EpilinkClientInput& in, FormatContext &ctx) {
+    std::string returnstring{"Client Input\n-----\nBitmask Records:\n-----\n"};
+    for (size_t i = 0; i != in.bm_record.size(); ++i){
+      for(const auto& byte : in.bm_record[i]) {
+        returnstring += to_string(byte)+' ';
+      }
+      returnstring += format("Empty: {}\n", in.bm_rec_empty[i]);
+    }
+    returnstring += "-----\nBinary Records\n-----\n";
+    for (size_t i = 0; i != in.bin_record.size(); ++i){
+      returnstring += format("{} Empty: {}", in.bin_record[i], in.bin_rec_empty[i]);
+    }
+    returnstring += "Number of database records: " + to_string(in.nvals);
+    return format_to(ctx.begin(), returnstring);
+  }
+};
 */
 
-} // namespace sel
+template <>
+struct formatter<sel::EpilinkServerInput> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::EpilinkServerInput& input, FormatContext &ctx) {
+    return format_to(ctx.begin(), "Server Input printing not ready yet!");
+  }
+};
+
+} // namespace fmt
+#endif // FMT_FORMAT_H_
+
 #endif /* end of include guard: SEL_EPILINKINPUT_H */

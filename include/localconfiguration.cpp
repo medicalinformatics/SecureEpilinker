@@ -16,15 +16,15 @@
 \brief Holds Information about a local connection
 */
 
-#include "localconfiguration.h"
 #include <exception>
 #include <set>
 #include <thread>
+#include "fmt/format.h" // needs to be included before local headers for custom formatters
+#include "localconfiguration.h"
 #include "authenticationconfig.hpp"
 #include "databasefetcher.h"
 #include "linkagejob.h"
 #include "epilink_input.h"
-#include "fmt/format.h"
 #include "secure_epilinker.h"
 #include "seltypes.h"
 #include "util.h"

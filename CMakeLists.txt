@@ -60,14 +60,20 @@ set(EPIRESTSRC
       include/monitormethodhandler.h
       include/tempselmethodhandler.h)
 
-set(SELSOURCES "include/util.cpp" "include/epilink_input.cpp"
-  "include/secure_epilinker.cpp" "include/util.cpp" "include/aby/Share.cpp"
+set(SELABYSOURCES "include/util.cpp" "include/util.cpp" "include/aby/Share.cpp"
   "include/aby/gadgets.cpp" "include/aby/util.cpp")
 
-set(SELHEADER "include/epilink_input.h" "include/math.h"
-  "include/secure_epilinker.h" "include/sel.h" "include/util.h"
-  "include/aby/Share.h" "include/aby/circuit_defs.h" "include/aby/gadgets.h"
+set(SELSOURCES ${SELABYSOURCES}
+  "include/epilink_input.cpp" "include/secure_epilinker.cpp"
+  "include/seltypes.cpp")
+
+set(SELABYHEADER "include/math.h" "include/util.h"
+  "include/aby/Share.h" "include/aby/gadgets.h"
   "include/aby/util.h")
+
+set(SELHEADER ${SELABYHEADER}
+  "include/epilink_input.h" "include/secure_epilinker.h"
+  "include/seltypes.h")
 
 add_executable (sel sepilinker.cpp ${EPIRESTSRC} ${EPIRESTHEAD} ${SELSOURCES} ${SELHEADER})
 add_dependencies(sel ABY)
@@ -112,9 +118,9 @@ target_compile_options(sel PRIVATE "-O0" "-ggdb" "-g3"
 #target_compile_options(sel PRIVATE "-O2" "-s" "-DNDEBUG"
   #"-fsanitize-address-use-after-scope" "-fsanitize=undefined")
 
-# Test ABY Stuff
 # Test-Targets
-add_executable(test_aby test/test_aby.cpp ${SELSOURCES} ${SELHEADER})
+# Test ABY Stuff
+add_executable(test_aby test/test_aby.cpp ${SELABYSOURCES} ${SELABYHEADER})
 add_dependencies(test_aby ABY)
 add_dependencies(test_aby OTExtension)
 add_dependencies(test_aby MIRACL)
@@ -123,7 +129,8 @@ target_link_libraries(test_aby PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
   OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
 target_link_libraries(test_aby PRIVATE fmt::fmt-header-only cxxopts)
 set_property(TARGET test_aby PROPERTY CXX_STANDARD 14)
-target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3")
+target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3"
+  "-DDEBUG_SEL_GADGETS")
 
 # Test Secure Epilinker
 add_executable(test_sel test/test_sel.cpp ${SELSOURCES} ${SELHEADER})
@@ -134,8 +141,15 @@ add_dependencies(test_sel ENCRYPTO_utils)
 target_link_libraries(test_sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
   OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
 target_link_libraries(test_sel PRIVATE fmt::fmt-header-only cxxopts)
-set_property(TARGET test_sel PROPERTY CXX_STANDARD 14)
+set_property(TARGET test_sel PROPERTY CXX_STANDARD 17)
 target_compile_options(test_sel PRIVATE "-O0" "-ggdb" "-g3"
-  "-DDEBUG_SEL_INPUT"  "-DDEBUG_SEL_CIRCUIT" "-DDEBUG_SEL_RESULT")
+  "-DDEBUG_SEL_INPUT"  "-DDEBUG_SEL_CIRCUIT" "-DDEBUG_SEL_RESULT"
+  "-DDEBUG_SEL_GADGETS")
+
+# Test utils
+add_executable(test_util test/test_util.cpp include/util.cpp include/util.h)
+target_link_libraries(test_util PRIVATE fmt::fmt-header-only)
+set_property(TARGET test_util PROPERTY CXX_STANDARD 14)
+target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
