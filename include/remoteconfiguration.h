@@ -23,56 +23,42 @@
 #include <memory>
 #include <mutex>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <vector>
 #include "authenticationconfig.hpp"
 #include "linkagejob.h"
 #include "seltypes.h"
 
 namespace sel {
+class MatchingJob;
 
 class RemoteConfiguration {
   /**
    * Stores secureEpiLinker configuration for one connection
    */
  public:
-  RemoteConfiguration();
-  RemoteConfiguration(RemoteId c_id);
+  explicit RemoteConfiguration(RemoteId c_id);
   ~RemoteConfiguration();
-  void set_connection_profile(ConnectionConfig cconfig) {
-    m_connection_profile = std::move(cconfig);
-  }
-  void set_linkage_service(ConnectionConfig cconfig) {
-    m_linkage_service = std::move(cconfig);
-  }
-  void add_job(std::shared_ptr<LinkageJob> job) {
-    auto id(job->get_id());
-    std::lock_guard<std::mutex> lock(m_queue_mutex);
-    m_job_queue.emplace(std::move(id), std::move(job));
-  }
+  void set_connection_profile(ConnectionConfig cconfig);
 
-  std::pair<std::unordered_map<JobId, std::shared_ptr<LinkageJob>>::iterator,
-            std::unordered_map<JobId, std::shared_ptr<LinkageJob>>::iterator>
-  find_job(const JobId& id) {
-    std::lock_guard<std::mutex> lock(m_queue_mutex);
-    return std::make_pair(m_job_queue.find(id), m_job_queue.end());
-  }
+  void set_linkage_service(ConnectionConfig cconfig);
 
-  JobId get_id() const { return m_connection_id; }
+  RemoteId get_id() const;
+  void set_remote_client_id(std::string id){m_remote_client_id = move(id);}
+  ClientId get_remote_client_id() const  {return m_remote_client_id;}
 
-  void run_setup_phase();  // TODO(TK): Not implemented in ABY
-  uint16_t get_remote_port() const;
+  uint16_t get_remote_signaling_port() const;
+  uint16_t get_aby_port() const;
+  void set_aby_port(uint16_t port);
   std::string get_remote_host() const;
+
  protected:
  private:
-  void run_queued_jobs();
-  void remove_job(const std::string& j_id);
   RemoteId m_connection_id;
-  std::unordered_map<JobId, std::shared_ptr<LinkageJob>> m_job_queue;
+  ClientId m_remote_client_id;
   ConnectionConfig m_connection_profile;
   ConnectionConfig m_linkage_service;
-  std::mutex m_queue_mutex;
-  std::thread m_worker_thread;
+  uint16_t m_aby_port;
 };
 
 }  // Namespace sel

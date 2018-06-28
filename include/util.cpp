@@ -23,6 +23,8 @@
 #include <iterator>
 #include <functional>
 #include <iomanip>
+#include <chrono>
+#include <random>
 
 using namespace std;
 
@@ -105,6 +107,63 @@ string print_epilink_input(const EpilinkClientInput& in){
     returnstring += to_string(in.bin_record[i])+" Empty: "+(in.bin_rec_empty[i]? "Yes\n" : "No\n");
   }
   return returnstring + "Number of database records: " + to_string(in.nvals) +'\n';
+}
+
+  std::string generate_id(){
+  const auto timestamp{chrono::system_clock::now().time_since_epoch()};
+  std::string tempstring{
+      to_string(chrono::duration_cast<chrono::milliseconds>(timestamp).count())};
+  random_shuffle(tempstring.begin(), tempstring.end());
+  return tempstring;
+}
+
+// safeGetline to handle \n or \r\n from Stackoverflow User user763305
+// https://stackoverflow.com/questions/6089231/getting-std-ifstream-to-handle-lf-cr-and-crlf#6089413
+std::istream& safeGetline(std::istream& is, std::string& t)
+{
+    t.clear();
+
+    // The characters in the stream are read one-by-one using a std::streambuf.
+    // That is faster than reading them one-by-one using the std::istream.
+    // Code that uses streambuf this way must be guarded by a sentry object.
+    // The sentry object performs various tasks,
+    // such as thread synchronization and updating the stream state.
+
+    std::istream::sentry se(is, true);
+    std::streambuf* sb = is.rdbuf();
+
+    for(;;) {
+        int c = sb->sbumpc();
+        switch (c) {
+        case '\n':
+            return is;
+        case '\r':
+            if(sb->sgetc() == '\n')
+                sb->sbumpc();
+            return is;
+        case std::streambuf::traits_type::eof():
+            // Also handle the case when the last line has no line ending
+            if(t.empty())
+                is.setstate(std::ios::eofbit);
+            return is;
+        default:
+            t += (char)c;
+        }
+    }
+}
+vector<string> get_headers(istream& is,const string& header){
+  vector<string> responsevec;
+  string line;
+  while(safeGetline(is,line)){
+    responsevec.emplace_back(line);
+  }
+  vector<string> headers;
+  for(const auto& line : responsevec){
+    if(auto pos = line.find(header); pos != string::npos){
+      headers.emplace_back(line.substr(header.length()+2));
+    }
+  }
+  return headers;
 }
 
 } // namespace sel

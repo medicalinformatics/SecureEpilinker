@@ -20,47 +20,30 @@
 #define SEL_SELTYPES_H
 #pragma once
 
-#include <map>
-#include <string>
-#include <memory>
-#include <vector>
-#include <variant>
 #include <cmath>
+#include <map>
+#include <memory>
+#include <string>
+#include <variant>
+#include <vector>
+#include "secure_epilinker.h"
 
-namespace sel{
+namespace sel {
 class AuthenticationConfig;
-//class RemoteConfiguration;
-
+// class RemoteConfiguration;
 
 using DataField = std::variant<int, double, std::string, std::vector<uint8_t>>;
 using JobId = std::string;
 using RemoteId = std::string;
+using ClientId = std::string;
 using FieldName = std::string;
+using ToDate = size_t;
 
-enum class FieldType {
-  BITMASK,
-  NUMBER,
-  STRING,
-  INTEGER
-};
-enum class FieldComparator {
-  NGRAM,
-  BINARY
-};
-enum class AlgorithmType {
-  EPILINK
-};
-enum class AuthenticationType {
-  NONE,
-  API_KEY
-};
-enum class JobStatus {
-  QUEUED,
-  RUNNING,
-  HOLD,
-  FAULT,
-  DONE
-};
+enum class FieldType { BITMASK, NUMBER, STRING, INTEGER };
+enum class FieldComparator { NGRAM, BINARY };
+enum class AlgorithmType { EPILINK };
+enum class AuthenticationType { NONE, API_KEY };
+enum class JobStatus { QUEUED, RUNNING, HOLD, FAULT, DONE };
 
 FieldType str_to_ftype(const std::string& str);
 FieldComparator str_to_fcomp(const std::string& str);
@@ -75,12 +58,9 @@ struct ML_Field {
            double e,
            const std::string& c,
            const std::string& t)
-      : name(n),
-        comparator(str_to_fcomp(c)),
-        type(str_to_ftype(t))
-        {
-           weight = std::log2((1-e)/f);
-        };
+      : name(n), comparator(str_to_fcomp(c)), type(str_to_ftype(t)) {
+    weight = std::log2((1 - e) / f);
+  };
   std::string name;
   double weight;
   FieldComparator comparator;
@@ -109,5 +89,13 @@ struct SessionResponse {
   std::string body;
   std::multimap<std::string, std::string> headers;
 };
-}
-#endif // SEL_SELTYPES_H
+struct ServerData {
+  std::map<FieldName, std::vector<Bitmask>> hw_data;
+  std::map<FieldName, VCircUnit> bin_data;
+  std::map<FieldName, std::vector<bool>> hw_empty;
+  std::map<FieldName, std::vector<bool>> bin_empty;
+  std::vector<std::map<std::string, std::string>> ids;
+  ToDate todate;
+};
+}  // namespace sel
+#endif  // SEL_SELTYPES_H

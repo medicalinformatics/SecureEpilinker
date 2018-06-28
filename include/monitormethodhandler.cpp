@@ -19,7 +19,7 @@
 #include "monitormethodhandler.h"
 #include <memory>
 #include <string>
-#include "connectionhandler.h"
+#include "serverhandler.h"
 #include "fmt/format.h"
 #include "linkagejob.h"
 #include "restbed"
@@ -37,13 +37,13 @@ void MonitorMethodHandler::handle_method(
     fmt::print("{} -- {}\n", h.first, h.second);
   }
   SessionResponse response;
-  const auto id_iterators{m_connection_handler->find_job(job_id)};
-  if (id_iterators.first != id_iterators.second) {  // Job ID found
+  try {
+    const auto job{m_server_handler->get_linkage_job(job_id)};
     const auto status{
-        js_enum_to_string(((*(id_iterators.first)).second)->get_status())};
+        js_enum_to_string(job->get_status())};
     response.return_code = restbed::OK;
     response.body = status;
-  } else {
+  } catch (const exception& e) {
     response.return_code = restbed::BAD_REQUEST;
     response.body = "Invalid job id";
   }

@@ -40,11 +40,15 @@ bool check_exchange_group(const std::unordered_set<FieldName>&,
 SessionResponse valid_init_json_handler(
     const nlohmann::json&,
     RemoteId,
+    const std::shared_ptr<ConfigurationHandler>&,
+    const std::shared_ptr<ServerHandler>&,
     const std::shared_ptr<ConnectionHandler>&);
 
 SessionResponse valid_linkrecord_json_handler(
     const nlohmann::json&,
     const RemoteId&,
+    const std::shared_ptr<ConfigurationHandler>&,
+    const std::shared_ptr<ServerHandler>&,
     const std::shared_ptr<ConnectionHandler>&);
 
 SessionResponse invalid_json_handler(valijson::ValidationResults&);

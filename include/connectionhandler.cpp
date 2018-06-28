@@ -18,96 +18,107 @@ computations
 */
 
 #include "connectionhandler.h"
+#include <algorithm>
+#include <iterator>
 #include <memory>
+#include <mutex>
+#include <set>
 #include <unordered_map>
+#include <vector>
 #include "localconfiguration.h"
 #include "remoteconfiguration.h"
 #include "restbed"
 #include "seltypes.h"
+#include <curlpp/cURLpp.hpp>
+#include <curlpp/Easy.hpp>
+#include <curlpp/Options.hpp>
+#include <curlpp/Infos.hpp>
+#include <sstream>
 
 using namespace std;
 namespace sel {
 ConnectionHandler::ConnectionHandler(restbed::Service* service)
     : m_service(service) {}
 
-void ConnectionHandler::upsert_connection(
-    shared_ptr<RemoteConfiguration> connection) {
-  RemoteId remote_id{connection->get_id()};
-  if (connection_exists(remote_id)) {
-    update_connection(remote_id, move(connection));
-  } else {
-    insert_connection(move(remote_id), move(connection));
-  }
-}
-
-size_t ConnectionHandler::num_connections() const {
-  return m_connections.size();
-}
-
-void ConnectionHandler::set_local_configuration(
-    shared_ptr<LocalConfiguration>&& l_conf) {
-  lock_guard<mutex> lock(m_local_data_mutex);
-  m_local_configuration = move(l_conf);
-}
-
-bool ConnectionHandler::connection_exists(const RemoteId& c_id) const {
-  auto it = m_connections.find(c_id);
-  return (it != m_connections.end());
-}
-
-const ML_Field& ConnectionHandler::get_field(const FieldName& name) {
-  return m_local_configuration->get_field(name);
-}
-
 shared_ptr<restbed::Service> ConnectionHandler::get_service() const {
   return m_service;
 }
 
-void ConnectionHandler::add_job(const RemoteId& remote_id,
-                                shared_ptr<LinkageJob> job) {
-  if (connection_exists(remote_id)) {
-    auto job_id{job->get_id()};
-    m_connections[remote_id]->add_job(move(job));
-    m_job_id_to_remote_id.emplace(job_id, remote_id);
+uint16_t ConnectionHandler::get_free_port() {
+  if (auto it = m_aby_available_ports.begin(); !m_aby_available_ports.empty()) {
+    auto port = *it;
+    m_aby_available_ports.erase(it);
+    return port;
   } else {
-    throw runtime_error("Invalid Remote ID");
+    throw std::runtime_error("No remaining port for ABY");
   }
+  return 0u;
 }
 
-pair<unordered_map<JobId, shared_ptr<LinkageJob>>::iterator,
-     unordered_map<JobId, shared_ptr<LinkageJob>>::iterator>
-ConnectionHandler::find_job(const JobId& id) {
-  if (auto it = m_job_id_to_remote_id.find(id);
-      it != m_job_id_to_remote_id.end()) {
-    auto& remote = m_connections[it->second];
-    return remote->find_job(id);
+ConnectionHandler::RemoteInfo ConnectionHandler::initialize_aby_server(
+    shared_ptr<RemoteConfiguration> remote_config) {
+  if (m_aby_available_ports.empty()) {
+    throw std::runtime_error("No available port for smpc communication");
+  }
+  auto ip{remote_config->get_remote_host()};
+  auto port{remote_config->get_remote_signaling_port()};
+  auto id{generate_id()};
+  curlpp::Easy curl_request;
+  stringstream response_stream;
+  list<string> headers{
+    "Authorization: SEL ABCD",
+    "Available-Ports: "s+get_available_ports(),
+    "Remote-Identifier: "s+id,
+    "SEL-Init: True"};
+  curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
+  curl_request.setOpt(new curlpp::Options::Url("https://"s+ip+':'+to_string(port)+"/selconnect"));
+  curl_request.setOpt(new curlpp::Options::Post(true));
+  curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
+  curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
+  curl_request.setOpt(new curlpp::Options::WriteStream(&response_stream));
+  curl_request.setOpt(new curlpp::options::Header(1));
+  curl_request.perform();
+  auto resph(get_headers(response_stream, "SEL-Port"));
+  if(resph.empty()){
+    throw runtime_error("No common available port for smpc communication");
+  }
+  uint16_t sel_port = stoul(resph.front());
+  return {id, sel_port};
+}
+
+uint16_t ConnectionHandler::choose_common_port(const string& remote_ports) {
+  set<uint16_t> remote_ports_set;
+  auto remote_ports_vec{split(remote_ports, ',')};  // Expects ports as csv
+  for (const auto& port : remote_ports_vec) {
+    remote_ports_set.emplace(stoul(port));
+  }
+  vector<uint16_t> intersection;
+  lock_guard<mutex> lock(m_port_mutex);
+  set_intersection(m_aby_available_ports.begin(), m_aby_available_ports.end(),
+                   remote_ports_set.begin(), remote_ports_set.end(),
+                   back_inserter(intersection));
+  if (intersection.empty()) {
+    throw runtime_error("No common available port for smpc communication");
+  }
+  m_aby_available_ports.erase(intersection.front());
+  return intersection.front();
+}
+
+string ConnectionHandler::get_available_ports() const {
+  string result;
+  for (const auto& port : m_aby_available_ports) {
+    result += to_string(port) + ',';
+  }
+  result.pop_back();  // remove trailing comma
+  return result;
+}
+void ConnectionHandler::mark_port_used(uint16_t port) {
+  if (auto it = m_aby_available_ports.find(port);
+      it != m_aby_available_ports.end()) {
+    lock_guard<mutex> lock(m_port_mutex);
+    m_aby_available_ports.erase(it);
   } else {
-    throw runtime_error("Invalid Job ID");
+    throw runtime_error("Can not mark port used: invalid port");
   }
-}
-
-void ConnectionHandler::insert_connection(
-    RemoteId&& remote_id,
-    shared_ptr<RemoteConfiguration> connection) {
-  m_connections.emplace(move(remote_id), move(connection));
-}
-
-void ConnectionHandler::update_connection(
-    const JobId& remote_id,
-    shared_ptr<RemoteConfiguration> connection) {
-  m_connections[remote_id] = move(connection);
-}
-
-shared_ptr<LocalConfiguration> ConnectionHandler::get_local_configuration()
-    const {
-  return m_local_configuration;
-}
-
-shared_ptr<RemoteConfiguration> ConnectionHandler::get_remote_configuration(
-    const RemoteId& r_id) {
-  if (!connection_exists(r_id)) {
-    throw runtime_error("Invalid Connection");
-  }
-  return m_connections.at(r_id);
 }
 }  // namespace sel

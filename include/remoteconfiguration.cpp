@@ -17,45 +17,19 @@
 */
 
 #include "remoteconfiguration.h"
+#include <mutex>
+#include "seltypes.h"
 #include "util.h"
 
 using namespace std;
 namespace sel {
-RemoteConfiguration::RemoteConfiguration()
-    : m_worker_thread(&RemoteConfiguration::run_queued_jobs, this) {}
+
 RemoteConfiguration::RemoteConfiguration(RemoteId c_id)
-    : m_connection_id(move(c_id)),
-      m_worker_thread(&RemoteConfiguration::run_queued_jobs, this) {}
+    : m_connection_id(move(c_id)) {}
 
-RemoteConfiguration::~RemoteConfiguration() {
-  m_worker_thread.join();
-}
+RemoteConfiguration::~RemoteConfiguration() {}
 
-void RemoteConfiguration::run_queued_jobs() {
-  while (true) {
-    if (!m_job_queue.empty()) {
-      for (auto& job : m_job_queue) {
-        if (job.second->get_status() == JobStatus::QUEUED) {
-          job.second->run_job();
-        }
-        /*
-        if(job.get_status() == JobStatus::FINISHED) {
-          remove_job(job.get_id());
-        }*/
-      }
-    }
-  }
-}
-
-void RemoteConfiguration::remove_job(const JobId& j_id) {
-  lock_guard<mutex> lock(m_queue_mutex);
-  auto job = m_job_queue.find(j_id);
-  if (job != m_job_queue.end()) {
-    m_job_queue.erase(job);
-  }
-}
-
-uint16_t RemoteConfiguration::get_remote_port() const {
+uint16_t RemoteConfiguration::get_remote_signaling_port() const {
   auto parts{split(m_connection_profile.url, ':')};
   // {{192.168.1.1},{8080}}
   return stoi(parts.back());
@@ -66,4 +40,24 @@ string RemoteConfiguration::get_remote_host() const {
   // {{192.168.1.1},{8080}}
   return parts.front();
 }
+
+void RemoteConfiguration::set_connection_profile(ConnectionConfig cconfig) {
+  m_connection_profile = std::move(cconfig);
+}
+void RemoteConfiguration::set_linkage_service(ConnectionConfig cconfig) {
+  m_linkage_service = std::move(cconfig);
+}
+
+RemoteId RemoteConfiguration::get_id() const {
+  return m_connection_id;
+}
+
+uint16_t RemoteConfiguration::get_aby_port() const {
+  return m_aby_port;
+}
+
+void RemoteConfiguration::set_aby_port(uint16_t port) {
+  m_aby_port = port;
+}
+
 }  // namespace sel

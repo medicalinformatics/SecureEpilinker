@@ -26,10 +26,14 @@ set(EPIRESTSRC
       include/remoteconfiguration.cpp
       include/localconfiguration.cpp
       include/connectionhandler.cpp
+      include/configurationhandler.cpp
       include/databasefetcher.cpp
+      include/datahandler.cpp
       include/jsonhandlerfunctions.cpp
       include/seltypes.cpp
+      include/serverhandler.cpp
       include/linkagejob.cpp
+      include/localserver.cpp
       include/base64.cpp
       include/monitormethodhandler.cpp
       include/tempselmethodhandler.cpp)
@@ -44,10 +48,14 @@ set(EPIRESTSRC
       include/authenticationconfig.hpp
       include/apikeyconfig.hpp
       include/connectionhandler.h
+      include/configurationhandler.h
       include/databasefetcher.h
+      include/datahandler.h
       include/jsonhandlerfunctions.h
       include/seltypes.h
+      include/serverhandler.h
       include/linkagejob.h
+      include/localserver.h
       include/base64.h
       include/monitormethodhandler.h
       include/tempselmethodhandler.h)
@@ -85,9 +93,10 @@ find_package(Threads)
 include_directories(SYSTEM ${SecureEpiLinker_INSTALL_PREFIX}/include
   "extern/restbed/source")
 target_include_directories(sel PRIVATE extern/valijson/include)
+target_include_directories(sel PRIVATE extern/curlpp/include)
 # Debug Version (sanitizers linked)
 target_link_libraries(sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
-  OpenSSL::SSL OpenSSL::Crypto Threads::Threads stdc++fs
+  OpenSSL::SSL OpenSSL::Crypto Threads::Threads stdc++fs curl curlpp
   ${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
 # Release Version
 #target_link_libraries(sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt

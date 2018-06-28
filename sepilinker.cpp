@@ -19,6 +19,9 @@
 #include "include/remoteconfiguration.h"
 #include "include/apikeyconfig.hpp"
 #include "include/connectionhandler.h"
+#include "include/configurationhandler.h"
+#include "include/datahandler.h"
+#include "include/serverhandler.h"
 #include "include/jsonmethodhandler.h"
 #include "include/methodhandler.hpp"
 #include "include/monitormethodhandler.h"
@@ -35,6 +38,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <curlpp/cURLpp.hpp>
 
 using json = nlohmann::json;
 using namespace sel;
@@ -81,8 +85,15 @@ int main(int argc, char* argv[]) {
   
   // Program
   restbed::Service service;
+  curlpp::Cleanup curl_cleanup;
   // Create Connection Handler
   auto connections = std::make_shared<sel::ConnectionHandler>(&service);
+  auto configurations = std::make_shared<sel::ConfigurationHandler>(connections);
+  auto data = std::make_shared<sel::DataHandler>();
+  auto servers = std::make_shared<sel::ServerHandler>(configurations, data);
+
+  connections->set_config_handler(configurations);
+  data->set_config_handler(configurations);
   // Create JSON Validator
   auto init_validator = std::make_shared<sel::Validator>(
       read_json_from_disk(server_config["initSchemaPath"].get<std::string>()));
@@ -92,17 +103,17 @@ int main(int argc, char* argv[]) {
   // Create Handler for POST Request with JSON payload (using the validator)
   auto init_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "PUT", connections, init_validator);
+          "PUT", configurations, connections, servers,init_validator);
   auto linkrecord_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "POST", connections, linkrecord_validator);
+          "POST", configurations, connections, servers, linkrecord_validator);
   // Create GET-Handler for job status monitoring
   auto jobmonitor_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::MonitorMethodHandler>(
-          "GET", connections);
+          "GET", servers);
   auto temp_selconnect_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::TempSelMethodHandler>(
-          "POST", connections);
+          "POST", connections, servers, data);
 
   // Add Validation Callbacks
   auto devptr_init =

@@ -20,19 +20,22 @@
 #define SEL_TEMPSELMETHODHANDLER_H
 #pragma once
 
-#include "methodhandler.hpp"
-#include "seltypes.h"
-#include "valijson/validation_results.hpp"
-#include "restbed"
 #include <memory>
 #include <string>
+#include "methodhandler.hpp"
+#include "restbed"
+#include "seltypes.h"
+#include "valijson/validation_results.hpp"
 
 // Forward Declarations
 
 namespace sel {
 class Validator;
 class ConnectionHandler;
+class DataHandler;
+class ConfigurationHandler;
 class LinkageJob;
+class ServerHandler;
 
 class TempSelMethodHandler : public MethodHandler {
   /**
@@ -41,20 +44,20 @@ class TempSelMethodHandler : public MethodHandler {
  public:
   explicit TempSelMethodHandler(
       const std::string& method,
-      std::shared_ptr<ConnectionHandler> connection_handler)
-      : MethodHandler(method), m_connection_handler(connection_handler){}
-  explicit TempSelMethodHandler(
-      const std::string& method,
       std::shared_ptr<ConnectionHandler> connection_handler,
-      std::shared_ptr<Validator> validator)
-      : MethodHandler(method, validator),
-        m_connection_handler(connection_handler){}
+      std::shared_ptr<ServerHandler> server_handler,
+      std::shared_ptr<DataHandler> data_handler)
+      : MethodHandler(method),
+        m_connection_handler(move(connection_handler)),
+        m_server_handler(move(server_handler)),
+        m_data_handler(move(data_handler)) {}
   ~TempSelMethodHandler(){};
   void handle_method(std::shared_ptr<restbed::Session>) const override;
 
  private:
   std::shared_ptr<ConnectionHandler> m_connection_handler;
-
+  std::shared_ptr<ServerHandler> m_server_handler;
+  std::shared_ptr<DataHandler> m_data_handler;
 };
 
 }  // namespace sel

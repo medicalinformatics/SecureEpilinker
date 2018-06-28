@@ -22,6 +22,7 @@
 #include <thread>
 #include "authenticationconfig.hpp"
 #include "databasefetcher.h"
+#include "linkagejob.h"
 #include "epilink_input.h"
 #include "fmt/format.h"
 #include "secure_epilinker.h"
@@ -44,11 +45,11 @@ void LocalConfiguration::add_field(ML_Field field) {
   }
 }
 
-const ML_Field& LocalConfiguration::get_field(const FieldName& fieldname) {
+const ML_Field& LocalConfiguration::get_field(const FieldName& fieldname) const{
   if (field_hw_exists(fieldname)) {
-    return cref(m_hw_fields[fieldname]);
+    return cref(m_hw_fields.at(fieldname));
   } else if (field_bin_exists(fieldname)) {
-    return cref(m_bin_fields[fieldname]);
+    return cref(m_bin_fields.at(fieldname));
   } else {
     throw runtime_error("Field \"" + fieldname + "\" does not exist.");
   }
@@ -94,31 +95,23 @@ void LocalConfiguration::add_exchange_group(set<FieldName> group) {
   }
 }
 
-bool LocalConfiguration::field_exists(const FieldName& fieldname) {
+bool LocalConfiguration::field_exists(const FieldName& fieldname) const {
   auto hw_it = m_hw_fields.find(fieldname);
   if (hw_it != m_hw_fields.end()) {
     return true;
   }
   auto bin_it = m_bin_fields.find(fieldname);
-  if (bin_it != m_bin_fields.end()) {
-    return true;
-  }
-
-  return false;
+  return (bin_it != m_bin_fields.end());
 }
 
-bool LocalConfiguration::field_hw_exists(const FieldName& fieldname) {
+bool LocalConfiguration::field_hw_exists(const FieldName& fieldname) const {
   auto hw_it = m_hw_fields.find(fieldname);
-  return (hw_it != m_hw_fields.end()) ? true : false;
+  return (hw_it != m_hw_fields.end());
 }
 
-bool LocalConfiguration::field_bin_exists(const FieldName& fieldname) {
+bool LocalConfiguration::field_bin_exists(const FieldName& fieldname) const {
   auto bin_it = m_bin_fields.find(fieldname);
-  return (bin_it != m_bin_fields.end()) ? true : false;
-}
-
-void LocalConfiguration::set_algorithm_config(AlgorithmConfig aconfig) {
-  m_algorithm = aconfig;
+  return (bin_it != m_bin_fields.end());
 }
 
 void LocalConfiguration::set_data_service(string&& url) {
@@ -127,18 +120,6 @@ void LocalConfiguration::set_data_service(string&& url) {
 
 void LocalConfiguration::set_local_auth(unique_ptr<AuthenticationConfig> auth) {
   m_local_authentication = move(auth);
-}
-
-void LocalConfiguration::poll_data() {
-  m_database_fetcher->set_url(m_data_service_url);
-  m_database_fetcher->set_page_size(25u);  // TODO(TK): Magic number raus!
-  auto&& data{m_database_fetcher->fetch_data(m_local_authentication.get())};
-  m_todate = data.todate;
-  m_hw_data = move(data.hw_data);
-  m_bin_data = move(data.bin_data);
-  m_hw_empty = move(data.hw_empty);
-  m_bin_empty = move(data.bin_empty);
-  m_ids = move(data.ids);
 }
 
 vector<set<FieldName>> const& LocalConfiguration::get_exchange_group(
@@ -167,75 +148,5 @@ vector<set<size_t>> LocalConfiguration::get_exchange_group_indices(
     tempvec.emplace_back(move(tempset));
   }
   return tempvec;
-}
-
-void LocalConfiguration::run_comparison() {
-  // Fill Member variables
-  poll_data();
-  // Get Weights and calcualte # of Records
-  VWeight hw_weights{get_weights(FieldComparator::NGRAM)};
-  VWeight bin_weights{get_weights(FieldComparator::BINARY)};
-  const size_t nvals{
-      m_hw_data.begin()->second.size()};  // assuming each record has hw and bin
-  fmt::print("Number of records: {}\n", nvals);
-  // make data and empty map to vectors
-  vector<vector<Bitmask>> hw_data;
-  vector<VCircUnit> bin_data;
-  hw_data.reserve(m_hw_fields.size());
-  bin_data.reserve(m_bin_fields.size());
-  vector<vector<bool>> hw_empty;
-  vector<vector<bool>> bin_empty;
-  hw_empty.reserve(m_hw_fields.size());
-  bin_empty.reserve(m_bin_fields.size());
-  for (auto& field : m_hw_data) {
-    hw_data.emplace_back(field.second);
-  }
-  for (auto& field : m_bin_data) {
-    bin_data.emplace_back(field.second);
-  }
-  for (auto& field : m_hw_empty) {
-    hw_empty.emplace_back(field.second);
-  }
-  for (auto& field : m_bin_empty) {
-    bin_empty.emplace_back(field.second);
-  }
-  try {
-    fmt::print("Input remote host (for now!)\n");
-    string host;
-    cin >> host;
-    fmt::print("Input remote port (argh, fix this!)\n");
-    uint16_t port;
-    cin >> port;
-
-    SecureEpilinker::ABYConfig aby_config{SERVER, S_BOOL, host, port, 1};
-    EpilinkConfig epilink_config{
-        move(hw_weights),
-        move(bin_weights),
-        get_exchange_group_indices(FieldComparator::NGRAM),
-        get_exchange_group_indices(FieldComparator::BINARY),
-        m_algorithm.bloom_length,
-        m_algorithm.threshold_match,
-        m_algorithm.threshold_non_match};
-    SecureEpilinker aby_server_party{aby_config, epilink_config};
-    aby_server_party.build_circuit(nvals);
-    aby_server_party.run_setup_phase();
-    EpilinkServerInput server_input{hw_data, bin_data, hw_empty, bin_empty};
-    fmt::print("Server running\n{}{}{}", print_aby_config(aby_config),
-               print_epilink_config(epilink_config),
-               print_epilink_input(server_input));
-    const auto server_share{aby_server_party.run_as_server(server_input)};
-    fmt::print("Server result:\n{}", server_share);
-    fmt::print("IDs (in Order):\n");
-    for (size_t i = 0; i != m_ids.size(); ++i) {
-      fmt::print("{} IDs: ", i);
-      for (const auto& m : m_ids[i]) {
-        fmt::print("{} - {}; ", m.first, m.second);
-      }
-      fmt::print("\n");
-    }
-  } catch (const exception& e) {
-    fmt::print(stderr, "Error running MPC server: {}\n", e.what());
-  }
-  // Send ABY Share and IDs to Linkage Server
 }
 }  // namespace sel

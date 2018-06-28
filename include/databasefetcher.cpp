@@ -17,7 +17,12 @@
 */
 
 #include "databasefetcher.h"
+#include <curlpp/Easy.hpp>
+#include <curlpp/Infos.hpp>
+#include <curlpp/Options.hpp>
+#include <curlpp/cURLpp.hpp>
 #include <map>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -34,11 +39,10 @@
 
 using namespace std;
 namespace sel {
-PollData DatabaseFetcher::fetch_data(AuthenticationConfig* l_auth) {
+ServerData DatabaseFetcher::fetch_data() {
   fmt::print("Requesting Database\n");
   m_page = 1u;
-  auto paget{
-      request_page(m_url + "?pagesize=" + to_string(m_page_size), l_auth)};
+  auto paget{request_page(m_url + "?pagesize=" + to_string(m_page_size))};
   auto page =
       *(paget.begin());  // FIXME(TK): JSon wird zusätzlich in Array gepack
   if (page.count("lastPageNumber")) {
@@ -51,7 +55,7 @@ PollData DatabaseFetcher::fetch_data(AuthenticationConfig* l_auth) {
   for (; m_page != m_last_page; ++m_page) {
     get_page_data(page);
     m_next_page = page["_links"]["next"]["href"].get<string>();
-    page = get_next_page(l_auth);
+    page = get_next_page();
   }
   // Process Data from last page
   get_page_data(page);
@@ -88,8 +92,8 @@ PollData DatabaseFetcher::fetch_data(AuthenticationConfig* l_auth) {
     }
     fmt::print("\n");
   }
-  return {m_todate,         move(m_hw_data),   move(m_bin_data),
-          move(m_hw_empty), move(m_bin_empty), move(m_ids)};
+  return {move(m_hw_data),   move(m_bin_data), move(m_hw_empty),
+          move(m_bin_empty), move(m_ids),      move(m_todate)};
 }
 
 void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
@@ -109,9 +113,9 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
       throw runtime_error("Invalid JSON Data");
     }
     for (auto f = rec["fields"].begin(); f != rec["fields"].end(); ++f) {
-      switch (m_parent->get_field(f.key()).type) {
+      switch (m_local_config->get_field(f.key()).type) {
         case FieldType::INTEGER: {
-          if (m_parent->get_field(f.key()).comparator ==
+          if (m_local_config->get_field(f.key()).comparator ==
               FieldComparator::BINARY) {
             if (f->get<int>() == 0) {
               temp_bin_empty[f.key()].emplace_back(true);
@@ -127,7 +131,7 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
           break;
         }
         case FieldType::NUMBER: {
-          if (m_parent->get_field(f.key()).comparator ==
+          if (m_local_config->get_field(f.key()).comparator ==
               FieldComparator::BINARY) {
             if (f->get<double>() == 0.) {
               temp_bin_empty[f.key()].emplace_back(true);
@@ -143,7 +147,7 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
           break;
         }
         case FieldType::STRING: {
-          if (m_parent->get_field(f.key()).comparator ==
+          if (m_local_config->get_field(f.key()).comparator ==
               FieldComparator::BINARY) {
             if (trim_copy(f->get<string>()) == "") {
               temp_bin_empty[f.key()].emplace_back(true);
@@ -161,18 +165,18 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
         case FieldType::BITMASK: {
           auto temp = f->get<string>();
           auto bloom = base64_decode(temp);
-          if (!check_bloom_length(bloom, m_parent->get_bloom_length())) {
+          if (!check_bloom_length(bloom, m_algo_config->bloom_length)) {
             fmt::print(
                 "Warning: Set bits after bloomfilterlength. Set to zero.\n");
           }
-          if (m_parent->get_field(f.key()).comparator ==
+          if (m_local_config->get_field(f.key()).comparator ==
               FieldComparator::NGRAM) {
             bool bloomempty{true};
-            for(const auto& byte : bloom){
-              if(bool byte_empty = (byte == 0x00); !byte_empty){
-                  temp_hw_empty[f.key()].emplace_back(false);
-                  bloomempty = false;
-                  break;
+            for (const auto& byte : bloom) {
+              if (bool byte_empty = (byte == 0x00); !byte_empty) {
+                temp_hw_empty[f.key()].emplace_back(false);
+                bloomempty = false;
+                break;
               }
             }
             if (bloomempty) {
@@ -213,38 +217,57 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
   }
 }
 
-nlohmann::json DatabaseFetcher::get_next_page(
-    AuthenticationConfig* l_auth) const {
-  return request_page(m_next_page, l_auth);
+nlohmann::json DatabaseFetcher::get_next_page() const {
+  return request_page(m_next_page);
 }
 
-nlohmann::json DatabaseFetcher::request_page(
-    const string& url,
-    AuthenticationConfig* l_auth) const {
-  auto request{make_shared<restbed::Request>(restbed::Uri(url))};
-  request->set_method("GET");
-  request->set_version(1.1);
-  request->set_protocol("HTTP");
+nlohmann::json DatabaseFetcher::request_page(const string& url) const {
+  //auto request{make_shared<restbed::Request>(restbed::Uri(url))};
+  curlpp::Easy curl_request;
+  stringstream response_stream;
+  list<string> headers;
+  curl_request.setOpt(new curlpp::Options::Url(url));
+  curl_request.setOpt(new curlpp::Options::HttpGet(true));
+  curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
+  curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
+  curl_request.setOpt(new curlpp::Options::WriteStream(&response_stream));
+  curl_request.setOpt(new curlpp::options::Header(0));
+  //request->set_method("GET");
+  //request->set_version(1.1);
+  //request->set_protocol("HTTP");
   fmt::print("DB request address: {}\n", url);
-  if (l_auth->get_type() == AuthenticationType::API_KEY) {
-    auto apiauth = dynamic_cast<APIKeyConfig*>(l_auth);
-    request->add_header(
-        "Authorization",
-        string("mainzellisteApiKey apikey=\"") + apiauth->get_key() + "\"");
+  if (m_local_authentication->get_type() == AuthenticationType::API_KEY) {
+    auto apiauth = dynamic_cast<const APIKeyConfig*>(m_local_authentication);
+    //request->add_header(
+        //"Authorization",
+        //string("mainzellisteApiKey apikey=\"") + apiauth->get_key() + "\"");
+    headers.emplace_back("Authorization: mainzellisteApiKey apikey=\""s +
+                         apiauth->get_key() + "\"");
   }
-  auto response = restbed::Http::sync(request);
-  auto status = response->get_status_code();
-  if (status != 400 && status != 401) {
-    size_t content_length = response->get_header("Content-Length", 0);
-    if (content_length) {
-      restbed::Http::fetch(content_length, response);
+  curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
+  curl_request.perform();
+  auto responsecode = curlpp::Infos::ResponseCode::get(curl_request);
+  if (responsecode != 400 && responsecode != 401) {
+    if (!(response_stream.str().empty())) {
+      fmt::print("Response Data:\n{}\n", response_stream.str());
     } else {
-      fmt::print("No valid Data!");
+      fmt::print("No valid Data!\n");
     }
+    return nlohmann::json::parse(response_stream.str());
 
-    auto body = response->get_body();
-    string bodystring = string(body.begin(), body.end());
-    return nlohmann::json::parse(bodystring);
+    // auto response = restbed::Http::sync(request);
+    // auto status = response->get_status_code();
+    // if (status != 400 && status != 401) {
+    // size_t content_length = response->get_header("Content-Length", 0);
+    // if (content_length) {
+    // restbed::Http::fetch(content_length, response);
+    //} else {
+    // fmt::print("No valid Data!");
+    //}
+
+    // auto body = response->get_body();
+    // string bodystring = string(body.begin(), body.end());
+    // return nlohmann::json::parse(bodystring);
   } else {
     fmt::print("Invalid Response from DB\n");
     return nlohmann::json();
