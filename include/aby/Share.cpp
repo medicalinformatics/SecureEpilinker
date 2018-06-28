@@ -41,7 +41,7 @@ BoolShare apply_file_binary(const BoolShare& a, const BoolShare& b,
   return BoolShare{a.bcirc, a.bcirc->PutGateFromFile(fn, in, a.get_nvals())};
 }
 
-vector<BoolShare> BoolShare::split(uint32_t new_nval) {
+vector<BoolShare> BoolShare::split(uint32_t new_nval) const {
   const size_t bitlen{get_bitlen()}, nvals{get_nvals()},
       numshares{ceil_divide(nvals, new_nval)};
   vector<vector<uint32_t>> split_wires;
@@ -64,6 +64,23 @@ vector<BoolShare> BoolShare::split(uint32_t new_nval) {
     }
     res.emplace_back(BoolShare(bcirc, new boolshare(wires, bcirc)));
   }
+
+  return res;
+}
+
+vector<ArithShare> ArithShare::split(uint32_t new_nval) const {
+  const size_t nvals{get_nvals()}, numshares{ceil_divide(nvals, new_nval)};
+  vector<uint32_t> new_nvals(numshares, new_nval);
+  if (nvals%new_nval) new_nvals.back() = nvals%new_nval;
+
+  auto split_wires = acirc->PutSplitterGate(sh.get()->get_wire_id(0), new_nvals);
+  assert (numshares == split_wires.size());
+
+  vector<ArithShare> res;
+  res.reserve(numshares);
+  for(uint32_t w : split_wires)
+    res.emplace_back(ArithShare(acirc,
+          new arithshare(vector<uint32_t>(1,w), acirc)));
 
   return res;
 }
@@ -164,17 +181,13 @@ BoolShare b2y(BooleanCircuit* ycirc, const BoolShare& s) {
 
 /******************** SIMD stuff ********************/
 
-/**
- * Vertically Combines the given shares to a new share having the same number of
- * wires=bitlen and nvals the sum of the individual nvals
- */
-BoolShare vcombine(const vector<BoolShare>& shares) {
+Share vcombine(const vector<Share>& shares) {
   // TODO handle size() == 0 ?
   size_t bitlen = shares.at(0).get_bitlen();
   vector<vector<uint32_t>> combwires{bitlen};
   vector<uint32_t> reswires;
   reswires.reserve(bitlen);
-  BooleanCircuit* circ = shares.at(0).get_circuit();
+  auto circ = shares.at(0).get_circuit();
   for (const auto& share : shares) {
     vector<uint32_t> wires{share.get()->get_wires()};
     for (size_t i{0}; i != wires.size(); ++i) {
@@ -184,7 +197,7 @@ BoolShare vcombine(const vector<BoolShare>& shares) {
   for (vector<uint32_t>& cw : combwires) {
     reswires.emplace_back(circ->PutCombinerGate(cw));
   }
-  return BoolShare{circ, reswires};
+  return Share{circ, reswires};
 }
 
 // TODO sum, all, any, prod -> gadgets

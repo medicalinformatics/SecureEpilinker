@@ -19,8 +19,13 @@
 #include <memory>
 #include <type_traits>
 #include "gadgets.h"
-#include "circuit_defs.h"
 #include "../util.h"
+
+#ifdef DEBUG_SEL_GADGETS
+#include <fmt/format.h>
+using fmt::format;
+using fmt::print;
+#endif
 
 using namespace std;
 
@@ -57,6 +62,16 @@ template ArithShare binary_accumulate(vector<ArithShare> vals,
 
 template BoolShare binary_accumulate(vector<BoolShare> vals,
     const BinaryOp_BoolShare& op);
+
+void print_share(const ArithQuotient& q, const string& msg) {
+  print_share(q.num, msg + "(num)");
+  print_share(q.den, msg + "(den)");
+}
+
+void print_share(const BoolQuotient& q, const string& msg) {
+  print_share(q.num, msg + "(num)");
+  print_share(q.den, msg + "(den)");
+}
 
 /**
  * Accumulates all objects of vector using binary operation op serially by
@@ -231,6 +246,206 @@ void split_select_target(BoolShare& selector, BoolShare& target,
     selector = cmp.mux(selector, stack_selector);
     target = cmp.mux(target, stack_target);
   }
+}
+
+void split_select_quotient_target(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const ArithQuotientSelector& op_select, const B2AConverter& to_arith) {
+  size_t nvals0 = selector.den.get_nvals(), ntargets = targets.size();
+  ArithmeticCircuit* ac = selector.num.get_circuit();
+  uint32_t bitlen = ac->GetShareBitLen();
+  assert (selector.num.get_nvals() == nvals0);
+  for (const auto& t : targets) assert(t.get_nvals() == nvals0);
+#ifdef DEBUG_SEL_GADGETS
+  cout << "==== split-select-quotient-target shares of nvals: " << nvals0 << " ====\n";
+  cout << "#targets:" << ntargets << "; bitlen: " << bitlen << "\n";
+#endif
+  ArithQuotient stack_selector;
+  vector<BoolShare> stack_targets(targets.size());
+  assert (stack_selector.num.is_null() && stack_selector.den.is_null());
+  ArithShare one;
+  for(size_t cnvals{selector.num.get_nvals()/2}, rem{selector.num.get_nvals()%2};
+      selector.num.get_nvals() > 1; rem = cnvals%2, cnvals /=2) {
+#ifdef DEBUG_SEL_GADGETS
+    cout << "cnvals: " << cnvals << " rem: " << rem << "\n";
+#endif
+    if (rem && stack_selector.num) {
+#ifdef DEBUG_SEL_GADGETS
+      cout << "remainder and stack: combining stack and cnvals++\n";
+#endif
+      selector = {vcombine({selector.num, stack_selector.num}),
+          vcombine({selector.num, stack_selector.num})};
+      stack_selector.num.reset(); // need to reset, move doesn't work :(
+      stack_selector.den.reset(); // need to reset, move doesn't work :(
+      assert (stack_selector.num.is_null());
+      for(size_t i=0; i!=ntargets; ++i) {
+        targets[i] = vcombine({targets[i], stack_targets[i]});
+        stack_targets[i].reset();
+      }
+      cnvals++;
+      rem = 0;
+    }
+
+    vector<ArithShare> splits_num = selector.num.split(cnvals);
+    vector<ArithShare> splits_den = selector.den.split(cnvals);
+    vector<vector<BoolShare>> tsplits;
+    tsplits.reserve(ntargets);
+    for (const BoolShare& target : targets)
+      tsplits.emplace_back(target.split(cnvals));
+
+    // push to stack if remainder
+    if (splits_num.size() > 2) {
+#ifdef DEBUG_SEL_GADGETS
+      cout << "storing remainder stack\n";
+#endif
+      assert (splits_num.size() == 3);
+      for (const auto& ts : tsplits) assert(ts.size() == 3);
+      assert (rem == 1);
+      stack_selector.num = move(splits_num.back());
+      stack_selector.den = move(splits_den.back());
+      for(size_t i=0; i!=ntargets; ++i)
+        stack_targets[i] = move(tsplits[i].back());
+
+      assert (stack_selector.num.get_nvals() == 1);
+    }
+    assert (splits_num[0].get_nvals() == cnvals);
+    assert (splits_num[1].get_nvals() == cnvals);
+    BoolShare cmp = op_select({splits_num[0], splits_den[0]},
+        {splits_num[1], splits_den[1]});
+    ArithShare acmp = to_arith(cmp);
+    one = constant_simd(ac, 1u, bitlen, cnvals);
+    ArithShare notacmp = one - acmp;
+    selector.num = acmp * splits_num[0] + notacmp * splits_num[1];
+    selector.den = acmp * splits_den[0] + notacmp * splits_den[1];
+    for(size_t i=0; i!=ntargets; ++i)
+      targets[i] = cmp.mux(tsplits[i][0], tsplits[i][1]);
+#ifdef DEBUG_SEL_GADGETS
+    print_share(cmp, format("cmp ({})", cnvals));
+    print_share(acmp, format("acmp ({})", cnvals));
+    print_share(one, format("one ({})", cnvals));
+    print_share(notacmp, format("notacmp ({})", cnvals));
+#endif
+  }
+  // finally accumulate with stack
+  if (!stack_selector.num.is_null()) {
+#ifdef DEBUG_SEL_GADGETS
+    cout << "stack not empty, final acc" << endl;
+#endif
+    BoolShare cmp = op_select(selector, stack_selector);
+    ArithShare acmp = to_arith(cmp);
+    if (one.is_null()) one = constant(ac, 1u, bitlen);
+    ArithShare notacmp = one - acmp;
+    selector.num = acmp * selector.num + notacmp * stack_selector.num;
+    selector.den = acmp * selector.den + notacmp * stack_selector.den;
+    for(size_t i=0; i!=ntargets; ++i)
+      targets[i] = cmp.mux(targets[i], stack_targets[i]);
+#ifdef DEBUG_SEL_GADGETS
+    print_share(cmp, "cmp (final)");
+    print_share(acmp, "acmp (final)");
+    print_share(one, "one (final)");
+    print_share(notacmp, "notacmp (final)");
+#endif
+  }
+}
+
+
+ArithQuotientSelector make_max_selector(const A2BConverter& to_bool) {
+  return [&to_bool] (auto a, auto b) {
+      ArithShare ax = a.num * b.den;
+      ArithShare bx = b.num * a.den;
+      return to_bool(ax) > to_bool(bx);
+  };
+}
+
+ArithQuotientSelector make_min_selector(const A2BConverter& to_bool) {
+  return [&to_bool] (auto a, auto b) {
+      ArithShare ax = a.num * b.den;
+      ArithShare bx = b.num * a.den;
+      return to_bool(ax) < to_bool(bx);
+  };
+}
+
+
+void max_index(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const A2BConverter& to_bool, const B2AConverter& to_arith) {
+  auto op_select= make_max_selector(to_bool);
+  return split_select_quotient_target(selector, targets, op_select, to_arith);
+}
+
+void min_index(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const A2BConverter& to_bool, const B2AConverter& to_arith) {
+  auto op_select= make_min_selector(to_bool);
+  return split_select_quotient_target(selector, targets, op_select, to_arith);
+}
+
+BoolShare reinterpret_share(const ArithShare& a, BooleanCircuit* bc) {
+  assert(bc->GetContext() == S_BOOL && "This crazy stuff only works with bool circuits.");
+  ArithmeticCircuit* ac = a.get_circuit();
+  // hack: this writes the share value to gate.gs.val
+  //auto aout_share = make_unique<share>(ac->PutSharedOUTGate(a.get()));
+  //uint32_t aout_gateid = aout_share->get_wire_id(0);
+  // Treat wire of arith share as bool wire and split
+  vector<uint32_t> wires = ac->PutSplitterGate(a.get()->get_wire_id(0),
+      vector<uint32_t>(ac->GetShareBitLen(), 1));
+  return BoolShare{bc, wires};
+}
+
+// TODO#13 If we can mux with ArithShares, use it here.
+ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool, const B2AConverter& to_arith) {
+  /* Old implementation uses bool muxing
+  BoolQuotient q = max(a, b, to_bool);
+  return {to_arith(q.num), to_arith(q.den)};
+  */
+  uint32_t nvals  = a.num.get_nvals();
+  assert(a.den.get_nvals() == nvals);
+  assert(b.num.get_nvals() == nvals);
+  assert(b.den.get_nvals() == nvals);
+  ArithShare ax = a.num * b.den;
+  ArithShare bx = b.num * a.den;
+  // convert to bool
+  BoolShare b_ax = to_bool(ax), b_bx = to_bool(bx);
+  BoolShare cmp = (b_ax > b_bx);
+  ArithShare acmp = to_arith(cmp);
+  ArithmeticCircuit* acirc = acmp.get_circuit();
+  ArithShare one = constant_simd(acirc, 1u, acirc->GetShareBitLen(), nvals);
+  ArithShare notcmp = one - acmp;
+#ifdef DEBUG_SEL_GADGETS
+  print_share(cmp, "max cmp");
+  print_share(acmp, "max acmp");
+  print_share(notcmp, "max notcmp");
+#endif
+
+  ArithShare num = acmp * a.num + notcmp * b.num;
+  ArithShare den = acmp * a.den + notcmp * b.den;
+  return {num, den};
+}
+
+ArithQuotient max(const vector<ArithQuotient>& qs,
+    const A2BConverter& to_bool, const B2AConverter& to_arith) {
+  return binary_accumulate(qs, (BinaryOp_ArithQuotient)
+      [&to_bool, &to_arith](auto a, auto b) {
+      return max(a, b, to_bool, to_arith);
+      });
+}
+
+BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool) {
+  uint32_t nvals  = a.num.get_nvals();
+  assert(a.den.get_nvals() == nvals);
+  assert(b.num.get_nvals() == nvals);
+  assert(b.den.get_nvals() == nvals);
+  ArithShare ax = a.num * b.den;
+  ArithShare bx = b.num * a.den;
+  // convert to bool
+  BoolShare b_ax = to_bool(ax), b_bx = to_bool(bx);
+  BoolShare cmp = (b_ax > b_bx);
+
+  BoolShare num = cmp.mux(to_bool(a.num), to_bool(b.num));
+  BoolShare den = cmp.mux(to_bool(a.den), to_bool(b.den));
+  return {num, den};
 }
 
 } // namespace sel

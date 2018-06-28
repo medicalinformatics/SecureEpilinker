@@ -30,6 +30,36 @@ using namespace std;
 
 namespace sel {
 
+// https://stackoverflow.com/questions/3272424/compute-fast-log-base-2-ceiling
+int ceil_log2(unsigned long long x)
+{
+  static const unsigned long long t[6] = {
+    0xFFFFFFFF00000000ull,
+    0x00000000FFFF0000ull,
+    0x000000000000FF00ull,
+    0x00000000000000F0ull,
+    0x000000000000000Cull,
+    0x0000000000000002ull
+  };
+
+  int y = (((x & (x - 1)) == 0) ? 0 : 1);
+  int j = 32;
+  int i;
+
+  for (i = 0; i < 6; i++) {
+    int k = (((x & t[i]) == 0) ? 0 : j);
+    y += k;
+    x >>= k;
+    j >>= 1;
+  }
+
+  return y;
+}
+
+int ceil_log2_min1(unsigned long long x) {
+  return max(1, ceil_log2(x));
+}
+
 std::vector<uint8_t> vector_bool_to_bitmask(const std::vector<bool>& vb) {
   vector<uint8_t> v;
   size_t size_bytes{bitbytes(vb.size())};
@@ -72,44 +102,7 @@ std::ostream& operator<< (std::ostream& out, const std::vector<uint8_t>& v) {
     return out;
 }
 
-std::string print_aby_config(const SecureEpilinker::ABYConfig& conf) {
-  return ((conf.role == SERVER) ? "Server Config\n"s : "Client Config:\n"s) +
-    "Sharing: "s + ((conf.bool_sharing == S_YAO) ? "Yao\n"s : "GMW\n"s ) +
-    "Remote Host: "s + conf.remote_host + ":"s + to_string(conf.port) + "\n"s +
-    "Threads: "s + to_string(conf.nthreads) + '\n';
-
-}
-
-string print_epilink_config(const EpilinkConfig& conf){
-  string returnstring{"Epilink Configuration\n"};
-  returnstring += "Bitmask size (in Bit):\t"s + to_string(conf.size_bitmask) + '\n';
-  returnstring += "Threshold match: "s + to_string(conf.threshold) + '\n';
-  returnstring += "Threshold tentatice match: " + to_string(conf.tthreshold) + '\n';
-  returnstring += "Number of bitmask field weights: " + to_string(conf.hw_weights.size()) + '\n';
-  returnstring += "Number of binary field weights: " + to_string(conf.bin_weights.size()) + '\n';
-  return returnstring;
-}
-
-string print_epilink_input(const EpilinkServerInput& in){
-  return "Server Input printing not ready yet!\n";
-}
-
-string print_epilink_input(const EpilinkClientInput& in){
-  string returnstring{"Client Input\n-----\nBitmask Records:\n-----\n"};
-  for (size_t i = 0; i != in.hw_record.size(); ++i){
-    for(const auto& byte : in.hw_record[i]) {
-      returnstring += to_string(byte)+' ';
-    }
-    returnstring += "Empty: "s+(in.hw_rec_empty[i]? "Yes\n" : "No\n");
-  }
-  returnstring += "-----\nBinary Records\n-----\n";
-  for (size_t i = 0; i != in.bin_record.size(); ++i){
-    returnstring += to_string(in.bin_record[i])+" Empty: "+(in.bin_rec_empty[i]? "Yes\n" : "No\n");
-  }
-  return returnstring + "Number of database records: " + to_string(in.nvals) +'\n';
-}
-
-  std::string generate_id(){
+std::string generate_id(){
   const auto timestamp{chrono::system_clock::now().time_since_epoch()};
   std::string tempstring{
       to_string(chrono::duration_cast<chrono::milliseconds>(timestamp).count())};
@@ -138,13 +131,15 @@ std::istream& safeGetline(std::istream& is, std::string& t)
         case '\n':
             return is;
         case '\r':
-            if(sb->sgetc() == '\n')
+            if(sb->sgetc() == '\n'){
                 sb->sbumpc();
+            }
             return is;
         case std::streambuf::traits_type::eof():
             // Also handle the case when the last line has no line ending
-            if(t.empty())
+            if(t.empty()){
                 is.setstate(std::ios::eofbit);
+            }
             return is;
         default:
             t += (char)c;
@@ -165,5 +160,4 @@ vector<string> get_headers(istream& is,const string& header){
   }
   return headers;
 }
-
 } // namespace sel

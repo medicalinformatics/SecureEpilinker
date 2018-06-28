@@ -17,11 +17,11 @@
 */
 
 #include <memory>
-#include <random>
 #include <algorithm>
-#include <limits>
+#ifdef DEBUG_SEL_INPUT
 #include <fmt/format.h>
-#include "abycore/circuit/abycircuit.h"
+#include <iostream>
+#endif
 #include "epilink_input.h"
 #include "util.h"
 
@@ -30,123 +30,73 @@ using fmt::print;
 
 namespace sel {
 
-EpilinkConfig::EpilinkConfig(VWeight hw_weights, VWeight bin_weights,
-      vector<IndexSet> hw_exchange_groups, vector<IndexSet> bin_exchange_groups,
+constexpr auto BIN = FieldComparator::BINARY;
+constexpr auto BM = FieldComparator::NGRAM;
+
+EpilinkConfig::EpilinkConfig(
+      std::map<FieldComparator, VWeight> weights_,
+      std::map<FieldComparator, std::vector<IndexSet>> exchange_groups_,
       uint32_t size_bitmask, double threshold, double tthreshold) :
-  hw_weights{hw_weights}, bin_weights{bin_weights},
-  hw_exchange_groups{hw_exchange_groups}, bin_exchange_groups{bin_exchange_groups},
-  size_bitmask{size_bitmask}, bytes_bitmask{bits_in_bytes(size_bitmask)},
-  size_hw{ceil_log2(size_bitmask+1)},
-  threshold{threshold}, tthreshold{tthreshold},
-  nhw_fields{hw_weights.size()}, nbin_fields{bin_weights.size()},
-  nfields{nhw_fields + nbin_fields},
-  // evenly distribute precision bits between weight and dice-coeff
+  weights {weights_},
+  exchange_groups {exchange_groups_},
+  size_bitmask {size_bitmask},
+  bytes_bitmask (bitbytes(size_bitmask)),
+  size_hw (ceil_log2(size_bitmask+1)),
+  threshold {threshold},
+  tthreshold {tthreshold},
+  nfields {transform_map(weights, [](auto ws){return ws.size();})},
+  nfields_total{nfields.at(BM) + nfields.at(BIN)},
+  // Evenly distribute precision bits between weight^2 and dice-coeff
+  // When calculating the max of a quotient of the form fw/w, we have to compare
+  // factors of the form fw*w, where the field weight fw is itself a sum of factor of a
+  // weight and dice coefficient d. The denominator w is itself potentially a
+  // sum of weights. So in order for the CircUnit to not overflow for a product
+  // of the form sum_n(d * w) * sum_n(w), it has to hold that
+  // ceil_log2(n^2) + dice_prec + 2*weight_prec <= BitLen = sizeof(CircUnit).
   //dice_prec{(BitLen - ceil_log2(nfields))/2}, // TODO better this one and
   //custom integer division
-  dice_prec{16 - 1 - ceil_log2(size_bitmask + 1)},
+  dice_prec(16 - 1 - ceil_log2(size_bitmask + 1)),
   //weight_prec{ceil_divide((BitLen - ceil_log2(nfields)), 2)}, // TODO ^^^
-  weight_prec{BitLen - ceil_log2(nfields) - dice_prec},
+  weight_prec{(BitLen - ceil_log2(nfields_total^2) - dice_prec)/2},
   max_weight{max(
-      nhw_fields ? *max_element(hw_weights.cbegin(), hw_weights.cend()) : 0.0,
-      nbin_fields ? *max_element(bin_weights.cbegin(), bin_weights.cend()) :0.0
-      )},
-  hw_weights_r{rescale_weights(hw_weights, weight_prec, max_weight)},
-  bin_weights_r{rescale_weights(bin_weights, weight_prec, max_weight)}
+      nfields.at(BM) ?
+        *max_element(weights.at(BM).cbegin(), weights.at(BM).cend()) : 0.0,
+      nfields.at(BIN) ?
+        *max_element(weights.at(BIN).cbegin(), weights.at(BIN).cend()) : 0.0
+      )}
   {
-    // We sum up nfields products of dice_prec+weight_prec values, so they must
-    // fit into the total BitLen
-    assert (dice_prec + weight_prec + ceil_log2(nfields) == BitLen);
+    // Division by 2 for weight_prec initialization could have wasted one bit
+    if (dice_prec + 2*weight_prec + ceil_log2(nfields_total^2) < BitLen) ++dice_prec;
+    assert (dice_prec + 2*weight_prec + ceil_log2(nfields_total^2) == BitLen);
 #ifdef DEBUG_SEL_INPUT
     print("BitLen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
-        BitLen, nfields, dice_prec, weight_prec);
+        BitLen, nfields_total, dice_prec, weight_prec);
 #endif
   }
 
 void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
-  assert (dice_prec_ + weight_prec_ + ceil_log2(nfields) <= BitLen);
+  if (dice_prec_ + 2*weight_prec_ + ceil_log2(nfields_total^2) > BitLen) {
+    throw runtime_error("Given dice and weight precision would potentially let the CircUnit overflow!");
+  }
 
   dice_prec = dice_prec_;
   weight_prec = weight_prec_;
 }
 
 EpilinkServerInput::EpilinkServerInput(
-  vector<VBitmask> hw_database, vector<VCircUnit> bin_database,
-  vector<vector<bool>> hw_db_empty, vector<vector<bool>> bin_db_empty) :
-  hw_database{hw_database}, bin_database{bin_database},
-  hw_db_empty{hw_db_empty}, bin_db_empty{bin_db_empty},
-  nvals{hw_database.empty() ?
-    bin_database.at(0).size() : hw_database.at(0).size()}
+  vector<VBitmask> bm_database, vector<VCircUnit> bin_database,
+  vector<vector<bool>> bm_db_empty, vector<vector<bool>> bin_db_empty) :
+  bm_database{bm_database}, bin_database{bin_database},
+  bm_db_empty{bm_db_empty}, bin_db_empty{bin_db_empty},
+  nvals{bm_database.empty() ?
+    bin_database.at(0).size() : bm_database.at(0).size()}
 {
   // check that all vectors over records have same size
-  check_vectors_size(hw_database, nvals, "hw_database");
+  check_vectors_size(bm_database, nvals, "bm_database");
   check_vectors_size(bin_database, nvals, "bin_database");
-  check_vectors_size(hw_db_empty, nvals, "hw_db_empty");
+  check_vectors_size(bm_db_empty, nvals, "bm_db_empty");
   check_vectors_size(bin_db_empty, nvals, "bin_db_empty");
 }
-/*
-vector<Weight> gen_random_weights(const mt19937& gen, const uint32_t nfields) {
-  // random weights between 1.0 and 24.0
-  uniform_real_distribution<Weight> weight_dis(1.0, 24.0);
-  vector<Weight> weights(nfields);
-  generate(weights.begin(), weights.end(),
-      [&weight_dis, &gen](){return weight_dis(gen);});
-  return weights;
-}
-
-VBitmask gen_random_hw_vec(const mt19937& gen, const uint32_t size, const uint32_t bitmask_size) {
-  uniform_int_distribution<BitmaskUnit> dis{};
-  uint32_t bitmask_bytes = bits_in_bytes(bitmask_size);
-  vector<Bitmask> ret(size);
-  for (auto& bm : ret) {
-    bm.resize(bitmask_bytes);
-    generate(bm.begin(), bm.end(), [&gen, &dis](){ return dis(gen); });
-  }
-  return ret;
-}
-
-VCircUnit gen_random_bin_vec(const mt19937& gen, const uint32_t size) {
-  uniform_int_distribution<CircUnit> dis{};
-  vector<CircUnit> ret(size);
-  generate(ret.begin(), ret.end(), [&gen, &dis](){ return dis(gen); });
-  return ret;
-}
-
-EpilinkClientInput gen_random_client_input(
-    const uint32_t seed, const uint32_t bitmask_size,
-    const uint32_t nhw_fields, const uint32_t nbin_fields) {
-  mt19937 gen(seed);
-
-  return EpilinkClientInput{
-    gen_random_weights(gen, nhw_fields),
-    gen_random_weights(gen, nbin_fields),
-    gen_random_hw_vec(gen, nhw_fields, bitmask_size),
-    gen_random_bin_vec(gen, nbin_fields)};
-}
-
-
-EpilinkServerInput gen_random_server_input(
-    const uint32_t seed, const uint32_t bitmask_size,
-    const uint32_t nhw_fields, const uint32_t nbin_fields,
-    const uint32_t nvals) {
-  mt19937 gen(seed);
-
-  // random weights
-  vector<Weight> hw_weights = gen_random_weights(gen, nhw_fields);
-  vector<Weight> bin_weights = gen_random_weights(gen, nbin_fields);
-  // random database
-  vector<vector<Bitmask>> hw_database(nhw_fields);
-  for (auto& col: hw_database) {
-    col = gen_random_hw_vec(gen, nvals, bitmask_size);
-  }
-  vector<vector<CircUnit>> bin_database(nbin_fields);
-  for (auto& col: bin_database) {
-    col = gen_random_bin_vec(gen, nvals);
-  }
-
-  return EpilinkServerInput{hw_weights, bin_weights,
-    hw_database, bin_database};
-}
-*/
 
 // hammingweight of bitmasks
 CircUnit hw(const Bitmask& bm) {
@@ -201,3 +151,17 @@ CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight) {
 }
 
 } // namespace sel
+
+std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in) {
+  os << "Client Input\n-----\nBitmask Records:\n-----\n";
+  for (size_t i = 0; i != in.bm_record.size(); ++i){
+    os << (in.bm_rec_empty[i] ? "(-) " : "(+) ");
+    for (auto& b : in.bm_record[i]) os << b;
+    os << '\n';
+  }
+  os << "-----\nBinary Records\n-----\n";
+  for (size_t i = 0; i != in.bin_record.size(); ++i){
+    os << (in.bin_rec_empty[i] ? "(-) " : "(+) ") << in.bin_record[i] << '\n';
+  }
+  return os << "Number of database records: " << in.nvals;
+}
