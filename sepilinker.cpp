@@ -140,8 +140,12 @@ int main(int argc, char* argv[]) {
   auto settings = std::make_shared<restbed::Settings>();
   ssl_settings->set_port(server_config["port"].get<unsigned>());
   ssl_settings->set_bind_address("0.0.0.0");
-  // settings->set_port(8080);
-  settings->set_ssl_settings(ssl_settings);
+  settings->set_worker_limit( 4 );
+  if(server_config["useSSL"].get<bool>()){
+    settings->set_ssl_settings(ssl_settings);
+  } else {
+    settings->set_port(8080);
+  }
 
   initializer.publish(service);
   linkrecord_handler.publish(service);

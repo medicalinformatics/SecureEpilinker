@@ -4,5 +4,6 @@
 "serverCertificatePath": "../data/server.crt",
 "serverDHPath": "../data/dh768.pem",
 "initSchemaPath": "../data/init-schema.json",
-"linkRecordSchemaPath": "../data/linkrecord-schema.json"
+"linkRecordSchemaPath": "../data/linkrecord-schema.json",
+"useSSL": true
 }
