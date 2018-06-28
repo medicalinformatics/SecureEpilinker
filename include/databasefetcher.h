@@ -29,30 +29,20 @@
 namespace sel {
 class LocalConfiguration;
 
-struct PollData {
-  size_t todate;
-  std::map<FieldName, std::vector<Bitmask>> hw_data;
-  std::map<FieldName, VCircUnit> bin_data;
-  std::map<FieldName, std::vector<bool>> hw_empty;
-  std::map<FieldName, std::vector<bool>> bin_empty;
-  std::vector<std::map<std::string, std::string>> ids;
-};
-
 class DatabaseFetcher {
  public:
-  PollData fetch_data(AuthenticationConfig* l_auth);
-  DatabaseFetcher(LocalConfiguration* const parent, const std::string& url)
-      : m_url(url), m_parent(parent) {}
-  DatabaseFetcher(LocalConfiguration* const parent) : m_parent(parent) {}
+  ServerData fetch_data();
+  DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf, std::shared_ptr<const AlgorithmConfig> algo_conf, const std::string& url, AuthenticationConfig const* l_auth)
+      : m_url(url), m_local_config(local_conf), m_algo_config(algo_conf), m_local_authentication(l_auth) {}
 
   void set_url(const std::string& url) { m_url = url; }
   void set_page_size(unsigned size) { m_page_size = size; }
   size_t get_todate() const { return m_todate; }
 
  private:
-  nlohmann::json get_next_page(AuthenticationConfig* l_auth) const;
-  nlohmann::json request_page(const std::string& url,
-                              AuthenticationConfig* l_auth) const;
+  nlohmann::json get_next_page() const;
+  nlohmann::json request_page(const std::string& url
+                              ) const;
   void get_page_data(const nlohmann::json&);
   std::map<FieldName, std::vector<Bitmask>> m_hw_data;
   std::map<FieldName, sel::VCircUnit> m_bin_data;
@@ -65,7 +55,9 @@ class DatabaseFetcher {
   std::string m_next_page;
   size_t m_todate;
   std::string m_url;
-  LocalConfiguration* const m_parent;
+  std::shared_ptr<const LocalConfiguration> m_local_config;
+  std::shared_ptr<const AlgorithmConfig> m_algo_config;
+  AuthenticationConfig const * m_local_authentication;
 };
 
 }  // namespace sel

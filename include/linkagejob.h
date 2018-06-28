@@ -39,11 +39,12 @@ namespace sel {
 class ConnectionHandler;
 class LocalConfiguration;
 class RemoteConfiguration;
+class ServerHandler;
 
 class LinkageJob {
  public:
    LinkageJob();
-   LinkageJob(std::shared_ptr<LocalConfiguration>, std::shared_ptr<RemoteConfiguration>);
+   LinkageJob(std::shared_ptr<const LocalConfiguration>, std::shared_ptr<const RemoteConfiguration>, std::shared_ptr<const AlgorithmConfig>, std::shared_ptr<ServerHandler>);
    void set_callback(CallbackConfig cc) {m_callback = std::move(cc);}
    void add_hw_data_field(const FieldName& fieldname, DataField field, bool);
    void add_bin_data_field(const FieldName& fieldname, DataField field, bool);
@@ -52,16 +53,18 @@ class LinkageJob {
    void run_job();
    void set_local_config(std::shared_ptr<LocalConfiguration>);
  private:
-   void set_id();
-   JobId m_id;
+  size_t signal_server();
+  JobId m_id;
   JobStatus m_status{JobStatus::QUEUED};
   std::map<FieldName, Bitmask> m_hw_data;
   std::map<FieldName, CircUnit> m_bin_data;
   std::map<FieldName, bool> m_hw_empty;
   std::map<FieldName, bool> m_bin_empty;
   CallbackConfig m_callback;
-  std::shared_ptr<LocalConfiguration> m_local_config;
-  std::shared_ptr<RemoteConfiguration> m_parent;
+  std::shared_ptr<const LocalConfiguration> m_local_config;
+  std::shared_ptr<const AlgorithmConfig> m_algo_config;
+  std::shared_ptr<const RemoteConfiguration> m_remote_config;
+  std::shared_ptr<ServerHandler> m_parent;
 };
 
 }  // namespace sel

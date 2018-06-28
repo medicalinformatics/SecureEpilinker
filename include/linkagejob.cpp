@@ -3,11 +3,10 @@
 \author  Tobias Kussel <kussel@cbs.tu-darmstadt.de>
 \copyright SEL - Secure EpiLinker
     Copyright (C) 2018 Computational Biology & Simulation Group TU-Darmstadt
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as published
-    by the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    This program is distributed in the hope that it will be useful,
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version. This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
     GNU Affero General Public License for more details.
@@ -17,42 +16,42 @@
 */
 
 #include "linkagejob.h"
-#include <chrono>
 #include <exception>
 #include <map>
-#include <random>
 #include <string>
 #include <variant>
 #include <vector>
 #include "fmt/format.h"
 #include "localconfiguration.h"
 #include "seltypes.h"
+#include "serverhandler.h"
 
 #include "epilink_input.h"
 #include "remoteconfiguration.h"
 #include "secure_epilinker.h"
 #include "util.h"
 
+#include <curlpp/Easy.hpp>
+#include <curlpp/Infos.hpp>
+#include <curlpp/Options.hpp>
+#include <curlpp/cURLpp.hpp>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 namespace sel {
-void LinkageJob::set_id() {
-  const auto timestamp{chrono::system_clock::now().time_since_epoch()};
-  m_id =
-      to_string(chrono::duration_cast<chrono::milliseconds>(timestamp).count());
-  random_shuffle(m_id.begin(), m_id.end());
-}
 
-LinkageJob::LinkageJob() {
-  set_id();
-}
+LinkageJob::LinkageJob() : m_id(generate_id()) {}
 
-LinkageJob::LinkageJob(shared_ptr<LocalConfiguration> l_conf,
-                       shared_ptr<RemoteConfiguration> parent)
-    : m_local_config(move(l_conf)), m_parent(parent) {
-  set_id();
-}
+LinkageJob::LinkageJob(shared_ptr<const LocalConfiguration> l_conf,
+                       shared_ptr<const RemoteConfiguration> r_conf,
+                       shared_ptr<const AlgorithmConfig> algo,
+                       shared_ptr<ServerHandler> server_handler)
+    : m_id(generate_id()),
+      m_local_config(move(l_conf)),
+      m_algo_config(move(algo)),
+      m_remote_config(move(r_conf)),
+      m_parent(move(server_handler)) {}
 
 void LinkageJob::add_hw_data_field(const FieldName& fieldname,
                                    DataField datafield,
@@ -85,7 +84,6 @@ void LinkageJob::run_job() {
 
   // Prepare Data, weights and exchange groups
 
-  const auto& algorithm_config{m_local_config->get_algorithm_config()};
   fmt::print("Job {} started\n", m_id);
 
   vector<Bitmask> hw_data;
@@ -112,8 +110,7 @@ void LinkageJob::run_job() {
   }
 
   VWeight hw_weights{m_local_config->get_weights(FieldComparator::NGRAM)};
-  VWeight bin_weights{
-      m_local_config->get_weights(FieldComparator::BINARY)};
+  VWeight bin_weights{m_local_config->get_weights(FieldComparator::BINARY)};
 
   // TODO(TK): To get: remote_ip, remote_port, nvals,
   // threads
@@ -121,44 +118,48 @@ void LinkageJob::run_job() {
   try {
     // Construct ABY Client
     // FIXME(TK): Magicnumbers
-    const e_sharing booleantype{S_BOOL};
-    const uint32_t nthreads{1};
-    size_t nvals;
-    fmt::print(
-        "Please insert number of records (no worries, this is only "
-        "temporary)\n");
-    cin >> nvals;
-
-    SecureEpilinker::ABYConfig aby_config{
-        CLIENT, booleantype, m_parent->get_remote_host(),
-        m_parent->get_remote_port(), nthreads};
-    EpilinkConfig epi_config{
-        hw_weights,
-        bin_weights,
-        m_local_config->get_exchange_group_indices(FieldComparator::NGRAM),
-        m_local_config->get_exchange_group_indices(FieldComparator::BINARY),
-        algorithm_config.bloom_length,
-        algorithm_config.threshold_match,
-        algorithm_config.threshold_non_match};
-
-    SecureEpilinker sepilinker_client{aby_config, epi_config};
-    sepilinker_client.build_circuit(nvals);
-    sepilinker_client.run_setup_phase();
+    size_t nvals = signal_server();
+    fmt::print("Server has {} Records\n", nvals);
+    auto epilinker{m_parent->get_epilink_client(m_remote_config->get_id())};
+    // TODO(TK): Correct position for building circuit (again)?
+    epilinker->build_circuit(nvals);
+    epilinker->run_setup_phase();
     EpilinkClientInput client_input{hw_data, bin_data, hw_empty, bin_empty,
                                     nvals};
-    fmt::print("Client running\n{}{}{}", print_aby_config(aby_config),
-               print_epilink_config(epi_config),
-               print_epilink_input(client_input));
-    const auto client_share{sepilinker_client.run_as_client(client_input)};
-    fmt::print("Client result:\n{}", client_share);
+    fmt::print("Client running\n{}", print_epilink_input(client_input));
+    // const auto client_share{epilinker->run_as_client(client_input)};
+    // fmt::print("Client result:\n{}", client_share);
+    fmt::print("Client exited successfuly with dummy values\n");
+    m_status = JobStatus::DONE;
   } catch (const exception& e) {
     fmt::print(stderr, "Error running MPC Client: {}\n", e.what());
     m_status = JobStatus::FAULT;
   }
-  m_status = JobStatus::DONE;
 }
 
 void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
   m_local_config = move(l_config);
 }
+
+size_t LinkageJob::signal_server() {
+  curlpp::Easy curl_request;
+  stringstream response_stream;
+  list<string> headers{
+      "Authorization: SEL ABCD",
+      "Remote-Identifier: "s + m_remote_config->get_remote_client_id()};
+  curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
+  curl_request.setOpt(new curlpp::Options::Url(
+      "https://"s + m_remote_config->get_remote_host() + ':' +
+      to_string(m_remote_config->get_remote_signaling_port()) + "/selconnect"));
+  curl_request.setOpt(new curlpp::Options::Post(true));
+  curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
+  curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
+  curl_request.setOpt(new curlpp::Options::WriteStream(&response_stream));
+  curl_request.setOpt(new curlpp::options::Header(1));
+  fmt::print("Sending linkage request\n");
+  curl_request.perform();
+  auto nval{stoull(get_headers(response_stream, "Record-Number").front())};
+  return nval;
+}
+
 }  // namespace sel

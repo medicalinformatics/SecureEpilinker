@@ -31,8 +31,9 @@
 
 namespace sel {
 class Validator;
-class ConnectionHandler;
+class ConfigurationHandler;
 class LinkageJob;
+class ServerHandler;
 
 class MonitorMethodHandler : public MethodHandler {
   /**
@@ -41,19 +42,19 @@ class MonitorMethodHandler : public MethodHandler {
  public:
   explicit MonitorMethodHandler(
       const std::string& method,
-      std::shared_ptr<ConnectionHandler> connection_handler)
-      : MethodHandler(method), m_connection_handler(connection_handler){}
+      std::shared_ptr<ServerHandler> server_handler)
+      : MethodHandler(method), m_server_handler(move(server_handler)){}
   explicit MonitorMethodHandler(
       const std::string& method,
-      std::shared_ptr<ConnectionHandler> connection_handler,
-      std::shared_ptr<Validator> validator)
+      std::shared_ptr<ServerHandler> server_handler,
+      std::shared_ptr<Validator>& validator)
       : MethodHandler(method, validator),
-        m_connection_handler(connection_handler){}
+        m_server_handler(move(server_handler)){}
   ~MonitorMethodHandler() = default;
   void handle_method(std::shared_ptr<restbed::Session>) const override;
 
  private:
-  std::shared_ptr<ConnectionHandler> m_connection_handler;
+  std::shared_ptr<ServerHandler> m_server_handler;
 
 };
 

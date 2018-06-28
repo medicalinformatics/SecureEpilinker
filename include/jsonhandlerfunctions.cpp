@@ -28,6 +28,7 @@
 #include "authenticationconfig.hpp"
 #include "base64.h"
 #include "connectionhandler.h"
+#include "serverhandler.h"
 #include "fmt/format.h"
 #include "localconfiguration.h"
 #include "nlohmann/json.hpp"
@@ -78,13 +79,19 @@ bool check_exchange_group(const unordered_set<FieldName>& fieldnames,
 SessionResponse valid_linkrecord_json_handler(
     const nlohmann::json& j,
     const RemoteId& remote_id,
-    const shared_ptr<ConnectionHandler>& handler) {
+    const shared_ptr<ConfigurationHandler>& config_handler,
+    const shared_ptr<ServerHandler>& server_handler,
+    const shared_ptr<ConnectionHandler>&) {
   try {
     JobId job_id;
-    if (handler->num_connections()) {
+    if (config_handler->get_remote_count()) {
+      const auto local_config{config_handler->get_local_config()};
+      const auto remote_config{config_handler->get_remote_config(remote_id)};
+      const auto algo_config{config_handler->get_algorithm_config()};
       auto job{make_shared<LinkageJob>(
-          handler->get_local_configuration(),
-          handler->get_remote_configuration(remote_id))};
+          local_config,
+          remote_config,
+          algo_config, server_handler)};
       job_id = job->get_id();
       fmt::print("Ressource Path: {}\n", job_id);
       try {
@@ -94,7 +101,7 @@ SessionResponse valid_linkrecord_json_handler(
         job->set_callback(move(callback));
 
         for (auto f = j["fields"].begin(); f != j["fields"].end(); ++f) {
-          const auto& field_config = handler->get_field(f.key());
+          const auto& field_config = local_config->get_field(f.key());
           DataField tempfield;
           bool empty{false};
           switch (field_config.type) {
@@ -108,11 +115,8 @@ SessionResponse valid_linkrecord_json_handler(
               for(const auto& byte : tempbytearray){
                 empty = empty && (byte == 0x00);
               }
-              //              fmt::print("Bitstring: {}\n",
-              //              print_bytearray(tempbytearray));
               if (!check_bloom_length(tempbytearray,
-                                      (handler->get_local_configuration())
-                                          ->get_bloom_length())) {
+                                      algo_config->bloom_length)) {
                 fmt::print(
                     "Warning: Set bits after bloomfilterlength. Set to "
                     "zero.\n");
@@ -156,7 +160,7 @@ SessionResponse valid_linkrecord_json_handler(
           }
         }
 
-        handler->add_job(remote_id, move(job));
+        server_handler->add_linkage_job(remote_id, move(job));
       } catch (const exception& e) {
         fmt::print(stderr, "Error: {}\n", e.what());
         return {restbed::BAD_REQUEST,
@@ -185,12 +189,14 @@ SessionResponse valid_linkrecord_json_handler(
 SessionResponse valid_init_json_handler(
     const nlohmann::json& j,
     RemoteId remote_id,
-    const shared_ptr<ConnectionHandler>& handler) {
+    const shared_ptr<ConfigurationHandler>& config_handler,
+    const shared_ptr<ServerHandler>& server_handler,
+    const shared_ptr<ConnectionHandler>& connection_handler) {
   if (remote_id == "local") {
     auto local_config = make_shared<LocalConfiguration>();
     fmt::print("Creating local configuration\n");
     vector<ML_Field> fields;
-    AlgorithmConfig algo;
+    auto algo{make_shared<AlgorithmConfig>()};
     try {
       // Get local Authentication
       auto l_auth{get_auth_object(j["localAuthentication"])};
@@ -219,14 +225,14 @@ SessionResponse valid_init_json_handler(
           throw runtime_error("Invalid Exchange Group! Field doesn't exist!");
         }
       }
+      config_handler->set_local_config(move(local_config));
       // Get Algorithm Config
-      algo.type = str_to_atype(j["algorithm"]["algoType"].get<string>());
-      algo.bloom_length = j["algorithm"]["bloomLength"].get<unsigned>();
-      algo.threshold_match = j["algorithm"]["threshold_match"].get<double>();
-      algo.threshold_non_match =
+      algo->type = str_to_atype(j["algorithm"]["algoType"].get<string>());
+      algo->bloom_length = j["algorithm"]["bloomLength"].get<unsigned>();
+      algo->threshold_match = j["algorithm"]["threshold_match"].get<double>();
+      algo->threshold_non_match =
           j["algorithm"]["threshold_non_match"].get<double>();
-      local_config->set_algorithm_config(algo);
-      handler->set_local_configuration(move(local_config));
+      config_handler->set_algorithm_config(move(algo));
       return {restbed::OK, "", {{"Connection", "Close"}}};
     } catch (const runtime_error& e) {
       return {restbed::INTERNAL_SERVER_ERROR,
@@ -234,27 +240,36 @@ SessionResponse valid_init_json_handler(
               {{"Content-Length", to_string(string(e.what()).length())}}};
     }
   } else {  // remote Config
-    auto remote_config = make_shared<RemoteConfiguration>(remote_id);
     fmt::print("Creating remote Config for: \"{}\"\n", remote_id);
-    try {
       ConnectionConfig con;
       ConnectionConfig linkage_service;
+      auto local_conf{config_handler->get_local_config()};
+      auto algo_conf{config_handler->get_algorithm_config()};
+    try {
       // Get Connection Profile
       con.url = j["connectionProfile"]["url"].get<string>();
       con.authentication =
           get_auth_object(j["connectionProfile"]["authentication"]);
-      remote_config->set_connection_profile(move(con));
       // Get Linkage Service Config
       linkage_service.url = j["linkageService"]["url"].get<string>();
       linkage_service.authentication =
           get_auth_object(j["linkageService"]["authentication"]);
-      remote_config->set_linkage_service(move(linkage_service));
     } catch (const runtime_error& e) {
       return {restbed::INTERNAL_SERVER_ERROR,
               e.what(),
               {{"Content-Length", to_string(string(e.what()).length())}}};
     }
-    handler->upsert_connection(remote_config);
+    auto remote_config = make_shared<RemoteConfiguration>(remote_id);
+    remote_config->set_connection_profile(move(con));
+    remote_config->set_linkage_service(move(linkage_service));
+    auto remote_info{connection_handler->initialize_aby_server(remote_config)};
+    remote_config->set_aby_port(remote_info.port);
+    connection_handler->mark_port_used(remote_info.port);
+    remote_config->set_remote_client_id(remote_info.id);
+    config_handler->set_remote_config(move(remote_config));
+    auto fun = bind(&ServerHandler::insert_client, server_handler.get(), placeholders::_1);
+    std::thread client_creator(fun, remote_id);
+    client_creator.detach();
 
     return {restbed::OK, "", {{"Connection", "Close"}}};
   }

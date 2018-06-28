@@ -20,16 +20,18 @@
 #define JSONMETHODHANDLER_H
 #pragma once
 
-#include "methodhandler.hpp"
-#include "seltypes.h"
-#include "valijson/validation_results.hpp"
-#include "restbed"
 #include <memory>
 #include <string>
+#include "methodhandler.hpp"
+#include "restbed"
+#include "seltypes.h"
+#include "serverhandler.h"
+#include "valijson/validation_results.hpp"
 
 // Forward Declarations
 namespace sel {
 class Validator;
+class ConfigurationHandler;
 class ConnectionHandler;
 
 class JsonMethodHandler : public MethodHandler {
@@ -39,15 +41,24 @@ class JsonMethodHandler : public MethodHandler {
  public:
   explicit JsonMethodHandler(
       const std::string& method,
-      std::shared_ptr<ConnectionHandler> connection_handler)
-      : MethodHandler(method), m_connection_handler(connection_handler) {}
+      std::shared_ptr<ConfigurationHandler> configuration_handler,
+      std::shared_ptr<ConnectionHandler> connection_handler,
+      std::shared_ptr<ServerHandler> server_handler)
+      : MethodHandler(method),
+        m_configuration_handler(move(configuration_handler)),
+        m_connection_handler(move(connection_handler)),
+        m_server_handler(move(server_handler)) {}
 
   explicit JsonMethodHandler(
       const std::string& method,
+      std::shared_ptr<ConfigurationHandler> configuration_handler,
       std::shared_ptr<ConnectionHandler> connection_handler,
+      std::shared_ptr<ServerHandler> server_handler,
       std::shared_ptr<Validator> validator)
       : MethodHandler(method, validator),
-        m_connection_handler(connection_handler) {}
+        m_configuration_handler(move(configuration_handler)),
+        m_connection_handler(move(connection_handler)),
+        m_server_handler(move(server_handler)) {}
 
   ~JsonMethodHandler(){};
 
@@ -55,11 +66,16 @@ class JsonMethodHandler : public MethodHandler {
 
   void handle_continue(std::shared_ptr<restbed::Session>) const;
 
-  void use_data(const std::shared_ptr<restbed::Session>&,const nlohmann::json&, const std::string&) const;
+  void use_data(const std::shared_ptr<restbed::Session>&,
+                const nlohmann::json&,
+                const std::string&) const;
 
-  void set_valid_callback(
-      std::function<SessionResponse(const nlohmann::json&, const std::string&,
-                         std::shared_ptr<ConnectionHandler>)> fun) {
+  void set_valid_callback(std::function<SessionResponse(
+                              const nlohmann::json&,
+                              const std::string&,
+                              const std::shared_ptr<ConfigurationHandler>&,
+                              const std::shared_ptr<ServerHandler>&,
+                              const std::shared_ptr<ConnectionHandler>&)> fun) {
     m_valid_callback = fun;
   }
 
@@ -69,12 +85,19 @@ class JsonMethodHandler : public MethodHandler {
   }
 
  private:
+  std::shared_ptr<ConfigurationHandler> m_configuration_handler;
   std::shared_ptr<ConnectionHandler> m_connection_handler;
+  std::shared_ptr<ServerHandler> m_server_handler;
 
-  std::function<SessionResponse(const nlohmann::json&, const std::string&,  std::shared_ptr<ConnectionHandler>)>
+  std::function<SessionResponse(const nlohmann::json&,
+                                const std::string&,
+                                const std::shared_ptr<ConfigurationHandler>&,
+                                const std::shared_ptr<ServerHandler>&,
+                                const std::shared_ptr<ConnectionHandler>&)>
       m_valid_callback{nullptr};
 
-  std::function<SessionResponse(valijson::ValidationResults&)> m_invalid_callback{nullptr};
+  std::function<SessionResponse(valijson::ValidationResults&)>
+      m_invalid_callback{nullptr};
 };
 
 }  // namespace sel

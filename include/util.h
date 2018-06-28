@@ -192,6 +192,16 @@ std::string print_aby_config(const SecureEpilinker::ABYConfig&);
 std::string print_epilink_config(const EpilinkConfig&);
 std::string print_epilink_input(const EpilinkServerInput&);
 std::string print_epilink_input(const EpilinkClientInput&);
+
+std::string generate_id();
+
+std::istream& safeGetline(std::istream&, std::string&);
+std::vector<std::string> get_headers(std::istream& is,const std::string& header);
+
+// Forward Declarations
+class LocalConfiguration;
+struct AlgorithmConfig;
+EpilinkConfig get_epilink_config(std::shared_ptr<const LocalConfiguration>, std::shared_ptr<const AlgorithmConfig>);
 } // namespace sel
 
 // Custom fmt formatters for our types

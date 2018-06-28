@@ -23,9 +23,11 @@ computations
 
 #include "seltypes.h"
 #include "localconfiguration.h"
+#include "configurationhandler.h"
 #include <memory>
 #include <unordered_map>
 #include <mutex>
+#include "util.h"
 
 namespace restbed {
 class Service;
@@ -37,54 +39,52 @@ class LinkageJob;
 class AuthenticationConfig;
 //class LocalConfiguration;
 
+  struct RemoteAddress {
+    std::string ip;
+    uint16_t port;
+    explicit RemoteAddress(std::string url) {
+      auto temp = split(url,':');
+      port = std::stoul(temp.back());
+      ip = temp.front();
+      if(ip == "localhost")
+        ip = "127.0.0.1";
+    }
+    RemoteAddress(std::string ip, uint16_t port) : ip(ip), port(port) {}
+  };
 class ConnectionHandler {
   /**
    * Handle connection configurations and jobs. Dispatch ABY computations
    */
  public:
+   struct RemoteInfo{std::string id; uint16_t port;};
   ConnectionHandler(restbed::Service* service);
-
-  void upsert_connection(std::shared_ptr<RemoteConfiguration> connection);
-
-  size_t num_connections() const;
-
-  void set_local_configuration(std::shared_ptr<LocalConfiguration>&& l_conf);
 
   bool connection_exists(const RemoteId& c_id) const;
 
-  void dispatch_job();  // TODO(TK): Empty function
+
+  void set_config_handler(std::shared_ptr<ConfigurationHandler> handler) {m_config_handler = std::move(handler);}
 
   const ML_Field& get_field(const FieldName& name);
 
   std::shared_ptr<restbed::Service> get_service() const;
 
-  void add_job(const RemoteId& remote_id, std::shared_ptr<LinkageJob> job);
 
-  std::pair<
-      std::unordered_map<JobId, std::shared_ptr<LinkageJob>>::iterator,
-      std::unordered_map<JobId, std::shared_ptr<LinkageJob>>::iterator>
-  find_job(const JobId& id);
-
-  void initiate_comparison() { 
-    std::lock_guard<std::mutex> lock(m_local_data_mutex);
-    m_local_configuration->run_comparison();
-  };
   std::shared_ptr<LocalConfiguration> get_local_configuration() const;
   std::shared_ptr<RemoteConfiguration> get_remote_configuration(const RemoteId&);
 
+  uint16_t get_free_port();
+  uint16_t choose_common_port(const std::string&);
+  void mark_port_used(uint16_t);
+
+  RemoteInfo initialize_aby_server(std::shared_ptr<RemoteConfiguration>);
+
  private:
-  void insert_connection(RemoteId&& remote_id,
-                         std::shared_ptr<RemoteConfiguration> connection);
-
-  void update_connection(const RemoteId& remote_id,
-                         std::shared_ptr<RemoteConfiguration> connection);
-
-  std::unordered_map<RemoteId, std::shared_ptr<RemoteConfiguration>>
-      m_connections;
-  std::shared_ptr<LocalConfiguration> m_local_configuration;
-  std::unordered_map<JobId, RemoteId> m_job_id_to_remote_id;
+  std::string get_available_ports() const;
+  std::shared_ptr<ConfigurationHandler> m_config_handler;
   std::shared_ptr<restbed::Service> m_service;
-  std::mutex m_local_data_mutex;
+  // TODO(TK): parameterize available ports
+  std::set<uint16_t> m_aby_available_ports{1337u,1338u,1339u,1340u,1341u, 1342u, 1343u};
+  std::mutex m_port_mutex;
 };
 
 }  // Namespace sel
