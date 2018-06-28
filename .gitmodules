@@ -25,3 +25,6 @@
 [submodule "extern/cxxopts"]
 	path = extern/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
+[submodule "extern/curlpp"]
+	path = extern/curlpp
+	url = https://github.com/jpbarrette/curlpp
