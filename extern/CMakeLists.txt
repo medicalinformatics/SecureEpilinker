@@ -30,3 +30,4 @@ add_custom_command(OUTPUT restbed_patched
   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/extern/restbed")
 add_custom_target(restbed_patch ALL DEPENDS restbed_patch)
 
+add_subdirectory(curlpp)
