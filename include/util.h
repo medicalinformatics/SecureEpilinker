@@ -146,7 +146,7 @@ std::map<Key, ToValue> transform_map(const std::map<Key, FromValue>& _map,
 template <class Key, class FromValue, class Transformer,
   class ToValue = decltype(std::declval<Transformer>()
       (std::declval<std::pair<const Key, FromValue>>()))>
-std::vector<Key, ToValue> transform_map_vec(const std::map<Key, FromValue>& _map,
+std::vector<ToValue> transform_map_vec(const std::map<Key, FromValue>& _map,
     Transformer _tr) {
   std::vector<ToValue> res;
   res.reserve(_map.size());
