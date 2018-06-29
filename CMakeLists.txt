@@ -128,7 +128,7 @@ add_dependencies(test_aby ENCRYPTO_utils)
 target_link_libraries(test_aby PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
   OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
 target_link_libraries(test_aby PRIVATE fmt::fmt-header-only cxxopts)
-set_property(TARGET test_aby PROPERTY CXX_STANDARD 14)
+set_property(TARGET test_aby PROPERTY CXX_STANDARD 17)
 target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3"
   "-DDEBUG_SEL_GADGETS")
 
@@ -149,7 +149,7 @@ target_compile_options(test_sel PRIVATE "-O0" "-ggdb" "-g3"
 # Test utils
 add_executable(test_util test/test_util.cpp include/util.cpp include/util.h)
 target_link_libraries(test_util PRIVATE fmt::fmt-header-only)
-set_property(TARGET test_util PROPERTY CXX_STANDARD 14)
+set_property(TARGET test_util PROPERTY CXX_STANDARD 17)
 target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
