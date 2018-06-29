@@ -26,13 +26,9 @@
 #include <memory>
 #include <string>
 #include <variant>
-<<<<<<< HEAD
 #include <vector>
-#include "secure_epilinker.h"
-=======
 #include <set>
 #include <cmath>
->>>>>>> refactor-input-data
 
 namespace sel {
 class AuthenticationConfig;
@@ -137,5 +133,4 @@ struct formatter<sel::FieldComparator> {
 };
 } // namespace fmt
 #endif // FMT_FORMAT_H_
-
-
+#endif // SEL_SELTYPES_H
