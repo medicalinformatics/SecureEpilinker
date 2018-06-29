@@ -31,6 +31,7 @@
 #include <cctype>
 #include <locale>
 #include <sstream>
+#include "epilink_input.h"
 
 namespace sel {
 
