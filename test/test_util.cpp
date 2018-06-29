@@ -42,6 +42,12 @@ void test_map() {
   assert (numsi ==  numst);
 }
 
+void test_map_str_double_to_vector_double() {
+  map<string,double> mw{{"f1", 2.3},{"f2",0.8},{"f3", 0.6543}};
+  vector<double> vw{transform_map_vec(mw,[&mw](pair<string,double> t){return t.second;})};
+  assert (vw.size() == mw.size());
+}
+
 } // namespace sel
 
 using namespace sel;
