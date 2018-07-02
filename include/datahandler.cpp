@@ -2,7 +2,6 @@
 #include "configurationhandler.h"
 #include "databasefetcher.h"
 #include "localconfiguration.h"
-#include "seltypes.h"
 #include <memory>
 #include <mutex>
 

@@ -21,6 +21,7 @@
 #pragma once
 
 #include "seltypes.h"
+#include "resttypes.h"
 #include "secure_epilinker.h"
 #include "connectionhandler.h"
 #include <map>

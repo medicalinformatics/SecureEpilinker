@@ -24,7 +24,8 @@
 #include <string>
 #include "methodhandler.hpp"
 #include "restbed"
-#include "seltypes.h"
+#include "resttypes.h"
+//#include "seltypes.h"
 #include "serverhandler.h"
 #include "valijson/validation_results.hpp"
 

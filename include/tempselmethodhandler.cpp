@@ -26,6 +26,7 @@ later version. This program is distributed in the hope that it will be useful,
 #include "restbed"
 #include "serverhandler.h"
 #include "util.h"
+#include "resttypes.h"
 
 using namespace std;
 namespace sel {

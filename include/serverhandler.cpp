@@ -25,6 +25,7 @@
 #include "connectionhandler.h"
 #include "epilink_input.h"
 #include "seltypes.h"
+#include "resttypes.h"
 #include <tuple>
 using namespace std;
 namespace sel {

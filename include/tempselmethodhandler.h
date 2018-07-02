@@ -24,7 +24,8 @@
 #include <string>
 #include "methodhandler.hpp"
 #include "restbed"
-#include "seltypes.h"
+//#include "seltypes.h"
+#include "resttypes.h"
 #include "valijson/validation_results.hpp"
 
 // Forward Declarations

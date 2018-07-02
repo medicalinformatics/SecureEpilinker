@@ -20,14 +20,13 @@
 #define SEL_DATAHANDLER_H
 #pragma once
 
-//#include "databasefetcher.h"
+#include "resttypes.h"
 #include <map>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
 #include "secure_epilinker.h"
-#include "seltypes.h"
 
 namespace sel {
 class ConfigurationHandler;

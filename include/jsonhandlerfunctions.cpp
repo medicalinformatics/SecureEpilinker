@@ -33,7 +33,7 @@
 #include "nlohmann/json.hpp"
 #include "remoteconfiguration.h"
 #include "restbed"
-#include "seltypes.h"
+#include "resttypes.h"
 #include "util.h"
 #include "valijson/validation_results.hpp"
 

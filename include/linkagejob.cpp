@@ -24,6 +24,7 @@ later version. This program is distributed in the hope that it will be useful,
 #include "fmt/format.h"
 #include "localconfiguration.h"
 #include "seltypes.h"
+#include "resttypes.h"
 #include "serverhandler.h"
 
 #include "epilink_input.h"

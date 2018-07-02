@@ -30,6 +30,7 @@ set(EPIRESTSRC
       include/databasefetcher.cpp
       include/datahandler.cpp
       include/jsonhandlerfunctions.cpp
+      include/resttypes.cpp
       include/seltypes.cpp
       include/serverhandler.cpp
       include/linkagejob.cpp
@@ -52,6 +53,7 @@ set(EPIRESTSRC
       include/databasefetcher.h
       include/datahandler.h
       include/jsonhandlerfunctions.h
+      include/resttypes.h
       include/seltypes.h
       include/serverhandler.h
       include/linkagejob.h

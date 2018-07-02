@@ -21,7 +21,7 @@
 #define SEL_AUTHENTICATIONCONFIG_HPP
 #pragma once
 
-#include "seltypes.h"
+#include "resttypes.h"
 #include <memory>
 #include <string>
 

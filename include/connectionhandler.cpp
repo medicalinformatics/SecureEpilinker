@@ -28,7 +28,7 @@ computations
 #include "localconfiguration.h"
 #include "remoteconfiguration.h"
 #include "restbed"
-#include "seltypes.h"
+//#include "seltypes.h"
 #include <curlpp/cURLpp.hpp>
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>

@@ -19,7 +19,7 @@
 #define SEL_CONFIGURATIONHANDLER_H
 #pragma once
 
-#include "seltypes.h"
+#include "resttypes.h"
 #include "linkagejob.h"
 #include <memory>
 #include <mutex>

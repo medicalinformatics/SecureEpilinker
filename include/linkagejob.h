@@ -22,6 +22,7 @@
 #pragma once
 
 #include "seltypes.h"
+#include "resttypes.h"
 #include "resourcehandler.h"
 #include "methodhandler.hpp"
 #include <memory>
