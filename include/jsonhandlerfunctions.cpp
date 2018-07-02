@@ -22,7 +22,6 @@
 #include <fstream>
 #include <memory>
 #include <string>
-#include <unordered_set>
 #include <vector>
 #include "apikeyconfig.hpp"
 #include "authenticationconfig.hpp"
@@ -67,8 +66,8 @@ unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json& j) {
   return make_unique<AuthenticationConfig>(AuthenticationType::NONE);
 }
 
-bool check_exchange_group(const unordered_set<FieldName>& fieldnames,
-                          const set<FieldName>& exchange_group) {
+bool check_exchange_group(const IndexSet& fieldnames,
+                          const IndexSet& exchange_group) {
   bool fields_present{true};
   for (const auto& f : exchange_group) {
     fields_present &= fieldnames.count(f);
@@ -190,7 +189,7 @@ SessionResponse valid_init_json_handler(
       auto url{j["dataService"]["url"].get<string>()};
       local_config->set_data_service(move(url));
       // Get Field Descriptions
-      unordered_set<FieldName> fieldnames;
+      IndexSet fieldnames;
       for (const auto& f : j["algorithm"]["fields"]) {
         ML_Field tempfield(
             f["name"].get<string>(), f["frequency"].get<double>(),
@@ -200,7 +199,7 @@ SessionResponse valid_init_json_handler(
         fieldnames.emplace(f["name"].get<string>());
       }
       for (const auto& eg : j["algorithm"]["exchangeGroups"]) {
-        set<FieldName> egroup;
+        IndexSet egroup;
         for (const auto& f : eg) {
           egroup.emplace(f.get<string>());
         }

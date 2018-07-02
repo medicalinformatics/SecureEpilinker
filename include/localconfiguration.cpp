@@ -18,7 +18,6 @@
 
 #include "localconfiguration.h"
 #include <exception>
-#include <set>
 #include <thread>
 #include "authenticationconfig.hpp"
 #include "databasefetcher.h"
@@ -50,7 +49,7 @@ std::map<FieldName, ML_Field> LocalConfiguration::get_fields() const {
   return m_fields;
 }
 
-void LocalConfiguration::add_exchange_group(set<FieldName> group) {
+void LocalConfiguration::add_exchange_group(IndexSet group) {
   for (const auto& f : group) {
     if (!field_exists(f)) {
       throw runtime_error("Invalid Exchange Group. Field(s) does not exist!");
@@ -59,7 +58,7 @@ void LocalConfiguration::add_exchange_group(set<FieldName> group) {
   }
 }
 
-vector<set<FieldName>> const& LocalConfiguration::get_exchange_groups() const {
+vector<IndexSet> const& LocalConfiguration::get_exchange_groups() const {
   return m_exchange_groups;
 }
 

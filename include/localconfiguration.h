@@ -27,7 +27,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <set>
 
 #include "authenticationconfig.hpp"
 #include "epilink_input.h"
@@ -52,8 +51,8 @@ class LocalConfiguration {
   const ML_Field& get_field(const FieldName& fieldname) const;
   std::map<FieldName, ML_Field> get_fields() const;
 
-  void add_exchange_group(std::set<FieldName> group);
-  std::vector<set<FieldName>> const& get_exchange_groups() const;
+  void add_exchange_group(IndexSet group);
+  std::vector<IndexSet> const& get_exchange_groups() const;
 
   bool field_exists(const FieldName& fieldname) const;
 
@@ -69,7 +68,7 @@ class LocalConfiguration {
  private:
   std::unique_ptr<AuthenticationConfig> m_local_authentication;
   std::map<FieldName, ML_Field> m_fields;
-  std::vector<std::set<FieldName>> m_exchange_groups;
+  std::vector<IndexSet> m_exchange_groups;
   std::string m_data_service_url;
   AbyInfo m_aby_info;
 };

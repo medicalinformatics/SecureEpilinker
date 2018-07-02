@@ -22,21 +22,19 @@
 
 #include <experimental/filesystem>
 #include <memory>
-#include <unordered_set>
 #include "authenticationconfig.hpp"
 #include "connectionhandler.h"
 #include "nlohmann/json.hpp"
 #include "seltypes.h"
 #include "valijson/validation_results.hpp"
-#include <set>
 
 namespace sel {
 nlohmann::json read_json_from_disk(const std::experimental::filesystem::path&);
 
 std::unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json&);
 
-bool check_exchange_group(const std::unordered_set<FieldName>&,
-                          const std::set<FieldName>&);
+bool check_exchange_group(const IndexSet&,
+                          const IndexSet&);
 SessionResponse valid_init_json_handler(
     const nlohmann::json&,
     RemoteId,
