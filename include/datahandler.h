@@ -20,32 +20,37 @@
 #define SEL_DATAHANDLER_H
 #pragma once
 
-#include "databasefetcher.h"
-#include "secure_epilinker.h"
-#include "seltypes.h"
+//#include "databasefetcher.h"
 #include <map>
 #include <memory>
-#include <vector>
-#include <string>
 #include <mutex>
+#include <string>
+#include <vector>
+#include "secure_epilinker.h"
+#include "seltypes.h"
 
-namespace sel{
-  class ConfigurationHandler;
+namespace sel {
+class ConfigurationHandler;
+class DatabaseFetcher;
 
-  class DataHandler {
-    public:
-      void set_config_handler(std::shared_ptr<ConfigurationHandler>);
-      std::shared_ptr<const ServerData> get_database() const;
-      size_t poll_database();
-      size_t poll_database_diff(); // TODO(TK) Not implemented yet. Use full update
-    private:
-      mutable std::mutex m_db_mutex;
-      std::shared_ptr<const ServerData> m_database;
-      std::unique_ptr<DatabaseFetcher> m_database_fetcher;
-      std::shared_ptr<const ConfigurationHandler> m_config_handler;
-  };
+struct ServerData {
+  std::map<FieldName, VFieldEntry> data;
+  std::vector<std::map<std::string, std::string>> ids;
+  ToDate todate;
+};
+class DataHandler {
+ public:
+  void set_config_handler(std::shared_ptr<ConfigurationHandler>);
+  std::shared_ptr<const ServerData> get_database() const;
+  size_t poll_database();
+  size_t poll_database_diff();  // TODO(TK) Not implemented yet. Use full update
+ private:
+  mutable std::mutex m_db_mutex;
+  std::shared_ptr<const ServerData> m_database;
+  std::unique_ptr<DatabaseFetcher> m_database_fetcher;
+  std::shared_ptr<const ConfigurationHandler> m_config_handler;
+};
 
-} // namespace sel
-
+}  // namespace sel
 
 #endif /* end of include guard: SEL_DATAHANDLER_H */

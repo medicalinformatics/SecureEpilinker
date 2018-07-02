@@ -68,10 +68,8 @@ size_t ConfigurationHandler::get_remote_count() const {
 
 EpilinkConfig get_epilink_config(shared_ptr<const LocalConfiguration> local_config,
                                     shared_ptr<const AlgorithmConfig> algo_config){
-return {local_config->get_weights(FieldComparator::NGRAM),
-        local_config->get_weights(FieldComparator::BINARY),
-        local_config->get_exchange_group_indices(FieldComparator::NGRAM),
-        local_config->get_exchange_group_indices(FieldComparator::BINARY),
+return {local_config->get_fields(),
+        local_config->get_exchange_groups(),
         algo_config->bloom_length, algo_config->threshold_match,
         algo_config->threshold_non_match };
 

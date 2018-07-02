@@ -49,18 +49,13 @@ class LocalConfiguration {
                      std::unique_ptr<AuthenticationConfig> local_auth);
 
   void add_field(ML_Field field);
-
   const ML_Field& get_field(const FieldName& fieldname) const;
-  std::vector<double> get_weights(FieldComparator) const;
-  void add_exchange_group(std::set<FieldName> group);
+  std::map<FieldName, ML_Field> get_fields() const;
 
-  std::vector<set<FieldName>> const& get_exchange_group(FieldComparator) const;
-  vector<set<size_t>> get_exchange_group_indices(FieldComparator) const;
+  void add_exchange_group(std::set<FieldName> group);
+  std::vector<set<FieldName>> const& get_exchange_groups() const;
 
   bool field_exists(const FieldName& fieldname) const;
-  bool field_hw_exists(const FieldName& fieldname) const;
-  bool field_bin_exists(const FieldName& fieldname) const;
-  void set_algorithm_config(AlgorithmConfig aconfig);
 
   void set_data_service(std::string&& url);
   std::string get_data_service() const;
@@ -73,10 +68,8 @@ class LocalConfiguration {
 
  private:
   std::unique_ptr<AuthenticationConfig> m_local_authentication;
-  std::map<FieldName, ML_Field> m_bin_fields;
-  std::map<FieldName, ML_Field> m_hw_fields;
-  std::vector<std::set<FieldName>> m_hw_exchange_groups;
-  std::vector<std::set<FieldName>> m_bin_exchange_groups;
+  std::map<FieldName, ML_Field> m_fields;
+  std::vector<std::set<FieldName>> m_exchange_groups;
   std::string m_data_service_url;
   AbyInfo m_aby_info;
 };

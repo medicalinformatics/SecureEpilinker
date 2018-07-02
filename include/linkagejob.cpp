@@ -53,32 +53,59 @@ LinkageJob::LinkageJob(shared_ptr<const LocalConfiguration> l_conf,
       m_remote_config(move(r_conf)),
       m_parent(move(server_handler)) {}
 
-void LinkageJob::add_hw_data_field(const FieldName& fieldname,
-                                   DataField datafield,
-                                   bool empty) {
-  assert(holds_alternative<Bitmask>(datafield));
-  m_hw_data.emplace(fieldname, get<Bitmask>(datafield));
-  m_hw_empty.emplace(fieldname, empty);
 void LinkageJob::set_callback(CallbackConfig cc) {
   m_callback = move(cc);
 }
 
-void LinkageJob::add_bin_data_field(const FieldName& fieldname,
-                                    DataField datafield,
-                                    bool empty) {
-  CircUnit tempfield;
+void LinkageJob::add_data_field(const FieldName& fieldname,
+                                DataField datafield) {
+  FieldEntry temp_entry;
   if (holds_alternative<int>(datafield)) {
-    tempfield = static_cast<CircUnit>(get<int>(datafield));
+    const auto content{get<int>(datafield)};
+    if (content == 0) {
+      temp_entry = nullopt;
+    } else {
+      Bitmask temp(sizeof(content));
+      ::memcpy(temp.data(), &content, sizeof(content));
+      temp_entry = move(temp);
+    }
   } else if (holds_alternative<double>(datafield)) {
-    tempfield = hash<double>{}(get<double>(datafield));
+    const auto content{get<double>(datafield)};
+    if (content == 0.) {
+      temp_entry = nullopt;
+    } else {
+      Bitmask temp(sizeof(content));
+      ::memcpy(temp.data(), &content, sizeof(content));
+      temp_entry = move(temp);
+    }
   } else if (holds_alternative<string>(datafield)) {
-    tempfield = hash<string>{}(get<string>(datafield));
-  } else {
-    throw runtime_error("Invalid Binary Comparison");
-    tempfield = 0;
+    const auto content{get<string>(datafield)};
+    if (trim_copy(content).empty()) {
+      temp_entry = nullopt;
+    } else {
+      const auto temp_char_array{content.c_str()};
+      Bitmask temp(sizeof(temp_char_array));
+      ::memcpy(temp.data(), &temp_char_array, sizeof(temp_char_array));
+      temp_entry = move(temp);
+    }
+  } else if (holds_alternative<Bitmask>(datafield)) {
+    const auto content{get<Bitmask>(datafield)};
+    bool bloomempty{true};
+    for (const auto& byte : content) {
+      if (bool byte_empty = (byte == 0x00); !byte_empty) {
+        bloomempty = false;
+        break;
+      }
+    }
+    if (bloomempty) {
+      temp_entry = nullopt;
+    } else {
+      temp_entry = move(content);
+    }
   }
-  m_bin_empty.emplace(fieldname, empty);
-  m_bin_data.emplace(fieldname, tempfield);
+  m_data.emplace(fieldname, temp_entry);
+}
+
 JobStatus LinkageJob::get_status() const {
   return m_status;
 }
@@ -94,47 +121,14 @@ void LinkageJob::run_job() {
 
   fmt::print("Job {} started\n", m_id);
 
-  vector<Bitmask> hw_data;
-  VCircUnit bin_data;
-  hw_data.reserve(m_hw_data.size());
-  bin_data.reserve(m_bin_data.size());
-
-  vector<bool> hw_empty;
-  vector<bool> bin_empty;
-  hw_empty.reserve(m_hw_empty.size());
-  bin_empty.reserve(m_bin_empty.size());
-
-  for (const auto& field : m_hw_data) {
-    hw_data.emplace_back(field.second);
-  }
-  for (const auto& field : m_bin_data) {
-    bin_data.emplace_back(field.second);
-  }
-  for (const auto& field : m_hw_empty) {
-    hw_empty.emplace_back(field.second);
-  }
-  for (const auto& field : m_bin_empty) {
-    bin_empty.emplace_back(field.second);
-  }
-
-  VWeight hw_weights{m_local_config->get_weights(FieldComparator::NGRAM)};
-  VWeight bin_weights{m_local_config->get_weights(FieldComparator::BINARY)};
-
-  // TODO(TK): To get: remote_ip, remote_port, nvals,
-  // threads
-
   try {
-    // Construct ABY Client
-    // FIXME(TK): Magicnumbers
+    // Get number of records from server
     size_t nvals = signal_server();
     fmt::print("Server has {} Records\n", nvals);
     auto epilinker{m_parent->get_epilink_client(m_remote_config->get_id())};
-    // TODO(TK): Correct position for building circuit (again)?
     epilinker->build_circuit(nvals);
     epilinker->run_setup_phase();
-    EpilinkClientInput client_input{hw_data, bin_data, hw_empty, bin_empty,
-                                    nvals};
-    fmt::print("Client running\n{}", print_epilink_input(client_input));
+    EpilinkClientInput client_input{m_data, nvals};
     // const auto client_share{epilinker->run_as_client(client_input)};
     // fmt::print("Client result:\n{}", client_share);
     fmt::print("Client exited successfuly with dummy values\n");
@@ -169,5 +163,4 @@ size_t LinkageJob::signal_server() {
   auto nval{stoull(get_headers(response_stream, "Record-Number").front())};
   return nval;
 }
-
 }  // namespace sel

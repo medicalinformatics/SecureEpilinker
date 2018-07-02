@@ -26,6 +26,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <optional>
 #include "apikeyconfig.hpp"
 #include "authenticationconfig.hpp"
 #include "base64.h"
@@ -61,26 +62,19 @@ ServerData DatabaseFetcher::fetch_data() {
   get_page_data(page);
 
   fmt::print("Recieved Inputs:\n");
-  for (auto& p : m_hw_data) {
+  for (auto& p : m_data) {
     fmt::print(
         "-------------------------------\n{}\n-------------------------------"
         "\n",
         p.first);
     for (auto& d : p.second) {
-      fmt::print("Bitmask\n");
-      for (const auto& byte : d)
+      bool empty{d};
+      fmt::print("Field {}empty", empty?"":"not ");
+      if(!empty){
+      for (const auto& byte : d.value())
         fmt::print("{} ", byte);
       fmt::print("\n");
-    }
-  }
-
-  for (auto& p : m_bin_data) {
-    fmt::print(
-        "-------------------------------\n{}\n-------------------------------"
-        "\n",
-        p.first);
-    for (auto& d : p.second) {
-      fmt::print("{}\n", d);
+      }
     }
   }
 
@@ -92,8 +86,7 @@ ServerData DatabaseFetcher::fetch_data() {
     }
     fmt::print("\n");
   }
-  return {move(m_hw_data),   move(m_bin_data), move(m_hw_empty),
-          move(m_bin_empty), move(m_ids),      move(m_todate)};
+  return {move(m_data), move(m_ids), move(m_todate)};
 }
 
 void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
@@ -103,10 +96,7 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
   if (!page_data.count("records")) {
     throw runtime_error("Invalid JSON Data");
   }
-  map<FieldName, vector<Bitmask>> temp_hw_data;
-  map<FieldName, VCircUnit> temp_bin_data;
-  map<FieldName, vector<bool>> temp_hw_empty;
-  map<FieldName, vector<bool>> temp_bin_empty;
+  map<FieldName, VFieldEntry> temp_data;
 
   for (const auto& rec : page_data["records"]) {
     if (!rec.count("fields")) {
@@ -115,51 +105,37 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
     for (auto f = rec["fields"].begin(); f != rec["fields"].end(); ++f) {
       switch (m_local_config->get_field(f.key()).type) {
         case FieldType::INTEGER: {
-          if (m_local_config->get_field(f.key()).comparator ==
-              FieldComparator::BINARY) {
-            if (f->get<int>() == 0) {
-              temp_bin_empty[f.key()].emplace_back(true);
+            const auto content{f->get<int>()};
+            if (content == 0) {
+              temp_data[f.key()].emplace_back(nullopt);
             } else {
-              temp_bin_empty[f.key()].emplace_back(false);
+            Bitmask temp(sizeof(content));
+            ::memcpy(temp.data(), &content, sizeof(content));
+            temp_data[f.key()].emplace_back(move(temp));
             }
-            temp_bin_data[f.key()].emplace_back(
-                static_cast<CircUnit>(f->get<int>()));
-          } else {
-            throw runtime_error(
-                "NGRAM comparison not allowed for non bitmask types");
-          }
           break;
         }
         case FieldType::NUMBER: {
-          if (m_local_config->get_field(f.key()).comparator ==
-              FieldComparator::BINARY) {
-            if (f->get<double>() == 0.) {
-              temp_bin_empty[f.key()].emplace_back(true);
+          const auto content{f->get<double>()};
+            if (content == 0.) {
+              temp_data[f.key()].emplace_back(nullopt);
             } else {
-              temp_bin_empty[f.key()].emplace_back(false);
+            Bitmask temp(sizeof(content));
+            ::memcpy(temp.data(), &content, sizeof(content));
+            temp_data[f.key()].emplace_back(move(temp));
             }
-            temp_bin_data[f.key()].emplace_back(
-                hash<double>{}(f->get<double>()));
-          } else {
-            throw runtime_error(
-                "NGRAM comparison not allowed for non bitmask types");
-          }
           break;
         }
         case FieldType::STRING: {
-          if (m_local_config->get_field(f.key()).comparator ==
-              FieldComparator::BINARY) {
-            if (trim_copy(f->get<string>()) == "") {
-              temp_bin_empty[f.key()].emplace_back(true);
+          const auto content{f->get<string>()};
+            if (trim_copy(content).empty()) {
+              temp_data[f.key()].emplace_back(nullopt);
             } else {
-              temp_bin_empty[f.key()].emplace_back(false);
+              const auto temp_char_array{content.c_str()};
+              Bitmask temp(sizeof(temp_char_array));
+            ::memcpy(temp.data(), &temp_char_array, sizeof(temp_char_array));
+            temp_data[f.key()].emplace_back(move(temp));
             }
-            temp_bin_data[f.key()].emplace_back(
-                hash<string>{}(f->get<string>()));
-          } else {
-            throw runtime_error(
-                "NGRAM comparison not allowed for non bitmask types");
-          }
           break;
         }
         case FieldType::BITMASK: {
@@ -169,23 +145,18 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
             fmt::print(
                 "Warning: Set bits after bloomfilterlength. Set to zero.\n");
           }
-          if (m_local_config->get_field(f.key()).comparator ==
-              FieldComparator::NGRAM) {
             bool bloomempty{true};
             for (const auto& byte : bloom) {
               if (bool byte_empty = (byte == 0x00); !byte_empty) {
-                temp_hw_empty[f.key()].emplace_back(false);
                 bloomempty = false;
                 break;
               }
             }
             if (bloomempty) {
-              temp_hw_empty[f.key()].emplace_back(true);
+              temp_data[f.key()].emplace_back(nullopt);
+            } else {
+              temp_data[f.key()].emplace_back(move(bloom));
             }
-            temp_hw_data[f.key()].emplace_back(move(bloom));
-          } else {
-            throw runtime_error("BINARY comparison for bitmasks not allowed");
-          }
         }
       }
       if (!rec.count("ids")) {
@@ -199,21 +170,9 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
     }
     m_ids.emplace_back(move(tempmap));
   }
-  for (auto& field : temp_hw_data) {  // Append page data to main data
-    m_hw_data[field.first].insert(m_hw_data[field.first].end(),
+  for (auto& field : temp_data) {  // Append page data to main data
+    m_data[field.first].insert(m_data[field.first].end(),
                                   field.second.begin(), field.second.end());
-  }
-  for (auto& field : temp_bin_data) {  // Append page data to main data
-    m_bin_data[field.first].insert(m_bin_data[field.first].end(),
-                                   field.second.begin(), field.second.end());
-  }
-  for (auto& field : temp_hw_empty) {  // Append page empty to main data
-    m_hw_empty[field.first].insert(m_hw_empty[field.first].end(),
-                                   field.second.begin(), field.second.end());
-  }
-  for (auto& field : temp_bin_empty) {  // Append page data to main data
-    m_bin_empty[field.first].insert(m_bin_empty[field.first].end(),
-                                    field.second.begin(), field.second.end());
   }
 }
 
@@ -222,7 +181,6 @@ nlohmann::json DatabaseFetcher::get_next_page() const {
 }
 
 nlohmann::json DatabaseFetcher::request_page(const string& url) const {
-  //auto request{make_shared<restbed::Request>(restbed::Uri(url))};
   curlpp::Easy curl_request;
   stringstream response_stream;
   list<string> headers;
@@ -232,15 +190,9 @@ nlohmann::json DatabaseFetcher::request_page(const string& url) const {
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
   curl_request.setOpt(new curlpp::Options::WriteStream(&response_stream));
   curl_request.setOpt(new curlpp::options::Header(0));
-  //request->set_method("GET");
-  //request->set_version(1.1);
-  //request->set_protocol("HTTP");
   fmt::print("DB request address: {}\n", url);
   if (m_local_authentication->get_type() == AuthenticationType::API_KEY) {
     auto apiauth = dynamic_cast<const APIKeyConfig*>(m_local_authentication);
-    //request->add_header(
-        //"Authorization",
-        //string("mainzellisteApiKey apikey=\"") + apiauth->get_key() + "\"");
     headers.emplace_back("Authorization: mainzellisteApiKey apikey=\""s +
                          apiauth->get_key() + "\"");
   }
@@ -254,20 +206,6 @@ nlohmann::json DatabaseFetcher::request_page(const string& url) const {
       fmt::print("No valid Data!\n");
     }
     return nlohmann::json::parse(response_stream.str());
-
-    // auto response = restbed::Http::sync(request);
-    // auto status = response->get_status_code();
-    // if (status != 400 && status != 401) {
-    // size_t content_length = response->get_header("Content-Length", 0);
-    // if (content_length) {
-    // restbed::Http::fetch(content_length, response);
-    //} else {
-    // fmt::print("No valid Data!");
-    //}
-
-    // auto body = response->get_body();
-    // string bodystring = string(body.begin(), body.end());
-    // return nlohmann::json::parse(bodystring);
   } else {
     fmt::print("Invalid Response from DB\n");
     return nlohmann::json();

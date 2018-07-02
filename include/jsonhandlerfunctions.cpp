@@ -103,18 +103,13 @@ SessionResponse valid_linkrecord_json_handler(
         for (auto f = j["fields"].begin(); f != j["fields"].end(); ++f) {
           const auto& field_config = local_config->get_field(f.key());
           DataField tempfield;
-          bool empty{false};
           switch (field_config.type) {
             case FieldType::BITMASK: {
               if (!(f->is_string())) {
                 throw runtime_error("Invalid Field Type");
               }
-              empty =true;
               const auto b64string{f->get<string>()};
               auto tempbytearray{base64_decode(b64string)};
-              for(const auto& byte : tempbytearray){
-                empty = empty && (byte == 0x00);
-              }
               if (!check_bloom_length(tempbytearray,
                                       algo_config->bloom_length)) {
                 fmt::print(
@@ -129,8 +124,6 @@ SessionResponse valid_linkrecord_json_handler(
                 throw runtime_error("Invalid Field Type");
               }
               tempfield = f->get<int>();
-              if (!f->get<int>())
-                empty = true;
               break;
             }
             case FieldType::NUMBER: {
@@ -138,8 +131,6 @@ SessionResponse valid_linkrecord_json_handler(
                 throw runtime_error("Invalid Field Type");
               }
               tempfield = f->get<double>();
-              if (!f->get<double>())
-                empty = true;
               break;
             }
             case FieldType::STRING: {
@@ -147,17 +138,11 @@ SessionResponse valid_linkrecord_json_handler(
                 throw runtime_error("Invalid Field Type");
               }
               tempfield = f->get<string>();
-              if (trim_copy(f->get<string>()) == "")
-                empty = true;
               break;
             }
             default: { throw runtime_error("Invalid Field Type"); }
           }  // Switch
-          if (field_config.comparator == FieldComparator::NGRAM) {
-            job->add_hw_data_field(field_config.name, move(tempfield), empty);
-          } else {
-            job->add_bin_data_field(field_config.name, move(tempfield), empty);
-          }
+            job->add_data_field(field_config.name, move(tempfield));
         }
 
         server_handler->add_linkage_job(remote_id, move(job));
@@ -210,7 +195,7 @@ SessionResponse valid_init_json_handler(
         ML_Field tempfield(
             f["name"].get<string>(), f["frequency"].get<double>(),
             f["errorRate"].get<double>(), f["comparator"].get<string>(),
-            f["fieldType"].get<string>());
+            f["fieldType"].get<string>(),5); //TODO(TK) implement API change
         local_config->add_field(move(tempfield));
         fieldnames.emplace(f["name"].get<string>());
       }

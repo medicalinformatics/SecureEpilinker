@@ -45,7 +45,6 @@ using VWeight = std::vector<Weight>;
 using JobId = std::string;
 using RemoteId = std::string;
 using ClientId = std::string;
-using FieldName = std::string;
 using ToDate = size_t;
 
 enum class FieldType { BITMASK, NUMBER, STRING, INTEGER };
@@ -102,14 +101,6 @@ struct SessionResponse {
   int return_code;
   std::string body;
   std::multimap<std::string, std::string> headers;
-};
-struct ServerData {
-  std::map<FieldName, std::vector<Bitmask>> hw_data;
-  std::map<FieldName, VCircUnit> bin_data;
-  std::map<FieldName, std::vector<bool>> hw_empty;
-  std::map<FieldName, std::vector<bool>> bin_empty;
-  std::vector<std::map<std::string, std::string>> ids;
-  ToDate todate;
 };
 } // namespace sel
 

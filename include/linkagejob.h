@@ -45,9 +45,8 @@ class LinkageJob {
  public:
    LinkageJob();
    LinkageJob(std::shared_ptr<const LocalConfiguration>, std::shared_ptr<const RemoteConfiguration>, std::shared_ptr<const AlgorithmConfig>, std::shared_ptr<ServerHandler>);
-   void add_hw_data_field(const FieldName& fieldname, DataField field, bool);
-   void add_bin_data_field(const FieldName& fieldname, DataField field, bool);
    void set_callback(CallbackConfig cc);
+   void add_data_field(const FieldName& fieldname, DataField field);
    JobStatus get_status() const;
    JobId get_id() const;
    void run_job();
@@ -56,10 +55,7 @@ class LinkageJob {
   size_t signal_server();
   JobId m_id;
   JobStatus m_status{JobStatus::QUEUED};
-  std::map<FieldName, Bitmask> m_hw_data;
-  std::map<FieldName, CircUnit> m_bin_data;
-  std::map<FieldName, bool> m_hw_empty;
-  std::map<FieldName, bool> m_bin_empty;
+  std::map<FieldName, FieldEntry> m_data;
   CallbackConfig m_callback;
   std::shared_ptr<const LocalConfiguration> m_local_config;
   std::shared_ptr<const AlgorithmConfig> m_algo_config;
