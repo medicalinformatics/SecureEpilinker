@@ -116,4 +116,8 @@ SecureEpilinker::Result LocalServer::launch_comparison(
 uint16_t LocalServer::get_port() const {
   return m_client_port;
 }
+
+string LocalServer::get_ip() const {
+  return m_client_ip;
+}
 }  // namespace sel

@@ -118,6 +118,10 @@ void LocalConfiguration::set_data_service(string&& url) {
   m_data_service_url = url;
 }
 
+string LocalConfiguration::get_data_service() const {
+  return m_data_service_url;
+}
+
 void LocalConfiguration::set_local_auth(unique_ptr<AuthenticationConfig> auth) {
   m_local_authentication = move(auth);
 }
@@ -126,6 +130,8 @@ vector<set<FieldName>> const& LocalConfiguration::get_exchange_group(
     FieldComparator comp) const {
   return (comp == FieldComparator::NGRAM) ? m_hw_exchange_groups
                                           : m_bin_exchange_groups;
+string LocalConfiguration::print_auth_type() const {
+  return m_local_authentication->print_type();
 }
 
 vector<set<size_t>> LocalConfiguration::get_exchange_group_indices(
@@ -148,5 +154,13 @@ vector<set<size_t>> LocalConfiguration::get_exchange_group_indices(
     tempvec.emplace_back(move(tempset));
   }
   return tempvec;
+AuthenticationConfig const* LocalConfiguration::get_local_authentication()
+    const {
+  return m_local_authentication.get();
 }
+
+LocalConfiguration::AbyInfo LocalConfiguration::get_aby_info() const {
+  return m_aby_info;
+}
+
 }  // namespace sel

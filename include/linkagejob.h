@@ -45,11 +45,11 @@ class LinkageJob {
  public:
    LinkageJob();
    LinkageJob(std::shared_ptr<const LocalConfiguration>, std::shared_ptr<const RemoteConfiguration>, std::shared_ptr<const AlgorithmConfig>, std::shared_ptr<ServerHandler>);
-   void set_callback(CallbackConfig cc) {m_callback = std::move(cc);}
    void add_hw_data_field(const FieldName& fieldname, DataField field, bool);
    void add_bin_data_field(const FieldName& fieldname, DataField field, bool);
-   JobStatus get_status() const { return m_status; }
-   JobId get_id() const {return m_id;}
+   void set_callback(CallbackConfig cc);
+   JobStatus get_status() const;
+   JobId get_id() const;
    void run_job();
    void set_local_config(std::shared_ptr<LocalConfiguration>);
  private:

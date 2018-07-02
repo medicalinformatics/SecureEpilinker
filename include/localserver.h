@@ -27,6 +27,7 @@
 namespace sel {
 class DataHandler;
 class ConfigurationHandler;
+struct ServerData;
 
 class LocalServer {
  public:
@@ -45,7 +46,7 @@ class LocalServer {
   SecureEpilinker::Result run_server();
   SecureEpilinker::Result launch_comparison(std::shared_ptr<const ServerData>);
   uint16_t get_port() const;
-  std::string get_ip() const { return m_client_ip; }
+  std::string get_ip() const;
 
  private:
   ClientId m_client_id;
