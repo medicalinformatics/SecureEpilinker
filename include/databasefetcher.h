@@ -25,6 +25,7 @@
 #include "nlohmann/json.hpp"
 #include "seltypes.h"
 #include "epilink_input.h"
+#include "datahandler.h"
 
 namespace sel {
 class LocalConfiguration;
@@ -44,10 +45,11 @@ class DatabaseFetcher {
   nlohmann::json request_page(const std::string& url
                               ) const;
   void get_page_data(const nlohmann::json&);
-  std::map<FieldName, std::vector<Bitmask>> m_hw_data;
-  std::map<FieldName, sel::VCircUnit> m_bin_data;
-  std::map<FieldName, std::vector<bool>> m_hw_empty;
-  std::map<FieldName, std::vector<bool>> m_bin_empty;
+  std::map<FieldName, VFieldEntry> m_data;
+  //std::map<FieldName, std::vector<Bitmask>> m_hw_data;
+  //std::map<FieldName, sel::VCircUnit> m_bin_data;
+  //std::map<FieldName, std::vector<bool>> m_hw_empty;
+  //std::map<FieldName, std::vector<bool>> m_bin_empty;
   std::vector<std::map<std::string, std::string>> m_ids;
   unsigned m_page_size{25u};
   unsigned m_last_page{1u};

@@ -43,14 +43,8 @@ LocalServer::LocalServer(ClientId client_id,
           {SERVER, m_config_handler->get_local_config()->get_aby_info().boolean_sharing,
            m_client_ip, m_client_port,
            m_config_handler->get_local_config()->get_aby_info().aby_threads},
-          {m_config_handler->get_local_config()->get_weights(
-               FieldComparator::NGRAM),
-           m_config_handler->get_local_config()->get_weights(
-               FieldComparator::BINARY),
-           m_config_handler->get_local_config()->get_exchange_group_indices(
-               FieldComparator::NGRAM),
-           m_config_handler->get_local_config()->get_exchange_group_indices(
-               FieldComparator::BINARY),
+          {m_config_handler->get_local_config()->get_fields(),
+           m_config_handler->get_local_config()->get_exchange_groups(),
            m_config_handler->get_algorithm_config()->bloom_length,
            m_config_handler->get_algorithm_config()->threshold_match,
            m_config_handler->get_algorithm_config()->threshold_non_match}) {}
@@ -72,32 +66,11 @@ ClientId LocalServer::get_id() const {
 
 SecureEpilinker::Result LocalServer::run_server() {
   fmt::print("The Server is running and performing it's computations\n");
-  const size_t nvals{m_data->hw_data.begin()->second.size()};
-  vector<vector<Bitmask>> hw_data;
-  vector<VCircUnit> bin_data;
-  vector<vector<bool>> hw_empty;
-  vector<vector<bool>> bin_empty;
-  hw_data.reserve(m_data->hw_data.size());
-  bin_data.reserve(m_data->bin_data.size());
-  hw_empty.reserve(m_data->hw_empty.size());
-  bin_empty.reserve(m_data->bin_empty.size());
-  for (auto& field : m_data->hw_data){
-    hw_data.emplace_back(field.second);
-  }
-  for (auto& field : m_data->bin_data){
-    bin_data.emplace_back(field.second);
-  }
-  for (auto& field : m_data->hw_empty){
-    hw_empty.emplace_back(field.second);
-  }
-  for (auto& field : m_data->bin_empty){
-    bin_empty.emplace_back(field.second);
-  }
+  const size_t nvals{m_data->data.begin()->second.size()};
   m_aby_server.build_circuit(nvals);
   m_aby_server.run_setup_phase();
   fmt::print("Starting Server\n");
-  //auto server_result{m_aby_server.run_as_server({move(hw_data), move(bin_data), move(hw_empty), move(bin_empty)})};
-  //
+  //auto server_result{m_aby_server.run_as_server({m_data->data})};
   //fmt::print("Server Result: {}", server_result);
   fmt::print("Returning dummy results\n");
   //return server_result;

@@ -16,15 +16,15 @@
 \brief Holds Information about a local connection
 */
 
+#include "localconfiguration.h"
 #include <exception>
 #include <set>
 #include <thread>
-#include "fmt/format.h" // needs to be included before local headers for custom formatters
-#include "localconfiguration.h"
 #include "authenticationconfig.hpp"
 #include "databasefetcher.h"
-#include "linkagejob.h"
 #include "epilink_input.h"
+#include "fmt/format.h"  // needs to be included before local headers for custom formatters
+#include "linkagejob.h"
 #include "secure_epilinker.h"
 #include "seltypes.h"
 #include "util.h"
@@ -38,80 +38,34 @@ LocalConfiguration::LocalConfiguration(
 
 void LocalConfiguration::add_field(ML_Field field) {
   FieldName fieldname{field.name};
-  if (field.comparator == FieldComparator::NGRAM) {
-    m_hw_fields.emplace(move(fieldname), move(field));
-  } else {
-    m_bin_fields.emplace(move(fieldname), move(field));
-  }
+  m_fields.emplace(move(fieldname), move(field));
 }
 
-const ML_Field& LocalConfiguration::get_field(const FieldName& fieldname) const{
-  if (field_hw_exists(fieldname)) {
-    return cref(m_hw_fields.at(fieldname));
-  } else if (field_bin_exists(fieldname)) {
-    return cref(m_bin_fields.at(fieldname));
-  } else {
-    throw runtime_error("Field \"" + fieldname + "\" does not exist.");
-  }
+const ML_Field& LocalConfiguration::get_field(
+    const FieldName& fieldname) const {
+  return cref(m_fields.at(fieldname));
 }
 
-vector<double> LocalConfiguration::get_weights(
-    FieldComparator comparator) const {
-  vector<double> tempvec;
-  if (comparator == FieldComparator::NGRAM) {
-    tempvec.reserve(m_hw_fields.size());
-    for (const auto& p : m_hw_fields) {
-      tempvec.emplace_back(p.second.weight);
-    }
-  } else {
-    tempvec.reserve(m_bin_fields.size());
-    for (const auto& p : m_bin_fields) {
-      tempvec.emplace_back(p.second.weight);
-    }
-  }
-  return tempvec;
+std::map<FieldName, ML_Field> LocalConfiguration::get_fields() const {
+  return m_fields;
 }
 
 void LocalConfiguration::add_exchange_group(set<FieldName> group) {
-  bool hw{false};
-  bool bin{false};
   for (const auto& f : group) {
     if (!field_exists(f)) {
       throw runtime_error("Invalid Exchange Group. Field(s) does not exist!");
     }
-    if (get_field(f).comparator == FieldComparator::NGRAM) {
-      hw = true;
-    } else {
-      bin = true;
-    }
+    m_exchange_groups.emplace_back(move(group));
   }
-  if (!(!hw != !bin)) {
-    throw runtime_error("Mixed Exchangegroups are not implemented");
-  }
-  if (hw) {
-    m_hw_exchange_groups.emplace_back(move(group));
-  } else {
-    m_bin_exchange_groups.emplace_back(move(group));
-  }
+}
+
+vector<set<FieldName>> const& LocalConfiguration::get_exchange_groups() const {
+  return m_exchange_groups;
 }
 
 bool LocalConfiguration::field_exists(const FieldName& fieldname) const {
-  auto hw_it = m_hw_fields.find(fieldname);
-  if (hw_it != m_hw_fields.end()) {
-    return true;
-  }
-  auto bin_it = m_bin_fields.find(fieldname);
-  return (bin_it != m_bin_fields.end());
-}
-
-bool LocalConfiguration::field_hw_exists(const FieldName& fieldname) const {
-  auto hw_it = m_hw_fields.find(fieldname);
-  return (hw_it != m_hw_fields.end());
-}
-
-bool LocalConfiguration::field_bin_exists(const FieldName& fieldname) const {
-  auto bin_it = m_bin_fields.find(fieldname);
-  return (bin_it != m_bin_fields.end());
+  auto it = m_fields.find(fieldname);
+  return it == m_fields.end() ? false : true;
 }
 
 void LocalConfiguration::set_data_service(string&& url) {
@@ -126,34 +80,10 @@ void LocalConfiguration::set_local_auth(unique_ptr<AuthenticationConfig> auth) {
   m_local_authentication = move(auth);
 }
 
-vector<set<FieldName>> const& LocalConfiguration::get_exchange_group(
-    FieldComparator comp) const {
-  return (comp == FieldComparator::NGRAM) ? m_hw_exchange_groups
-                                          : m_bin_exchange_groups;
 string LocalConfiguration::print_auth_type() const {
   return m_local_authentication->print_type();
 }
 
-vector<set<size_t>> LocalConfiguration::get_exchange_group_indices(
-    FieldComparator comp) const {
-  auto& exchange_groups{(comp == FieldComparator::NGRAM)
-                            ? m_hw_exchange_groups
-                            : m_bin_exchange_groups};
-  auto& fields{(comp == FieldComparator::NGRAM) ? m_hw_fields : m_bin_fields};
-  vector<set<size_t>> tempvec;
-  for (auto& exchange_set : exchange_groups) {
-    set<size_t> tempset;
-    for (auto& exchange_field : exchange_set) {
-      auto field_iterator{fields.find(exchange_field)};
-      if (field_iterator == fields.end()) {
-        throw runtime_error("Invalid Exchange Group!");
-      }
-      tempset.emplace(
-          static_cast<size_t>(distance(fields.begin(), field_iterator)));
-    }
-    tempvec.emplace_back(move(tempset));
-  }
-  return tempvec;
 AuthenticationConfig const* LocalConfiguration::get_local_authentication()
     const {
   return m_local_authentication.get();
