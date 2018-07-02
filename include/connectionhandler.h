@@ -21,13 +21,13 @@ computations
 #define SEL_CONNECTIONHANDLER_H
 #pragma once
 
-#include "seltypes.h"
 #include "localconfiguration.h"
 #include "configurationhandler.h"
 #include <memory>
 #include <unordered_map>
 #include <mutex>
 #include "util.h"
+#include "resttypes.h"
 
 namespace restbed {
 class Service;

@@ -22,6 +22,7 @@
 
 #include "databasefetcher.h"
 #include "seltypes.h"
+#include "resttypes.h"
 #include <chrono>
 #include "localserver.h"
 #include <map>

@@ -20,6 +20,7 @@
 #include <memory>
 #include <string>
 #include "fmt/format.h"
+#include "resttypes.h"
 #include "restbed"
 
 using namespace std;

@@ -22,6 +22,7 @@
 #pragma once
 
 #include "authenticationconfig.hpp"
+#include "resttypes.h"
 
 
 namespace sel {

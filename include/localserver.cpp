@@ -24,6 +24,7 @@
 #include "localconfiguration.h"
 #include "secure_epilinker.h"
 #include "seltypes.h"
+#include "resttypes.h"
 #include "util.h"
 
 using namespace std;

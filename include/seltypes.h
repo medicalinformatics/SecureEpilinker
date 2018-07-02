@@ -41,23 +41,11 @@ using IndexSet = std::set<FieldName>;
 using Weight = double;
 using VWeight = std::vector<Weight>;
 
-// TODO#22 move REST stuff to resttypes.h
-using JobId = std::string;
-using RemoteId = std::string;
-using ClientId = std::string;
-using ToDate = size_t;
-
 enum class FieldType { BITMASK, NUMBER, STRING, INTEGER };
 enum class FieldComparator { NGRAM, BINARY };
-enum class AlgorithmType { EPILINK };
-enum class AuthenticationType { NONE, API_KEY };
-enum class JobStatus { QUEUED, RUNNING, HOLD, FAULT, DONE };
 
 FieldType str_to_ftype(const std::string& str);
 FieldComparator str_to_fcomp(const std::string& str);
-AlgorithmType str_to_atype(const std::string& str);
-AuthenticationType str_to_authtype(const std::string& str);
-std::string js_enum_to_string(JobStatus);
 
 struct ML_Field {
   ML_Field() = default;
@@ -78,29 +66,6 @@ struct ML_Field {
   FieldComparator comparator;
   FieldType type;
   size_t bitsize;
-};
-
-struct ConnectionConfig {
-  std::string url;
-  std::unique_ptr<AuthenticationConfig> authentication;
-};
-
-struct CallbackConfig {
-  std::string url;
-  std::string token;
-};
-
-struct AlgorithmConfig {
-  AlgorithmType type;
-  unsigned bloom_length;
-  double threshold_match;
-  double threshold_non_match;
-};
-
-struct SessionResponse {
-  int return_code;
-  std::string body;
-  std::multimap<std::string, std::string> headers;
 };
 } // namespace sel
 

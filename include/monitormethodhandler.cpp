@@ -23,6 +23,7 @@
 #include "fmt/format.h"
 #include "linkagejob.h"
 #include "restbed"
+#include "resttypes.h"
 
 using namespace std;
 namespace sel {

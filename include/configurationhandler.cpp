@@ -18,9 +18,11 @@
 
 #include "configurationhandler.h"
 #include <memory>
+#include <mutex>
 #include "connectionhandler.h"
 #include "localconfiguration.h"
 #include "remoteconfiguration.h"
+#include "resttypes.h"
 
 using namespace std;
 namespace sel {

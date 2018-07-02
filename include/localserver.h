@@ -23,6 +23,7 @@
 #include <memory>
 #include "secure_epilinker.h"
 #include "seltypes.h"
+#include "resttypes.h"
 
 namespace sel {
 class DataHandler;

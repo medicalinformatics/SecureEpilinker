@@ -20,6 +20,7 @@
 #include <mutex>
 #include "seltypes.h"
 #include "util.h"
+#include "resttypes.h"
 
 using namespace std;
 namespace sel {

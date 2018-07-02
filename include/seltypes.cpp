@@ -44,47 +44,4 @@ FieldComparator str_to_fcomp(const string& str) {
   assert(!"This should never be reached!");
   throw runtime_error("Invalid Comparator Type");
 }
-AlgorithmType str_to_atype(const string& str) {
-  if (str == "epilink")
-    return AlgorithmType::EPILINK;
-  assert(!"This should never be reached!");
-  throw runtime_error("Invalid Algorithm Type");
-}
-AuthenticationType str_to_authtype(const string& str) {
-  if (str == "apikey")
-    return AuthenticationType::API_KEY;
-  else if (str == "none")
-    return AuthenticationType::NONE;
-  assert(!"This should never be reached!");
-  throw runtime_error("Invalid Authentication Type");
-}
-
-string js_enum_to_string(JobStatus status) {
-  switch (status) {
-    case JobStatus::RUNNING: {
-      return "Running";
-      break;
-    }
-    case JobStatus::QUEUED: {
-      return "Queued";
-      break;
-    }
-    case JobStatus::DONE: {
-      return "Done";
-      break;
-    }
-    case JobStatus::HOLD: {
-      return "Hold";
-      break;
-    }
-    case JobStatus::FAULT: {
-      return "Fault";
-      break;
-    }
-    default: {
-      throw runtime_error("Invalid Status");
-      return "Error!";
-    }
-  }
-}
 }  // namespace sel

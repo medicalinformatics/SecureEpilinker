@@ -28,6 +28,7 @@
 #include "authenticationconfig.hpp"
 #include "linkagejob.h"
 #include "seltypes.h"
+#include "resttypes.h"
 
 namespace sel {
 class MatchingJob;

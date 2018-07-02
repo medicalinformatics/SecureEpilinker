@@ -26,6 +26,7 @@
 #include "connectionhandler.h"
 #include "nlohmann/json.hpp"
 #include "seltypes.h"
+#include "resttypes.h"
 #include "valijson/validation_results.hpp"
 
 namespace sel {

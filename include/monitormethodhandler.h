@@ -21,11 +21,12 @@
 #pragma once
 
 #include "methodhandler.hpp"
-#include "seltypes.h"
+//#include "seltypes.h"
 #include "valijson/validation_results.hpp"
 #include "restbed"
 #include <memory>
 #include <string>
+#include "resttypes.h"
 
 // Forward Declarations
 

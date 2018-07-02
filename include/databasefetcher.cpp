@@ -35,8 +35,8 @@
 #include "localconfiguration.h"
 #include "nlohmann/json.hpp"
 #include "restbed"
-#include "seltypes.h"
 #include "util.h"
+#include "resttypes.h"
 
 using namespace std;
 namespace sel {
