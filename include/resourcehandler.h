@@ -17,7 +17,7 @@
 */
 
 #ifndef SEL_RESOURCEHANDLER_H
-#define SnEL_RESOURCEHANDLER_H
+#define SEL_RESOURCEHANDLER_H
 #pragma once
 
 #include "nlohmann/json.hpp"
