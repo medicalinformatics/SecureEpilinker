@@ -59,6 +59,8 @@ void LinkageJob::add_hw_data_field(const FieldName& fieldname,
   assert(holds_alternative<Bitmask>(datafield));
   m_hw_data.emplace(fieldname, get<Bitmask>(datafield));
   m_hw_empty.emplace(fieldname, empty);
+void LinkageJob::set_callback(CallbackConfig cc) {
+  m_callback = move(cc);
 }
 
 void LinkageJob::add_bin_data_field(const FieldName& fieldname,
@@ -77,6 +79,12 @@ void LinkageJob::add_bin_data_field(const FieldName& fieldname,
   }
   m_bin_empty.emplace(fieldname, empty);
   m_bin_data.emplace(fieldname, tempfield);
+JobStatus LinkageJob::get_status() const {
+  return m_status;
+}
+
+JobId LinkageJob::get_id() const {
+  return m_id;
 }
 
 void LinkageJob::run_job() {

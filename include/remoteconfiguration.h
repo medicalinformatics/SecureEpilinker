@@ -44,8 +44,8 @@ class RemoteConfiguration {
   void set_linkage_service(ConnectionConfig cconfig);
 
   RemoteId get_id() const;
-  void set_remote_client_id(std::string id){m_remote_client_id = move(id);}
-  ClientId get_remote_client_id() const  {return m_remote_client_id;}
+  void set_remote_client_id(std::string id);
+  ClientId get_remote_client_id() const;
 
   uint16_t get_remote_signaling_port() const;
   uint16_t get_aby_port() const;

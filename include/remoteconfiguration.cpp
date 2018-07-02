@@ -60,4 +60,12 @@ void RemoteConfiguration::set_aby_port(uint16_t port) {
   m_aby_port = port;
 }
 
+void RemoteConfiguration::set_remote_client_id(string id) {
+  m_remote_client_id = move(id);
+}
+
+ClientId RemoteConfiguration::get_remote_client_id() const {
+  return m_remote_client_id;
+}
+
 }  // namespace sel

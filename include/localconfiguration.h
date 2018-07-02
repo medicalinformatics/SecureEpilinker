@@ -63,14 +63,13 @@ class LocalConfiguration {
   void set_algorithm_config(AlgorithmConfig aconfig);
 
   void set_data_service(std::string&& url);
-  std::string get_data_service() const {return m_data_service_url;}
+  std::string get_data_service() const;
+
   void set_local_auth(std::unique_ptr<AuthenticationConfig> auth);
+  std::string print_auth_type() const;
+  AuthenticationConfig const* get_local_authentication() const;
 
-  std::string print_auth_type() const {return m_local_authentication->print_type();}
-
-  AuthenticationConfig const* get_local_authentication() const {return m_local_authentication.get();}
-
-  AbyInfo get_aby_info() const {return m_aby_info;}
+  AbyInfo get_aby_info() const;
 
  private:
   std::unique_ptr<AuthenticationConfig> m_local_authentication;
