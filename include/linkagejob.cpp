@@ -86,7 +86,7 @@ void LinkageJob::add_data_field(const FieldName& fieldname,
     } else {
       const auto temp_char_array{content.c_str()};
       Bitmask temp(sizeof(temp_char_array));
-      ::memcpy(temp.data(), &temp_char_array, sizeof(temp_char_array));
+      ::memcpy(temp.data(), temp_char_array, sizeof(content.length()));
       temp_entry = move(temp);
     }
   } else if (holds_alternative<Bitmask>(datafield)) {

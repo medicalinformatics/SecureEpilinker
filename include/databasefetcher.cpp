@@ -133,7 +133,7 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
             } else {
               const auto temp_char_array{content.c_str()};
               Bitmask temp(sizeof(temp_char_array));
-            ::memcpy(temp.data(), &temp_char_array, sizeof(temp_char_array));
+            ::memcpy(temp.data(), temp_char_array, sizeof(content.size()));
             temp_data[f.key()].emplace_back(move(temp));
             }
           break;
