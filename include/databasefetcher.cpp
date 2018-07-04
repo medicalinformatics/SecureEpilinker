@@ -69,12 +69,12 @@ ServerData DatabaseFetcher::fetch_data() {
         p.first);
     for (auto& d : p.second) {
       bool empty{!d};
-      fmt::print("Field {}empty", empty?"":"not ");
+      fmt::print("Field {}empty ", empty?"":"not ");
       if(!empty){
       for (const auto& byte : d.value())
         fmt::print("{} ", byte);
-      fmt::print("\n");
       }
+      fmt::print("\n");
     }
   }
 
@@ -102,15 +102,20 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
     if (!rec.count("fields")) {
       throw runtime_error("Invalid JSON Data");
     }
+    // FIXME(TK) I do s.th. *very* unsafe and use bitlength user input directly
+    // for memcpy. DO SOME SANITY CHECKS OR THIS SOFTWARE WILL BREAK AND ALLOW
+    // ARBITRARY REMOTE CODE EXECUTION!
     for (auto f = rec["fields"].begin(); f != rec["fields"].end(); ++f) {
-      switch (m_local_config->get_field(f.key()).type) {
+      const auto field_info{m_local_config->get_field(f.key())};
+      switch (field_info.type) {
         case FieldType::INTEGER: {
             const auto content{f->get<int>()};
             if (content == 0) {
               temp_data[f.key()].emplace_back(nullopt);
             } else {
-            Bitmask temp(sizeof(content));
-            ::memcpy(temp.data(), &content, sizeof(content));
+            fmt::print("Bytes from API: {}\tBytes from sizeof(): {}\n", bitbytes(field_info.bitsize),sizeof(content));
+            Bitmask temp(bitbytes(field_info.bitsize));
+            ::memcpy(temp.data(), &content, bitbytes(field_info.bitsize));
             temp_data[f.key()].emplace_back(move(temp));
             }
           break;
@@ -120,8 +125,8 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
             if (content == 0.) {
               temp_data[f.key()].emplace_back(nullopt);
             } else {
-            Bitmask temp(sizeof(content));
-            ::memcpy(temp.data(), &content, sizeof(content));
+            Bitmask temp(bitbytes(field_info.bitsize));
+            ::memcpy(temp.data(), &content, bitbytes(field_info.bitsize));
             temp_data[f.key()].emplace_back(move(temp));
             }
           break;
@@ -132,8 +137,8 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
               temp_data[f.key()].emplace_back(nullopt);
             } else {
               const auto temp_char_array{content.c_str()};
-              Bitmask temp(sizeof(temp_char_array));
-            ::memcpy(temp.data(), temp_char_array, sizeof(content.size()));
+              Bitmask temp(bitbytes(field_info.bitsize));
+            ::memcpy(temp.data(), temp_char_array, bitbytes(field_info.bitsize));
             temp_data[f.key()].emplace_back(move(temp));
             }
           break;
