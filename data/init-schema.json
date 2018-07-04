@@ -37,6 +37,9 @@
             "string",
             "bitmask"
           ]
+        },
+        "bitlength": {
+          "type": "number"
         }
       },
       "additionalProperties": false

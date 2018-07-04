@@ -194,7 +194,7 @@ SessionResponse valid_init_json_handler(
         ML_Field tempfield(
             f["name"].get<string>(), f["frequency"].get<double>(),
             f["errorRate"].get<double>(), f["comparator"].get<string>(),
-            f["fieldType"].get<string>(),5); //TODO(TK) implement API change
+            f["fieldType"].get<string>(),f["bitlength"].get<size_t>());
         local_config->add_field(move(tempfield));
         fieldnames.emplace(f["name"].get<string>());
       }
