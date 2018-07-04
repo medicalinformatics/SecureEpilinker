@@ -28,14 +28,16 @@ struct ABYTester {
   BooleanCircuit* bc;
   BooleanCircuit* cc;
   ArithmeticCircuit* ac;
+  bool zeropad;
   const B2AConverter to_arith_closure;
   const A2BConverter to_bool_closure;
 
-  ABYTester(e_role role, e_sharing sharing, uint32_t nvals, uint32_t bitlen, uint32_t nthreads) :
+  ABYTester(e_role role, e_sharing sharing, uint32_t nvals, uint32_t bitlen, uint32_t nthreads, bool _zeropad) :
     role{role}, bitlen{bitlen}, nvals{nvals}, party{role, "127.0.0.1", 5676, LT, bitlen, nthreads},
     bc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[sharing]->GetCircuitBuildRoutine())},
     cc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[(sharing==S_YAO)?S_BOOL:S_YAO]->GetCircuitBuildRoutine())},
     ac{dynamic_cast<ArithmeticCircuit*>(party.GetSharings()[S_ARITH]->GetCircuitBuildRoutine())},
+    zeropad{_zeropad},
     to_arith_closure{[this](auto x){return to_arith(x);}},
     to_bool_closure{[this](auto x){return to_bool(x);}}
   {
@@ -49,7 +51,7 @@ struct ABYTester {
     return (bc->GetContext() == S_YAO) ? a2y(bc, s) : a2b(bc, cc, s);
   }
   ArithShare to_arith(const BoolShare& s_) {
-    BoolShare s{s_.zeropad(bitlen)}; // fix for aby issue #46
+    BoolShare s = zeropad ? s_.zeropad(bitlen) : s_; // fix for aby issue #46
     return (bc->GetContext() == S_YAO) ? y2a(ac, cc, s) : b2a(ac, s);
   }
 
@@ -77,17 +79,17 @@ struct ABYTester {
     iota(data.begin(), data.end(), 0);
     size_t data_bitlen = sel::ceil_log2_min1(nvals);
     BoolShare in(bc, data.data(), data_bitlen, SERVER, nvals);
-    //BoolShare in2(bc, data.data(), data_bitlen, SERVER, 2);
+    BoolShare in2(bc, data.data(), data_bitlen, SERVER, 2);
     ArithShare ain = to_arith(in);
-    //ArithShare ain2 = to_arith(in2);
+    ArithShare ain2 = to_arith(in2);
 
     BoolShare bain = to_bool(ain);
     ArithShare abain = to_arith(bain);
 
     print_share(in, "bool in");
-    //print_share(in2, "bool in2");
+    print_share(in2, "bool in2");
     print_share(ain, "arithmetic in");
-    //print_share(ain2, "arithmetic in2");
+    print_share(ain2, "arithmetic in2");
 
     print_share(bain, "b(a(in))");
     print_share(abain, "a(b(a(in)))");
@@ -296,6 +298,7 @@ int main(int argc, char *argv[])
   uint32_t nvals = 1;
   uint32_t bitlen = 32;
   uint32_t nthreads = 1;
+  bool zeropad = false;
 
   cxxopts::Options options{"test_aby", "Test ABY related components"};
   options.add_options()
@@ -303,6 +306,7 @@ int main(int argc, char *argv[])
     ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO", cxxopts::value(sharing))
     ("n,nvals", "Parallellity", cxxopts::value(nvals))
     ("b,bitlen", "Bitlength", cxxopts::value(bitlen))
+    ("z,zeropad", "Enable zeropadding before B2A conversion", cxxopts::value(zeropad))
     ("h,help", "Print help");
   auto op = options.parse(argc, argv);
 
@@ -313,7 +317,7 @@ int main(int argc, char *argv[])
 
   e_role role = role_server ? SERVER : CLIENT;
 
-  ABYTester tester{role, (e_sharing)sharing, nvals, bitlen, nthreads};
+  ABYTester tester{role, (e_sharing)sharing, nvals, bitlen, nthreads, zeropad};
 
   //tester.test_split_select_target();
   //tester.test_add();
