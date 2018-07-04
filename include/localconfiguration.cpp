@@ -55,8 +55,8 @@ void LocalConfiguration::add_exchange_group(IndexSet group) {
     if (!field_exists(f)) {
       throw runtime_error("Invalid Exchange Group. Field(s) does not exist!");
     }
-    m_exchange_groups.emplace_back(move(group));
   }
+  m_exchange_groups.emplace_back(move(group));
 }
 
 vector<IndexSet> const& LocalConfiguration::get_exchange_groups() const {
