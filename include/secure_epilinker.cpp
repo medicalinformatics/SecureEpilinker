@@ -346,7 +346,7 @@ private:
       // Set hammingweight input share only for bitmasks
       if (f.comparator == BM) {
         sin.hw = BoolShare(bcirc,
-            vector<CircUnit>(nvals, hw(value)),
+            vector<CircUnit>(nvals, hw(value)).data(),
             cfg.size_hw, CLIENT, nvals);
       }
 
