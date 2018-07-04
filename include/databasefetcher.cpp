@@ -68,7 +68,7 @@ ServerData DatabaseFetcher::fetch_data() {
         "\n",
         p.first);
     for (auto& d : p.second) {
-      bool empty{d};
+      bool empty{!d};
       fmt::print("Field {}empty", empty?"":"not ");
       if(!empty){
       for (const auto& byte : d.value())
