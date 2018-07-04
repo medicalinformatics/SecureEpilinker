@@ -159,6 +159,25 @@ std::vector<ToValue> transform_map_vec(const std::map<Key, FromValue>& _map,
 }
 
 /**
+ * Return maximum element (by value) from given vector
+ */
+template <class Value>
+Value max_element(const std::vector<Value>& _vec) {
+  return *(std::max_element(_vec.begin(),_vec.end()));
+}
+
+/**
+ * Return maximum element (by value) from given map on which the transformer is
+ * applied
+ */
+template <class Key, class FromValue, class Transformer,
+  class ToValue = decltype(std::declval<Transformer>()
+      (std::declval<std::pair<const Key, FromValue>>()))>
+ToValue max_element(const std::map<Key, FromValue>& _map, Transformer _tr) {
+  return sel::max_element(transform_map_vec(_map,_tr));
+}
+
+/**
  * Print vectors to cout
  */
 template<typename T>

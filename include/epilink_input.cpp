@@ -54,8 +54,7 @@ EpilinkConfig::EpilinkConfig(
   dice_prec(16 - 1 - ceil_log2(size_bitmask + 1)),
   //weight_prec{ceil_divide((BitLen - ceil_log2(nfields)), 2)}, // TODO ^^^
   weight_prec{(BitLen - ceil_log2(nfields^2) - dice_prec)/2},
-  max_weight{*(max_element(transform_map_vec(fields, [](auto f){return f.second.weight;}).begin(),
-        transform_map_vec(fields, [](auto f){return f.second.weight;}).end()))}
+  max_weight{sel::max_element(fields, [](auto f){return f.second.weight;})}
   {
     // Division by 2 for weight_prec initialization could have wasted one bit
     if (dice_prec + 2*weight_prec + ceil_log2(nfields^2) < BitLen) ++dice_prec;
