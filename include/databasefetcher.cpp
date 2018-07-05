@@ -113,7 +113,6 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
             if (content == 0) {
               temp_data[f.key()].emplace_back(nullopt);
             } else {
-            fmt::print("Bytes from API: {}\tBytes from sizeof(): {}\n", bitbytes(field_info.bitsize),sizeof(content));
             Bitmask temp(bitbytes(field_info.bitsize));
             ::memcpy(temp.data(), &content, bitbytes(field_info.bitsize));
             temp_data[f.key()].emplace_back(move(temp));

@@ -27,6 +27,7 @@ later version. This program is distributed in the hope that it will be useful,
 #include "serverhandler.h"
 #include "util.h"
 #include "resttypes.h"
+#include <thread>
 
 using namespace std;
 namespace sel {
@@ -73,7 +74,9 @@ void TempSelMethodHandler::handle_method(
                         {"SEL-Port", to_string(common_port)},
                         {"Connection", "Close"}};
     session->close(response.return_code, response.body, response.headers);
-    m_server_handler->get_local_server(client_id)->launch_comparison(data);
+    fmt::print("Response should be sent\n");
+    std::thread server_runner([this,client_id,data](){m_server_handler->run_server(client_id,move(data));});
+    server_runner.detach();
   }
 }
 }  // namespace sel

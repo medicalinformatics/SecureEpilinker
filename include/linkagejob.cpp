@@ -38,6 +38,7 @@ later version. This program is distributed in the hope that it will be useful,
 #include <curlpp/cURLpp.hpp>
 #include <iostream>
 #include <sstream>
+#include <future>
 
 using namespace std;
 namespace sel {
@@ -134,9 +135,8 @@ void LinkageJob::run_job() {
     epilinker->build_circuit(nvals);
     epilinker->run_setup_phase();
     EpilinkClientInput client_input{m_data, nvals};
-    // const auto client_share{epilinker->run_as_client(client_input)};
-    // fmt::print("Client result:\n{}", client_share);
-    fmt::print("Client exited successfuly with dummy values\n");
+    const auto client_share{epilinker->run_as_client(client_input)};
+    fmt::print("Client result:\nIndex: {}, Match: {}, TMatch:{}\n", client_share.index, client_share.match, client_share.tmatch);
     m_status = JobStatus::DONE;
   } catch (const exception& e) {
     fmt::print(stderr, "Error running MPC Client: {}\n", e.what());
@@ -150,7 +150,8 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
 
 size_t LinkageJob::signal_server() {
   curlpp::Easy curl_request;
-  stringstream response_stream;
+  promise<stringstream> response_promise;
+  future<stringstream> response_stream = response_promise.get_future();
   list<string> headers{
       "Authorization: SEL ABCD",
       "Remote-Identifier: "s + m_remote_config->get_remote_client_id()};
@@ -161,11 +162,13 @@ size_t LinkageJob::signal_server() {
   curl_request.setOpt(new curlpp::Options::Post(true));
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
-  curl_request.setOpt(new curlpp::Options::WriteStream(&response_stream));
   curl_request.setOpt(new curlpp::options::Header(1));
   fmt::print("Sending linkage request\n");
-  curl_request.perform();
-  auto nval{stoull(get_headers(response_stream, "Record-Number").front())};
+  send_curl(curl_request, move(response_promise));
+  response_stream.wait();
+  auto stream = response_stream.get();
+  fmt::print("Response stream: {}\n", stream.str());
+  auto nval{stoull(get_headers(stream, "Record-Number").front())};
   return nval;
 }
 }  // namespace sel

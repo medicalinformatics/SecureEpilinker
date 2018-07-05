@@ -71,16 +71,9 @@ SecureEpilinker::Result LocalServer::run_server() {
   m_aby_server.build_circuit(nvals);
   m_aby_server.run_setup_phase();
   fmt::print("Starting Server\n");
-  //auto server_result{m_aby_server.run_as_server({m_data->data})};
-  //fmt::print("Server Result: {}", server_result);
-  fmt::print("Returning dummy results\n");
-  //return server_result;
-  return {0,false,true
-  #ifdef DEBUG_SEL_RESULT
-    ,7,8
-  #endif
-  };
-}
+  auto server_result{m_aby_server.run_as_server({m_data->data})};
+  return server_result;
+  }
 
 SecureEpilinker::Result LocalServer::launch_comparison(
     shared_ptr<const ServerData> data) {

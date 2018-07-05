@@ -25,6 +25,8 @@
 #include "seltypes.h"
 #include "resttypes.h"
 
+#include "datahandler.h"
+
 namespace sel {
 class DataHandler;
 class ConfigurationHandler;
@@ -48,6 +50,9 @@ class LocalServer {
   SecureEpilinker::Result launch_comparison(std::shared_ptr<const ServerData>);
   uint16_t get_port() const;
   std::string get_ip() const;
+
+
+  std::vector<std::map<std::string, std::string>> get_ids() const {return m_data->ids;}
 
  private:
   ClientId m_client_id;
