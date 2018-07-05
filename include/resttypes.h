@@ -25,6 +25,12 @@
 #include <memory>
 #include <string>
 
+#include <future>
+#include <sstream>
+#include <curlpp/Easy.hpp>
+#include <curlpp/Infos.hpp>
+#include <curlpp/Options.hpp>
+#include <curlpp/cURLpp.hpp>
 namespace sel{
 
 // Forward Declarations
@@ -65,5 +71,9 @@ struct SessionResponse {
   std::string body;
   std::multimap<std::string, std::string> headers;
 };
+
+
+void send_curl(curlpp::Easy& request, std::promise<std::stringstream> barrier);
+
 } // namespace sel
 #endif /* end of include guard: SEL_RESTTYPES_HPP */

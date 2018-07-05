@@ -22,6 +22,12 @@
 #include <stdexcept>
 #include <string>
 
+#include <future>
+#include <sstream>
+#include <curlpp/Easy.hpp>
+#include <curlpp/Infos.hpp>
+#include <curlpp/Options.hpp>
+#include <curlpp/cURLpp.hpp>
 using std::string;
 using std::runtime_error;
 
@@ -63,5 +69,12 @@ string js_enum_to_string(JobStatus status) {
       return "Error!";
     }
   }
+}
+
+void send_curl(curlpp::Easy& request, std::promise<std::stringstream> barrier){
+  std::stringstream response;
+  request.setOpt(new curlpp::Options::WriteStream(&response));
+  request.perform();
+  barrier.set_value(move(response));
 }
 } //namespace sel

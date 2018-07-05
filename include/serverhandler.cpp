@@ -81,4 +81,18 @@ shared_ptr<SecureEpilinker> ServerHandler::get_epilink_client(const RemoteId& re
 std::shared_ptr<LocalServer> ServerHandler::get_local_server(const ClientId& client_id) const {
   return m_server.at(client_id);
 }
+
+void ServerHandler::run_server(ClientId client_id, std::shared_ptr<const ServerData> data) {
+  const auto result{get_local_server(client_id)->launch_comparison(move(data))};
+  fmt::print("Server Result\nIndex: {}, Match: {}, TMatch: {}\n", result.index, result.match, result.tmatch);
+  const auto ids{get_local_server(client_id)->get_ids()};
+  for (size_t i = 0; i!= ids.size(); ++i){
+    fmt::print("Index: {}, IDs: ",i);
+    for (const auto& id : ids[i]){
+      fmt::print("\"{}:{}\"",id.first,id.second);
+    }
+    fmt::print("\n");
+  }
+  // TODO(TK): Send result and ids to linkage server
+}
 }  // namespace sel
