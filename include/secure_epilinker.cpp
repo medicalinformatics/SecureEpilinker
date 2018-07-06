@@ -272,7 +272,7 @@ private:
    */
   map<FieldName, InputShares> ins;
   // Constant shares
-  BoolShare const_zero, const_idx;
+  BoolShare const_idx;
   // Left side of inequality: T * sum(weights)
   ArithShare const_threshold, const_tthreshold;
 
@@ -296,8 +296,6 @@ private:
 
   void set_constants(uint32_t nvals) {
     this->nvals = nvals;
-    // create constants with nvals
-    const_zero = constant_simd(bcirc, 0, 1, nvals);
     // build constant index vector
     vector<BoolShare> numbers;
     numbers.reserve(nvals);
@@ -319,7 +317,6 @@ private:
     const_threshold = constant(acirc, T, BitLen);
     const_tthreshold = constant(acirc, Tt, BitLen);
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(const_zero, "const_zero");
     print_share(const_idx, "const_idx");
     print_share(const_threshold , "const_threshold ");
     print_share(const_tthreshold , "const_tthreshold ");
