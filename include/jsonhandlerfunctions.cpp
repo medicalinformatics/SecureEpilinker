@@ -61,7 +61,7 @@ unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json& j) {
   auto l_auth_type{str_to_authtype(j["authType"].get<string>())};
   if (l_auth_type == AuthenticationType::API_KEY) {
     return AuthenticationConfig::create_authentication<APIKeyConfig>(
-        l_auth_type, j["sharedkey"].get<string>());
+        l_auth_type, j["sharedKey"].get<string>());
   }
   return make_unique<AuthenticationConfig>(AuthenticationType::NONE);
 }
@@ -82,6 +82,7 @@ SessionResponse valid_linkrecord_json_handler(
     const shared_ptr<ServerHandler>& server_handler,
     const shared_ptr<ConnectionHandler>&) {
   try {
+    fmt::print("Payload: {}\n", j.dump(2));
     JobId job_id;
     if (config_handler->get_remote_count()) {
       const auto local_config{config_handler->get_local_config()};
@@ -176,6 +177,7 @@ SessionResponse valid_init_json_handler(
     const shared_ptr<ConfigurationHandler>& config_handler,
     const shared_ptr<ServerHandler>& server_handler,
     const shared_ptr<ConnectionHandler>& connection_handler) {
+    fmt::print("Payload: {}\n", j.dump(2));
   if (remote_id == "local") {
     auto local_config = make_shared<LocalConfiguration>();
     fmt::print("Creating local configuration\n");
