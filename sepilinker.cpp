@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
   if(server_config["useSSL"].get<bool>()){
     settings->set_ssl_settings(ssl_settings);
   } else {
-    settings->set_port(8080);
+    settings->set_port(server_config["port"].get<unsigned>());
   }
 
   initializer.publish(service);
