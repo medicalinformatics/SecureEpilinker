@@ -44,7 +44,14 @@ void TempSelMethodHandler::handle_method(
     // TODO(TK) Authorize Usage
     if (auto it = headers.find("Available-Ports"); it != headers.end()) {
       common_port = m_connection_handler->choose_common_port(it->second);
-      client_ip = split(session->get_origin(), ':').front();
+      const auto origin{session->get_origin()};
+      const bool ipv6{split(origin,':').size() > 2 ? true : false};
+      fmt::print("Origin: {}, is IPv{}\n", origin, ipv6?"6":"4");
+      if(!ipv6){
+        client_ip = split(origin, ':').front();
+      } else {
+        client_ip = "127.0.0.1"; // FIXME(TK): Handling for IPv6
+      }
       client_id = request->get_header("Remote-Identifier", "Not set");
       response.return_code = restbed::OK;
       response.body = "Create Server";
