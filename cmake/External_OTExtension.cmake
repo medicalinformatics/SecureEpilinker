@@ -11,9 +11,6 @@ ExternalProject_Add(OTExtension
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_BINARY_DIR}/OTExtension.CMakeLists.txt"
         "<SOURCE_DIR>/CMakeLists.txt"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PROJECT_SOURCE_DIR}/extern/ABY/src/abycore/ot/OTconstants.h"
-        "<SOURCE_DIR>/ot/"
     COMMAND "${PROJECT_SOURCE_DIR}/cmake/patch-OTExtension.sh" "<SOURCE_DIR>"
     CMAKE_ARGS
         -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
