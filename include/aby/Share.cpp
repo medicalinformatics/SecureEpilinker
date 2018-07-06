@@ -19,6 +19,8 @@
 #include <fmt/format.h>
 #include "Share.h"
 
+using namespace std;
+
 namespace sel {
 
 /******************** BoolShare ********************/

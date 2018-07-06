@@ -99,7 +99,7 @@ private:
   const EpilinkConfig epicfg;
 
   class SELCircuit; // forward of implementation class ~ pimpl
-  unique_ptr<SELCircuit> selc; // ~pimpl
+  std::unique_ptr<SELCircuit> selc; // ~pimpl
 
   bool is_built{false};
   bool is_setup{false};

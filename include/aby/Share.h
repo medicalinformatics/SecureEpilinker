@@ -36,7 +36,7 @@ class Share {
    */
   Share(Circuit* c, share* s) : circ{c}, sh{s} {};
   Share(Circuit* c, const share_p& sp) : circ{c}, sh{sp} {};
-  Share(Circuit* c, const vector<uint32_t>& gates) :
+  Share(Circuit* c, const std::vector<uint32_t>& gates) :
     Share{c, new boolshare(gates, static_cast<Circuit*>(c))} {};
   ~Share() = default;
   /*
@@ -144,7 +144,7 @@ class BoolShare: public Share {
   BoolShare(): Share{}, bcirc{} {};
   BoolShare(BooleanCircuit* bc, share* s) :
     Share(static_cast<Circuit*>(bc), s), bcirc{bc} {};
-  BoolShare(BooleanCircuit* bc, const vector<uint32_t>& gates) :
+  BoolShare(BooleanCircuit* bc, const std::vector<uint32_t>& gates) :
     BoolShare{bc, new boolshare(gates, static_cast<Circuit*>(bc))} {};
   // Consume Share move contructor
   BoolShare(Share&& s) :
@@ -259,12 +259,12 @@ class BoolShare: public Share {
 
   // Binary functions
   friend BoolShare apply_file_binary(const BoolShare& a, const BoolShare& b,
-      uint32_t a_bits, uint32_t b_bits, const string& fn);
+      uint32_t a_bits, uint32_t b_bits, const std::string& fn);
 
   /**
    * Spits a simd share into ceil(nvals/new_nvals) shares
    */
-  vector<BoolShare> split(uint32_t new_nval) const;
+  std::vector<BoolShare> split(uint32_t new_nval) const;
 
 
   protected:
@@ -276,7 +276,7 @@ class ArithShare: public Share {
   ArithShare(): Share{}, acirc{} {};
   ArithShare(ArithmeticCircuit* ac, share* s) :
     Share(static_cast<Circuit*>(ac), s), acirc{ac} {};
-  ArithShare(ArithmeticCircuit* ac, const vector<uint32_t>& gates) :
+  ArithShare(ArithmeticCircuit* ac, const std::vector<uint32_t>& gates) :
     ArithShare{ac, new arithshare(gates, static_cast<Circuit*>(ac))} {};
   // Consume Share move contructor
   ArithShare(Share&& s) :
@@ -318,7 +318,7 @@ class ArithShare: public Share {
   /**
    * Spits a simd share into ceil(nvals/new_nvals) shares
    */
-  vector<ArithShare> split(uint32_t new_nval) const;
+  std::vector<ArithShare> split(uint32_t new_nval) const;
 
   protected:
   ArithmeticCircuit* acirc;
@@ -338,7 +338,7 @@ class OutShare: private Share {
     return sh->get_clear_value_vec(vec, bitlen, nvals);
   }
 
-  vector<uint32_t> get_clear_value_vec();
+  std::vector<uint32_t> get_clear_value_vec();
 };
 
 /******************** Factories ********************/
@@ -358,7 +358,7 @@ OutShare out_shared(const Share& share);
 /*
  * Debugging PrintValueGate
  */
-OutShare print_share(const Share& share, const string& msg);
+OutShare print_share(const Share& share, const std::string& msg);
 
 Share constant(Circuit* c, UGATE_T val, uint32_t bitlen);
 
@@ -390,9 +390,9 @@ BoolShare b2y(BooleanCircuit* ycirc, const BoolShare& s);
  * Vertically Combines the given shares to a new share having the same number of
  * wires=bitlen and nvals the sum of the individual nvals
  */
-Share vcombine(const vector<Share>& shares);
-inline BoolShare vcombine_bool(const vector<BoolShare>& shares) {
-  return vcombine(vector<Share>(shares.cbegin(), shares.cend()));
+Share vcombine(const std::vector<Share>& shares);
+inline BoolShare vcombine_bool(const std::vector<BoolShare>& shares) {
+  return vcombine(std::vector<Share>(shares.cbegin(), shares.cend()));
 }
 
 } // namespace sel

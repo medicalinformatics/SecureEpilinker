@@ -21,7 +21,6 @@
 #pragma once
 
 #include <functional>
-#include "abycore/aby/abyparty.h"
 #include "Share.h"
 
 namespace sel {
@@ -52,8 +51,8 @@ ArithShare binary_accumulate(vector<ArithShare> vals,
     const BinaryOp_ArithShare& op);
 */
 
-void print_share(const ArithQuotient& q, const string& msg);
-void print_share(const BoolQuotient& q, const string& msg);
+void print_share(const ArithQuotient& q, const std::string& msg);
+void print_share(const BoolQuotient& q, const std::string& msg);
 
 /**
  * Creates a BoolShare with bitlen wires from an arith share with 1 wire and
@@ -97,15 +96,15 @@ void min_index(
     ArithQuotient& selector, std::vector<BoolShare>& targets,
     const A2BConverter& to_bool, const B2AConverter& to_arith);
 
-BoolShare max(const vector<BoolShare>&);
-BoolShare sum(const vector<BoolShare>&);
-ArithShare sum(const vector<ArithShare>&);
+BoolShare max(const std::vector<BoolShare>&);
+BoolShare sum(const std::vector<BoolShare>&);
+ArithShare sum(const std::vector<ArithShare>&);
 
 BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
     const A2BConverter& to_bool);
 ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
     const A2BConverter& to_bool, const B2AConverter& to_arith);
-ArithQuotient max(const vector<ArithQuotient>& qs,
+ArithQuotient max(const std::vector<ArithQuotient>& qs,
     const A2BConverter& to_bool, const B2AConverter& to_arith);
 
 } // namespace sel
