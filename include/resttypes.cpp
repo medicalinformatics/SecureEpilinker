@@ -39,7 +39,7 @@ AlgorithmType str_to_atype(const string& str) {
   throw runtime_error("Invalid Algorithm Type");
 }
 AuthenticationType str_to_authtype(const string& str) {
-  if (str == "apikey")
+  if (str == "apiKey")
     return AuthenticationType::API_KEY;
   else if (str == "none")
     return AuthenticationType::NONE;

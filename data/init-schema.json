@@ -5,9 +5,9 @@
     "authentication": {
       "type": "object",
       "properties": {
-        "authType": {"enum": ["none","apikey"]},
+        "authType": {"enum": ["none","apiKey"]},
         "additionalProperties": {
-          "sharedkey": {"type": "string"}
+          "sharedKey": {"type": "string"}
         }
       }
     },
@@ -61,6 +61,7 @@
         "authentication": {"$ref": "#/definitions/authentication"}
       },
       "additionalProperties": false
+      "idType": {"type": "string"},
     },
     "linkageService": {
       "url": { "type": "string"},
