@@ -49,6 +49,9 @@ FieldComparator str_to_fcomp(const std::string& str);
 
 struct ML_Field {
   ML_Field() = default;
+  /**
+   * Constructor from json
+   */
   ML_Field(const std::string& n,
            double f,
            double e,
@@ -61,6 +64,16 @@ struct ML_Field {
         type{str_to_ftype(t)},
         bitsize{b}
         {};
+  /**
+   * Internal constructor for testing
+   */
+  ML_Field(const std::string& name, const double weight,
+      const FieldComparator comp, const FieldType type,
+      const size_t bitsize) :
+    name{name}, weight{weight},
+    comparator{comp}, type{type},
+    bitsize{bitsize} {};
+
   std::string name;
   Weight weight;
   FieldComparator comparator;
