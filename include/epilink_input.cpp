@@ -130,11 +130,12 @@ std::ostream& operator<<(std::ostream& os,
   } else {
     os << "<empty>";
   }
+  return os;
 }
 
 std::ostream& operator<<(std::ostream& os,
     const std::pair<const sel::FieldName, sel::FieldEntry>& f) {
-  os << f.first << ": " << f.second;
+  return os << f.first << ": " << f.second;
 }
 
 std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in) {
