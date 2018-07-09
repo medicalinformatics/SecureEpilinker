@@ -13,27 +13,46 @@ constexpr auto BM = FieldComparator::NGRAM;
 constexpr double Threshold = 0.9;
 constexpr double TThreshold = 0.7;
 
+ML_Field f_int1 (
+  //name, f, e, comparator, type, bitsize
+  "int_1", 1.0,
+  FieldComparator::BINARY, FieldType::INTEGER, 32
+);
+
+ML_Field f_int2 (
+  //name, f, e, comparator, type, bitsize
+  "int_2", 3.0,
+  FieldComparator::BINARY, FieldType::INTEGER, 32
+);
+
+ML_Field f_bm1 (
+  //name, f, e, comparator, type, bitsize
+  "bm_1", 2.0,
+  FieldComparator::NGRAM, FieldType::BITMASK, 8
+);
+
+ML_Field f_bm2 (
+  //name, f, e, comparator, type, bitsize
+  "bm_2", 4.0,
+  FieldComparator::NGRAM, FieldType::BITMASK, 8
+);
+
 Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
     uint32_t nvals) {
-  // First test: only one bin field, single byte bitmask
+  // First test: only one bin field, single byte integer
   EpilinkConfig epi_cfg {
-    {
-      {BM, {4.0}},
-      {BIN, {1.0}}
-    }, // bm/bin weights
-    {{BM, {}}, {BIN, {}}}, // bm/bin exchange groups
+    { {"int_1", f_int1}, }, // fields
+    {}, // exchange groups
     8, Threshold, TThreshold // size_bitmask, (tent.) thresholds
   };
 
   EpilinkClientInput in_client {
-    {{0x33}}, {0xdeadbeef}, // hw/bin record
-    {false}, {false}, // hw/bin empty
+    { {"int_1", Bitmask{0x33, 0, 0, 0}} }, // record
     nvals // nvals
   };
 
   EpilinkServerInput in_server {
-    {vector<Bitmask>(nvals, {0x33})}, {vector<CircUnit>(nvals, 0xdeadbeef)}, // hw/bin database
-    {vector<bool>(nvals, false)}, {vector<bool>(nvals, false)}, // hw/bin empty
+    { { "int_1", vector<FieldEntry>(nvals, Bitmask{0x33, 0, 0, 0})} } // records
   };
 
   SecureEpilinker linker{aby_cfg, epi_cfg};
@@ -57,25 +76,32 @@ Result test_exchange_grp(const SecureEpilinker::ABYConfig& aby_cfg,
   // First test: only one bin field, single byte bitmask
   EpilinkConfig epi_cfg {
     {
-      {BM, {4.0, 1.0}},
-      {BIN, {2.0, 1.0}}
-    }, // bm/bin weights
-    {{BM, {{0,1}}}, {BIN, {}}}, // bm/bin exchange groups
+      {"int_1", f_int1},
+      {"int_2", f_int2},
+      {"bm_1", f_bm1},
+      {"bm_2", f_bm2},
+    }, // fields
+    {{"int_1", "int_2"}}, // exchange groups
     8, Threshold, TThreshold // size_bitmask, (tent.) thresholds
   };
 
   EpilinkClientInput in_client {
-    {{0x33},{0x43}}, // hw records
-    {0xdeadbeef, 0xdecea5ed}, // bin records
-    {false, false}, {false, false}, // hw/bin empty
+    {
+      {"bm_1", Bitmask{0x33, 0, 0, 0}},
+      {"bm_2", Bitmask{0x43, 0, 0, 0}},
+      {"int_1", Bitmask{0xde, 0xad, 0xbe, 0xef}},
+      {"int_2", Bitmask{0xde, 0xce, 0xa5, 0xed}}
+    }, // record
     nvals // nvals
   };
 
   EpilinkServerInput in_server {
-    {vector<Bitmask>(nvals, {0x44}), vector<Bitmask>(nvals, {0x33})}, // hw db
-    {vector<CircUnit>(nvals, 0xdeadbeef), vector<CircUnit>(nvals, 0xdecea5ed)}, // bin database
-    {vector<bool>(nvals, false), vector<bool>(nvals, false)},// hw empty
-    {vector<bool>(nvals, false), vector<bool>(nvals, false)} // bin empty
+    {
+      {"bm_1", vector<FieldEntry>(nvals, Bitmask{0x33, 0, 0, 0})},
+      {"bm_2", vector<FieldEntry>(nvals, Bitmask{0x43, 0, 0, 0})},
+      {"int_1", vector<FieldEntry>(nvals, Bitmask{0xde, 0xad, 0xbe, 0xef})},
+      {"int_2", vector<FieldEntry>(nvals, Bitmask{0xde, 0xce, 0xa5, 0xed})}
+    } // records
   };
 
   SecureEpilinker linker{aby_cfg, epi_cfg};
