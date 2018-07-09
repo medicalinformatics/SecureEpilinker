@@ -25,7 +25,6 @@
 using fmt::format, fmt::print;
 #include "util.h"
 #include "secure_epilinker.h"
-#include "epilink_input.h"
 #include "math.h"
 #include "aby/Share.h"
 #include "aby/gadgets.h"
@@ -460,8 +459,8 @@ private:
       ArithQuotient sum_perm_weight{sum(field_weights)};
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(sum_perm_weight,
-          //format("sum_perm_weight ({},{})", ftype, groupPerm)); // TODO#19
-          format("sum_perm_weight ({})", ftype ));
+          //format("sum_perm_weight ({}|{})", group, groupPerm )); // TODO#19
+          "sum_perm_weight"); // TODO#19
 #endif
       // collect for later max
       perm_weights.emplace_back(sum_perm_weight);
@@ -470,8 +469,8 @@ private:
     ArithQuotient max_perm_weight{max(perm_weights, to_bool_closure, to_arith_closure)};
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(max_perm_weight,
-        //format("max_perm_weight ({},{})", ftype, group)); // TODO#19
-        format("max_perm_weight ({})", ftype));
+        //format("max_perm_weight ({})", group)); // TODO#19
+        "max_perm_weight"); // TODO#19
 #endif
     // Treat quotient as FieldWeight
     return {max_perm_weight.num, max_perm_weight.den};
