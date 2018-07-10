@@ -71,6 +71,20 @@ string js_enum_to_string(JobStatus status) {
   }
 }
 
+void to_json(nlohmann::json& j, const AlgorithmConfig& c) {
+  j = nlohmann::json{{"algoType", (c.type==AlgorithmType::EPILINK)?"epilink":"unknown"},{"threshold_match", c.threshold_match},{"threshold_non_match", c.threshold_non_match}};
+}
+
+void from_json(const nlohmann::json& j, AlgorithmConfig& c) {
+  if(auto type = j.at("algoType").get<string>(); type=="epilink") {
+    c.type = AlgorithmType::EPILINK;
+  } else {
+    throw runtime_error("Unknown algorithm type: "+type);
+  }
+  c.threshold_match = j.at("threshold_match").get<double>();
+  c.threshold_non_match = j.at("threshold_non_match").get<double>();
+}
+
 void send_curl(curlpp::Easy& request, std::promise<std::stringstream> barrier){
   std::stringstream response;
   request.setOpt(new curlpp::Options::WriteStream(&response));
