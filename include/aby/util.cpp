@@ -19,6 +19,8 @@
 #include <chrono>
 #include <functional>
 #include "abycore/aby/abyparty.h"
+#include "abycore/circuit/arithmeticcircuits.h"
+#include "abycore/sharing/sharing.h"
 #include "util.h"
 
 #define SEP "\t"

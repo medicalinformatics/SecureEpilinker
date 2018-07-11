@@ -21,7 +21,10 @@
 #pragma once
 
 #include <memory>
-#include "abycore/aby/abyparty.h"
+#include "abycore/circuit/share.h"
+#include "abycore/circuit/booleancircuits.h"
+#include "abycore/circuit/arithmeticcircuits.h"
+
 
 namespace sel {
 
