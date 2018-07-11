@@ -19,9 +19,6 @@
 #include <stdexcept>
 #include <algorithm>
 #include "fmt/format.h"
-#ifdef DEBUG_SEL_CIRCUIT
-#include "fmt/ostream.h"
-#endif
 using fmt::format, fmt::print;
 #include "abycore/sharing/sharing.h"
 #include "util.h"
@@ -32,6 +29,7 @@ using fmt::format, fmt::print;
 #include "seltypes.h"
 
 using namespace std;
+
 
 namespace sel {
 
@@ -460,8 +458,7 @@ private:
       ArithQuotient sum_perm_weight{sum(field_weights)};
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(sum_perm_weight,
-          //format("sum_perm_weight ({}|{})", group, groupPerm )); // TODO#19
-          "sum_perm_weight"); // TODO#19
+          format("sum_perm_weight ({}|{})", group, groupPerm));
 #endif
       // collect for later max
       perm_weights.emplace_back(sum_perm_weight);
@@ -470,8 +467,7 @@ private:
     ArithQuotient max_perm_weight{max(perm_weights, to_bool_closure, to_arith_closure)};
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(max_perm_weight,
-        //format("max_perm_weight ({})", group)); // TODO#19
-        "max_perm_weight"); // TODO#19
+        format("max_perm_weight ({})", group));
 #endif
     // Treat quotient as FieldWeight
     return {max_perm_weight.num, max_perm_weight.den};
