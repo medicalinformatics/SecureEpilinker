@@ -23,6 +23,9 @@
 #include "epilink_input.h"
 #include "abycore/aby/abyparty.h"
 
+class BooleanCircuit;
+class ArithmeticCircuit;
+
 namespace sel {
 
 class SecureEpilinker {

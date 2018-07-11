@@ -23,6 +23,7 @@
 #include "fmt/ostream.h"
 #endif
 using fmt::format, fmt::print;
+#include "abycore/sharing/sharing.h"
 #include "util.h"
 #include "secure_epilinker.h"
 #include "math.h"
