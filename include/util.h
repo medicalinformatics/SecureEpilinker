@@ -26,11 +26,11 @@
 #include <iterator>
 #include <functional>
 #include <memory>
-#include <fmt/format.h>
 #include <stdexcept>
 #include <cctype>
 #include <locale>
 #include <sstream>
+#include "fmt/format.h"
 #include "epilink_input.h"
 
 namespace sel {
@@ -254,5 +254,28 @@ class LocalConfiguration;
 struct AlgorithmConfig;
 EpilinkConfig get_epilink_config(std::shared_ptr<const LocalConfiguration>, std::shared_ptr<const AlgorithmConfig>);
 } // namespace sel
+
+// Custom fmt formatters for our types
+namespace fmt {
+
+template <class T>
+struct formatter<std::vector<T>> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const std::vector<T> v, FormatContext &ctx) {
+    auto c = format_to(ctx.begin(), "[");
+    for (const auto& e : v) {
+      c = format_to(c, "{}", e);
+      if (e != v.back()) {
+        c = format_to(c, ", ");
+      }
+    }
+    return format_to(c,"]");
+  }
+};
+
+} // namespace fmt
 
 #endif /* end of include guard: SEL_UTIL_H */
