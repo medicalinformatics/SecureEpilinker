@@ -20,6 +20,7 @@
 #define SEL_SECURE_EPILINKER_H
 #pragma once
 
+#include "fmt/format.h"
 #include "epilink_input.h"
 #include "abycore/aby/abyparty.h"
 
@@ -113,7 +114,6 @@ private:
 
 } // namespace sel
 
-#ifdef FMT_FORMAT_H_
 // Custom fmt formatters for our types
 namespace fmt {
 template <>
@@ -153,5 +153,4 @@ struct formatter<sel::SecureEpilinker::ABYConfig> {
 };
 
 } // namespace fmt
-#endif // FMT_FORMAT_H_
 #endif /* end of include guard: SEL_SECURE_EPILINKER_H */
