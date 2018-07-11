@@ -352,7 +352,7 @@ private:
 
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(sin.val, format("client val[{}]", i));
-      print_share(sin.hw, format("client hw[{}]", i));
+      if (f.comparator == BM) print_share(sin.hw, format("client hw[{}]", i));
       print_share(sin.delta, format("client delta[{}]", i));
 #endif
     }
@@ -388,7 +388,7 @@ private:
 
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(sin.val, format("server val[{}]", i));
-      print_share(sin.hw, format("server hw[{}]", i));
+      if (f.comparator == BM) print_share(sin.hw, format("server hw[{}]", i));
       print_share(sin.delta, format("server delta[{}]", i));
 #endif
     }
@@ -410,7 +410,7 @@ private:
       sin.delta = ArithShare(acirc, BitLen, nvals); // dummy
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(sin.val, format("dummy client val[{}]", i));
-      print_share(sin.hw, format("dummy client hw[{}]", i));
+      if (f.comparator == BM) print_share(sin.hw, format("dummy client hw[{}]", i));
       print_share(sin.delta, format("dummy client delta[{}]", i));
 #endif
     }
@@ -432,7 +432,7 @@ private:
       sin.delta = ArithShare(acirc, BitLen, nvals); // dummy
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(sin.val, format("dummy server val[{}]", i));
-      print_share(sin.hw, format("dummy server hw[{}]", i));
+      if (f.comparator == BM) print_share(sin.hw, format("dummy server hw[{}]", i));
       print_share(sin.delta, format("dummy server delta[{}]", i));
 #endif
     }
