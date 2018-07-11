@@ -29,6 +29,7 @@
 #include <vector>
 #include <set>
 #include <cmath>
+#include "fmt/format.h"
 
 namespace sel {
 class AuthenticationConfig;
@@ -82,7 +83,6 @@ struct ML_Field {
 };
 } // namespace sel
 
-#ifdef FMT_FORMAT_H_
 // Custom fmt formatters for our types
 namespace fmt {
 template <>
@@ -101,5 +101,4 @@ struct formatter<sel::FieldComparator> {
   }
 };
 } // namespace fmt
-#endif // FMT_FORMAT_H_
 #endif // SEL_SELTYPES_H

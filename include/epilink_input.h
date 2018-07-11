@@ -24,6 +24,7 @@
 #include <map>
 #include <cstdint>
 #include "seltypes.h"
+#include "fmt/ostream.h"
 
 namespace sel {
 
@@ -112,10 +113,6 @@ std::ostream& operator<<(std::ostream& os, const sel::FieldEntry& val);
 std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in);
 std::ostream& operator<<(std::ostream& os, const sel::EpilinkServerInput& in);
 
-#ifdef FMT_FORMAT_H_
-// To use ostream&operator<< overloads
-#include "fmt/ostream.h"
-
 // Custom fmt formatters for our types
 namespace fmt {
 
@@ -138,6 +135,5 @@ struct formatter<sel::EpilinkConfig> {
 };
 
 } // namespace fmt
-#endif // FMT_FORMAT_H_
 
 #endif /* end of include guard: SEL_EPILINKINPUT_H */
