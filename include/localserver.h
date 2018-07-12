@@ -48,11 +48,13 @@ class LocalServer {
   ClientId get_id() const;
   SecureEpilinker::Result run_server();
   SecureEpilinker::Result launch_comparison(std::shared_ptr<const ServerData>);
+  bool compare_configuration(const nlohmann::json&) const;
   uint16_t get_port() const;
   std::string get_ip() const;
 
 
   std::vector<std::map<std::string, std::string>> get_ids() const {return m_data->ids;}
+  std::shared_ptr<DataHandler> get_data_handler() const {return m_data_handler;}
 
  private:
   ClientId m_client_id;
