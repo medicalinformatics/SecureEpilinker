@@ -145,7 +145,7 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
         case FieldType::BITMASK: {
           auto temp = f->get<string>();
           auto bloom = base64_decode(temp);
-          if (!check_bloom_length(bloom, m_algo_config->bloom_length)) {
+          if (!check_bloom_length(bloom, field_info.bitsize)) {
             fmt::print(
                 "Warning: Set bits after bloomfilterlength. Set to zero.\n");
           }

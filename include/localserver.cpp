@@ -46,7 +46,7 @@ LocalServer::LocalServer(ClientId client_id,
            m_config_handler->get_local_config()->get_aby_info().aby_threads},
           {m_config_handler->get_local_config()->get_fields(),
            m_config_handler->get_local_config()->get_exchange_groups(),
-           m_config_handler->get_algorithm_config()->bloom_length,
+           500, //TODO(TK) remove, when EpilinkConfig is fixed
            m_config_handler->get_algorithm_config()->threshold_match,
            m_config_handler->get_algorithm_config()->threshold_non_match}) {}
 LocalServer::LocalServer(ClientId client_id,
