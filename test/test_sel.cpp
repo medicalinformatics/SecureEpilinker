@@ -19,6 +19,8 @@ ML_Field f_int1 (
   FieldComparator::BINARY, FieldType::INTEGER, 32
 );
 
+Bitmask data_int_1 {Bitmask{0x33, 0, 0, 0}};
+
 ML_Field f_int2 (
   //name, f, e, comparator, type, bitsize
   "int_2", 3.0,
@@ -47,12 +49,12 @@ Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
   };
 
   EpilinkClientInput in_client {
-    { {"int_1", Bitmask{0x33, 0, 0, 0}} }, // record
+    { {"int_1", data_int_1} }, // record
     nvals // nvals
   };
 
   EpilinkServerInput in_server {
-    { { "int_1", vector<FieldEntry>(nvals, Bitmask{0x33, 0, 0, 0})} } // records
+    { {"int_1", vector<FieldEntry>(nvals, Bitmask{0x37,0,0,0})} } // records
   };
 
   SecureEpilinker linker{aby_cfg, epi_cfg};
@@ -153,8 +155,8 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  //auto res = test_simple(aby_cfg, nvals);
-  Result res = test_exchange_grp(aby_cfg, nvals);
+  Result res = test_simple(aby_cfg, nvals);
+  //Result res = test_exchange_grp(aby_cfg, nvals);
 
   print_result(res);
 
