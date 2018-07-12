@@ -54,12 +54,12 @@ struct ConnectionConfig {
 
 struct CallbackConfig {
   std::string url;
-  std::string token;
+  std::string idType;
+  std::string idString;
 };
 
 struct AlgorithmConfig {
   AlgorithmType type;
-  unsigned bloom_length;
   double threshold_match;
   double threshold_non_match;
 };

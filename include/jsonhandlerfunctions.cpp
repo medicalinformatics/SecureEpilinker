@@ -136,7 +136,8 @@ SessionResponse valid_linkrecord_json_handler(
       try {
         CallbackConfig callback;
         callback.url = j["callback"]["url"].get<string>();
-        callback.token = j["callback"]["token"].get<string>();
+        callback.idType = j["callback"]["patientId"]["idType"].get<string>();
+        callback.idString = j["callback"]["patientId"]["idString"].get<string>();
         job->set_callback(move(callback));
 
         for (auto f = j["fields"].begin(); f != j["fields"].end(); ++f) {
@@ -150,7 +151,7 @@ SessionResponse valid_linkrecord_json_handler(
               const auto b64string{f->get<string>()};
               auto tempbytearray{base64_decode(b64string)};
               if (!check_bloom_length(tempbytearray,
-                                      algo_config->bloom_length)) {
+                                      field_config.bitsize)) {
                 fmt::print(
                     "Warning: Set bits after bloomfilterlength. Set to "
                     "zero.\n");
@@ -253,7 +254,6 @@ SessionResponse valid_init_json_handler(
       config_handler->set_local_config(move(local_config));
       // Get Algorithm Config
       algo->type = str_to_atype(j["algorithm"]["algoType"].get<string>());
-      algo->bloom_length = j["algorithm"]["bloomLength"].get<unsigned>();
       algo->threshold_match = j["algorithm"]["threshold_match"].get<double>();
       algo->threshold_non_match =
           j["algorithm"]["threshold_non_match"].get<double>();

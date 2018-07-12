@@ -1,7 +1,10 @@
 {
   "callback": {
-    "url": "https://mlc.mitro.dkfz.de/linkCallback/123",
-    "token": "3lk4j3Y4l5j"
+    "url": "http://127.0.0.1:8800",
+    "patientId": {
+      "idType": "srl1",
+      "idString": "hdsjahjdak"
+    }
     },
   "fields": {
     "vorname": "iz1tCN0iHA9Odb0K4u8CneS8O/SBFz5PmUk+GD+k952cH6SymAxKlzlL0kglvXMR1Qk2sBeRfs1IaNfPn/1A",
