@@ -1,9 +1,11 @@
 #include <numeric>
+#include <algorithm>
 #include "cxxopts.hpp"
 #include "../include/util.h"
 #include "../include/aby/Share.h"
 #include "../include/aby/gadgets.h"
 #include "abycore/aby/abyparty.h"
+#include "abycore/sharing/sharing.h"
 
 using namespace std;
 using namespace sel;
@@ -55,6 +57,20 @@ struct ABYTester {
     return (bc->GetContext() == S_YAO) ? y2a(ac, cc, s) : b2a(ac, s);
   }
 
+  void test_bm_input() {
+    uint32_t _bitlen = bitlen;
+    auto bytelen = bitbytes(_bitlen);
+    Bitmask data(bytelen);
+    iota(data.begin(), data.end(), 0x42);
+
+    BoolShare in{bc, repeat_vec(data, nvals).data(), _bitlen, CLIENT, nvals};
+
+    cout << hex;
+    print_share(in, "in");
+
+    party.ExecCircuit();
+  }
+
   void test_reinterpret() {
     ArithShare a{ac, vector<uint32_t>(bitlen, 0xdeadbeef).data(), bitlen, SERVER, bitlen};
     ArithShare azero{ac, vector<uint32_t>(bitlen, 0).data(), bitlen, SERVER, bitlen};
@@ -75,7 +91,7 @@ struct ABYTester {
   }
 
   void test_conversion() {
-    vector<uint32_t> data(nvals);
+    vector<uint32_t> data(max(nvals, 2u));
     iota(data.begin(), data.end(), 0);
     size_t data_bitlen = sel::ceil_log2_min1(nvals);
     BoolShare in(bc, data.data(), data_bitlen, SERVER, nvals);
@@ -324,10 +340,11 @@ int main(int argc, char *argv[])
   //tester.test_mult_const();
   //tester.test_hw();
   //tester.test_max_bits();
-  tester.test_conversion();
+  //tester.test_conversion();
   //tester.test_reinterpret();
   //tester.test_split_select_quotient_target();
   //tester.test_max_quotient();
+  tester.test_bm_input();
 
   return 0;
 }
