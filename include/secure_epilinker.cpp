@@ -346,7 +346,7 @@ private:
 
       // delta
       sin.delta = ArithShare(acirc,
-          vector<CircUnit>(nvals, entry.has_value()).data(),
+          vector<CircUnit>(nvals, static_cast<CircUnit>(entry.has_value())).data(),
           BitLen, CLIENT, nvals);
 
 #ifdef DEBUG_SEL_CIRCUIT
@@ -366,8 +366,9 @@ private:
       const auto& f = _f.second;
       const VFieldEntry& entries = input.database.at(i);
       size_t bytesize = bitbytes(f.bitsize);
+      Bitmask dummy_bm(bytesize);
       VBitmask values = transform_vec(entries,
-          [&bytesize](auto e){return e.value_or(Bitmask(bytesize));});
+          [&dummy_bm](auto e){return e.value_or(dummy_bm);});
       check_vectors_size(values, bytesize, "server input byte vector "s + i);
       ValueShare& sin = ins[i].server;
 
