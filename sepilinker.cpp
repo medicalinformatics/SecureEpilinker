@@ -100,6 +100,7 @@ int main(int argc, char* argv[]) {
   auto linkrecord_validator =
       std::make_shared<sel::Validator>(read_json_from_disk(
           server_config["linkRecordSchemaPath"].get<std::string>()));
+  auto null_validator = std::make_shared<sel::Validator>();
   // Create Handler for POST Request with JSON payload (using the validator)
   auto init_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
@@ -114,6 +115,9 @@ int main(int argc, char* argv[]) {
   auto temp_selconnect_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::TempSelMethodHandler>(
           "POST", connections, servers, data);
+  auto temp_link_methodhandler =
+      sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
+          "POST", configurations, connections, servers, null_validator);
 
   // Add Validation Callbacks
   auto devptr_init =
@@ -124,6 +128,10 @@ int main(int argc, char* argv[]) {
       dynamic_cast<sel::JsonMethodHandler*>(linkrecord_methodhandler.get());
   devptr_linkrecord->set_valid_callback(valid_linkrecord_json_handler);
   devptr_linkrecord->set_invalid_callback(invalid_json_handler);
+  auto devptr_temp_link =
+      dynamic_cast<sel::JsonMethodHandler*>(temp_link_methodhandler.get());
+  devptr_temp_link->set_valid_callback(valid_temp_link_json_handler);
+  devptr_temp_link->set_invalid_callback(invalid_json_handler);
   // Create Ressource on <url/init> and instruct to use the built MethodHandler
   sel::ResourceHandler initializer{"/init/{remote_id: .*}"};
   initializer.add_method(init_methodhandler);
@@ -137,6 +145,8 @@ int main(int argc, char* argv[]) {
   jobmonitor_handler.add_method(jobmonitor_methodhandler);
   sel::ResourceHandler selconnect_handler{"/selconnect"};
   selconnect_handler.add_method(temp_selconnect_methodhandler);
+  sel::ResourceHandler sellink_handler{"/sellink/{remote_id: .*}"};
+  sellink_handler.add_method(temp_link_methodhandler);
   // Setup SSL Connection
   auto ssl_settings = std::make_shared<restbed::SSLSettings>();
   ssl_settings->set_http_disabled(true);
@@ -162,6 +172,7 @@ int main(int argc, char* argv[]) {
   linkrecord_handler.publish(service);
   jobmonitor_handler.publish(service);
   selconnect_handler.publish(service);
+  sellink_handler.publish(service);
   fmt::print("Service Running\n");
   service.start(settings);  // Eventloop
 

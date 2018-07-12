@@ -44,4 +44,17 @@ FieldComparator str_to_fcomp(const string& str) {
   assert(!"This should never be reached!");
   throw runtime_error("Invalid Comparator Type");
 }
+
+std::string ftype_to_str(const FieldType& type) {
+      switch(type){
+        case FieldType::BITMASK: return "bitmask";
+        case FieldType::NUMBER: return "number";
+        case FieldType::STRING: return "string";
+        case FieldType::INTEGER: return "integer";
+        default: {
+                 throw runtime_error("Invalid FieldType");
+                 return "";
+                 }
+      }
+    }
 }  // namespace sel

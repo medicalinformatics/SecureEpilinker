@@ -28,9 +28,7 @@
 #include <future>
 #include <sstream>
 #include <curlpp/Easy.hpp>
-#include <curlpp/Infos.hpp>
-#include <curlpp/Options.hpp>
-#include <curlpp/cURLpp.hpp>
+#include <nlohmann/json.hpp>
 namespace sel{
 
 // Forward Declarations
@@ -72,6 +70,8 @@ struct SessionResponse {
   std::multimap<std::string, std::string> headers;
 };
 
+void to_json(nlohmann::json& j, const AlgorithmConfig& c);
+void from_json(const nlohmann::json& j, AlgorithmConfig& c);
 
 void send_curl(curlpp::Easy& request, std::promise<std::stringstream> barrier);
 

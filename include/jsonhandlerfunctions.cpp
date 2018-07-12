@@ -75,6 +75,45 @@ bool check_exchange_group(const IndexSet& fieldnames,
   return fields_present;
 }
 
+
+SessionResponse valid_temp_link_json_handler(
+    const nlohmann::json& j,
+    const ClientId& client_id,
+    const shared_ptr<ConfigurationHandler>&,
+    const shared_ptr<ServerHandler>& server_handler,
+    const shared_ptr<ConnectionHandler>&) {
+  SessionResponse response;
+  uint16_t common_port;
+  string client_ip;
+    fmt::print("Recieved Job Request\n");
+    //TODO(TK) Authorization
+    common_port = server_handler->get_server_port(client_id);
+
+    if(!(server_handler->get_local_server(client_id)->compare_configuration(j))) {
+      response.return_code = restbed::FORBIDDEN;
+      response.body = "Algorithm configuration does not match"s;
+      response.headers = {{"Content-Length", to_string(response.body.length())},
+                          {"Remote-Identifier", client_id},
+                          {"Connection", "Close"}};
+    fmt::print("Non matching configs!\n");
+    return response;
+    }
+    fmt::print("Matching configs!\n");
+    auto data_handler{server_handler->get_local_server(client_id)->get_data_handler()};
+    auto nvals{data_handler->poll_database()};
+    auto data{data_handler->get_database()};
+    response.return_code = restbed::OK;
+    response.body = "Linkage server running"s;
+    response.headers = {{"Content-Length", to_string(response.body.length())},
+                        {"Remote-Identifier", client_id},
+                        {"Record-Number", to_string(nvals)},
+                        {"SEL-Port", to_string(common_port)},
+                        {"Connection", "Close"}};
+    std::thread server_runner([client_id,data,server_handler](){server_handler->run_server(client_id,move(data));}); // TODO(TK) Data gets copied b/c const.
+    server_runner.detach();
+    return response;
+    }
+
 SessionResponse valid_linkrecord_json_handler(
     const nlohmann::json& j,
     const RemoteId& remote_id,
