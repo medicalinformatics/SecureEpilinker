@@ -56,8 +56,8 @@ vector<CircUnit> hw(const vector<Bitmask>& v_bm) {
 /***************** Circuit gadgets *******************/
 /**
   * Return type of weight_compare_*()
-  * fw - field weight = weight * comparison * empty-flags
-  * w - weight for weight sum = weight * empyt-flags
+  * fw - field weight = weight * comparison * empty-deltas
+  * w - weight for weight sum = weight * empyt-deltas
   */
 struct FieldWeight { ArithShare fw, w; };
 
@@ -254,7 +254,6 @@ private:
   // Input shares
   struct ValueShare {
     BoolShare val; // value as bool
-    BoolShare empty; // empty flag - will probably be kicked out
     ArithShare delta; // 1 if non-empty, 0 o/w
     BoolShare hw; // precomputed HW of val - not used for bin
   };
