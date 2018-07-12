@@ -164,7 +164,7 @@ size_t LinkageJob::signal_server() {
       "Authorization: SEL ABCD",
       "Remote-Identifier: "s + m_remote_config->get_remote_client_id(),
       "Expect:",
-      "Content-Type: text/json",
+      "Content-Type: application/json",
       "Content-Length: "s+to_string(algo_comp_conf.dump().size())};
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
   curl_request.setOpt(new curlpp::Options::Url(
