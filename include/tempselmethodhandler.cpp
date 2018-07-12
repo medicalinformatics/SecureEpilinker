@@ -39,7 +39,6 @@ void TempSelMethodHandler::handle_method(
   uint16_t common_port;
   string client_ip;
   ClientId client_id;
-  if (headers.count("SEL-Init")) {
     fmt::print("Recieved Server Initialization Request\n");
     // TODO(TK) Authorize Usage
     if (auto it = headers.find("Available-Ports"); it != headers.end()) {
@@ -66,24 +65,5 @@ void TempSelMethodHandler::handle_method(
       std::thread server_creator(fun, tempadr);
       server_creator.detach();
     }
-  } else {
-    fmt::print("Recieved Job Request\n");
-    //TODO(TK) Authorization
-    client_id = headers.find("Remote-Identifier")->second;
-    common_port = m_server_handler->get_server_port(client_id);
-    auto nvals{m_data_handler->poll_database()};
-    auto data{m_data_handler->get_database()};
-    response.return_code = restbed::OK;
-    response.body = "Linkage server running"s;
-    response.headers = {{"Content-Length", to_string(response.body.length())},
-                        {"Remote-Identifier", client_id},
-                        {"Record-Number", to_string(nvals)},
-                        {"SEL-Port", to_string(common_port)},
-                        {"Connection", "Close"}};
-    session->close(response.return_code, response.body, response.headers);
-    fmt::print("Response should be sent\n");
-    std::thread server_runner([this,client_id,data](){m_server_handler->run_server(client_id,move(data));});
-    server_runner.detach();
-  }
 }
 }  // namespace sel
