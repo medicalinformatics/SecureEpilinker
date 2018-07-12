@@ -63,10 +63,18 @@ struct ABYTester {
     Bitmask data(bytelen);
     iota(data.begin(), data.end(), 0x42);
 
-    BoolShare in{bc, repeat_vec(data, nvals).data(), _bitlen, CLIENT, nvals};
+    BoolShare in, in2;
+    if (role==CLIENT) {
+      in = BoolShare{bc, repeat_vec(data, nvals).data(), _bitlen, CLIENT, nvals};
+      in2 = BoolShare{bc, _bitlen, nvals};
+    } else {
+      in2 = BoolShare{bc, repeat_vec(data, nvals).data(), _bitlen, SERVER, nvals};
+      in = BoolShare{bc, _bitlen, nvals};
+    }
 
     cout << hex;
     print_share(in, "in");
+    print_share(in2, "in2");
 
     party.ExecCircuit();
   }
@@ -342,6 +350,7 @@ int main(int argc, char *argv[])
   //tester.test_max_bits();
   //tester.test_conversion();
   //tester.test_reinterpret();
+  //tester.test_split_accumulate();
   //tester.test_split_select_quotient_target();
   //tester.test_max_quotient();
   tester.test_bm_input();
