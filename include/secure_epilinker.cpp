@@ -252,18 +252,18 @@ private:
   BooleanCircuit* ccirc; // intermediate conversion circuit
   ArithmeticCircuit* acirc;
   // Input shares
-  struct ValueShare {
+  struct EntryShare {
     BoolShare val; // value as bool
     ArithShare delta; // 1 if non-empty, 0 o/w
     BoolShare hw; // precomputed HW of val - not used for bin
   };
   struct InputShares {
-    ValueShare client, server;
+    EntryShare client, server;
   };
   /**
    * All input shares are stored in this map, keyed by fieldname
-   * Value is a vector over all fields, and each field holds the ValueShare for
-   * client and server. A ValueShare holds the value of the field itself, a
+   * Value is a vector over all fields, and each field holds the EntryShare for
+   * client and server. An EntryShare holds the value of the field itself, a
    * delta flag, which is 1 if the field is non-empty, and the precalculated
    * hammingweight for bitmasks.
    */
@@ -330,7 +330,7 @@ private:
       size_t bytesize = bitbytes(f.bitsize);
       Bitmask value = entry.value_or(Bitmask(bytesize));
       check_vector_size(value, bytesize, "client input byte vector "s + i);
-      ValueShare& sin = ins[i].client;
+      EntryShare& sin = ins[i].client;
 
       // value
       sin.val = BoolShare(bcirc,
@@ -370,7 +370,7 @@ private:
       VBitmask values = transform_vec(entries,
           [&dummy_bm](auto e){return e.value_or(dummy_bm);});
       check_vectors_size(values, bytesize, "server input byte vector "s + i);
-      ValueShare& sin = ins[i].server;
+      EntryShare& sin = ins[i].server;
 
       // value
       sin.val = BoolShare(bcirc,
@@ -400,7 +400,7 @@ private:
     for (const auto& _f : cfg.fields) {
       const FieldName& i = _f.first;
       const auto& f = _f.second;
-      ValueShare& sin = (role==CLIENT) ? ins[i].client : ins[i].server;
+      EntryShare& sin = (role==CLIENT) ? ins[i].client : ins[i].server;
       sin.val = BoolShare(bcirc, f.bitsize, nvals); //dummy
 
       if (f.comparator == BM) {
