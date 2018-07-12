@@ -39,6 +39,21 @@ ML_Field f_bm2 (
   FieldComparator::NGRAM, FieldType::BITMASK, 8
 );
 
+// Whether to use run_as_{client/server}() or run_as_both()
+bool run_both{true};
+e_role role;
+
+Result run(SecureEpilinker& linker,
+    const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
+  if (!run_both) {
+    return (role==CLIENT) ?
+      linker.run_as_client(in_client) : linker.run_as_server(in_server);
+  } else {
+    return linker.run_as_both(in_client, in_server);
+  }
+
+}
+
 Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
     uint32_t nvals) {
   // First test: only one bin field, single byte integer
@@ -62,15 +77,7 @@ Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
   linker.build_circuit(nvals);
   linker.run_setup_phase();
 
-  Result res;
-  if (aby_cfg.role == SERVER) {
-    res = linker.run_as_server(in_server);
-  } else {
-    res = linker.run_as_client(in_client);
-  }
-  linker.reset();
-
-  return res;
+  return run(linker, in_client, in_server);
 }
 
 Result test_exchange_grp(const SecureEpilinker::ABYConfig& aby_cfg,
@@ -111,18 +118,7 @@ Result test_exchange_grp(const SecureEpilinker::ABYConfig& aby_cfg,
   linker.build_circuit(nvals);
   linker.run_setup_phase();
 
-  Result res;
-  /*
-  if (aby_cfg.role == SERVER) {
-    res = linker.run_as_server(in_server);
-  } else {
-    res = linker.run_as_client(in_client);
-  }
-  */
-  res = linker.run_as_both(in_client, in_server);
-  linker.reset();
-
-  return res;
+  return run(linker, in_client, in_server);
 }
 
 void print_result(Result result) {
@@ -141,6 +137,7 @@ int main(int argc, char *argv[])
     ("S,server", "Run as server. Default to client", cxxopts::value(role_server))
     ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO", cxxopts::value(sharing))
     ("n,nvals", "Parallellity", cxxopts::value(nvals))
+    ("r,run-both", "Use run_as_both()", cxxopts::value(run_both))
     ("h,help", "Print help");
   auto op = options.parse(argc, argv);
 
@@ -149,7 +146,7 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  e_role role = role_server ? SERVER : CLIENT;
+  role = role_server ? SERVER : CLIENT;
 
   SecureEpilinker::ABYConfig aby_cfg {
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
