@@ -1,4 +1,4 @@
-#include "fmt/ostream.h"
+#include "fmt/format.h"
 #include "../include/util.h"
 
 using namespace std;
@@ -6,8 +6,8 @@ using namespace std;
 namespace sel {
 
 void test_format_vector() {
-  vector<size_t>v({3,5,7});
-  assert (fmt::format("{}", v) == "[3, 5, 7]");
+  vector<string>v({"ab", "cd", "ef"});
+  assert (fmt::format("{}", v) == "[ab, cd, ef]");
 }
 
 void test_vector_bool_to_bitmask() {
