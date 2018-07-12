@@ -28,6 +28,8 @@ later version. This program is distributed in the hope that it will be useful,
 #include "serverhandler.h"
 
 #include "epilink_input.h"
+#include "apikeyconfig.hpp"
+#include "authenticationconfig.hpp"
 #include "remoteconfiguration.h"
 #include "secure_epilinker.h"
 #include "util.h"
@@ -137,6 +139,9 @@ void LinkageJob::run_job() {
     EpilinkClientInput client_input{m_data, nvals};
     const auto client_share{epilinker->run_as_client(client_input)};
     fmt::print("Client result:\nIndex: {}, Match: {}, TMatch:{}\n", client_share.index, client_share.match, client_share.tmatch);
+    //TODO(tk) send result to linkage server
+    nlohmann::json result_id{{"idType", "srl1"},{"idString", "3lk4j3Y4l5j"}};
+    perform_callback(result_id);
     m_status = JobStatus::DONE;
   } catch (const exception& e) {
     fmt::print(stderr, "Error running MPC Client: {}\n", e.what());
@@ -178,5 +183,42 @@ size_t LinkageJob::signal_server() {
   fmt::print("Response stream: {}\n", stream.str());
   auto nval{stoull(get_headers(stream, "Record-Number").front())};
   return nval;
+}
+
+bool LinkageJob::perform_callback(const nlohmann::json& new_id) const {
+  curlpp::Easy curl_request;
+  nlohmann::json data_json{ {"patientId", {
+                          {"idType", m_callback.idType},
+                          {"idString", m_callback.idString}
+                        }},
+                        {"newId", {
+                          {"idType", new_id["idType"].get<string>()},
+                          {"idString", new_id["idString"].get<string>()} }
+                        }};
+  auto data{data_json.dump()};
+  promise<stringstream> response_promise;
+  future<stringstream> response_stream{response_promise.get_future()};
+  const auto auth{m_local_config->get_local_authentication()};
+  auto local_auth =  dynamic_cast<const APIKeyConfig*>(auth);
+  list<string> headers{
+      "Authorization: MainzellisteApiKey apikey=\""s+local_auth->get_key()+"\"",
+      "Expect:",
+      "Content-Type: application/json",
+      "Content-Length: "s+to_string(data.length())};
+  curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
+  curl_request.setOpt(new curlpp::Options::Url(m_callback.url));
+  curl_request.setOpt(new cURLpp::Options::Verbose(true));
+  curl_request.setOpt(new curlpp::Options::Post(true));
+  curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
+  curl_request.setOpt(new curlpp::Options::PostFieldSize(data.size()));
+  //curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
+  //curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
+  curl_request.setOpt(new curlpp::options::Header(1));
+  fmt::print("Sending linkage request\n");
+  send_curl(curl_request, move(response_promise));
+  response_stream.wait();
+  auto stream = response_stream.get();
+  fmt::print("Callback response:\n{}\n", stream.str());
+  return true; //TODO(TK) return correct success bool
 }
 }  // namespace sel

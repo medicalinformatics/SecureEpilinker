@@ -54,6 +54,7 @@ class LinkageJob {
    void set_local_config(std::shared_ptr<LocalConfiguration>);
  private:
   size_t signal_server();
+  bool perform_callback(const nlohmann::json&) const;
   JobId m_id;
   JobStatus m_status{JobStatus::QUEUED};
   std::map<FieldName, FieldEntry> m_data;
