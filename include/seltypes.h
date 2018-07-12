@@ -46,6 +46,7 @@ enum class FieldComparator { NGRAM, BINARY };
 
 FieldType str_to_ftype(const std::string& str);
 FieldComparator str_to_fcomp(const std::string& str);
+std::string ftype_to_str(const FieldType&);
 
 struct ML_Field {
   ML_Field() = default;

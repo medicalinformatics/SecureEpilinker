@@ -93,4 +93,27 @@ LocalConfiguration::AbyInfo LocalConfiguration::get_aby_info() const {
   return m_aby_info;
 }
 
+nlohmann::json LocalConfiguration::get_comparison_json() const {
+  nlohmann::json j;
+  j["exchangeGroups"] = m_exchange_groups;
+  j["fields"] = m_fields;
+  return j;
+}
+
+void to_json(nlohmann::json& j, const ML_Field& f) {
+  j = nlohmann::json{
+      {"name", f.name},
+      {"weight", f.weight},
+      {"bitlength", f.bitsize},
+      {"comparator",
+       (f.comparator == FieldComparator::NGRAM) ? "nGram" : "binary"},
+      {"fieldType", ftype_to_str(f.type)}};
+}
+
+void from_json(const nlohmann::json& j, ML_Field& f){
+f = ML_Field{j.at("name").get<string>(), j.at("weight").get<double>(),
+                  str_to_fcomp(j.at("comparator").get<string>()),
+                  str_to_ftype(j.at("fieldType").get<string>()),
+                  j.at("bitlength").get<size_t>()};
+}
 }  // namespace sel

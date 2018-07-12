@@ -150,18 +150,26 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
 
 size_t LinkageJob::signal_server() {
   curlpp::Easy curl_request;
+  nlohmann::json algo_comp_conf{*m_algo_config};
+  algo_comp_conf.emplace_back(m_local_config->get_comparison_json());
+  auto data{algo_comp_conf.dump()};
   promise<stringstream> response_promise;
   future<stringstream> response_stream = response_promise.get_future();
   list<string> headers{
       "Authorization: SEL ABCD",
-      "Remote-Identifier: "s + m_remote_config->get_remote_client_id()};
+      "Remote-Identifier: "s + m_remote_config->get_remote_client_id(),
+      "Expect:",
+      "Content-Type: text/json",
+      "Content-Length: "s+to_string(algo_comp_conf.dump().size())};
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
   curl_request.setOpt(new curlpp::Options::Url(
-      "https://"s + m_remote_config->get_remote_host() + ':' +
-      to_string(m_remote_config->get_remote_signaling_port()) + "/selconnect"));
+      "http://"s + m_remote_config->get_remote_host() + ':' +
+      to_string(m_remote_config->get_remote_signaling_port()) + "/sellink/"+m_remote_config->get_remote_client_id()));
   curl_request.setOpt(new curlpp::Options::Post(true));
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
+  curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
+  curl_request.setOpt(new curlpp::Options::PostFieldSize(algo_comp_conf.dump().size()));
   curl_request.setOpt(new curlpp::options::Header(1));
   fmt::print("Sending linkage request\n");
   send_curl(curl_request, move(response_promise));

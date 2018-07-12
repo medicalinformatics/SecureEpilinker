@@ -32,6 +32,7 @@
 #include "authenticationconfig.hpp"
 #include "epilink_input.h"
 #include "secure_epilinker.h"
+#include "nlohmann/json.hpp"
 
 namespace sel {
 //class AuthenticationConfig;
@@ -65,6 +66,7 @@ class LocalConfiguration {
   AuthenticationConfig const* get_local_authentication() const;
 
   AbyInfo get_aby_info() const;
+  nlohmann::json get_comparison_json() const;
 
  private:
   std::unique_ptr<AuthenticationConfig> m_local_authentication;
@@ -73,6 +75,9 @@ class LocalConfiguration {
   std::string m_data_service_url;
   AbyInfo m_aby_info;
 };
+
+void to_json (nlohmann::json&, const ML_Field&);
+void from_json(const nlohmann::json&, ML_Field&);
 
 }  // namespace sel
 
