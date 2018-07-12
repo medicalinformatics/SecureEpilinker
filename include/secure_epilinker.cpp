@@ -137,7 +137,7 @@ public:
   void set_client_input(const EpilinkClientInput& input) {
     set_constants(input.nvals);
     set_real_client_input(input);
-    set_dummy_server_input();
+    set_dummy_input(SERVER);
 
     is_input_set = true;
   }
@@ -145,7 +145,7 @@ public:
   void set_server_input(const EpilinkServerInput& input) {
     set_constants(input.nvals);
     set_real_server_input(input);
-    set_dummy_client_input();
+    set_dummy_input(CLIENT);
 
     is_input_set = true;
   }
@@ -394,13 +394,13 @@ private:
     }
   }
 
-  void set_dummy_client_input() {
+  void set_dummy_input(e_role role) {
     assert (nvals > 0 && "call set_constants() before set_*_input()");
 
     for (const auto& _f : cfg.fields) {
       const FieldName& i = _f.first;
       const auto& f = _f.second;
-      ValueShare& sin = ins[i].client;
+      ValueShare& sin = (role==CLIENT) ? ins[i].client : ins[i].server;
       sin.val = BoolShare(bcirc, f.bitsize, nvals); //dummy
 
       if (f.comparator == BM) {
@@ -409,31 +409,10 @@ private:
 
       sin.delta = ArithShare(acirc, BitLen, nvals); // dummy
 #ifdef DEBUG_SEL_CIRCUIT
-      print_share(sin.val, format("dummy client val[{}]", i));
-      if (f.comparator == BM) print_share(sin.hw, format("dummy client hw[{}]", i));
-      print_share(sin.delta, format("dummy client delta[{}]", i));
-#endif
-    }
-  }
-
-  void set_dummy_server_input() {
-    assert (nvals > 0 && "call set_constants() before set_*_input()");
-
-    for (const auto& _f : cfg.fields) {
-      const FieldName& i = _f.first;
-      const auto& f = _f.second;
-      ValueShare& sin = ins[i].server;
-      sin.val = BoolShare(bcirc, f.bitsize, nvals); //dummy
-
-      if (f.comparator == BM) {
-        sin.hw = BoolShare(bcirc, cfg.size_hw, nvals); //dummy
-      }
-
-      sin.delta = ArithShare(acirc, BitLen, nvals); // dummy
-#ifdef DEBUG_SEL_CIRCUIT
-      print_share(sin.val, format("dummy server val[{}]", i));
-      if (f.comparator == BM) print_share(sin.hw, format("dummy server hw[{}]", i));
-      print_share(sin.delta, format("dummy server delta[{}]", i));
+      string str_role = get_role_name(role);
+      print_share(sin.val, format("{} dummy val[{}]", str_role, i));
+      if (f.comparator == BM) print_share(sin.hw, format("{} dummy hw[{}]", str_role, i));
+      print_share(sin.delta, format("{} dummy delta[{}]", str_role, i));
 #endif
     }
   }
