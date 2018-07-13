@@ -40,11 +40,12 @@ ML_Field f_bm2 (
 );
 
 // Whether to use run_as_{client/server}() or run_as_both()
-bool run_both{true};
+bool run_both{false};
 e_role role;
 
 Result run(SecureEpilinker& linker,
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
+  print("Calling run_as_{}()", run_both ? "both" : ((role==CLIENT) ? "client" : "server"));
   if (!run_both) {
     return (role==CLIENT) ?
       linker.run_as_client(in_client) : linker.run_as_server(in_server);
@@ -63,13 +64,15 @@ Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
     8, Threshold, TThreshold // size_bitmask, (tent.) thresholds
   };
 
+  Bitmask data_int_zero(4, 0);
+
   EpilinkClientInput in_client {
-    { {"int_1", data_int_1} }, // record
+    { {"int_1", (role==CLIENT) ? data_int_1 : data_int_zero} }, // record
     nvals // nvals
   };
 
   EpilinkServerInput in_server {
-    { {"int_1", vector<FieldEntry>(nvals, Bitmask{0x37,0,0,0})} } // records
+    { {"int_1", vector<FieldEntry>(nvals, (role==SERVER) ? Bitmask{0x33,0,0,0} : data_int_zero)} } // records
   };
 
   SecureEpilinker linker{aby_cfg, epi_cfg};
