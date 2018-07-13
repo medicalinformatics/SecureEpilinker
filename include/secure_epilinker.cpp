@@ -155,6 +155,7 @@ public:
    * Debugging test_both_inputs() to test exactly mirrored inputs.
    */
   void set_both_inputs(const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
+    assert (in_client.nvals == in_server.nvals);
     set_constants(in_client.nvals);
     set_real_client_input(in_client);
     set_real_server_input(in_server);
