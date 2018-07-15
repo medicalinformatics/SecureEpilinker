@@ -1,4 +1,5 @@
 #include "cxxopts.hpp"
+#include "fmt/format.h"
 #include "../include/util.h"
 #include "../include/secure_epilinker.h"
 #include "abycore/aby/abyparty.h"
@@ -19,13 +20,15 @@ ML_Field f_int1 (
   FieldComparator::BINARY, FieldType::INTEGER, 32
 );
 
-Bitmask data_int_1 {Bitmask{0x33, 0, 0, 0}};
+Bitmask data_int_1 = {0xde, 0xad, 0xbe, 0xef};
 
 ML_Field f_int2 (
   //name, f, e, comparator, type, bitsize
   "int_2", 3.0,
   FieldComparator::BINARY, FieldType::INTEGER, 32
 );
+
+Bitmask data_int_2 = {0xde, 0xce, 0xa5, 0xed};
 
 ML_Field f_bm1 (
   //name, f, e, comparator, type, bitsize
@@ -45,7 +48,7 @@ e_role role;
 
 Result run(SecureEpilinker& linker,
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
-  print("Calling run_as_{}()", run_both ? "both" : ((role==CLIENT) ? "client" : "server"));
+  print("Calling run_as_{}()\n", run_both ? "both" : ((role==CLIENT) ? "client" : "server"));
   if (!run_both) {
     return (role==CLIENT) ?
       linker.run_as_client(in_client) : linker.run_as_server(in_server);
@@ -57,6 +60,8 @@ Result run(SecureEpilinker& linker,
 
 Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
     uint32_t nvals) {
+  print("data_int_1: {}\n", data_int_1);
+
   // First test: only one bin field, single byte integer
   EpilinkConfig epi_cfg {
     { {"int_1", f_int1}, }, // fields
@@ -64,15 +69,15 @@ Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
     8, Threshold, TThreshold // size_bitmask, (tent.) thresholds
   };
 
-  Bitmask data_int_zero(4, 0);
+  //Bitmask data_int_zero(data_int_1.size(), 0);
 
   EpilinkClientInput in_client {
-    { {"int_1", (role==CLIENT) ? data_int_1 : data_int_zero} }, // record
+    { {"int_1", data_int_1} }, // record
     nvals // nvals
   };
 
   EpilinkServerInput in_server {
-    { {"int_1", vector<FieldEntry>(nvals, (role==SERVER) ? Bitmask{0x33,0,0,0} : data_int_zero)} } // records
+    { {"int_1", vector<FieldEntry>(nvals, data_int_1)} } // records
   };
 
   SecureEpilinker linker{aby_cfg, epi_cfg};
@@ -80,7 +85,8 @@ Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
   linker.build_circuit(nvals);
   linker.run_setup_phase();
 
-  return run(linker, in_client, in_server);
+  auto res = run(linker, in_client, in_server);
+  return res;
 }
 
 Result test_exchange_grp(const SecureEpilinker::ABYConfig& aby_cfg,
@@ -99,20 +105,20 @@ Result test_exchange_grp(const SecureEpilinker::ABYConfig& aby_cfg,
 
   EpilinkClientInput in_client {
     {
-      {"bm_1", Bitmask{0x33, 0, 0, 0}},
-      {"bm_2", Bitmask{0x43, 0, 0, 0}},
-      {"int_1", Bitmask{0xde, 0xad, 0xbe, 0xef}},
-      {"int_2", Bitmask{0xde, 0xce, 0xa5, 0xed}}
+      {"bm_1", Bitmask{0x33}},
+      {"bm_2", Bitmask{0x43}},
+      {"int_1", data_int_1},
+      {"int_2", data_int_2}
     }, // record
     nvals // nvals
   };
 
   EpilinkServerInput in_server {
     {
-      {"bm_1", vector<FieldEntry>(nvals, Bitmask{0x33, 0, 0, 0})},
-      {"bm_2", vector<FieldEntry>(nvals, Bitmask{0x43, 0, 0, 0})},
-      {"int_1", vector<FieldEntry>(nvals, Bitmask{0xde, 0xad, 0xbe, 0xef})},
-      {"int_2", vector<FieldEntry>(nvals, Bitmask{0xde, 0xce, 0xa5, 0xed})}
+      {"bm_1", vector<FieldEntry>(nvals, Bitmask{0x33})},
+      {"bm_2", vector<FieldEntry>(nvals, Bitmask{0x42})}, // 1-bit mismatch
+      {"int_1", vector<FieldEntry>(nvals, data_int_2)},
+      {"int_2", vector<FieldEntry>(nvals, data_int_1)}
     } // records
   };
 
@@ -155,8 +161,8 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  Result res = test_simple(aby_cfg, nvals);
-  //Result res = test_exchange_grp(aby_cfg, nvals);
+  //Result res = test_simple(aby_cfg, nvals);
+  Result res = test_exchange_grp(aby_cfg, nvals);
 
   print_result(res);
 
