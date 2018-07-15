@@ -129,23 +129,14 @@ public:
   SELCircuit(EpilinkConfig cfg_,
     BooleanCircuit* bcirc, BooleanCircuit* ccirc, ArithmeticCircuit* acirc) :
     cfg{cfg_}, bcirc{bcirc}, ccirc{ccirc}, acirc{acirc},
-    ins{transform_map(cfg.fields, [](auto){ return InputShares{}; })},
     to_bool_closure{[this](auto x){return to_bool(x);}},
     to_arith_closure{[this](auto x){return to_arith(x);}}
   {}
 
-  void set_client_input(const EpilinkClientInput& input) {
+  template<class EpilinkInput>
+  void set_input(const EpilinkInput& input) {
     set_constants(input.nvals);
-    set_real_client_input(input);
-    set_dummy_input(SERVER);
-
-    is_input_set = true;
-  }
-
-  void set_server_input(const EpilinkServerInput& input) {
-    set_constants(input.nvals);
-    set_real_server_input(input);
-    set_dummy_input(CLIENT);
+    set_one_real_input(input);
 
     is_input_set = true;
   }
@@ -157,8 +148,7 @@ public:
   void set_both_inputs(const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
     assert (in_client.nvals == in_server.nvals);
     set_constants(in_client.nvals);
-    set_real_client_input(in_client);
-    set_real_server_input(in_server);
+    set_both_real_inputs(in_client, in_server);
 
     is_input_set = true;
   }
@@ -320,6 +310,131 @@ private:
     print_share(const_tthreshold , "const_tthreshold ");
 #endif
   }
+
+  EntryShare make_entry_share(const EpilinkClientInput& input,
+      const FieldName& i) {
+    const auto& f = cfg.fields.at(i);
+    const FieldEntry& entry = input.record.at(i);
+    size_t bytesize = bitbytes(f.bitsize);
+    Bitmask value = entry.value_or(Bitmask(bytesize));
+    check_vector_size(value, bytesize, "client input byte vector "s + i);
+
+    // value
+    BoolShare val(bcirc,
+        repeat_vec(value, nvals).data(),
+        f.bitsize, CLIENT, nvals);
+
+    // delta
+    ArithShare delta(acirc,
+        vector<CircUnit>(nvals, static_cast<CircUnit>(entry.has_value())).data(),
+        BitLen, CLIENT, nvals);
+
+    // Set hammingweight input share only for bitmasks
+    BoolShare _hw;
+    if (f.comparator == BM) {
+      _hw = BoolShare(bcirc,
+          vector<CircUnit>(nvals, hw(value)).data(),
+          cfg.size_hw, CLIENT, nvals);
+    }
+
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(val, format("client val[{}]", i));
+      print_share(delta, format("client delta[{}]", i));
+      if (f.comparator == BM) print_share(_hw, format("client hw[{}]", i));
+#endif
+
+    return {val, delta, _hw};
+  }
+
+  EntryShare make_entry_share(const EpilinkServerInput& input,
+      const FieldName& i) {
+    const auto& f = cfg.fields.at(i);
+    const VFieldEntry& entries = input.database.at(i);
+    size_t bytesize = bitbytes(f.bitsize);
+    Bitmask dummy_bm(bytesize);
+    VBitmask values = transform_vec(entries,
+        [&dummy_bm](auto e){return e.value_or(dummy_bm);});
+    check_vectors_size(values, bytesize, "server input byte vector "s + i);
+
+    // value
+    BoolShare val(bcirc,
+        concat_vec(values).data(), f.bitsize, SERVER, nvals);
+
+    // delta
+    vector<CircUnit> db_delta(nvals);
+    for (size_t j=0; j!=nvals; ++j) db_delta[j] = entries[j].has_value();
+    ArithShare delta(acirc, db_delta.data(), BitLen, SERVER, nvals);
+
+    // Set hammingweight input share only for bitmasks
+    BoolShare _hw;
+    if (f.comparator == BM) {
+      _hw = BoolShare(bcirc,
+          hw(values).data(), cfg.size_hw, SERVER, nvals);
+    }
+
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(val, format("server val[{}]", i));
+      print_share(delta, format("server delta[{}]", i));
+      if (f.comparator == BM) print_share(_hw, format("server hw[{}]", i));
+#endif
+
+    return {val, delta, _hw};
+  }
+
+  EntryShare make_dummy_entry_share(const FieldName& i) {
+    const auto& f = cfg.fields.at(i);
+
+    BoolShare val(bcirc, f.bitsize, nvals); //dummy val
+
+    ArithShare delta(acirc, BitLen, nvals); // dummy delta
+
+    BoolShare _hw;
+    if (f.comparator == BM) {
+      _hw = BoolShare(bcirc, cfg.size_hw, nvals); //dummy hw
+    }
+
+#ifdef DEBUG_SEL_CIRCUIT
+      print_share(val, format("dummy val[{}]", i));
+      print_share(delta, format("dummy delta[{}]", i));
+      if (f.comparator == BM) print_share(_hw, format("dummy hw[{}]", i));
+#endif
+
+    return {val, delta, _hw};
+  }
+
+  InputShares make_input_share(const EpilinkClientInput& input,
+      const FieldName& i) {
+    return {make_entry_share(input, i), make_dummy_entry_share(i)};
+  }
+
+  InputShares make_input_share(const EpilinkServerInput& input,
+      const FieldName& i) {
+    return {make_dummy_entry_share(i), make_entry_share(input, i)};
+  }
+
+  template<class EpilinkInput>
+  void set_one_real_input(const EpilinkInput& input) {
+    assert (nvals > 0 && "call set_constants() before set_*_input()");
+
+    for (const auto& _f : cfg.fields) {
+      const FieldName& i = _f.first;
+
+      ins[i] = make_input_share(input, i);
+    }
+  }
+
+#ifdef DEBUG_SEL_CIRCUIT
+  void set_both_real_inputs(const EpilinkClientInput& in_client,
+      const EpilinkServerInput& in_server) {
+    assert (nvals > 0 && "call set_constants() before set_*_input()");
+
+    for (const auto& _f : cfg.fields) {
+      const FieldName& i = _f.first;
+
+      ins[i] = {make_entry_share(in_client, i), make_entry_share(in_server, i)};
+    }
+  }
+#endif
 
   void set_real_client_input(const EpilinkClientInput& input) {
     assert (nvals > 0 && "call set_constants() before set_*_input()");
@@ -562,7 +677,7 @@ SecureEpilinker::Result SecureEpilinker::run_as_client(
     cerr << "Warning: Implicitly running setup phase." << endl;
     run_setup_phase();
   }
-  selc->set_client_input(input);
+  selc->set_input(input);
   return run_circuit();
 }
 
@@ -572,7 +687,7 @@ SecureEpilinker::Result SecureEpilinker::run_as_server(
     cerr << "Warning: Implicitly running setup phase." << endl;
     run_setup_phase();
   }
-  selc->set_server_input(input);
+  selc->set_input(input);
   return run_circuit();
 }
 
