@@ -66,7 +66,7 @@ Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
   EpilinkConfig epi_cfg {
     { {"int_1", f_int1}, }, // fields
     {}, // exchange groups
-    8, Threshold, TThreshold // size_bitmask, (tent.) thresholds
+    Threshold, TThreshold // size_bitmask, (tent.) thresholds
   };
 
   //Bitmask data_int_zero(data_int_1.size(), 0);
@@ -100,7 +100,7 @@ Result test_exchange_grp(const SecureEpilinker::ABYConfig& aby_cfg,
       {"bm_2", f_bm2},
     }, // fields
     {{"int_1", "int_2"}}, // exchange groups
-    8, Threshold, TThreshold // size_bitmask, (tent.) thresholds
+    Threshold, TThreshold // size_bitmask, (tent.) thresholds
   };
 
   EpilinkClientInput in_client {

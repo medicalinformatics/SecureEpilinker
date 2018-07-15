@@ -47,11 +47,6 @@ struct EpilinkConfig {
   // exchange groups by index
   const std::vector<IndexSet> exchange_groups;
 
-  // bitlength of bitmasks and required bits of HWs
-  const uint32_t size_bitmask;
-  const uint32_t bytes_bitmask;
-  const uint32_t size_hw;
-
   // thresholds
   const double threshold; // threshold for definitive match
   const double tthreshold; // threshold for tentative match
@@ -64,7 +59,7 @@ struct EpilinkConfig {
   EpilinkConfig(
       std::map<FieldName, ML_Field> fields,
       std::vector<IndexSet> exchange_groups,
-      uint32_t size_bitmask, double threshold, double tthreshold
+      double threshold, double tthreshold
   );
   ~EpilinkConfig() = default;
 
@@ -105,6 +100,11 @@ std::vector<CircUnit> rescale_weights(const std::vector<Weight>& weights,
 
 CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight);
 
+/**
+ * bits required to store hammingweight of bitmask of given size
+ */
+size_t hw_size(size_t size);
+
 } // namespace sel
 
 std::ostream& operator<<(std::ostream& os,
@@ -124,12 +124,10 @@ struct formatter<sel::EpilinkConfig> {
   template <typename FormatContext>
   auto format(const sel::EpilinkConfig& conf, FormatContext &ctx) {
     return format_to(ctx.begin(),"Epilink Configuration"
-      "\nBitmask size (in Bit):\t{}"
       "\nThreshold match: {}"
       "\nThreshold tentative match: {}"
       "\nNumber of fields: {}",
-      conf.size_bitmask, conf.threshold, conf.tthreshold,
-      conf.nfields
+      conf.threshold, conf.tthreshold, conf.nfields
     );
   }
 };

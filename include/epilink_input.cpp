@@ -33,45 +33,42 @@ namespace sel {
 EpilinkConfig::EpilinkConfig(
       std::map<FieldName, ML_Field> fields_,
       std::vector<IndexSet> exchange_groups_,
-      uint32_t size_bitmask, double threshold, double tthreshold) :
+      double threshold, double tthreshold) :
   fields {fields_},
   exchange_groups {exchange_groups_},
-  size_bitmask {size_bitmask},
-  bytes_bitmask (bitbytes(size_bitmask)),
-  size_hw (ceil_log2(size_bitmask+1)),
   threshold {threshold},
   tthreshold {tthreshold},
   nfields {fields.size()},
-  // Evenly distribute precision bits between weight^2 and dice-coeff
-  // When calculating the max of a quotient of the form fw/w, we have to compare
-  // factors of the form fw*w, where the field weight fw is itself a sum of factor of a
-  // weight and dice coefficient d. The denominator w is itself potentially a
-  // sum of weights. So in order for the CircUnit to not overflow for a product
-  // of the form sum_n(d * w) * sum_n(w), it has to hold that
-  // ceil_log2(n^2) + dice_prec + 2*weight_prec <= BitLen = sizeof(CircUnit).
-  //dice_prec{(BitLen - ceil_log2(nfields))/2}, // TODO better this one and
-  //custom integer division
-  dice_prec(16 - 1 - ceil_log2(size_bitmask + 1)),
-  //weight_prec{ceil_divide((BitLen - ceil_log2(nfields)), 2)}, // TODO ^^^
-  weight_prec{(BitLen - ceil_log2(nfields^2) - dice_prec)/2},
   max_weight{sel::max_element(fields, [](auto f){return f.second.weight;})}
   {
+    // Set dice precision according to longest bitmask
+    size_t max_bm_size = 0;
+    for ( const auto& f : fields ) {
+      if (f.second.comparator == FieldComparator::NGRAM) {
+        max_bm_size = max(max_bm_size, f.second.bitsize);
+      }
+    }
+    /* Evenly distribute precision bits between weight^2 and dice-coeff
+    When calculating the max of a quotient of the form fw/w, we have to compare
+    factors of the form fw*w, where the field weight fw is itself a sum of factor of a
+    weight and dice coefficient d. The denominator w is itself potentially a
+    sum of weights. So in order for the CircUnit to not overflow for a product
+    of the form sum_n(d * w) * sum_n(w), it has to hold that
+    ceil_log2(n^2) + dice_prec + 2*weight_prec <= BitLen = sizeof(CircUnit).
+    dice_prec = (BitLen - ceil_log2(nfields))/2; // TODO better this one and
+                                                 //custom integer division
+    weight_prec = ceil_divide((BitLen - ceil_log2(nfields)), 2); // TODO ^^^
+    */
+    dice_prec = (16 - 1 - hw_size(max_bm_size)); // -1 because of factor 2
+    weight_prec = (BitLen - ceil_log2(nfields^2) - dice_prec)/2;
     // Division by 2 for weight_prec initialization could have wasted one bit
     if (dice_prec + 2*weight_prec + ceil_log2(nfields^2) < BitLen) ++dice_prec;
     assert (dice_prec + 2*weight_prec + ceil_log2(nfields^2) == BitLen);
+
 #ifdef DEBUG_SEL_INPUT
     print("BitLen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
         BitLen, nfields, dice_prec, weight_prec);
 #endif
-    for ( const auto& f : fields ) {
-      if (f.second.comparator == FieldComparator::NGRAM) {
-        if (f.second.bitsize != size_bitmask) {
-          throw runtime_error{fmt::format(
-              "bitmask field '{}' bitsize must be equal to"
-              "size_bitmask in EpilinkConfig", f.first)};
-        }
-      }
-    }
   }
 
 void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
@@ -119,6 +116,10 @@ vector<CircUnit> rescale_weights(const vector<Weight>& weights,
 CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight) {
   CircUnit max_el = (1ULL << prec) - 1ULL;
   return (weight/max_weight) * max_el;
+}
+
+size_t hw_size(size_t size) {
+  return ceil_log2_min1(size+1);
 }
 
 } // namespace sel
