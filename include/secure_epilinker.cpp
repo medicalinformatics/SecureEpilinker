@@ -334,7 +334,7 @@ private:
     if (f.comparator == BM) {
       _hw = BoolShare(bcirc,
           vector<CircUnit>(nvals, hw(value)).data(),
-          cfg.size_hw, CLIENT, nvals);
+          hw_size(f.bitsize), CLIENT, nvals);
     }
 
 #ifdef DEBUG_SEL_CIRCUIT
@@ -369,7 +369,7 @@ private:
     BoolShare _hw;
     if (f.comparator == BM) {
       _hw = BoolShare(bcirc,
-          hw(values).data(), cfg.size_hw, SERVER, nvals);
+          hw(values).data(), hw_size(f.bitsize), SERVER, nvals);
     }
 
 #ifdef DEBUG_SEL_CIRCUIT
@@ -390,7 +390,7 @@ private:
 
     BoolShare _hw;
     if (f.comparator == BM) {
-      _hw = BoolShare(bcirc, cfg.size_hw, nvals); //dummy hw
+      _hw = BoolShare(bcirc, hw_size(f.bitsize), nvals); //dummy hw
     }
 
 #ifdef DEBUG_SEL_CIRCUIT
