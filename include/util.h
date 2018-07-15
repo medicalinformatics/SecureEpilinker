@@ -33,6 +33,8 @@
 #include "fmt/format.h"
 #include "epilink_input.h"
 
+using Bitmask = std::vector<uint8_t>;
+
 namespace sel {
 
 constexpr size_t bitbytes(size_t b) { return (b + 7)/8; }
@@ -273,6 +275,24 @@ struct formatter<std::vector<T>> {
       }
     }
     return format_to(c,"]");
+  }
+};
+
+template<> struct formatter<Bitmask> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const Bitmask v, FormatContext &ctx) {
+    auto c = ctx.begin();
+    for (auto e = v.cbegin(); e != v.cend(); ++e) {
+      c = format_to(c, "{:x}", *e);
+      // separate each 2 bytes by whitespace
+      if ((e-v.cbegin())%2) {
+        c = format_to(c, " ");
+      }
+    }
+    return c;
   }
 };
 
