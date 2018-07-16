@@ -23,7 +23,6 @@
 },
 "algorithm": {
   "algoType": "epilink",
-  "bloomLength": 500,
   "threshold_match": 0.9,
   "threshold_non_match": 0.7,
   "exchangeGroups": [[ "vorname", "nachname", "geburtsname" ]],
