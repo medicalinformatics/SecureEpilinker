@@ -19,29 +19,44 @@
 #include "monitormethodhandler.h"
 #include <memory>
 #include <string>
-#include "serverhandler.h"
 #include "fmt/format.h"
 #include "linkagejob.h"
+#include "logger.h"
 #include "restbed"
 #include "resttypes.h"
+#include "serverhandler.h"
 
 using namespace std;
 namespace sel {
+MonitorMethodHandler::MonitorMethodHandler(
+    const std::string& method,
+    std::shared_ptr<ServerHandler> server_handler)
+    : MethodHandler(method),
+      m_server_handler(move(server_handler)),
+      m_logger{get_default_logger()} {}
+
+MonitorMethodHandler::MonitorMethodHandler(
+    const std::string& method,
+    std::shared_ptr<ServerHandler> server_handler,
+    std::shared_ptr<Validator>& validator)
+    : MethodHandler(method, validator),
+      m_server_handler(move(server_handler)), m_logger{get_default_logger()} {}
+
 void MonitorMethodHandler::handle_method(
     shared_ptr<restbed::Session> session) const {
   auto request{session->get_request()};
   auto headers{request->get_headers()};
   JobId job_id{request->get_path_parameter("job_id", "0")};
-  fmt::print("Requested Job ID: {}\n", job_id);
-  fmt::print("Recieved headers:\n");
+  m_logger->info("Requested status of Job ID: {}\n", job_id);
+  string header_string;
   for (const auto& h : headers) {
-    fmt::print("{} -- {}\n", h.first, h.second);
+    header_string += h.first +" -- " + h.second +"\n";
   }
+  m_logger->trace("Recieved headers:\n{}", header_string);
   SessionResponse response;
   try {
     const auto job{m_server_handler->get_linkage_job(job_id)};
-    const auto status{
-        js_enum_to_string(job->get_status())};
+    const auto status{js_enum_to_string(job->get_status())};
     response.return_code = restbed::OK;
     response.body = status;
   } catch (const exception& e) {

@@ -28,9 +28,20 @@ later version. This program is distributed in the hope that it will be useful,
 #include "util.h"
 #include "resttypes.h"
 #include <thread>
+#include "logger.h"
 
 using namespace std;
 namespace sel {
+TempSelMethodHandler::TempSelMethodHandler(
+      const std::string& method,
+      std::shared_ptr<ConnectionHandler> connection_handler,
+      std::shared_ptr<ServerHandler> server_handler,
+      std::shared_ptr<DataHandler> data_handler)
+      : MethodHandler(method),
+        m_connection_handler(move(connection_handler)),
+        m_server_handler(move(server_handler)),
+        m_data_handler(move(data_handler)), m_logger{get_default_logger()} {}
+
 void TempSelMethodHandler::handle_method(
     shared_ptr<restbed::Session> session) const {
   auto request{session->get_request()};
@@ -39,13 +50,13 @@ void TempSelMethodHandler::handle_method(
   uint16_t common_port;
   string client_ip;
   ClientId client_id;
-    fmt::print("Recieved Server Initialization Request\n");
+    m_logger->info("Recieved Server Initialization Request");
     // TODO(TK) Authorize Usage
     if (auto it = headers.find("Available-Ports"); it != headers.end()) {
       common_port = m_connection_handler->choose_common_port(it->second);
       const auto origin{session->get_origin()};
       const bool ipv6{split(origin,':').size() > 2 ? true : false};
-      fmt::print("Origin: {}, is IPv{}\n", origin, ipv6?"6":"4");
+      m_logger->trace("Origin: {}, is IPv{}\n", origin, ipv6?"6":"4");
       if(!ipv6){
         client_ip = split(origin, ':').front();
       } else {
@@ -59,7 +70,7 @@ void TempSelMethodHandler::handle_method(
                           {"Connection", "Close"}};
       session->close(response.return_code, response.body, response.headers);
 
-      fmt::print("Response created\n");
+      m_logger->debug("Server Initialization Response created");
       auto fun = bind(&ServerHandler::insert_server,m_server_handler.get(),client_id,placeholders::_1);
       RemoteAddress tempadr{client_ip,common_port};
       std::thread server_creator(fun, tempadr);

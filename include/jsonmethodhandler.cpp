@@ -22,6 +22,7 @@
 #include "fmt/format.h"
 #include "resttypes.h"
 #include "restbed"
+#include "logger.h"
 
 using namespace std;
 namespace sel {
@@ -53,15 +54,16 @@ namespace sel {
 
 void JsonMethodHandler::handle_method(
     shared_ptr<restbed::Session> session) const {
+  auto logger{get_default_logger()};
   auto request{session->get_request()};
   auto headers{request->get_headers()};
   RemoteId remote_id{request->get_path_parameter("remote_id", "")};
   size_t content_length = request->get_header("Content-Length", 0);
-  fmt::print("Remote ID: {}\n", remote_id);
-  fmt::print("Recieved headers:\n");
+  string header_string;
   for (const auto& h : headers) {
-    fmt::print("{} -- {}\n", h.first, h.second);
+    header_string += h.first + " -- " + h.second + "\n";
   }
+  logger->debug("JsonHandler used\nRemote ID: {}\nRecieved headers\n{}", remote_id, header_string);
   // if (request->get_header("Expect", restbed::String::lowercase) ==
   //"100-continue") {
   // fmt::print("Continuing\n");
@@ -86,9 +88,8 @@ void JsonMethodHandler::handle_method(
 void JsonMethodHandler::use_data(const shared_ptr<restbed::Session>& session,
                                  const nlohmann::json& bodydata,
                                  const RemoteId& remote_id) const {
-#ifdef DEBUG
-  fmt::print("Data recieved:\n{}\n", bodydata.dump(4));
-#endif
+  auto logger{get_default_logger()};
+  logger->trace("JSON recieved:\n{}", bodydata.dump(4));
   auto validation = m_validator->validate_json(bodydata);
   SessionResponse response;
   if (validation.first) {

@@ -23,6 +23,7 @@
 #include "localconfiguration.h"
 #include "remoteconfiguration.h"
 #include "resttypes.h"
+#include "logger.h"
 
 using namespace std;
 namespace sel {
@@ -60,7 +61,12 @@ shared_ptr<const AlgorithmConfig> ConfigurationHandler::get_algorithm_config()
 shared_ptr<RemoteConfiguration> ConfigurationHandler::get_remote_config(
     const RemoteId& remote_id) const {
   lock_guard<mutex> lock(m_remote_mutex);
+  try{
   return m_remote_configs.at(remote_id);
+  } catch  (const exception& e){
+    auto logger{get_default_logger()};
+    logger->error("Error in get_remote_config: {}", e.what());
+  }
 }
 
 size_t ConfigurationHandler::get_remote_count() const {

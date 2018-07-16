@@ -17,6 +17,7 @@
 */
 
 #include "databasefetcher.h"
+#include <spdlog/spdlog.h>
 #include <curlpp/Easy.hpp>
 #include <curlpp/Infos.hpp>
 #include <curlpp/Options.hpp>
@@ -33,6 +34,7 @@
 #include "epilink_input.h"
 #include "fmt/format.h"
 #include "localconfiguration.h"
+#include "logger.h"
 #include "nlohmann/json.hpp"
 #include "restbed"
 #include "util.h"
@@ -40,8 +42,19 @@
 
 using namespace std;
 namespace sel {
+DatabaseFetcher::DatabaseFetcher(
+    std::shared_ptr<const LocalConfiguration> local_conf,
+    std::shared_ptr<const AlgorithmConfig> algo_conf,
+    const std::string& url,
+    AuthenticationConfig const* l_auth)
+    : m_url(url),
+      m_local_config(local_conf),
+      m_algo_config(algo_conf),
+      m_local_authentication(l_auth),
+      m_logger{get_default_logger()} {}
 ServerData DatabaseFetcher::fetch_data() {
-  fmt::print("Requesting Database\n");
+  m_logger->debug("Requesting Database from {}?pageSize={}\n", m_url, m_page_size);
+  m_logger->info("Requesting Database");
   m_page = 1u;
   auto paget{request_page(m_url + "?pagesize=" + to_string(m_page_size))};
   auto page =
@@ -61,31 +74,31 @@ ServerData DatabaseFetcher::fetch_data() {
   // Process Data from last page
   get_page_data(page);
 
-  fmt::print("Recieved Inputs:\n");
+  string input_string;
   for (auto& p : m_data) {
-    fmt::print(
-        "-------------------------------\n{}\n-------------------------------"
-        "\n",
-        p.first);
+    input_string +=
+        "-------------------------------\n"+p.first+"\n-------------------------------"
+        "\n";
     for (auto& d : p.second) {
       bool empty{!d};
-      fmt::print("Field {}empty ", empty?"":"not ");
-      if(!empty){
-      for (const auto& byte : d.value())
-        fmt::print("{} ", byte);
+      input_string += "Field "s + (empty ? "" : "not ") +"empty ";
+      if (!empty) {
+        for (const auto& byte : d.value())
+          input_string += to_string(byte)+ " ";
       }
-      fmt::print("\n");
+      input_string += "\n";
     }
   }
 
-  fmt::print(
-      "------------------------------\nIDs\n-----------------------------\n");
+  input_string +=
+      "------------------------------\nIDs\n-----------------------------\n";
   for (const auto& m : m_ids) {
     for (const auto& i : m) {
-      fmt::print("Type: {}, ID: {}; ", i.first, i.second);
+  input_string += "Type: " + i.first +", ID: " + i.second + "; ";
     }
-    fmt::print("\n");
+  input_string += "\n";
   }
+  m_logger->debug("Recieved Inputs:\n{}", input_string);
   return {move(m_data), move(m_ids), move(m_todate)};
 }
 
@@ -146,9 +159,8 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
           auto temp = f->get<string>();
           auto bloom = base64_decode(temp);
           if (!check_bloom_length(bloom, field_info.bitsize)) {
-            fmt::print(
-                "Warning: Set bits after bloomfilterlength. Set to zero.\n");
           }
+              m_logger->warn("Bits set after bloomfilterlength. There might be a problem. Set to zero.\n");
             bool bloomempty{true};
             for (const auto& byte : bloom) {
               if (bool byte_empty = (byte == 0x00); !byte_empty) {
@@ -194,7 +206,7 @@ nlohmann::json DatabaseFetcher::request_page(const string& url) const {
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
   curl_request.setOpt(new curlpp::Options::WriteStream(&response_stream));
   curl_request.setOpt(new curlpp::options::Header(0));
-  fmt::print("DB request address: {}\n", url);
+  m_logger->debug("DB request address: {}", url);
   if (m_local_authentication->get_type() == AuthenticationType::API_KEY) {
     auto apiauth = dynamic_cast<const APIKeyConfig*>(m_local_authentication);
     headers.emplace_back("Authorization: mainzellisteApiKey apikey=\""s +
@@ -205,13 +217,18 @@ nlohmann::json DatabaseFetcher::request_page(const string& url) const {
   auto responsecode = curlpp::Infos::ResponseCode::get(curl_request);
   if (responsecode != 400 && responsecode != 401) {
     if (!(response_stream.str().empty())) {
-      fmt::print("Response Data:\n{}\n", response_stream.str());
+      m_logger->trace("Response Data:\n{}\n", response_stream.str());
     } else {
-      fmt::print("No valid Data!\n");
+      throw runtime_error("No valid data returned from Database");
     }
-    return nlohmann::json::parse(response_stream.str());
+    try {
+      return nlohmann::json::parse(response_stream.str());
+    } catch (const exception& e) {
+      m_logger->error("Error parsing JSON from database: {}", e.what());
+      return nlohmann::json();
+    }
   } else {
-    fmt::print("Invalid Response from DB\n");
+    m_logger->error("Error parsing JSON from database");
     return nlohmann::json();
   }
 }
