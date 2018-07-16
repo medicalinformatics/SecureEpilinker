@@ -24,9 +24,9 @@
 #include "epilink_input.h"
 #include "fmt/format.h"  // needs to be included before local headers for custom formatters
 #include "linkagejob.h"
+#include "resttypes.h"
 #include "secure_epilinker.h"
 #include "seltypes.h"
-#include "resttypes.h"
 #include "util.h"
 #include "logger.h"
 

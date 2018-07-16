@@ -23,11 +23,11 @@
 #include <curlpp/Options.hpp>
 #include <curlpp/cURLpp.hpp>
 #include <map>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <optional>
 #include "apikeyconfig.hpp"
 #include "authenticationconfig.hpp"
 #include "base64.h"
@@ -37,8 +37,8 @@
 #include "logger.h"
 #include "nlohmann/json.hpp"
 #include "restbed"
-#include "util.h"
 #include "resttypes.h"
+#include "util.h"
 
 using namespace std;
 namespace sel {
@@ -122,37 +122,38 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
       const auto field_info{m_local_config->get_field(f.key())};
       switch (field_info.type) {
         case FieldType::INTEGER: {
-            const auto content{f->get<int>()};
-            if (content == 0) {
-              temp_data[f.key()].emplace_back(nullopt);
-            } else {
+          const auto content{f->get<int>()};
+          if (content == 0) {
+            temp_data[f.key()].emplace_back(nullopt);
+          } else {
             Bitmask temp(bitbytes(field_info.bitsize));
             ::memcpy(temp.data(), &content, bitbytes(field_info.bitsize));
             temp_data[f.key()].emplace_back(move(temp));
-            }
+          }
           break;
         }
         case FieldType::NUMBER: {
           const auto content{f->get<double>()};
-            if (content == 0.) {
-              temp_data[f.key()].emplace_back(nullopt);
-            } else {
+          if (content == 0.) {
+            temp_data[f.key()].emplace_back(nullopt);
+          } else {
             Bitmask temp(bitbytes(field_info.bitsize));
             ::memcpy(temp.data(), &content, bitbytes(field_info.bitsize));
             temp_data[f.key()].emplace_back(move(temp));
-            }
+          }
           break;
         }
         case FieldType::STRING: {
           const auto content{f->get<string>()};
-            if (trim_copy(content).empty()) {
-              temp_data[f.key()].emplace_back(nullopt);
-            } else {
-              const auto temp_char_array{content.c_str()};
-              Bitmask temp(bitbytes(field_info.bitsize));
-            ::memcpy(temp.data(), temp_char_array, bitbytes(field_info.bitsize));
+          if (trim_copy(content).empty()) {
+            temp_data[f.key()].emplace_back(nullopt);
+          } else {
+            const auto temp_char_array{content.c_str()};
+            Bitmask temp(bitbytes(field_info.bitsize));
+            ::memcpy(temp.data(), temp_char_array,
+                     bitbytes(field_info.bitsize));
             temp_data[f.key()].emplace_back(move(temp));
-            }
+          }
           break;
         }
         case FieldType::BITMASK: {
@@ -191,8 +192,8 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
     m_ids.emplace_back(move(tempmap));
   }
   for (auto& field : temp_data) {  // Append page data to main data
-    m_data[field.first].insert(m_data[field.first].end(),
-                                  field.second.begin(), field.second.end());
+    m_data[field.first].insert(m_data[field.first].end(), field.second.begin(),
+                               field.second.end());
   }
 }
 
