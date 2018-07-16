@@ -1,24 +1,24 @@
 {
 "localAuthentication": {
-  "authType": "apikey",
-  "sharedkey": "123abc"
+  "authType": "apiKey",
+  "sharedKey": "123abc"
 },
 "dataService": {
-  "url": "http://localhost:8800/Communicator/getAllRecords"
+  "url": "http://127.0.0.1:8800/Communicator/getAllRecords"
 },
 "connectionProfile": {
   "url": "127.0.0.1:8081",
   "idType": "lid",
   "authentication": {
-    "authType": "apikey",
-    "sharedkey": "xkcd123"
+    "authType": "apiKey",
+    "sharedKey": "xkcd123"
   }
 },
 "linkageService": {
   "url": "https://ls.mitro.dkfz.de/",
   "authentication": {
-    "authType": "apikey",
-    "sharedkey": "bcd234"
+    "authType": "apiKey",
+    "sharedKey": "bcd234"
   }
 },
 "algorithm": {
