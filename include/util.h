@@ -83,19 +83,10 @@ std::vector<uint8_t> repeat_bit(const bool bit, const size_t n);
 
 std::vector<uint8_t> vector_bool_to_bitmask(const std::vector<bool>&);
 
-/*
-std::vector<uint8_t> concat_vec(const std::vector<std::vector<uint8_t>>& vs) {
-  size_t total_size{0};
-  for (auto& v : vs) total_size += v.size();
-
-  std::vector<uint8_t> c;
-  c.reserve(total_size);
-  for (auto& v : vs) {
-    c.insert(c.end(), v.begin(), v.end());
-  }
-  return c;
-}
-*/
+/**
+ * Hammingweight/popcount of bitmask
+ */
+size_t hw(const Bitmask& bm);
 
 /**
  * Performs bitwise AND (&) on both bitmasks' bits
