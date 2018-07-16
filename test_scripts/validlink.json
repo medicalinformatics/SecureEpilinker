@@ -1,6 +1,6 @@
 {
   "callback": {
-    "url": "http://127.0.0.1:8800",
+    "url": "http://127.0.0.1:8800/Communicator/linkCallback",
     "patientId": {
       "idType": "srl1",
       "idString": "hdsjahjdak"
