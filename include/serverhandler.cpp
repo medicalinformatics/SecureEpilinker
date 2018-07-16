@@ -43,8 +43,10 @@ void ServerHandler::insert_client(RemoteId id) {
       local_config, m_config_handler->get_algorithm_config())};
   auto aby_info{local_config->get_aby_info()};
   auto remote_config{m_config_handler->get_remote_config(id)};
+  //FIXME(TK): Temporary hardcoded target
   SecureEpilinker::ABYConfig aby_config{
-      CLIENT, aby_info.boolean_sharing, remote_config->get_remote_host(),
+      //CLIENT, aby_info.boolean_sharing, remote_config->get_remote_host(),
+      CLIENT, aby_info.boolean_sharing, "127.0.0.1",
       remote_config->get_aby_port(), aby_info.aby_threads};
   m_logger->debug("Creating client on port {}, Remote host: {}", aby_config.port, aby_config.remote_host);
   m_aby_clients.emplace(id, make_shared<SecureEpilinker>(aby_config,epilink_config));
