@@ -82,6 +82,16 @@ std::vector<uint8_t> repeat_bit(const bool bit, const size_t n) {
   return std::vector<uint8_t>(bitbytes(n), bit ? 0xffu : 0u);
 }
 
+Bitmask bm_and(const Bitmask& left, const Bitmask& right) {
+  size_t n = left.size();
+  assert(n == right.size());
+  Bitmask res(n);
+  for (auto i = 0; i != n; ++i) {
+    res[i] = left[i] & right[i];
+  }
+  return res;
+}
+
 std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> elems;
     split(s, delim, std::back_inserter(elems));

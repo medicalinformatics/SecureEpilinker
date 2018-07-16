@@ -97,6 +97,11 @@ std::vector<uint8_t> concat_vec(const std::vector<std::vector<uint8_t>>& vs) {
 }
 */
 
+/**
+ * Performs bitwise AND (&) on both bitmasks' bits
+ */
+Bitmask bm_and(const Bitmask& left, const Bitmask& right);
+
 template <typename T>
 void check_vector_size(const std::vector<T>& r,
     const size_t& size, const std::string& name) {
