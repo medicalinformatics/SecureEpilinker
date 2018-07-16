@@ -198,18 +198,18 @@ public:
     print_share(sum_field_weights, "sum_field_weights");
 #endif
 
-    // 4. Determine index of max score of all nvals calculations
+    // 3. Determine index of max score of all nvals calculations
     // Create targets vector with const_idx copy to pass to
     // split_select_quotient_target().
     vector<BoolShare> max_idx{1, const_idx};
     split_select_quotient_target(sum_field_weights, max_idx,
         make_max_selector(to_bool_closure), to_arith_closure);
 
-    // 5. Left side: sum up all weights and multiply with threshold
+    // 4. Left side: sum up all weights and multiply with threshold
     //  Since weights and threshold are public inputs, this can be computed
     //  locally. This is done in set_constants().
     //
-    // 6. Set two comparison bits, whether > (tentative) threshold
+    // 5. Set two comparison bits, whether > (tentative) threshold
     BoolShare threshold_weight = to_bool(const_threshold * sum_field_weights.den);
     BoolShare tthreshold_weight = to_bool(const_tthreshold * sum_field_weights.den);
     BoolShare b_sum_field_weight = to_bool(sum_field_weights.num);
