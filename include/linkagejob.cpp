@@ -133,13 +133,18 @@ void LinkageJob::run_job() {
 
   try {
     // Get number of records from server
-    size_t nvals = signal_server();
-    fmt::print("Server has {} Records\n", nvals);
+    promise<size_t> nvals_prom;
+    auto nvals{nvals_prom.get_future()};
+    signal_server(nvals_prom);
+    nvals.wait_for(15s);
+    if(!nvals.valid()){
+      throw runtime_error("Error retrieving number of records from server");
+    }
     logger->debug("Server has {} Records\n", nvals.get());
     auto epilinker{m_parent->get_epilink_client(m_remote_config->get_id())};
-    epilinker->build_circuit(nvals);
+    epilinker->build_circuit(nvals.get());
     epilinker->run_setup_phase();
-    EpilinkClientInput client_input{m_data, nvals};
+    EpilinkClientInput client_input{m_data, nvals.get()};
     const auto client_share{epilinker->run_as_client(client_input)};
     logger->info("Client result:\nIndex: {}, Match: {}, TMatch:{}\n", client_share.index, client_share.match, client_share.tmatch);
     //TODO(tk) send result to linkage server
@@ -156,8 +161,9 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
   m_local_config = move(l_config);
 }
 
-size_t LinkageJob::signal_server() {
+void LinkageJob::signal_server(promise<size_t>& nvals) {
   auto logger{get_default_logger()};
+  std::this_thread::sleep_for(5s);
   curlpp::Easy curl_request;
   nlohmann::json algo_comp_conf{*m_algo_config};
   algo_comp_conf.emplace_back(m_local_config->get_comparison_json());
