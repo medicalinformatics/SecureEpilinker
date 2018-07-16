@@ -27,7 +27,7 @@
           "type": "string",
           "enum": [
             "binary",
-            "nGram"
+            "dice"
           ]
         },
         "fieldType": {
