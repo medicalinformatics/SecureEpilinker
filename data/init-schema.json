@@ -60,8 +60,8 @@
         "url": {"type": "string"},
         "authentication": {"$ref": "#/definitions/authentication"}
       },
-      "additionalProperties": false
       "idType": {"type": "string"},
+      "additionalProperties": true
     },
     "linkageService": {
       "url": { "type": "string"},
