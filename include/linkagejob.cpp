@@ -209,7 +209,7 @@ bool LinkageJob::perform_callback(const nlohmann::json& new_id) const {
   const auto auth{m_local_config->get_local_authentication()};
   auto local_auth =  dynamic_cast<const APIKeyConfig*>(auth);
   list<string> headers{
-      "Authorization: MainzellisteApiKey apikey=\""s+local_auth->get_key()+"\"",
+      "Authorization: "s+local_auth->get_key(),
       "Expect:",
       "Content-Type: application/json",
       "Content-Length: "s+to_string(data.length())};
