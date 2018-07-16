@@ -213,7 +213,7 @@ nlohmann::json DatabaseFetcher::request_page(const string& url) const {
   m_logger->debug("DB request address: {}", url);
   if (m_local_authentication->get_type() == AuthenticationType::API_KEY) {
     auto apiauth = dynamic_cast<const APIKeyConfig*>(m_local_authentication);
-    headers.emplace_back("Authorization: mainzellisteApiKey apikey=\""s +
+    headers.emplace_back("Authorization: mainzellisteApiKey apiKey=\""s +
                          apiauth->get_key() + "\"");
   }
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
