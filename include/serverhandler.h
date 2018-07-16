@@ -27,6 +27,10 @@
 #include <map>
 #include <memory>
 
+namespace spdlog{
+  class logger;
+}
+
 namespace sel {
 class LinkageJob;
 class LocalServer;
@@ -51,6 +55,7 @@ class ServerHandler {
     std::map<ClientId, std::shared_ptr<LocalServer>> m_server;
     std::shared_ptr<ConfigurationHandler> m_config_handler;
     std::shared_ptr<DataHandler> m_data_handler;
+    std::shared_ptr<spdlog::logger> m_logger;
 };
 
 } // namespace sel

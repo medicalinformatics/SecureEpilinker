@@ -35,6 +35,7 @@ set(EPIRESTSRC
       include/serverhandler.cpp
       include/linkagejob.cpp
       include/localserver.cpp
+      include/logger.cpp
       include/base64.cpp
       include/monitormethodhandler.cpp
       include/tempselmethodhandler.cpp)
@@ -58,6 +59,7 @@ set(EPIRESTSRC
       include/serverhandler.h
       include/linkagejob.h
       include/localserver.h
+      include/logger.h
       include/base64.h
       include/monitormethodhandler.h
       include/tempselmethodhandler.h)
@@ -102,6 +104,7 @@ include_directories(SYSTEM ${SecureEpiLinker_INSTALL_PREFIX}/include
   "extern/restbed/source")
 target_include_directories(sel PRIVATE extern/valijson/include)
 target_include_directories(sel PRIVATE extern/curlpp/include)
+target_include_directories(sel PRIVATE extern/spdlog/include)
 # Debug Version (sanitizers linked)
 target_link_libraries(sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
   OpenSSL::SSL OpenSSL::Crypto Threads::Threads stdc++fs curl curlpp

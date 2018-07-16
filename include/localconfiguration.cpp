@@ -24,10 +24,11 @@
 #include "epilink_input.h"
 #include "fmt/format.h"  // needs to be included before local headers for custom formatters
 #include "linkagejob.h"
+#include "resttypes.h"
 #include "secure_epilinker.h"
 #include "seltypes.h"
-#include "resttypes.h"
 #include "util.h"
+#include "logger.h"
 
 using namespace std;
 namespace sel {
@@ -43,7 +44,12 @@ void LocalConfiguration::add_field(ML_Field field) {
 
 const ML_Field& LocalConfiguration::get_field(
     const FieldName& fieldname) const {
-  return cref(m_fields.at(fieldname));
+  try {
+    return cref(m_fields.at(fieldname));
+  } catch (const exception& e) {
+    auto logger{get_default_logger()};
+    logger->error("Error in get_field: {}", e.what());
+  }
 }
 
 std::map<FieldName, ML_Field> LocalConfiguration::get_fields() const {

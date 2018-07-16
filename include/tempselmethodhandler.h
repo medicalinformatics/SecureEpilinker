@@ -30,6 +30,10 @@
 
 // Forward Declarations
 
+namespace spdlog {
+class logger;
+}
+
 namespace sel {
 class Validator;
 class ConnectionHandler;
@@ -43,22 +47,19 @@ class TempSelMethodHandler : public MethodHandler {
    * Handles Job Monitoring Requests
    */
  public:
-  explicit TempSelMethodHandler(
+TempSelMethodHandler(
       const std::string& method,
       std::shared_ptr<ConnectionHandler> connection_handler,
       std::shared_ptr<ServerHandler> server_handler,
-      std::shared_ptr<DataHandler> data_handler)
-      : MethodHandler(method),
-        m_connection_handler(move(connection_handler)),
-        m_server_handler(move(server_handler)),
-        m_data_handler(move(data_handler)) {}
-  ~TempSelMethodHandler(){};
+      std::shared_ptr<DataHandler> data_handler);
+  ~TempSelMethodHandler() = default;
   void handle_method(std::shared_ptr<restbed::Session>) const override;
 
  private:
   std::shared_ptr<ConnectionHandler> m_connection_handler;
   std::shared_ptr<ServerHandler> m_server_handler;
   std::shared_ptr<DataHandler> m_data_handler;
+  std::shared_ptr<spdlog::logger> m_logger;
 };
 
 }  // namespace sel
