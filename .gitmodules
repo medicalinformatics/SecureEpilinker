@@ -28,3 +28,6 @@
 [submodule "extern/curlpp"]
 	path = extern/curlpp
 	url = https://github.com/jpbarrette/curlpp
+[submodule "extern/spdlog"]
+	path = extern/spdlog
+	url = https://github.com/gabime/spdlog.git

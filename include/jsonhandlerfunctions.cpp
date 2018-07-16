@@ -36,18 +36,20 @@
 #include "resttypes.h"
 #include "util.h"
 #include "valijson/validation_results.hpp"
+#include "logger.h"
 
 using namespace std;
 namespace sel {
 nlohmann::json read_json_from_disk(
     const experimental::filesystem::path& json_path) {
+  auto logger{get_default_logger()};
   nlohmann::json content;
   if (experimental::filesystem::exists(json_path)) {
     ifstream in(json_path);
     try {
       in >> content;
     } catch (const exception& e) {
-      fmt::print(stderr, "Error {}! Terminating!\n", e.what());
+      logger->critical("Error {}! Terminating!\n", e.what());
       exit(1);
     }
     return content;
@@ -82,10 +84,11 @@ SessionResponse valid_temp_link_json_handler(
     const shared_ptr<ConfigurationHandler>&,
     const shared_ptr<ServerHandler>& server_handler,
     const shared_ptr<ConnectionHandler>&) {
+  auto logger{get_default_logger()};
   SessionResponse response;
   uint16_t common_port;
   string client_ip;
-    fmt::print("Recieved Job Request\n");
+    logger->info("Recieved Linkage Request");
     //TODO(TK) Authorization
     common_port = server_handler->get_server_port(client_id);
 
@@ -95,10 +98,10 @@ SessionResponse valid_temp_link_json_handler(
       response.headers = {{"Content-Length", to_string(response.body.length())},
                           {"Remote-Identifier", client_id},
                           {"Connection", "Close"}};
-    fmt::print("Non matching configs!\n");
+    logger->debug("Non matching configs!");
     return response;
     }
-    fmt::print("Matching configs!\n");
+    logger->debug("Matching configs!");
     auto data_handler{server_handler->get_local_server(client_id)->get_data_handler()};
     auto nvals{data_handler->poll_database()};
     auto data{data_handler->get_database()};
@@ -120,8 +123,9 @@ SessionResponse valid_linkrecord_json_handler(
     const shared_ptr<ConfigurationHandler>& config_handler,
     const shared_ptr<ServerHandler>& server_handler,
     const shared_ptr<ConnectionHandler>&) {
+    auto logger{get_default_logger()};
   try {
-    fmt::print("Payload: {}\n", j.dump(2));
+    logger->trace("Payload: {}", j.dump(2));
     JobId job_id;
     if (config_handler->get_remote_count()) {
       const auto local_config{config_handler->get_local_config()};
@@ -132,15 +136,15 @@ SessionResponse valid_linkrecord_json_handler(
           remote_config,
           algo_config, server_handler)};
       job_id = job->get_id();
-      fmt::print("Ressource Path: {}\n", job_id);
+      logger->info("Created Job on Path: {}", job_id);
       try {
         CallbackConfig callback;
-        callback.url = j["callback"]["url"].get<string>();
-        callback.idType = j["callback"]["patientId"]["idType"].get<string>();
-        callback.idString = j["callback"]["patientId"]["idString"].get<string>();
+        callback.url = j.at("callback").at("url").get<string>();
+        callback.idType = j.at("callback").at("patientId").at("idType").get<string>();
+        callback.idString = j.at("callback").at("patientId").at("idString").get<string>();
         job->set_callback(move(callback));
 
-        for (auto f = j["fields"].begin(); f != j["fields"].end(); ++f) {
+        for (auto f = j.at("fields").begin(); f != j.at("fields").end(); ++f) {
           const auto& field_config = local_config->get_field(f.key());
           DataField tempfield;
           switch (field_config.type) {
@@ -149,12 +153,12 @@ SessionResponse valid_linkrecord_json_handler(
                 throw runtime_error("Invalid Field Type");
               }
               const auto b64string{f->get<string>()};
-              auto tempbytearray{base64_decode(b64string)};
+              auto tempbytearray{base64_decode(b64string, field_config.bitsize)};
               if (!check_bloom_length(tempbytearray,
                                       field_config.bitsize)) {
-                fmt::print(
-                    "Warning: Set bits after bloomfilterlength. Set to "
-                    "zero.\n");
+                logger->warn(
+                    "Bits set after bloomfilterlength. Maybe there is something "
+                    "wrong. Set to zero.");
               }
               tempfield = tempbytearray;
               break;
@@ -187,7 +191,7 @@ SessionResponse valid_linkrecord_json_handler(
 
         server_handler->add_linkage_job(remote_id, move(job));
       } catch (const exception& e) {
-        fmt::print(stderr, "Error: {}\n", e.what());
+        logger->error("Error in job creation: {}", e.what());
         return {restbed::BAD_REQUEST,
                 e.what(),
                 {{"Content-Length", to_string(string(e.what()).length())},
@@ -217,30 +221,31 @@ SessionResponse valid_init_json_handler(
     const shared_ptr<ConfigurationHandler>& config_handler,
     const shared_ptr<ServerHandler>& server_handler,
     const shared_ptr<ConnectionHandler>& connection_handler) {
-    fmt::print("Payload: {}\n", j.dump(2));
+  auto logger{get_default_logger()};
+    logger->trace("Payload: {}", j.dump(2));
   if (remote_id == "local") {
     auto local_config = make_shared<LocalConfiguration>();
-    fmt::print("Creating local configuration\n");
+    logger->info("Creating local configuration\n");
     vector<ML_Field> fields;
     auto algo{make_shared<AlgorithmConfig>()};
     try {
       // Get local Authentication
-      auto l_auth{get_auth_object(j["localAuthentication"])};
+      auto l_auth{get_auth_object(j.at("localAuthentication"))};
       local_config->set_local_auth(move(l_auth));
       // Get Dataservice
-      auto url{j["dataService"]["url"].get<string>()};
+      auto url{j.at("dataService").at("url").get<string>()};
       local_config->set_data_service(move(url));
       // Get Field Descriptions
       IndexSet fieldnames;
-      for (const auto& f : j["algorithm"]["fields"]) {
+      for (const auto& f : j.at("algorithm").at("fields")) {
         ML_Field tempfield(
-            f["name"].get<string>(), f["frequency"].get<double>(),
-            f["errorRate"].get<double>(), f["comparator"].get<string>(),
-            f["fieldType"].get<string>(),f["bitlength"].get<size_t>());
+            f.at("name").get<string>(), f.at("frequency").get<double>(),
+            f.at("errorRate").get<double>(), f.at("comparator").get<string>(),
+            f.at("fieldType").get<string>(),f.at("bitlength").get<size_t>());
         local_config->add_field(move(tempfield));
-        fieldnames.emplace(f["name"].get<string>());
+        fieldnames.emplace(f.at("name").get<string>());
       }
-      for (const auto& eg : j["algorithm"]["exchangeGroups"]) {
+      for (const auto& eg : j.at("algorithm").at("exchangeGroups")) {
         IndexSet egroup;
         for (const auto& f : eg) {
           egroup.emplace(f.get<string>());
@@ -253,10 +258,10 @@ SessionResponse valid_init_json_handler(
       }
       config_handler->set_local_config(move(local_config));
       // Get Algorithm Config
-      algo->type = str_to_atype(j["algorithm"]["algoType"].get<string>());
-      algo->threshold_match = j["algorithm"]["threshold_match"].get<double>();
+      algo->type = str_to_atype(j.at("algorithm").at("algoType").get<string>());
+      algo->threshold_match = j.at("algorithm").at("threshold_match").get<double>();
       algo->threshold_non_match =
-          j["algorithm"]["threshold_non_match"].get<double>();
+          j.at("algorithm").at("threshold_non_match").get<double>();
       config_handler->set_algorithm_config(move(algo));
       return {restbed::OK, "", {{"Connection", "Close"}}};
     } catch (const runtime_error& e) {
@@ -265,20 +270,20 @@ SessionResponse valid_init_json_handler(
               {{"Content-Length", to_string(string(e.what()).length())}}};
     }
   } else {  // remote Config
-    fmt::print("Creating remote Config for: \"{}\"\n", remote_id);
+    logger->info("Creating remote Config for: \"{}\"", remote_id);
       ConnectionConfig con;
       ConnectionConfig linkage_service;
       auto local_conf{config_handler->get_local_config()};
       auto algo_conf{config_handler->get_algorithm_config()};
     try {
       // Get Connection Profile
-      con.url = j["connectionProfile"]["url"].get<string>();
+      con.url = j.at("connectionProfile").at("url").get<string>();
       con.authentication =
-          get_auth_object(j["connectionProfile"]["authentication"]);
+          get_auth_object(j.at("connectionProfile").at("authentication"));
       // Get Linkage Service Config
-      linkage_service.url = j["linkageService"]["url"].get<string>();
+      linkage_service.url = j.at("linkageService").at("url").get<string>();
       linkage_service.authentication =
-          get_auth_object(j["linkageService"]["authentication"]);
+          get_auth_object(j.at("linkageService").at("authentication"));
     } catch (const runtime_error& e) {
       return {restbed::INTERNAL_SERVER_ERROR,
               e.what(),

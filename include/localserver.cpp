@@ -26,6 +26,7 @@
 #include "seltypes.h"
 #include "resttypes.h"
 #include "util.h"
+#include "logger.h"
 
 using namespace std;
 namespace sel {
@@ -66,11 +67,12 @@ ClientId LocalServer::get_id() const {
 }
 
 SecureEpilinker::Result LocalServer::run_server() {
-  fmt::print("The Server is running and performing it's computations\n");
+  auto logger{get_default_logger()};
+  logger->info("The Server is running and performing it's computations");
   const size_t nvals{m_data->data.begin()->second.size()};
   m_aby_server.build_circuit(nvals);
   m_aby_server.run_setup_phase();
-  fmt::print("Starting Server\n");
+  logger->debug("Starting Server Computation");
   auto server_result{m_aby_server.run_as_server({m_data->data})};
   return server_result;
   }

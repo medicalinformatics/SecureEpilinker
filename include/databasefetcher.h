@@ -22,10 +22,14 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "datahandler.h"
+#include "epilink_input.h"
 #include "nlohmann/json.hpp"
 #include "resttypes.h"
-#include "epilink_input.h"
-#include "datahandler.h"
+
+namespace spdlog {
+class logger;
+}
 
 namespace sel {
 class LocalConfiguration;
@@ -33,8 +37,10 @@ class LocalConfiguration;
 class DatabaseFetcher {
  public:
   ServerData fetch_data();
-  DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf, std::shared_ptr<const AlgorithmConfig> algo_conf, const std::string& url, AuthenticationConfig const* l_auth)
-      : m_url(url), m_local_config(local_conf), m_algo_config(algo_conf), m_local_authentication(l_auth) {}
+  DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf,
+                  std::shared_ptr<const AlgorithmConfig> algo_conf,
+                  const std::string& url,
+                  AuthenticationConfig const* l_auth);
 
   void set_url(const std::string& url) { m_url = url; }
   void set_page_size(unsigned size) { m_page_size = size; }
@@ -42,14 +48,9 @@ class DatabaseFetcher {
 
  private:
   nlohmann::json get_next_page() const;
-  nlohmann::json request_page(const std::string& url
-                              ) const;
+  nlohmann::json request_page(const std::string& url) const;
   void get_page_data(const nlohmann::json&);
   std::map<FieldName, VFieldEntry> m_data;
-  //std::map<FieldName, std::vector<Bitmask>> m_hw_data;
-  //std::map<FieldName, sel::VCircUnit> m_bin_data;
-  //std::map<FieldName, std::vector<bool>> m_hw_empty;
-  //std::map<FieldName, std::vector<bool>> m_bin_empty;
   std::vector<std::map<std::string, std::string>> m_ids;
   unsigned m_page_size{25u};
   unsigned m_last_page{1u};
@@ -59,7 +60,8 @@ class DatabaseFetcher {
   std::string m_url;
   std::shared_ptr<const LocalConfiguration> m_local_config;
   std::shared_ptr<const AlgorithmConfig> m_algo_config;
-  AuthenticationConfig const * m_local_authentication;
+  AuthenticationConfig const* m_local_authentication;
+  std::shared_ptr<spdlog::logger> m_logger;
 };
 
 }  // namespace sel

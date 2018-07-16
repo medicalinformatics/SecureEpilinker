@@ -22,14 +22,17 @@
 
 #include "methodhandler.hpp"
 //#include "seltypes.h"
-#include "valijson/validation_results.hpp"
-#include "restbed"
 #include <memory>
 #include <string>
+#include "restbed"
 #include "resttypes.h"
+#include "valijson/validation_results.hpp"
 
 // Forward Declarations
 
+namespace spdlog {
+class logger;
+}
 namespace sel {
 class Validator;
 class ConfigurationHandler;
@@ -41,22 +44,17 @@ class MonitorMethodHandler : public MethodHandler {
    * Handles Job Monitoring Requests
    */
  public:
-  explicit MonitorMethodHandler(
-      const std::string& method,
-      std::shared_ptr<ServerHandler> server_handler)
-      : MethodHandler(method), m_server_handler(move(server_handler)){}
-  explicit MonitorMethodHandler(
-      const std::string& method,
-      std::shared_ptr<ServerHandler> server_handler,
-      std::shared_ptr<Validator>& validator)
-      : MethodHandler(method, validator),
-        m_server_handler(move(server_handler)){}
+  MonitorMethodHandler(const std::string& method,
+                       std::shared_ptr<ServerHandler> server_handler);
+  MonitorMethodHandler(const std::string& method,
+                       std::shared_ptr<ServerHandler> server_handler,
+                       std::shared_ptr<Validator>& validator);
   ~MonitorMethodHandler() = default;
   void handle_method(std::shared_ptr<restbed::Session>) const override;
 
  private:
   std::shared_ptr<ServerHandler> m_server_handler;
-
+  std::shared_ptr<spdlog::logger> m_logger;
 };
 
 }  // namespace sel
