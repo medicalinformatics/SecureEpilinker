@@ -32,8 +32,6 @@
 #include "fmt/format.h"
 
 namespace sel {
-class AuthenticationConfig;
-// class RemoteConfiguration;
 
 using DataField = std::variant<int, double, std::string, std::vector<uint8_t>>;
 using FieldName = std::string;
