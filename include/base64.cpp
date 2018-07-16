@@ -36,6 +36,7 @@
 #include "base64.h"
 #include <iostream>
 #include <string>
+#include "util.h"
 
 static const std::string base64_chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -90,7 +91,7 @@ std::string base64_encode(uint8_t const* buf, unsigned int bufLen) {
   return ret;
 }
 
-std::vector<uint8_t> base64_decode(std::string const& encoded_string) {
+std::vector<uint8_t> base64_decode(std::string const& encoded_string, unsigned int buff_length) {
   int in_len = encoded_string.size();
   int i = 0;
   int j = 0;
@@ -132,6 +133,10 @@ std::vector<uint8_t> base64_decode(std::string const& encoded_string) {
 
     for (j = 0; (j < i - 1); j++)
       ret.emplace_back(char_array_3[j]);
+  }
+  auto bytediff = sel::bitbytes(buff_length) - ret.size();
+  for (unsigned i = 0; i != bytediff; ++i){
+    ret.emplace_back(0x00);
   }
 
   return ret;

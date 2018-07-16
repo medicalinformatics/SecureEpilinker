@@ -153,7 +153,7 @@ SessionResponse valid_linkrecord_json_handler(
                 throw runtime_error("Invalid Field Type");
               }
               const auto b64string{f->get<string>()};
-              auto tempbytearray{base64_decode(b64string)};
+              auto tempbytearray{base64_decode(b64string, field_config.bitsize)};
               if (!check_bloom_length(tempbytearray,
                                       field_config.bitsize)) {
                 logger->warn(
