@@ -22,10 +22,10 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "datahandler.h"
+#include "epilink_input.h"
 #include "nlohmann/json.hpp"
 #include "resttypes.h"
-#include "epilink_input.h"
-#include "datahandler.h"
 
 namespace spdlog {
 class logger;
@@ -48,14 +48,9 @@ class DatabaseFetcher {
 
  private:
   nlohmann::json get_next_page() const;
-  nlohmann::json request_page(const std::string& url
-                              ) const;
+  nlohmann::json request_page(const std::string& url) const;
   void get_page_data(const nlohmann::json&);
   std::map<FieldName, VFieldEntry> m_data;
-  //std::map<FieldName, std::vector<Bitmask>> m_hw_data;
-  //std::map<FieldName, sel::VCircUnit> m_bin_data;
-  //std::map<FieldName, std::vector<bool>> m_hw_empty;
-  //std::map<FieldName, std::vector<bool>> m_bin_empty;
   std::vector<std::map<std::string, std::string>> m_ids;
   unsigned m_page_size{25u};
   unsigned m_last_page{1u};
@@ -65,7 +60,7 @@ class DatabaseFetcher {
   std::string m_url;
   std::shared_ptr<const LocalConfiguration> m_local_config;
   std::shared_ptr<const AlgorithmConfig> m_algo_config;
-  AuthenticationConfig const * m_local_authentication;
+  AuthenticationConfig const* m_local_authentication;
   std::shared_ptr<spdlog::logger> m_logger;
 };
 
