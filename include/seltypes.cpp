@@ -37,8 +37,8 @@ FieldType str_to_ftype(const string& str) {
 }
 
 FieldComparator str_to_fcomp(const string& str) {
-  if (str == "nGram")
-    return FieldComparator::NGRAM;
+  if (str == "dice")
+    return FieldComparator::DICE;
   else if (str == "binary")
     return FieldComparator::BINARY;
   assert(!"This should never be reached!");
