@@ -202,7 +202,6 @@ public:
     // Create targets vector with const_idx copy to pass to
     // split_select_quotient_target().
     vector<BoolShare> max_idx{1, const_idx};
-    assert((bool)const_idx); // check that it was copied, not moved
     split_select_quotient_target(sum_field_weights, max_idx,
         make_max_selector(to_bool_closure), to_arith_closure);
 
