@@ -139,12 +139,12 @@ SessionResponse valid_linkrecord_json_handler(
       logger->info("Created Job on Path: {}", job_id);
       try {
         CallbackConfig callback;
-        callback.url = j["callback"]["url"].get<string>();
-        callback.idType = j["callback"]["patientId"]["idType"].get<string>();
-        callback.idString = j["callback"]["patientId"]["idString"].get<string>();
+        callback.url = j.at("callback").at("url").get<string>();
+        callback.idType = j.at("callback").at("patientId").at("idType").get<string>();
+        callback.idString = j.at("callback").at("patientId").at("idString").get<string>();
         job->set_callback(move(callback));
 
-        for (auto f = j["fields"].begin(); f != j["fields"].end(); ++f) {
+        for (auto f = j.at("fields").begin(); f != j.at("fields").end(); ++f) {
           const auto& field_config = local_config->get_field(f.key());
           DataField tempfield;
           switch (field_config.type) {
@@ -230,22 +230,22 @@ SessionResponse valid_init_json_handler(
     auto algo{make_shared<AlgorithmConfig>()};
     try {
       // Get local Authentication
-      auto l_auth{get_auth_object(j["localAuthentication"])};
+      auto l_auth{get_auth_object(j.at("localAuthentication"))};
       local_config->set_local_auth(move(l_auth));
       // Get Dataservice
-      auto url{j["dataService"]["url"].get<string>()};
+      auto url{j.at("dataService").at("url").get<string>()};
       local_config->set_data_service(move(url));
       // Get Field Descriptions
       IndexSet fieldnames;
-      for (const auto& f : j["algorithm"]["fields"]) {
+      for (const auto& f : j.at("algorithm").at("fields")) {
         ML_Field tempfield(
-            f["name"].get<string>(), f["frequency"].get<double>(),
-            f["errorRate"].get<double>(), f["comparator"].get<string>(),
-            f["fieldType"].get<string>(),f["bitlength"].get<size_t>());
+            f.at("name").get<string>(), f.at("frequency").get<double>(),
+            f.at("errorRate").get<double>(), f.at("comparator").get<string>(),
+            f.at("fieldType").get<string>(),f.at("bitlength").get<size_t>());
         local_config->add_field(move(tempfield));
-        fieldnames.emplace(f["name"].get<string>());
+        fieldnames.emplace(f.at("name").get<string>());
       }
-      for (const auto& eg : j["algorithm"]["exchangeGroups"]) {
+      for (const auto& eg : j.at("algorithm").at("exchangeGroups")) {
         IndexSet egroup;
         for (const auto& f : eg) {
           egroup.emplace(f.get<string>());
@@ -258,10 +258,10 @@ SessionResponse valid_init_json_handler(
       }
       config_handler->set_local_config(move(local_config));
       // Get Algorithm Config
-      algo->type = str_to_atype(j["algorithm"]["algoType"].get<string>());
-      algo->threshold_match = j["algorithm"]["threshold_match"].get<double>();
+      algo->type = str_to_atype(j.at("algorithm").at("algoType").get<string>());
+      algo->threshold_match = j.at("algorithm").at("threshold_match").get<double>();
       algo->threshold_non_match =
-          j["algorithm"]["threshold_non_match"].get<double>();
+          j.at("algorithm").at("threshold_non_match").get<double>();
       config_handler->set_algorithm_config(move(algo));
       return {restbed::OK, "", {{"Connection", "Close"}}};
     } catch (const runtime_error& e) {
@@ -277,13 +277,13 @@ SessionResponse valid_init_json_handler(
       auto algo_conf{config_handler->get_algorithm_config()};
     try {
       // Get Connection Profile
-      con.url = j["connectionProfile"]["url"].get<string>();
+      con.url = j.at("connectionProfile").at("url").get<string>();
       con.authentication =
-          get_auth_object(j["connectionProfile"]["authentication"]);
+          get_auth_object(j.at("connectionProfile").at("authentication"));
       // Get Linkage Service Config
-      linkage_service.url = j["linkageService"]["url"].get<string>();
+      linkage_service.url = j.at("linkageService").at("url").get<string>();
       linkage_service.authentication =
-          get_auth_object(j["linkageService"]["authentication"]);
+          get_auth_object(j.at("linkageService").at("authentication"));
     } catch (const runtime_error& e) {
       return {restbed::INTERNAL_SERVER_ERROR,
               e.what(),
