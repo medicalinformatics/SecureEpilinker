@@ -28,7 +28,7 @@
 
 namespace sel {
 
-// nGram/bitmask field types of which hamming weights are computed
+// dice/bitmask field types of which hamming weights are computed
 using BitmaskUnit = uint8_t;
 using Bitmask = std::vector<BitmaskUnit>;
 using VBitmask = std::vector<Bitmask>;

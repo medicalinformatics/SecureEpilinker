@@ -44,7 +44,7 @@ EpilinkConfig::EpilinkConfig(
     // Set dice precision according to longest bitmask
     size_t max_bm_size = 0;
     for ( const auto& f : fields ) {
-      if (f.second.comparator == FieldComparator::NGRAM) {
+      if (f.second.comparator == FieldComparator::DICE) {
         max_bm_size = max(max_bm_size, f.second.bitsize);
       }
     }

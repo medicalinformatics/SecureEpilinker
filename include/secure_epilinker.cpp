@@ -34,7 +34,7 @@ using namespace std;
 namespace sel {
 
 constexpr auto BIN = FieldComparator::BINARY;
-constexpr auto BM = FieldComparator::NGRAM;
+constexpr auto BM = FieldComparator::DICE;
 
 // hammingweight of bitmasks
 CircUnit hw(const Bitmask& bm) {

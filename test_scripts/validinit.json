@@ -32,7 +32,7 @@
     "name": "vorname",
     "frequency": 0.000235,
     "errorRate": 0.01,
-    "comparator": "nGram",
+    "comparator": "dice",
     "fieldType": "bitmask",
     "bitlength": 500
     },
@@ -40,7 +40,7 @@
     "name": "nachname",
     "frequency": 0.0000271,
     "errorRate": 0.008,
-    "comparator": "nGram",
+    "comparator": "dice",
     "fieldType": "bitmask",
     "bitlength": 500
     },
@@ -48,7 +48,7 @@
     "name": "geburtsname",
     "frequency": 0.0000271,
     "errorRate": 0.008,
-    "comparator": "nGram",
+    "comparator": "dice",
     "fieldType": "bitmask",
     "bitlength": 500
     },
@@ -92,7 +92,7 @@
     "name": "ort",
     "frequency": 0.01,
     "errorRate": 0.04,
-    "comparator": "nGram",
+    "comparator": "dice",
     "fieldType": "bitmask",
     "bitlength": 500
 
