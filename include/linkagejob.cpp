@@ -140,11 +140,12 @@ void LinkageJob::run_job() {
     if(!nvals.valid()){
       throw runtime_error("Error retrieving number of records from server");
     }
-    logger->debug("Server has {} Records\n", nvals.get());
+    const auto nvals_value{nvals.get()};
+    logger->debug("Server has {} Records\n", nvals_value);
     auto epilinker{m_parent->get_epilink_client(m_remote_config->get_id())};
-    epilinker->build_circuit(nvals.get());
+    epilinker->build_circuit(nvals_value);
     epilinker->run_setup_phase();
-    EpilinkClientInput client_input{m_data, nvals.get()};
+    EpilinkClientInput client_input{m_data, nvals_value};
     const auto client_share{epilinker->run_as_client(client_input)};
     logger->info("Client result:\nIndex: {}, Match: {}, TMatch:{}\n", client_share.index, client_share.match, client_share.tmatch);
     //TODO(tk) send result to linkage server
@@ -178,7 +179,7 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
       "Content-Length: "s+to_string(algo_comp_conf.dump().size())};
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
   curl_request.setOpt(new curlpp::Options::Url(
-      "http://"s + m_remote_config->get_remote_host() + ':' +
+      "https://"s + m_remote_config->get_remote_host() + ':' +
       to_string(m_remote_config->get_remote_signaling_port()) + "/sellink/"+m_remote_config->get_remote_client_id()));
   curl_request.setOpt(new curlpp::Options::Post(true));
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
