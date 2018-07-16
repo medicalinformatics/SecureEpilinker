@@ -18,10 +18,8 @@
 
 #include <memory>
 #include <algorithm>
-#ifdef DEBUG_SEL_INPUT
 #include <fmt/format.h>
 #include <iostream>
-#endif
 #include "epilink_input.h"
 #include "util.h"
 
@@ -69,6 +67,34 @@ EpilinkConfig::EpilinkConfig(
     print("BitLen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
         BitLen, nfields, dice_prec, weight_prec);
 #endif
+
+    // Sanity checks of exchange groups
+    IndexSet xgunion;
+    for (const auto& group : exchange_groups) {
+      const auto& f0 = fields.at(*group.cbegin());
+      for (const auto& fname : group) {
+        // Check if exchange groups are disjoint
+        auto [_, is_new] = xgunion.insert(fname);
+        if (!is_new) throw logic_error(fmt::format(
+            "Exchange groups must be distinct! Field {} specified multiple times.", fname));
+
+        const auto& f = fields.at(fname);
+
+        // Check same comparators
+        if (f.comparator != f0.comparator) {
+          throw logic_error{fmt::format(
+              "Cannot compare field '{}' of type {} with field '{}' of type {}",
+              f.name, f.comparator, f0.name, f0.comparator)};
+        }
+
+        // Check same bitsize
+        if (f.bitsize != f0.bitsize) {
+          throw runtime_error{fmt::format(
+              "Cannot compare field '{}' of bitsize {} with field '{}' of bitsize {}",
+              f.name, f.bitsize, f0.name, f0.bitsize)};
+        }
+      }
+    }
   }
 
 void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {

@@ -172,11 +172,7 @@ public:
       // add this group's field weight to vector
       field_weights.emplace_back(best_group_weight(group));
       // remove all indices that were covered by this index group
-      for (const auto& i : group) {
-        size_t r = no_x_group.erase(i);
-        // TODO better check this already in EpilinkConfig constructor
-        if (!r) throw runtime_error("Exchange groups must be distinct!");
-      }
+      for (const auto& i : group) no_x_group.erase(i);
     }
     // 1.2 Remaining indices
     for (const auto& i : no_x_group) {
@@ -474,18 +470,6 @@ private:
   FieldWeight field_weight(const FieldName& ileft, const FieldName& iright) {
     const ML_Field& fleft = cfg.fields.at(ileft), fright = cfg.fields.at(iright);
     const FieldComparator ftype = fleft.comparator;
-    if (ftype != fright.comparator) {
-      throw runtime_error{fmt::format(
-          "Cannot compare field '{}' of type {} with field '{}' of type {}",
-          ileft, ftype, iright, fright.comparator)};
-    }
-
-    // Check that bitsizes of both fields match
-    if (fleft.bitsize != fright.bitsize) {
-      throw runtime_error{fmt::format(
-          "Cannot compare field '{}' of bitsize {} with field '{}' of bitsize {}",
-          ileft, fleft.bitsize, iright, fright.comparator)};
-    }
 
     // 1. Calculate weight * delta(i,j)
     // If indices match, use precomputed rescaled weights. Otherwise take
