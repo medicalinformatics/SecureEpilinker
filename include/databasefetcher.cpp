@@ -157,10 +157,11 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
         }
         case FieldType::BITMASK: {
           auto temp = f->get<string>();
-          auto bloom = base64_decode(temp);
-          if (!check_bloom_length(bloom, field_info.bitsize)) {
-          }
+          if (!trim_copy(temp).empty()) {
+            auto bloom = base64_decode(temp, field_info.bitsize);
+            if (!check_bloom_length(bloom, field_info.bitsize)) {
               m_logger->warn("Bits set after bloomfilterlength. There might be a problem. Set to zero.\n");
+            }
             bool bloomempty{true};
             for (const auto& byte : bloom) {
               if (bool byte_empty = (byte == 0x00); !byte_empty) {
@@ -173,6 +174,9 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
             } else {
               temp_data[f.key()].emplace_back(move(bloom));
             }
+          } else {
+            temp_data[f.key()].emplace_back(nullopt);
+          }
         }
       }
       if (!rec.count("ids")) {
