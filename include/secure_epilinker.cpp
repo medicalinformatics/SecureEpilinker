@@ -36,15 +36,6 @@ namespace sel {
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::NGRAM;
 
-// hammingweight of bitmasks
-CircUnit hw(const Bitmask& bm) {
-  CircUnit n = 0;
-  for (auto& b : bm) {
-    n += __builtin_popcount(b);
-  }
-  return n;
-}
-
 // hammingweight over vectors
 vector<CircUnit> hw(const vector<Bitmask>& v_bm) {
   vector<CircUnit> res(v_bm.size());

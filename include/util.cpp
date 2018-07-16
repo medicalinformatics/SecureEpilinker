@@ -82,6 +82,14 @@ std::vector<uint8_t> repeat_bit(const bool bit, const size_t n) {
   return std::vector<uint8_t>(bitbytes(n), bit ? 0xffu : 0u);
 }
 
+size_t hw(const Bitmask& bm) {
+  size_t n = 0;
+  for (auto& b : bm) {
+    n += __builtin_popcount(b);
+  }
+  return n;
+}
+
 Bitmask bm_and(const Bitmask& left, const Bitmask& right) {
   size_t n = left.size();
   assert(n == right.size());
