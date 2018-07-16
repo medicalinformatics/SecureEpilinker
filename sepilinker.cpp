@@ -40,9 +40,11 @@
 #include <string>
 #include <curlpp/cURLpp.hpp>
 
+#include "include/logger.h"
+#include <spdlog/spdlog.h>
+
 using json = nlohmann::json;
 using namespace sel;
-
 
 int main(int argc, char* argv[]) {
   // Commandline Parser
@@ -51,7 +53,9 @@ int main(int argc, char* argv[]) {
     ("c,config", "Config file name", cxxopts::value<std::string>()->default_value("../data/serverconf.json"))
     ("i,initschema", "File name of initializeation schema", cxxopts::value<std::string>())
     ("l,linkschema", "File name of linkRecord schema", cxxopts::value<std::string>())
+    ("L,logfile", "File name of log file", cxxopts::value<std::string>()->default_value("secure_epilink.log"))
     ("k,key", "File name of server key", cxxopts::value<std::string>())
+    ("v,verbose", "Log more information")
     ("d,dh", "File name of Diffi-Hellman group", cxxopts::value<std::string>())
     ("C,cert", "File name of server certificate", cxxopts::value<std::string>())
     ("p,port", "Port for listening", cxxopts::value<unsigned>())
@@ -82,8 +86,21 @@ int main(int argc, char* argv[]) {
   if(cmdoptions.count("port")){
     server_config["port"] = cmdoptions["port"].as<unsigned>();
   }
-  
+
+  spdlog::level::level_enum log_level{spdlog::level::warn};
+  log_level = static_cast<spdlog::level::level_enum>(static_cast<int>(log_level) - std::min(static_cast<int>(cmdoptions["verbose"].count()),3));
+  //createLogger(cmdoptions["logfile"].as<std::string>(), log_level);
+  createLogger(cmdoptions["logfile"].as<std::string>(), spdlog::level::debug);
   // Program
+  spdlog::set_level(spdlog::level::trace);
+  auto logger = get_default_logger();
+  logger->info("Testing the different warning levels:\n{}","Info\n");
+  logger->trace("Trace\n");
+  logger->debug("Debug\n");
+  logger->warn("Warning\n");
+  logger->error("Error\n");
+  logger->critical("Critical\n");
+
   restbed::Service service;
   curlpp::Cleanup curl_cleanup;
   // Create Connection Handler
@@ -173,7 +190,7 @@ int main(int argc, char* argv[]) {
   jobmonitor_handler.publish(service);
   selconnect_handler.publish(service);
   sellink_handler.publish(service);
-  fmt::print("Service Running\n");
+  logger->info("Service Running\n");
   service.start(settings);  // Eventloop
 
   return 0;

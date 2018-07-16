@@ -33,6 +33,7 @@ later version. This program is distributed in the hope that it will be useful,
 #include "remoteconfiguration.h"
 #include "secure_epilinker.h"
 #include "util.h"
+#include "logger.h"
 
 #include <curlpp/Easy.hpp>
 #include <curlpp/Infos.hpp>
@@ -123,28 +124,30 @@ JobId LinkageJob::get_id() const {
 }
 
 void LinkageJob::run_job() {
+  auto logger{get_default_logger()};
   m_status = JobStatus::RUNNING;
 
   // Prepare Data, weights and exchange groups
 
-  fmt::print("Job {} started\n", m_id);
+  logger->info("Job {} started\n", m_id);
 
   try {
     // Get number of records from server
     size_t nvals = signal_server();
     fmt::print("Server has {} Records\n", nvals);
+    logger->debug("Server has {} Records\n", nvals.get());
     auto epilinker{m_parent->get_epilink_client(m_remote_config->get_id())};
     epilinker->build_circuit(nvals);
     epilinker->run_setup_phase();
     EpilinkClientInput client_input{m_data, nvals};
     const auto client_share{epilinker->run_as_client(client_input)};
-    fmt::print("Client result:\nIndex: {}, Match: {}, TMatch:{}\n", client_share.index, client_share.match, client_share.tmatch);
+    logger->info("Client result:\nIndex: {}, Match: {}, TMatch:{}\n", client_share.index, client_share.match, client_share.tmatch);
     //TODO(tk) send result to linkage server
     nlohmann::json result_id{{"idType", "srl1"},{"idString", "3lk4j3Y4l5j"}};
     perform_callback(result_id);
     m_status = JobStatus::DONE;
   } catch (const exception& e) {
-    fmt::print(stderr, "Error running MPC Client: {}\n", e.what());
+    logger->error("Error running MPC Client: {}\n", e.what());
     m_status = JobStatus::FAULT;
   }
 }
@@ -154,6 +157,7 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
 }
 
 size_t LinkageJob::signal_server() {
+  auto logger{get_default_logger()};
   curlpp::Easy curl_request;
   nlohmann::json algo_comp_conf{*m_algo_config};
   algo_comp_conf.emplace_back(m_local_config->get_comparison_json());
@@ -176,16 +180,20 @@ size_t LinkageJob::signal_server() {
   curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
   curl_request.setOpt(new curlpp::Options::PostFieldSize(algo_comp_conf.dump().size()));
   curl_request.setOpt(new curlpp::options::Header(1));
-  fmt::print("Sending linkage request\n");
-  send_curl(curl_request, move(response_promise));
-  response_stream.wait();
-  auto stream = response_stream.get();
-  fmt::print("Response stream: {}\n", stream.str());
-  auto nval{stoull(get_headers(stream, "Record-Number").front())};
-  return nval;
+  logger->debug("Sending linkage request\n");
+  try{
+    send_curl(curl_request, move(response_promise));
+    response_stream.wait();
+    auto stream = response_stream.get();
+    logger->debug("Response stream:\n{}\n", stream.str());
+    nvals.set_value(stoull(get_headers(stream, "Record-Number").front()));
+  } catch (const exception& e) {
+    logger->error("Error performing callback: {}", e.what());
+  }
 }
 
 bool LinkageJob::perform_callback(const nlohmann::json& new_id) const {
+  auto logger{get_default_logger()};
   curlpp::Easy curl_request;
   nlohmann::json data_json{ {"patientId", {
                           {"idType", m_callback.idType},
@@ -214,11 +222,11 @@ bool LinkageJob::perform_callback(const nlohmann::json& new_id) const {
   //curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   //curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
   curl_request.setOpt(new curlpp::options::Header(1));
-  fmt::print("Sending linkage request\n");
+  logger->debug("Sending callback to: {}\n", m_callback.url);
   send_curl(curl_request, move(response_promise));
   response_stream.wait();
   auto stream = response_stream.get();
-  fmt::print("Callback response:\n{}\n", stream.str());
+  logger->debug("Callback response:\n{}\n", stream.str());
   return true; //TODO(TK) return correct success bool
 }
 }  // namespace sel

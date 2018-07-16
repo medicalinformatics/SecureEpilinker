@@ -27,14 +27,20 @@
 #include "epilink_input.h"
 #include "datahandler.h"
 
+namespace spdlog {
+class logger;
+}
+
 namespace sel {
 class LocalConfiguration;
 
 class DatabaseFetcher {
  public:
   ServerData fetch_data();
-  DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf, std::shared_ptr<const AlgorithmConfig> algo_conf, const std::string& url, AuthenticationConfig const* l_auth)
-      : m_url(url), m_local_config(local_conf), m_algo_config(algo_conf), m_local_authentication(l_auth) {}
+  DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf,
+                  std::shared_ptr<const AlgorithmConfig> algo_conf,
+                  const std::string& url,
+                  AuthenticationConfig const* l_auth);
 
   void set_url(const std::string& url) { m_url = url; }
   void set_page_size(unsigned size) { m_page_size = size; }
@@ -60,6 +66,7 @@ class DatabaseFetcher {
   std::shared_ptr<const LocalConfiguration> m_local_config;
   std::shared_ptr<const AlgorithmConfig> m_algo_config;
   AuthenticationConfig const * m_local_authentication;
+  std::shared_ptr<spdlog::logger> m_logger;
 };
 
 }  // namespace sel

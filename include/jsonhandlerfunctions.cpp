@@ -36,18 +36,20 @@
 #include "resttypes.h"
 #include "util.h"
 #include "valijson/validation_results.hpp"
+#include "logger.h"
 
 using namespace std;
 namespace sel {
 nlohmann::json read_json_from_disk(
     const experimental::filesystem::path& json_path) {
+  auto logger{get_default_logger()};
   nlohmann::json content;
   if (experimental::filesystem::exists(json_path)) {
     ifstream in(json_path);
     try {
       in >> content;
     } catch (const exception& e) {
-      fmt::print(stderr, "Error {}! Terminating!\n", e.what());
+      logger->critical("Error {}! Terminating!\n", e.what());
       exit(1);
     }
     return content;
@@ -82,10 +84,11 @@ SessionResponse valid_temp_link_json_handler(
     const shared_ptr<ConfigurationHandler>&,
     const shared_ptr<ServerHandler>& server_handler,
     const shared_ptr<ConnectionHandler>&) {
+  auto logger{get_default_logger()};
   SessionResponse response;
   uint16_t common_port;
   string client_ip;
-    fmt::print("Recieved Job Request\n");
+    logger->info("Recieved Linkage Request");
     //TODO(TK) Authorization
     common_port = server_handler->get_server_port(client_id);
 
@@ -95,10 +98,10 @@ SessionResponse valid_temp_link_json_handler(
       response.headers = {{"Content-Length", to_string(response.body.length())},
                           {"Remote-Identifier", client_id},
                           {"Connection", "Close"}};
-    fmt::print("Non matching configs!\n");
+    logger->debug("Non matching configs!");
     return response;
     }
-    fmt::print("Matching configs!\n");
+    logger->debug("Matching configs!");
     auto data_handler{server_handler->get_local_server(client_id)->get_data_handler()};
     auto nvals{data_handler->poll_database()};
     auto data{data_handler->get_database()};
@@ -120,8 +123,9 @@ SessionResponse valid_linkrecord_json_handler(
     const shared_ptr<ConfigurationHandler>& config_handler,
     const shared_ptr<ServerHandler>& server_handler,
     const shared_ptr<ConnectionHandler>&) {
+    auto logger{get_default_logger()};
   try {
-    fmt::print("Payload: {}\n", j.dump(2));
+    logger->trace("Payload: {}", j.dump(2));
     JobId job_id;
     if (config_handler->get_remote_count()) {
       const auto local_config{config_handler->get_local_config()};
@@ -132,7 +136,7 @@ SessionResponse valid_linkrecord_json_handler(
           remote_config,
           algo_config, server_handler)};
       job_id = job->get_id();
-      fmt::print("Ressource Path: {}\n", job_id);
+      logger->info("Created Job on Path: {}", job_id);
       try {
         CallbackConfig callback;
         callback.url = j["callback"]["url"].get<string>();
@@ -152,9 +156,9 @@ SessionResponse valid_linkrecord_json_handler(
               auto tempbytearray{base64_decode(b64string)};
               if (!check_bloom_length(tempbytearray,
                                       field_config.bitsize)) {
-                fmt::print(
-                    "Warning: Set bits after bloomfilterlength. Set to "
-                    "zero.\n");
+                logger->warn(
+                    "Bits set after bloomfilterlength. Maybe there is something "
+                    "wrong. Set to zero.");
               }
               tempfield = tempbytearray;
               break;
@@ -187,7 +191,7 @@ SessionResponse valid_linkrecord_json_handler(
 
         server_handler->add_linkage_job(remote_id, move(job));
       } catch (const exception& e) {
-        fmt::print(stderr, "Error: {}\n", e.what());
+        logger->error("Error in job creation: {}", e.what());
         return {restbed::BAD_REQUEST,
                 e.what(),
                 {{"Content-Length", to_string(string(e.what()).length())},
@@ -217,10 +221,11 @@ SessionResponse valid_init_json_handler(
     const shared_ptr<ConfigurationHandler>& config_handler,
     const shared_ptr<ServerHandler>& server_handler,
     const shared_ptr<ConnectionHandler>& connection_handler) {
-    fmt::print("Payload: {}\n", j.dump(2));
+  auto logger{get_default_logger()};
+    logger->trace("Payload: {}", j.dump(2));
   if (remote_id == "local") {
     auto local_config = make_shared<LocalConfiguration>();
-    fmt::print("Creating local configuration\n");
+    logger->info("Creating local configuration\n");
     vector<ML_Field> fields;
     auto algo{make_shared<AlgorithmConfig>()};
     try {
@@ -265,7 +270,7 @@ SessionResponse valid_init_json_handler(
               {{"Content-Length", to_string(string(e.what()).length())}}};
     }
   } else {  // remote Config
-    fmt::print("Creating remote Config for: \"{}\"\n", remote_id);
+    logger->info("Creating remote Config for: \"{}\"", remote_id);
       ConnectionConfig con;
       ConnectionConfig linkage_service;
       auto local_conf{config_handler->get_local_config()};
