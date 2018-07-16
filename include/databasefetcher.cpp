@@ -56,14 +56,14 @@ ServerData DatabaseFetcher::fetch_data() {
   m_logger->debug("Requesting Database from {}?pageSize={}\n", m_url, m_page_size);
   m_logger->info("Requesting Database");
   m_page = 1u;
-  auto paget{request_page(m_url + "?pagesize=" + to_string(m_page_size))};
+  auto paget{request_page(m_url + "?pageSize=" + to_string(m_page_size))};
   auto page =
       *(paget.begin());  // FIXME(TK): JSon wird zusätzlich in Array gepack
   if (page.count("lastPageNumber")) {
     m_last_page = page["lastPageNumber"].get<unsigned>();
   }
-  if (page.count("todate")) {
-    m_todate = page["todate"].get<size_t>();
+  if (page.count("toDate")) {
+    m_todate = page.at("toDate").get<size_t>();
   }
 
   for (; m_page != m_last_page; ++m_page) {
