@@ -60,7 +60,7 @@ ServerData DatabaseFetcher::fetch_data() {
   auto page =
       *(paget.begin());  // FIXME(TK): JSon wird zusätzlich in Array gepack
   if (page.count("lastPageNumber")) {
-    m_last_page = page["lastPageNumber"].get<unsigned>();
+    m_last_page = page.at("lastPageNumber").get<unsigned>();
   }
   if (page.count("toDate")) {
     m_todate = page.at("toDate").get<size_t>();
@@ -68,7 +68,7 @@ ServerData DatabaseFetcher::fetch_data() {
 
   for (; m_page != m_last_page; ++m_page) {
     get_page_data(page);
-    m_next_page = page["_links"]["next"]["href"].get<string>();
+    m_next_page = page.at("_links").at("next").at("href").get<string>();
     page = get_next_page();
   }
   // Process Data from last page
@@ -185,8 +185,8 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
     }
     map<string, string> tempmap;
     for (auto i = rec["ids"].begin(); i != rec["ids"].end(); ++i) {
-      tempmap.emplace((*i)["idType"].get<string>(),
-                      (*i)["idString"].get<string>());
+      tempmap.emplace((*i).at("idType").get<string>(),
+                      (*i).at("idString").get<string>());
     }
     m_ids.emplace_back(move(tempmap));
   }
