@@ -104,16 +104,16 @@ ServerData DatabaseFetcher::fetch_data() {
 
 void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
   if (!page_data.count("_links")) {
-    throw runtime_error("Invalid JSON Data");
+    throw runtime_error("Invalid JSON Data: missing _links section");
   }
   if (!page_data.count("records")) {
-    throw runtime_error("Invalid JSON Data");
+    throw runtime_error("Invalid JSON Data: missing records section");
   }
   map<FieldName, VFieldEntry> temp_data;
 
   for (const auto& rec : page_data["records"]) {
     if (!rec.count("fields")) {
-      throw runtime_error("Invalid JSON Data");
+      throw runtime_error("Invalid JSON Data: missing fields");
     }
     // FIXME(TK) I do s.th. *very* unsafe and use bitlength user input directly
     // for memcpy. DO SOME SANITY CHECKS OR THIS SOFTWARE WILL BREAK AND ALLOW
@@ -180,7 +180,7 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
         }
       }
       if (!rec.count("ids")) {
-        throw runtime_error("Invalid JSON Data");
+        throw runtime_error("Invalid JSON Data: missing ids");
       }
     }
     map<string, string> tempmap;
@@ -219,6 +219,7 @@ nlohmann::json DatabaseFetcher::request_page(const string& url) const {
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
   curl_request.perform();
   auto responsecode = curlpp::Infos::ResponseCode::get(curl_request);
+  //TODO(TK): Better response handling needed
   if (responsecode != 400 && responsecode != 401) {
     if (!(response_stream.str().empty())) {
       m_logger->trace("Response Data:\n{}\n", response_stream.str());
