@@ -69,6 +69,7 @@ set(SELABYSOURCES "include/util.cpp" "include/util.cpp" "include/aby/Share.cpp"
 
 set(SELSOURCES ${SELABYSOURCES}
   "include/epilink_input.cpp" "include/secure_epilinker.cpp"
+  "include/clear_epilinker.cpp"
   "include/seltypes.cpp")
 
 set(SELABYHEADER "include/math.h" "include/util.h"
@@ -77,6 +78,7 @@ set(SELABYHEADER "include/math.h" "include/util.h"
 
 set(SELHEADER ${SELABYHEADER}
   "include/epilink_input.h" "include/secure_epilinker.h"
+  "include/clear_epilinker.h"
   "include/seltypes.h")
 
 add_executable (sel sepilinker.cpp ${EPIRESTSRC} ${EPIRESTHEAD} ${SELSOURCES} ${SELHEADER})
@@ -149,6 +151,7 @@ target_link_libraries(test_sel PRIVATE fmt::fmt-header-only cxxopts)
 set_property(TARGET test_sel PROPERTY CXX_STANDARD 17)
 target_compile_options(test_sel PRIVATE "-O0" "-ggdb" "-g3"
   "-DDEBUG_SEL_INPUT"  "-DDEBUG_SEL_CIRCUIT" "-DDEBUG_SEL_RESULT"
+  "-DDEBUG_SEL_CLEAR" # For intermediary value output in clear epilinker
   "-DDEBUG_SEL_GADGETS")
 
 # Test utils
