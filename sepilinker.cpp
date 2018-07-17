@@ -113,10 +113,10 @@ int main(int argc, char* argv[]) {
   data->set_config_handler(configurations);
   // Create JSON Validator
   auto init_validator = std::make_shared<sel::Validator>(
-      read_json_from_disk(server_config["initSchemaPath"].get<std::string>()));
+      read_json_from_disk(server_config.at("initSchemaPath").get<std::string>()));
   auto linkrecord_validator =
       std::make_shared<sel::Validator>(read_json_from_disk(
-          server_config["linkRecordSchemaPath"].get<std::string>()));
+          server_config.at("linkRecordSchemaPath").get<std::string>()));
   auto null_validator = std::make_shared<sel::Validator>();
   // Create Handler for POST Request with JSON payload (using the validator)
   auto init_methodhandler =
@@ -164,25 +164,26 @@ int main(int argc, char* argv[]) {
   selconnect_handler.add_method(temp_selconnect_methodhandler);
   sel::ResourceHandler sellink_handler{"/sellink/{remote_id: .*}"};
   sellink_handler.add_method(temp_link_methodhandler);
-  // Setup SSL Connection
-  auto ssl_settings = std::make_shared<restbed::SSLSettings>();
-  ssl_settings->set_http_disabled(true);
-  ssl_settings->set_private_key(restbed::Uri(
-      "file://" + server_config["serverKeyPath"].get<std::string>()));
-  ssl_settings->set_certificate(restbed::Uri(
-      "file://" + server_config["serverCertificatePath"].get<std::string>()));
-  ssl_settings->set_temporary_diffie_hellman(restbed::Uri(
-      "file://" + server_config["serverDHPath"].get<std::string>()));
 
   // Setup REST Server
   auto settings = std::make_shared<restbed::Settings>();
-  ssl_settings->set_port(server_config["port"].get<unsigned>());
-  ssl_settings->set_bind_address("0.0.0.0");
-  settings->set_worker_limit( 4 );
-  if(server_config["useSSL"].get<bool>()){
+  settings->set_worker_limit(server_config.at("restWorkerThreads").get<unsigned>());
+  if(server_config.at("useSSL").get<bool>()){
+  // Setup SSL Connection
+  auto ssl_settings = std::make_shared<restbed::SSLSettings>();
+    ssl_settings->set_http_disabled(true);
+    ssl_settings->set_private_key(restbed::Uri(
+      "file://" + server_config.at("serverKeyPath").get<std::string>()));
+    ssl_settings->set_certificate(restbed::Uri(
+      "file://" + server_config.at("serverCertificatePath").get<std::string>()));
+    ssl_settings->set_temporary_diffie_hellman(restbed::Uri(
+      "file://" + server_config.at("serverDHPath").get<std::string>()));
+    ssl_settings->set_port(server_config.at("port").get<unsigned>());
+    ssl_settings->set_bind_address(server_config.at("bindAddress").get<std::string>());
     settings->set_ssl_settings(ssl_settings);
   } else {
-    settings->set_port(server_config["port"].get<unsigned>());
+    settings->set_bind_address(server_config.at("bindAddress").get<std::string>());
+    settings->set_port(server_config.at("port").get<unsigned>());
   }
 
   initializer.publish(service);

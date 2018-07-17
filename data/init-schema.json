@@ -9,7 +9,8 @@
         "additionalProperties": {
           "sharedKey": {"type": "string"}
         }
-      }
+      },
+      "required": ["authType"]
     },
     "field": {
       "type": "object",
@@ -27,7 +28,7 @@
           "type": "string",
           "enum": [
             "binary",
-            "nGram"
+            "dice"
           ]
         },
         "fieldType": {
@@ -42,6 +43,7 @@
           "type": "number"
         }
       },
+      "required": ["name", "frequency", "errorRate", "comparator", "fieldType", "bitlength"],
       "additionalProperties": false
     }
   },
@@ -53,25 +55,32 @@
       "properties": {
         "url": {"type": "string"}
       },
+      "required": ["url"],
       "additionalProperties": false
     },
-    "connectionProfile": {"type": "object",
+    "connectionProfile": {
+      "type": "object",
       "properties": {
         "url": {"type": "string"},
-        "authentication": {"$ref": "#/definitions/authentication"}
+        "authentication": {"$ref": "#/definitions/authentication"},
+      "  idType": {"type": "string"}
       },
-      "additionalProperties": false
-      "idType": {"type": "string"},
+      "required": ["url", "authentication", "idType"],
+      "additionalProperties": true
     },
     "linkageService": {
-      "url": { "type": "string"},
-      "authentication": { "$ref": "#/definitions/authentication"}
+      "type": "object",
+      "properties": {
+      "authentication": { "$ref": "#/definitions/authentication"},
+      "url": { "type": "string"}
+      },
+      "required": ["url", "authentication"],
+      "additionalProperties": false
     },
     "algorithm": {
       "type": "object",
       "properties": {
         "algoType": {"enum": ["epilink"]},
-        "bloomLength": {"type": "integer"},
         "threshold_match": {"type": "number"},
         "threshold_non_match": {"type": "number"},
         "exchangeGroups": {"type": "array"},
@@ -79,6 +88,7 @@
           "items": {"$ref": "#/definitions/field"},
           "additionalItems": false}
       },
+      "required": ["algoType", "threshold_match", "threshold_non_match", "exchangeGroups", "fields"],
       "additionalProperties": false
     }
   },

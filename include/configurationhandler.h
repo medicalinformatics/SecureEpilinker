@@ -56,7 +56,7 @@ class ConfigurationHandler {
   mutable std::mutex m_algo_mutex;
 };
 
-EpilinkConfig get_epilink_config(std::shared_ptr<const LocalConfiguration>,
+EpilinkConfig make_epilink_config(std::shared_ptr<const LocalConfiguration>,
                                     std::shared_ptr<const AlgorithmConfig>);
 }  // namespace sel
 

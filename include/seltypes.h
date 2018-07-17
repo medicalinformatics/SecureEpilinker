@@ -33,7 +33,7 @@
 
 namespace sel {
 
-using DataField = std::variant<int, double, std::string, std::vector<uint8_t>>;
+using DataField = std::variant<int, double, std::string, std::vector<uint8_t>, std::nullptr_t>;
 using FieldName = std::string;
 using IndexSet = std::set<FieldName>;
 // weight type
@@ -41,7 +41,7 @@ using Weight = double;
 using VWeight = std::vector<Weight>;
 
 enum class FieldType { BITMASK, NUMBER, STRING, INTEGER };
-enum class FieldComparator { NGRAM, BINARY };
+enum class FieldComparator { DICE, BINARY };
 
 FieldType str_to_ftype(const std::string& str);
 FieldComparator str_to_fcomp(const std::string& str);
@@ -94,7 +94,7 @@ struct formatter<sel::FieldComparator> {
     std::string s;
     switch(c) {
       case sel::FieldComparator::BINARY: s = "Binary"; break;
-      case sel::FieldComparator::NGRAM: s = "Bitmask"; break;
+      case sel::FieldComparator::DICE: s = "Bitmask"; break;
     }
     return format_to(ctx.begin(), s);
   }

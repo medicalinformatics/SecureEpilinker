@@ -11,7 +11,7 @@ using Result = SecureEpilinker::Result;
 using fmt::print;
 
 constexpr auto BIN = FieldComparator::BINARY;
-constexpr auto BM = FieldComparator::NGRAM;
+constexpr auto BM = FieldComparator::DICE;
 constexpr double Threshold = 0.9;
 constexpr double TThreshold = 0.7;
 
@@ -40,13 +40,13 @@ Bitmask data_int_2 = {0xde, 0xce, 0xa5, 0xed};
 ML_Field f_bm1 (
   //name, f, e, comparator, type, bitsize
   "bm_1", 2.0,
-  FieldComparator::NGRAM, FieldType::BITMASK, 8
+  FieldComparator::DICE, FieldType::BITMASK, 8
 );
 
 ML_Field f_bm2 (
   //name, f, e, comparator, type, bitsize
   "bm_2", 4.0,
-  FieldComparator::NGRAM, FieldType::BITMASK, 8
+  FieldComparator::DICE, FieldType::BITMASK, 8
 );
 
 // Whether to use run_as_{client/server}() or run_as_both()
