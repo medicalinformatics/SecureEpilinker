@@ -27,7 +27,7 @@ using fmt::print, fmt::format;
 namespace sel::clear_epilink {
 
 constexpr auto BIN = FieldComparator::BINARY;
-constexpr auto BM = FieldComparator::NGRAM;
+constexpr auto BM = FieldComparator::DICE;
 
 /******************** Sum Quotient ********************/
 template<typename T>
