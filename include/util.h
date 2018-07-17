@@ -256,19 +256,26 @@ EpilinkConfig get_epilink_config(std::shared_ptr<const LocalConfiguration>, std:
 // Custom fmt formatters for our types
 namespace fmt {
 
-template <class T>
-struct formatter<std::vector<T>> {
+/**
+ * Container printer (vector, set, ...)
+ * inspired by https://github.com/louisdx/cxx-prettyprint
+ */
+template <typename T, template<typename...> class Container>
+struct formatter<Container<T>> {
   template <typename ParseContext>
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const std::vector<T> v, FormatContext &ctx) {
+  auto format(const Container<T> v, FormatContext &ctx) {
     auto c = format_to(ctx.begin(), "[");
-    for (const auto& e : v) {
-      c = format_to(c, "{}", e);
-      if (e != v.back()) {
-        c = format_to(c, ", ");
-      }
+
+    auto it = std::cbegin(v);
+    auto the_end = std::cend(v);
+
+    for (;;) {
+      c = format_to(c, "{}", *it);
+      if (++it == the_end) break;
+      c = format_to(c, ", ");
     }
     return format_to(c,"]");
   }
