@@ -23,7 +23,6 @@
 },
 "algorithm": {
   "algoType": "epilink",
-  "bloomLength": 500,
   "threshold_match": 0.9,
   "threshold_non_match": 0.7,
   "exchangeGroups": [[ "vorname", "nachname", "geburtsname" ]],
@@ -32,7 +31,7 @@
     "name": "vorname",
     "frequency": 0.000235,
     "errorRate": 0.01,
-    "comparator": "nGram",
+    "comparator": "dice",
     "fieldType": "bitmask",
     "bitlength": 500
     },
@@ -40,7 +39,7 @@
     "name": "nachname",
     "frequency": 0.0000271,
     "errorRate": 0.008,
-    "comparator": "nGram",
+    "comparator": "dice",
     "fieldType": "bitmask",
     "bitlength": 500
     },
@@ -48,7 +47,7 @@
     "name": "geburtsname",
     "frequency": 0.0000271,
     "errorRate": 0.008,
-    "comparator": "nGram",
+    "comparator": "dice",
     "fieldType": "bitmask",
     "bitlength": 500
     },
@@ -92,7 +91,7 @@
     "name": "ort",
     "frequency": 0.01,
     "errorRate": 0.04,
-    "comparator": "nGram",
+    "comparator": "dice",
     "fieldType": "bitmask",
     "bitlength": 500
 

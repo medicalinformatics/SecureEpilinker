@@ -112,7 +112,7 @@ void to_json(nlohmann::json& j, const ML_Field& f) {
       {"weight", f.weight},
       {"bitlength", f.bitsize},
       {"comparator",
-       (f.comparator == FieldComparator::NGRAM) ? "nGram" : "binary"},
+       (f.comparator == FieldComparator::DICE) ? "dice" : "binary"},
       {"fieldType", ftype_to_str(f.type)}};
 }
 

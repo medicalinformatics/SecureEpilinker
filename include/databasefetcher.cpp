@@ -120,65 +120,52 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
     // ARBITRARY REMOTE CODE EXECUTION!
     for (auto f = rec["fields"].begin(); f != rec["fields"].end(); ++f) {
       const auto field_info{m_local_config->get_field(f.key())};
-      switch (field_info.type) {
-        case FieldType::INTEGER: {
-          const auto content{f->get<int>()};
-          if (content == 0) {
-            temp_data[f.key()].emplace_back(nullopt);
-          } else {
+      if (!(f->is_null())) {
+        switch (field_info.type) {
+          case FieldType::INTEGER: {
+            const auto content{f->get<int>()};
             Bitmask temp(bitbytes(field_info.bitsize));
             ::memcpy(temp.data(), &content, bitbytes(field_info.bitsize));
             temp_data[f.key()].emplace_back(move(temp));
+            break;
           }
-          break;
-        }
-        case FieldType::NUMBER: {
-          const auto content{f->get<double>()};
-          if (content == 0.) {
-            temp_data[f.key()].emplace_back(nullopt);
-          } else {
+          case FieldType::NUMBER: {
+            const auto content{f->get<double>()};
             Bitmask temp(bitbytes(field_info.bitsize));
             ::memcpy(temp.data(), &content, bitbytes(field_info.bitsize));
             temp_data[f.key()].emplace_back(move(temp));
+            break;
           }
-          break;
-        }
-        case FieldType::STRING: {
-          const auto content{f->get<string>()};
-          if (trim_copy(content).empty()) {
-            temp_data[f.key()].emplace_back(nullopt);
-          } else {
-            const auto temp_char_array{content.c_str()};
-            Bitmask temp(bitbytes(field_info.bitsize));
-            ::memcpy(temp.data(), temp_char_array,
-                     bitbytes(field_info.bitsize));
-            temp_data[f.key()].emplace_back(move(temp));
-          }
-          break;
-        }
-        case FieldType::BITMASK: {
-          auto temp = f->get<string>();
-          if (!trim_copy(temp).empty()) {
-            auto bloom = base64_decode(temp, field_info.bitsize);
-            if (!check_bloom_length(bloom, field_info.bitsize)) {
-              m_logger->warn("Bits set after bloomfilterlength. There might be a problem. Set to zero.\n");
-            }
-            bool bloomempty{true};
-            for (const auto& byte : bloom) {
-              if (bool byte_empty = (byte == 0x00); !byte_empty) {
-                bloomempty = false;
-                break;
-              }
-            }
-            if (bloomempty) {
+          case FieldType::STRING: {
+            const auto content{f->get<string>()};
+            if (trim_copy(content).empty()) {
               temp_data[f.key()].emplace_back(nullopt);
             } else {
-              temp_data[f.key()].emplace_back(move(bloom));
+              const auto temp_char_array{content.c_str()};
+              Bitmask temp(bitbytes(field_info.bitsize));
+              ::memcpy(temp.data(), temp_char_array,
+                       bitbytes(field_info.bitsize));
+              temp_data[f.key()].emplace_back(move(temp));
             }
-          } else {
-            temp_data[f.key()].emplace_back(nullopt);
+            break;
+          }
+          case FieldType::BITMASK: {
+            auto temp = f->get<string>();
+            if (!trim_copy(temp).empty()) {
+              auto bloom = base64_decode(temp, field_info.bitsize);
+              if (!check_bloom_length(bloom, field_info.bitsize)) {
+                m_logger->warn(
+                    "Bits set after bloomfilterlength. There might be a "
+                    "problem. Set to zero.\n");
+              }
+              temp_data[f.key()].emplace_back(move(bloom));
+            } else {
+              temp_data[f.key()].emplace_back(nullopt);
+            }
           }
         }
+      } else { // field has type null
+        temp_data[f.key()].emplace_back(nullopt);
       }
       if (!rec.count("ids")) {
         throw runtime_error("Invalid JSON Data: missing ids");

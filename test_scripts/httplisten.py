@@ -15,9 +15,11 @@ class RequestHandler(BaseHTTPRequestHandler):
         print(request_path)
         print((self.headers))
         print("<----- Request End -----\n")
-        
+
         self.send_response(200)
-        self.send_header("Set-Cookie", "foo=bar")
+        self.send_header("Connection", "Close")
+        self.send_header('Content-Length', str(0))
+        self.end_headers()
         
     def do_GET(self):
         
