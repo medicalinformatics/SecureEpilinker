@@ -31,7 +31,6 @@
 #include <locale>
 #include <sstream>
 #include "fmt/format.h"
-#include "epilink_input.h"
 
 using Bitmask = std::vector<uint8_t>;
 
@@ -251,10 +250,6 @@ std::string generate_id();
 std::istream& safeGetline(std::istream&, std::string&);
 std::vector<std::string> get_headers(std::istream& is,const std::string& header);
 
-// Forward Declarations
-class LocalConfiguration;
-struct AlgorithmConfig;
-EpilinkConfig get_epilink_config(std::shared_ptr<const LocalConfiguration>, std::shared_ptr<const AlgorithmConfig>);
 } // namespace sel
 
 // Custom fmt formatters for our types

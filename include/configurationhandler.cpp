@@ -74,13 +74,12 @@ size_t ConfigurationHandler::get_remote_count() const {
   return m_remote_configs.size();
 }
 
-EpilinkConfig get_epilink_config(shared_ptr<const LocalConfiguration> local_config,
+EpilinkConfig make_epilink_config(shared_ptr<const LocalConfiguration> local_config,
                                     shared_ptr<const AlgorithmConfig> algo_config){
 return {local_config->get_fields(),
         local_config->get_exchange_groups(),
         algo_config->threshold_match,
         algo_config->threshold_non_match };
-
 }
 }  // namespace sel
 

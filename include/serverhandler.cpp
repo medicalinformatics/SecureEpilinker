@@ -39,7 +39,7 @@ ServerHandler::ServerHandler(
 
 void ServerHandler::insert_client(RemoteId id) {
   auto local_config{m_config_handler->get_local_config()};
-  auto epilink_config{get_epilink_config(
+  auto epilink_config{make_epilink_config(
       local_config, m_config_handler->get_algorithm_config())};
   auto aby_info{local_config->get_aby_info()};
   auto remote_config{m_config_handler->get_remote_config(id)};
@@ -54,7 +54,7 @@ void ServerHandler::insert_client(RemoteId id) {
 
 void ServerHandler::insert_server(ClientId id, RemoteAddress remote_address) {
   auto local_config{m_config_handler->get_local_config()};
-  auto epilink_config{get_epilink_config(
+  auto epilink_config{make_epilink_config(
       local_config, m_config_handler->get_algorithm_config())};
   auto aby_info{local_config->get_aby_info()};
   SecureEpilinker::ABYConfig aby_config{
