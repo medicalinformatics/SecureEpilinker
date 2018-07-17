@@ -468,13 +468,11 @@ private:
    * - Return field weight and weight
    */
   FieldWeight field_weight(const FieldName& ileft, const FieldName& iright) {
-    const ML_Field& fleft = cfg.fields.at(ileft), fright = cfg.fields.at(iright);
+    const ML_Field &fleft = cfg.fields.at(ileft), &fright = cfg.fields.at(iright);
     const FieldComparator ftype = fleft.comparator;
 
     // 1. Calculate weight * delta(i,j)
-    // If indices match, use precomputed rescaled weights. Otherwise take
-    // arithmetic average of both weights
-    CircUnit weight_r = rescale_weight(
+    const CircUnit weight_r = rescale_weight(
         (fleft.weight + fright.weight)/2,
         cfg.weight_prec, cfg.max_weight);
 
