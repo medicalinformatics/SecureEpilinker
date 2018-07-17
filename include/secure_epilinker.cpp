@@ -599,7 +599,6 @@ SecureEpilinker::Result SecureEpilinker::run_circuit() {
 
 void SecureEpilinker::reset() {
   party.Reset();
-  is_built = false;
   is_setup = false;
 }
 
