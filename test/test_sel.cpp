@@ -2,6 +2,7 @@
 #include "fmt/format.h"
 #include "../include/util.h"
 #include "../include/secure_epilinker.h"
+#include "../include/clear_epilinker.h"
 #include "abycore/aby/abyparty.h"
 
 using namespace sel;
@@ -13,6 +14,12 @@ constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::NGRAM;
 constexpr double Threshold = 0.9;
 constexpr double TThreshold = 0.7;
+
+struct EpilinkInput {
+  EpilinkConfig cfg;
+  EpilinkClientInput client;
+  EpilinkServerInput server;
+};
 
 ML_Field f_int1 (
   //name, f, e, comparator, type, bitsize
@@ -58,8 +65,7 @@ Result run(SecureEpilinker& linker,
 
 }
 
-Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
-    uint32_t nvals) {
+EpilinkInput input_simple(uint32_t nvals) {
   print("data_int_1: {}\n", data_int_1);
 
   // First test: only one bin field, single byte integer
@@ -80,17 +86,10 @@ Result test_simple(const SecureEpilinker::ABYConfig& aby_cfg,
     { {"int_1", vector<FieldEntry>(nvals, data_int_1)} } // records
   };
 
-  SecureEpilinker linker{aby_cfg, epi_cfg};
-
-  linker.build_circuit(nvals);
-  linker.run_setup_phase();
-
-  auto res = run(linker, in_client, in_server);
-  return res;
+  return {epi_cfg, in_client, in_server};
 }
 
-Result test_exchange_grp(const SecureEpilinker::ABYConfig& aby_cfg,
-    uint32_t nvals) {
+EpilinkInput input_exchange_grp(uint32_t nvals) {
   // First test: only one bin field, single byte bitmask
   EpilinkConfig epi_cfg {
     {
@@ -122,21 +121,13 @@ Result test_exchange_grp(const SecureEpilinker::ABYConfig& aby_cfg,
     } // records
   };
 
-  SecureEpilinker linker{aby_cfg, epi_cfg};
-
-  linker.build_circuit(nvals);
-  linker.run_setup_phase();
-
-  return run(linker, in_client, in_server);
-}
-
-void print_result(Result result) {
-  print("Result:\n{}", result);
+  return {epi_cfg, in_client, in_server};
 }
 
 int main(int argc, char *argv[])
 {
   bool role_server = false;
+  bool only_local = false;
   unsigned int sharing = S_BOOL;
   uint32_t nvals = 1;
   uint32_t nthreads = 1;
@@ -147,10 +138,11 @@ int main(int argc, char *argv[])
     ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO", cxxopts::value(sharing))
     ("n,nvals", "Parallellity", cxxopts::value(nvals))
     ("r,run-both", "Use run_as_both()", cxxopts::value(run_both))
+    ("L,local-only", "Only run local calculations on clear values. Doesn't initialize the SecureEpilinker.")
     ("h,help", "Print help");
   auto op = options.parse(argc, argv);
 
-  if (op.count("help") != 0) {
+  if (op["help"].as<bool>()) {
     cout << options.help() << endl;
     return 0;
   }
@@ -161,10 +153,23 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  //Result res = test_simple(aby_cfg, nvals);
-  Result res = test_exchange_grp(aby_cfg, nvals);
+  const auto in = input_exchange_grp(nvals);
 
-  print_result(res);
+  if(!op["local-only"].as<bool>()) {
+    SecureEpilinker linker{aby_cfg, in.cfg};
+    linker.build_circuit(nvals);
+    linker.run_setup_phase();
+
+    Result res = run(linker, in.client, in.server);
+
+    print("Result:\n{}", res);
+  }
+
+  auto res_local = clear_epilink::calc_integer({in.client, in.server}, in.cfg);
+  print("Local Result:\n{}", res_local);
+
+  auto res_exact = clear_epilink::calc_exact({in.client, in.server}, in.cfg);
+  print("Exact Result:\n{}", res_exact);
 
   return 0;
 }
