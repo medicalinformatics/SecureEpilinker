@@ -1,0 +1,15 @@
+# link me in build directory and start with
+# tmuxp load test_sel.tmuxp.yaml
+session_name: test_sel
+windows:
+- test_sel:
+  panes:
+    - shell_command:
+      - alias test_sel="./test_sel"
+      - test_sel
+    - shell_command:
+      - alias test_sel="./test_sel -S"
+      - test_sel
+  options_after:
+    synchronize-panes: on
+
