@@ -143,6 +143,20 @@ Quotient<T> field_weight(const Input& input, const EpilinkConfig& cfg,
   return {comp * weight, weight};
 }
 
+#ifdef DEBUG_SEL_CLEAR
+void print_group_result(const string& pfx, const vector<FieldName>& group,
+    const Quotient<CircUnit>& score, const size_t prec) {
+  print(">>> {} {} score: {:x}/({:x} << {}) = {}\n",
+      pfx, group, score.num, score.den, prec,
+      ((double)score.num)/(score.den << prec));
+}
+
+void print_group_result(const string& pfx, const vector<FieldName>& group,
+    const Quotient<double>& score, const size_t) {
+  print(">>> {} {} score: {}/{} = {}\n",
+      pfx, group, score.num, score.den, (score.num/score.den));
+}
+#endif
 
 template<typename T>
 Quotient<T> best_group_weight(const Input& input, const EpilinkConfig& cfg,
@@ -154,6 +168,7 @@ Quotient<T> best_group_weight(const Input& input, const EpilinkConfig& cfg,
 
 #ifdef DEBUG_SEL_CLEAR
   print("---------- Group {} ----------\n", group);
+  vector<FieldName> groupBest;
 #endif
 
   // iterate over all group permutations and calc field-weight
@@ -167,16 +182,19 @@ Quotient<T> best_group_weight(const Input& input, const EpilinkConfig& cfg,
     }
 
 #ifdef DEBUG_SEL_CLEAR
-  print(">>> Permutation {} score: {}/{}\n",
-      groupPerm, score.num, score.den);
+  print_group_result("Permutation", groupPerm, score, cfg.dice_prec);
 #endif
 
-    if (best_perm < score) best_perm = score;
+    if (best_perm < score) {
+      best_perm = score;
+#ifdef DEBUG_SEL_CLEAR
+      groupBest = groupPerm;
+#endif
+    }
   } while(next_permutation(groupPerm.begin(), groupPerm.end()));
 
 #ifdef DEBUG_SEL_CLEAR
-  print(">>> Best {} score: {}/{}\n",
-      groupPerm, best_perm.num, best_perm.den);
+  print_group_result("Best", groupBest, best_perm, cfg.dice_prec);
 #endif
 
   return best_perm;
