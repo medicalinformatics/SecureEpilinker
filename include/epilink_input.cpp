@@ -60,8 +60,10 @@ EpilinkConfig::EpilinkConfig(
     dice_prec = (16 - 1 - hw_size(max_bm_size)); // -1 because of factor 2
     weight_prec = (BitLen - ceil_log2(nfields^2) - dice_prec)/2;
     // Division by 2 for weight_prec initialization could have wasted one bit
-    if (dice_prec + 2*weight_prec + ceil_log2(nfields^2) < BitLen) ++dice_prec;
-    assert (dice_prec + 2*weight_prec + ceil_log2(nfields^2) == BitLen);
+    // which we cannot add to dice precision because it would overflow the
+    // 16-bit integer division input... Need better int-div
+    //if (dice_prec + 2*weight_prec + ceil_log2(nfields^2) < BitLen) ++dice_prec;
+    assert (dice_prec + 2*weight_prec + ceil_log2(nfields^2) <= BitLen);
 
 #ifdef DEBUG_SEL_INPUT
     print("BitLen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
