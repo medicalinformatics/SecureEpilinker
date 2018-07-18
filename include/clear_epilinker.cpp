@@ -29,36 +29,53 @@ namespace sel::clear_epilink {
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
 
-/******************** Sum Quotient ********************/
+/******************** FieldWeight ********************/
+/**
+ * A FieldWeight represents the addends in the sums of the Epilink algorithm.
+ * The EpiLink score is sum(w_i * c_i) / sum(w_i), where the w_i are the weights
+ * and c_i is the result of a comparison (binary (0/1) or dice-coefficient).
+ * field_weight() returns w_i*c_i in the member fw and the weight w_i in w.
+ * A FieldWeight with w==0 is interpreted as if any entry in the comparison was
+ * empty.
+ */
 template<typename T>
-struct Quotient {
-  T num{0}, den{0};
+struct FieldWeight {
+  T fw{0}, w{0};
 };
 
+/**
+ * When we add two FieldWeights in this context, we simply sum the field-weights
+ * and weights. This happens before determining the maximum score.
+ */
 template<typename T>
-Quotient<T>& operator+=(Quotient<T>& me, const Quotient<T>& other) {
-  me.num += other.num;
-  me.den += other.den;
+FieldWeight<T>& operator+=(FieldWeight<T>& me, const FieldWeight<T>& other) {
+  me.fw += other.fw;
+  me.w += other.w;
   return me;
 }
 
+/**
+ * We compare two FieldWeights as quotients because they are treated as the
+ * resulting Epilink score of two different records. This happens after summing
+ * individual FieldWeights.
+ */
 template<typename T>
-bool operator<(const Quotient<T>& left, const Quotient<T>& right) {
-  if (right.den == 0) return false;
-  if (left.den == 0) return true;
+bool operator<(const FieldWeight<T>& left, const FieldWeight<T>& right) {
+  if (right.w == 0) return false;
+  if (left.w == 0) return true;
 #ifdef DEBUG_SEL_CLEAR
   if constexpr(is_same_v<T, CircUnit>) {
-    CircUnit a = left.num * right.den;
-    CircUnit b = right.num * left.den;
-    uint64_t al = uint64_t(left.num) * right.den;
-    uint64_t bl = uint64_t(right.num) * left.den;
-    if (a != al) print("< Overflow left: {:x}*{:x} = {:x} != {:x}",
-        left.num, right.den, a, al);
-    if (b != bl) print("< Overflow right: {:x}*{:x} = {:x} != {:x}",
-        right.num, left.den, b, bl);
+    CircUnit a = left.fw * right.w;
+    CircUnit b = right.fw * left.w;
+    uint64_t al = uint64_t(left.fw) * right.w;
+    uint64_t bl = uint64_t(right.fw) * left.w;
+    if (a != al) print("< Overflow left: {:x}*{:x} = {:x} != {:x}\n",
+        left.fw, right.w, a, al);
+    if (b != bl) print("< Overflow right: {:x}*{:x} = {:x} != {:x}\n",
+        right.fw, left.w, b, bl);
   }
 #endif
-  return left.num * right.den < right.num * left.den;
+  return left.fw * right.w < right.fw * left.w;
 }
 
 /******************** Input Class ********************/
@@ -106,8 +123,8 @@ T equality(const Bitmask& left, const Bitmask& right, size_t prec) {
 }
 
 template<typename T>
-bool test_threshold(const Quotient<T>& q, const double thr, const size_t prec) {
-  return (T)(thr * scale<T>(1, prec)) * q.den < q.num;
+bool test_threshold(const FieldWeight<T>& q, const double thr, const size_t prec) {
+  return (T)(thr * scale<T>(1, prec)) * q.w < q.fw;
 }
 
 template<typename T>
@@ -122,7 +139,7 @@ T scaled_weight(const FieldName& ileft, const FieldName& iright, const EpilinkCo
 
 /******************** Algorithm Flow Components ********************/
 template<typename T>
-Quotient<T> field_weight(const Input& input, const EpilinkConfig& cfg,
+FieldWeight<T> field_weight(const Input& input, const EpilinkConfig& cfg,
     const size_t idx, const FieldName& ileft, const FieldName& iright) {
   const FieldComparator ftype = cfg.fields.at(ileft).comparator;
 
@@ -169,22 +186,22 @@ Quotient<T> field_weight(const Input& input, const EpilinkConfig& cfg,
 #ifdef DEBUG_SEL_CLEAR
 template<typename Ref>
 void print_score(const string& pfx, const Ref& r,
-    const Quotient<CircUnit>& score, const size_t prec) {
+    const FieldWeight<CircUnit>& score, const size_t prec) {
   print(">>> {} {} score: {:x}/({:x} << {} = {:x}) = {}\n",
-      pfx, r, score.num, score.den, prec, (score.den << prec),
-      ((double)score.num)/(score.den << prec));
+      pfx, r, score.fw, score.w, prec, (score.w << prec),
+      ((double)score.fw)/(score.w << prec));
 }
 
 template<typename Ref>
 void print_score(const string& pfx, const Ref& r,
-    const Quotient<double>& score, const size_t) {
+    const FieldWeight<double>& score, const size_t) {
   print(">>> {} {} score: {}/{} = {}\n",
-      pfx, r, score.num, score.den, (score.num/score.den));
+      pfx, r, score.fw, score.w, (score.fw/score.w));
 }
 #endif
 
 template<typename T>
-Quotient<T> best_group_weight(const Input& input, const EpilinkConfig& cfg,
+FieldWeight<T> best_group_weight(const Input& input, const EpilinkConfig& cfg,
     const size_t idx, const IndexSet& group_set) {
   vector<FieldName> group{begin(group_set), end(group_set)};
   // copy group to store permutations
@@ -197,9 +214,9 @@ Quotient<T> best_group_weight(const Input& input, const EpilinkConfig& cfg,
 #endif
 
   // iterate over all group permutations and calc field-weight
-  Quotient<T> best_perm;
+  FieldWeight<T> best_perm;
   do {
-    Quotient<T> score;
+    FieldWeight<T> score;
     for (size_t i = 0; i != size; ++i) {
       const auto& ileft = group[i];
       const auto& iright = groupPerm[i];
@@ -231,7 +248,7 @@ Result<T> calc(const Input& input, const EpilinkConfig& cfg) {
   const size_t nvals = input.nvals;
 
   // Accumulator of individual field_weights
-  vector<Quotient<T>> scores(nvals);
+  vector<FieldWeight<T>> scores(nvals);
 
   // 1. Field weights of individual fields
   // 1.1 For all exchange groups, find the permutation with the highest score
@@ -280,7 +297,7 @@ Result<T> calc(const Input& input, const EpilinkConfig& cfg) {
   // as sum(field-weights). This was implicitly done in the threshold test
   // before.
   return {best_idx, match, tmatch,
-    best_score.num, scale<T>(best_score.den, cfg.dice_prec)};
+    best_score.fw, scale<T>(best_score.w, cfg.dice_prec)};
 }
 
 Result<CircUnit> calc_integer(const Input& input, const EpilinkConfig& cfg) {
