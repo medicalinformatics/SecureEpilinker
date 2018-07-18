@@ -46,6 +46,18 @@ template<typename T>
 bool operator<(const Quotient<T>& left, const Quotient<T>& right) {
   if (right.den == 0) return false;
   if (left.den == 0) return true;
+#ifdef DEBUG_SEL_CLEAR
+  if constexpr(is_same_v<T, CircUnit>) {
+    CircUnit a = left.num * right.den;
+    CircUnit b = right.num * left.den;
+    uint64_t al = uint64_t(left.num) * right.den;
+    uint64_t bl = uint64_t(right.num) * left.den;
+    if (a != al) print("< Overflow left: {:x}*{:x} = {:x} != {:x}",
+        left.num, right.den, a, al);
+    if (b != bl) print("< Overflow right: {:x}*{:x} = {:x} != {:x}",
+        right.num, left.den, b, bl);
+  }
+#endif
   return left.num * right.den < right.num * left.den;
 }
 
