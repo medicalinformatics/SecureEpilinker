@@ -118,7 +118,18 @@ Quotient<T> field_weight(const Input& input, const EpilinkConfig& cfg,
   const FieldEntry& client_entry = input.record.at(ileft);
   const FieldEntry& server_entry = input.database.at(iright)[idx];
   const bool delta = (client_entry.has_value() && server_entry.has_value());
-  if (!delta) return {0, 0};
+  if (!delta){
+#ifdef DEBUG_SEL_CLEAR
+    string who = "both";
+    if (client_entry.has_value()) {
+      who = "right";
+    } else if (server_entry.has_value()) {
+      who = "left";
+    }
+    print("({}|{}|{})[{}] <{} empty>\n", ftype, ileft, iright, idx, who);
+#endif
+    return {0, 0};
+  }
 
   const T weight = scaled_weight<T>(ileft, iright, cfg);
   // 2. Compare values
@@ -144,17 +155,19 @@ Quotient<T> field_weight(const Input& input, const EpilinkConfig& cfg,
 }
 
 #ifdef DEBUG_SEL_CLEAR
-void print_group_result(const string& pfx, const vector<FieldName>& group,
+template<typename Ref>
+void print_score(const string& pfx, const Ref& r,
     const Quotient<CircUnit>& score, const size_t prec) {
-  print(">>> {} {} score: {:x}/({:x} << {}) = {}\n",
-      pfx, group, score.num, score.den, prec,
+  print(">>> {} {} score: {:x}/({:x} << {} = {:x}) = {}\n",
+      pfx, r, score.num, score.den, prec, (score.den << prec),
       ((double)score.num)/(score.den << prec));
 }
 
-void print_group_result(const string& pfx, const vector<FieldName>& group,
+template<typename Ref>
+void print_score(const string& pfx, const Ref& r,
     const Quotient<double>& score, const size_t) {
   print(">>> {} {} score: {}/{} = {}\n",
-      pfx, group, score.num, score.den, (score.num/score.den));
+      pfx, r, score.num, score.den, (score.num/score.den));
 }
 #endif
 
@@ -182,7 +195,7 @@ Quotient<T> best_group_weight(const Input& input, const EpilinkConfig& cfg,
     }
 
 #ifdef DEBUG_SEL_CLEAR
-  print_group_result("Permutation", groupPerm, score, cfg.dice_prec);
+  print_score("Permutation", groupPerm, score, cfg.dice_prec);
 #endif
 
     if (best_perm < score) {
@@ -194,7 +207,7 @@ Quotient<T> best_group_weight(const Input& input, const EpilinkConfig& cfg,
   } while(next_permutation(groupPerm.begin(), groupPerm.end()));
 
 #ifdef DEBUG_SEL_CLEAR
-  print_group_result("Best", groupBest, best_perm, cfg.dice_prec);
+  print_score("Best group:", groupBest, best_perm, cfg.dice_prec);
 #endif
 
   return best_perm;
@@ -234,6 +247,13 @@ Result<T> calc(const Input& input, const EpilinkConfig& cfg) {
       scores[idx] += field_weight<T>(input, cfg, idx, i, i);
     }
   }
+
+#ifdef DEBUG_SEL_CLEAR
+  print("---------- Final Scores ({}) ----------\n", nvals);
+  for (size_t idx = 0; idx != nvals; ++idx) {
+    print_score("Idx", idx, scores[idx], cfg.dice_prec);
+  }
+#endif
 
   // 2. Determine best score (index)
   const auto best_score_it = max_element(scores.cbegin(), scores.cend());
