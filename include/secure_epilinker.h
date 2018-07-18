@@ -51,7 +51,7 @@ public:
     bool match; // XOR share of match bit
     bool tmatch; // XOR share of tentative match bit
 #ifdef DEBUG_SEL_RESULT
-    CircUnit score_numerator, score_denominator;
+    CircUnit sum_field_weights, sum_weights;
 #endif
   };
 
@@ -126,12 +126,12 @@ struct formatter<sel::SecureEpilinker::Result> {
     return format_to(ctx.begin(),
         "best index: {}; match(/tent.)? {}/{}\n"
 #ifdef DEBUG_SEL_RESULT
-        "score.numerator: {:x}; score.denominator: {:x}; score: {}\n"
+        "sum(field-weights): {:x}; sum(weights): {:x}; score: {}\n"
 #endif
         , r.index, r.match, r.tmatch
 #ifdef DEBUG_SEL_RESULT
-        , r.score_numerator, r.score_denominator,
-        (((double)r.score_numerator)/r.score_denominator)
+        , r.sum_field_weights, r.sum_weights,
+        (((double)r.sum_field_weights)/r.sum_weights)
 #endif
         );
   }
