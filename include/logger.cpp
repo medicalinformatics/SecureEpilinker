@@ -27,9 +27,9 @@
 #include <spdlog/sinks/dist_sink.h>
 
 namespace sel{
-void createLogger(const std::string& filename, spdlog::level::level_enum level) {
+void createLogger(const std::string& filename){
   spdlog::flush_on(spdlog::level::trace);
-  //spdlog::init_thread_pool(async_log_queue_size,logging_threads);
+  spdlog::init_thread_pool(async_log_queue_size,logging_threads);
   std::vector<spdlog::sink_ptr> sinks;
   sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
   sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(filename,log_file_size,log_history));

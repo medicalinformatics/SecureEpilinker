@@ -43,6 +43,8 @@
 #include "include/logger.h"
 #include <spdlog/spdlog.h>
 
+#include "include/epilink_input.h"
+
 using json = nlohmann::json;
 using namespace sel;
 
@@ -87,19 +89,15 @@ int main(int argc, char* argv[]) {
     server_config["port"] = cmdoptions["port"].as<unsigned>();
   }
 
-  spdlog::level::level_enum log_level{spdlog::level::warn};
-  log_level = static_cast<spdlog::level::level_enum>(static_cast<int>(log_level) - std::min(static_cast<int>(cmdoptions["verbose"].count()),3));
-  //createLogger(cmdoptions["logfile"].as<std::string>(), log_level);
-  createLogger(cmdoptions["logfile"].as<std::string>(), spdlog::level::debug);
-  // Program
-  spdlog::set_level(spdlog::level::trace);
+  createLogger(cmdoptions["logfile"].as<std::string>());
+  switch(cmdoptions.count("verbose")){
+    case 0: spdlog::set_level(spdlog::level::warn); break;
+    case 1: spdlog::set_level(spdlog::level::info); break;
+    case 2: spdlog::set_level(spdlog::level::debug); break;
+    default: spdlog::set_level(spdlog::level::trace); break;
+  }
+    // Program
   auto logger = get_default_logger();
-  logger->info("Testing the different warning levels:\n{}","Info\n");
-  logger->trace("Trace\n");
-  logger->debug("Debug\n");
-  logger->warn("Warning\n");
-  logger->error("Error\n");
-  logger->critical("Critical\n");
 
   restbed::Service service;
   curlpp::Cleanup curl_cleanup;
@@ -194,5 +192,6 @@ int main(int argc, char* argv[]) {
   logger->info("Service Running\n");
   service.start(settings);  // Eventloop
 
+  spdlog::drop_all();
   return 0;
 }
