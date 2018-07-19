@@ -42,7 +42,7 @@ class LocalConfiguration {
   struct AbyInfo{
     size_t default_page_size{25u};
     uint32_t aby_threads{1u};
-    e_sharing boolean_sharing{S_BOOL};
+    e_sharing boolean_sharing{S_YAO};
   };
 
   LocalConfiguration() = default;
