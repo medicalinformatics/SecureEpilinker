@@ -28,9 +28,9 @@ constexpr char logger_name[]{"default"};
 constexpr size_t async_log_queue_size{8192u};
 constexpr size_t log_file_size{1024u*1024u*5u};
 constexpr unsigned log_history{5u};
-constexpr unsigned logging_threads{1u};
+constexpr unsigned logging_threads{3u};
 
-void createLogger(const std::string& filename, spdlog::level::level_enum level);
+void createLogger(const std::string& filename);
 inline std::shared_ptr<spdlog::logger> get_default_logger(){
   return spdlog::get(logger_name);
 }
