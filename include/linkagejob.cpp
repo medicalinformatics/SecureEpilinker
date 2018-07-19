@@ -175,13 +175,19 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
   m_local_config = move(l_config);
 }
 
+/**
+ * Send server the configuration to compare and recieve back the number of
+ * records in the database
+ */
 void LinkageJob::signal_server(promise<size_t>& nvals) {
   auto logger{get_default_logger()};
-  std::this_thread::sleep_for(5s);
+  std::this_thread::sleep_for(1s);
   curlpp::Easy curl_request;
+  // Create configurations to com,pare
   nlohmann::json algo_comp_conf{*m_algo_config};
   algo_comp_conf.emplace_back(m_local_config->get_comparison_json());
   auto data{algo_comp_conf.dump()};
+  // Create http request
   promise<stringstream> response_promise;
   future<stringstream> response_stream = response_promise.get_future();
   list<string> headers{
@@ -195,6 +201,7 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
       "https://"s + m_remote_config->get_remote_host() + ':' +
       to_string(m_remote_config->get_remote_signaling_port()) + "/sellink/"+m_remote_config->get_remote_client_id()));
   curl_request.setOpt(new curlpp::Options::Post(true));
+  curl_request.setOpt(new curlpp::Options::Verbose(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
   curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
@@ -206,6 +213,7 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
     response_stream.wait();
     auto stream = response_stream.get();
     logger->debug("Response stream:\n{}\n", stream.str());
+    // get nvals from response header
     nvals.set_value(stoull(get_headers(stream, "Record-Number").front()));
   } catch (const exception& e) {
     logger->error("Error performing callback: {}", e.what());
@@ -235,12 +243,12 @@ bool LinkageJob::perform_callback(const nlohmann::json& new_id) const {
       "Content-Length: "s+to_string(data.length())};
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
   curl_request.setOpt(new curlpp::Options::Url(m_callback.url));
-  curl_request.setOpt(new cURLpp::Options::Verbose(true));
+  curl_request.setOpt(new cURLpp::Options::Verbose(false));
   curl_request.setOpt(new curlpp::Options::Post(true));
   curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
   curl_request.setOpt(new curlpp::Options::PostFieldSize(data.size()));
-  //curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
-  //curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
+  curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
+  curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
   curl_request.setOpt(new curlpp::options::Header(1));
   logger->debug("Sending callback to: {}\n", m_callback.url);
   send_curl(curl_request, move(response_promise));
