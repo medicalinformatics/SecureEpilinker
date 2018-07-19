@@ -74,6 +74,7 @@ ServerData DatabaseFetcher::fetch_data() {
   // Process Data from last page
   get_page_data(page);
 
+#ifdef DEBUG_SEL_REST
   string input_string;
   for (auto& p : m_data) {
     input_string +=
@@ -98,7 +99,8 @@ ServerData DatabaseFetcher::fetch_data() {
     }
   input_string += "\n";
   }
-  m_logger->debug("Recieved Inputs:\n{}", input_string);
+  m_logger->trace("Recieved Inputs:\n{}", input_string);
+#endif
   return {move(m_data), move(m_ids), move(m_todate)};
 }
 
