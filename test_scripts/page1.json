@@ -26,7 +26,7 @@
          "fields":{ 
             "vorname":"TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVlciBhZGlwaXNjaW5nIGVsaXQuIEFlbmVh",
             "nachname":"QXVjaCBnaWJ0IGVzIG5pZW1hbmRlbiwgZGVyIGRlbiBTY2htZXJ6IGFuIHNpY2ggbGllYnQsIHN1Y2h0IG9k",
-            "geburtsname":"V2VpdCBoaW50ZW4sIGhpbnRlciBkZW4gV29ydGJlcmdlbiwgZmVybiBkZXIgTGFlbmRlciBWb2thbGllbiB1",
+            "geburtsname":null,
             "geburtstag": 14,
             "geburtsmonat": 2,
             "geburtsjahr": 1963,
@@ -49,7 +49,7 @@
             "geburtsmonat":12,
             "geburtsjahr":1964,
             "plz":"65432",
-            "ort":"RXIgaG9lcnRlIGxlaXNlIFNjaHJpdHRlIGhpbnRlciBzaWNoLiBEYXMgYmVkZXV0ZXRlIG5pY2h0cyBHdXRl"
+            "ort":"SmVtYW5kIG11c3N0ZSBKb3NlZiBLLiB2ZXJsZXVtZGV0IGhhYmVuLCBkZW5uIG9obmUgZGFzcyBlciBldHdh"
          },
          "ids":[ 
             { 

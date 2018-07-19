@@ -27,16 +27,16 @@
 #include "authenticationconfig.hpp"
 #include "base64.h"
 #include "connectionhandler.h"
-#include "serverhandler.h"
 #include "fmt/format.h"
 #include "localconfiguration.h"
+#include "logger.h"
 #include "nlohmann/json.hpp"
 #include "remoteconfiguration.h"
 #include "restbed"
 #include "resttypes.h"
+#include "serverhandler.h"
 #include "util.h"
 #include "valijson/validation_results.hpp"
-#include "logger.h"
 
 using namespace std;
 namespace sel {
@@ -77,7 +77,6 @@ bool check_exchange_group(const IndexSet& fieldnames,
   return fields_present;
 }
 
-
 SessionResponse valid_temp_link_json_handler(
     const nlohmann::json& j,
     const ClientId& client_id,
@@ -88,34 +87,37 @@ SessionResponse valid_temp_link_json_handler(
   SessionResponse response;
   uint16_t common_port;
   string client_ip;
-    logger->info("Recieved Linkage Request");
-    //TODO(TK) Authorization
-    common_port = server_handler->get_server_port(client_id);
+  logger->info("Recieved Linkage Request");
+  // TODO(TK) Authorization
+  common_port = server_handler->get_server_port(client_id);
 
-    if(!(server_handler->get_local_server(client_id)->compare_configuration(j))) {
-      response.return_code = restbed::FORBIDDEN;
-      response.body = "Algorithm configuration does not match"s;
-      response.headers = {{"Content-Length", to_string(response.body.length())},
-                          {"Remote-Identifier", client_id},
-                          {"Connection", "Close"}};
-    logger->debug("Non matching configs!");
-    return response;
-    }
-    logger->debug("Matching configs!");
-    auto data_handler{server_handler->get_local_server(client_id)->get_data_handler()};
-    auto nvals{data_handler->poll_database()};
-    auto data{data_handler->get_database()};
-    response.return_code = restbed::OK;
-    response.body = "Linkage server running"s;
+  if (!(server_handler->get_local_server(client_id)->compare_configuration(j))){
+    response.return_code = restbed::FORBIDDEN;
+    response.body = "Algorithm configuration does not match"s;
     response.headers = {{"Content-Length", to_string(response.body.length())},
                         {"Remote-Identifier", client_id},
-                        {"Record-Number", to_string(nvals)},
-                        {"SEL-Port", to_string(common_port)},
                         {"Connection", "Close"}};
-    std::thread server_runner([client_id,data,server_handler](){server_handler->run_server(client_id,move(data));}); // TODO(TK) Data gets copied b/c const.
-    server_runner.detach();
+    logger->debug("Non matching configs!");
     return response;
-    }
+  }
+  logger->debug("Matching configs!");
+  auto data_handler{
+      server_handler->get_local_server(client_id)->get_data_handler()};
+  auto nvals{data_handler->poll_database()};
+  auto data{data_handler->get_database()};
+  response.return_code = restbed::OK;
+  response.body = "Linkage server running"s;
+  response.headers = {{"Content-Length", to_string(response.body.length())},
+                      {"Remote-Identifier", client_id},
+                      {"Record-Number", to_string(nvals)},
+                      {"SEL-Port", to_string(common_port)},
+                      {"Connection", "Close"}};
+  std::thread server_runner([client_id, data, server_handler]() {
+    server_handler->run_server(client_id, data);
+  });
+  server_runner.detach();
+  return response;
+}
 
 SessionResponse valid_linkrecord_json_handler(
     const nlohmann::json& j,
@@ -123,7 +125,7 @@ SessionResponse valid_linkrecord_json_handler(
     const shared_ptr<ConfigurationHandler>& config_handler,
     const shared_ptr<ServerHandler>& server_handler,
     const shared_ptr<ConnectionHandler>&) {
-    auto logger{get_default_logger()};
+  auto logger{get_default_logger()};
   try {
     logger->trace("Payload: {}", j.dump(2));
     JobId job_id;
@@ -131,17 +133,17 @@ SessionResponse valid_linkrecord_json_handler(
       const auto local_config{config_handler->get_local_config()};
       const auto remote_config{config_handler->get_remote_config(remote_id)};
       const auto algo_config{config_handler->get_algorithm_config()};
-      auto job{make_shared<LinkageJob>(
-          local_config,
-          remote_config,
-          algo_config, server_handler)};
+      auto job{make_shared<LinkageJob>(local_config, remote_config, algo_config,
+                                       server_handler)};
       job_id = job->get_id();
       logger->info("Created Job on Path: {}", job_id);
       try {
         CallbackConfig callback;
         callback.url = j.at("callback").at("url").get<string>();
-        callback.idType = j.at("callback").at("patientId").at("idType").get<string>();
-        callback.idString = j.at("callback").at("patientId").at("idString").get<string>();
+        callback.idType =
+            j.at("callback").at("patientId").at("idType").get<string>();
+        callback.idString =
+            j.at("callback").at("patientId").at("idString").get<string>();
         job->set_callback(move(callback));
 
         for (auto f = j.at("fields").begin(); f != j.at("fields").end(); ++f) {
@@ -238,7 +240,7 @@ SessionResponse valid_init_json_handler(
     const shared_ptr<ServerHandler>& server_handler,
     const shared_ptr<ConnectionHandler>& connection_handler) {
   auto logger{get_default_logger()};
-    logger->trace("Payload: {}", j.dump(2));
+  logger->trace("Payload: {}", j.dump(2));
   if (remote_id == "local") {
     auto local_config = make_shared<LocalConfiguration>();
     logger->info("Creating local configuration\n");
@@ -257,7 +259,7 @@ SessionResponse valid_init_json_handler(
         ML_Field tempfield(
             f.at("name").get<string>(), f.at("frequency").get<double>(),
             f.at("errorRate").get<double>(), f.at("comparator").get<string>(),
-            f.at("fieldType").get<string>(),f.at("bitlength").get<size_t>());
+            f.at("fieldType").get<string>(), f.at("bitlength").get<size_t>());
         local_config->add_field(move(tempfield));
         fieldnames.emplace(f.at("name").get<string>());
       }
@@ -275,7 +277,8 @@ SessionResponse valid_init_json_handler(
       config_handler->set_local_config(move(local_config));
       // Get Algorithm Config
       algo->type = str_to_atype(j.at("algorithm").at("algoType").get<string>());
-      algo->threshold_match = j.at("algorithm").at("threshold_match").get<double>();
+      algo->threshold_match =
+          j.at("algorithm").at("threshold_match").get<double>();
       algo->threshold_non_match =
           j.at("algorithm").at("threshold_non_match").get<double>();
       config_handler->set_algorithm_config(move(algo));
@@ -287,10 +290,10 @@ SessionResponse valid_init_json_handler(
     }
   } else {  // remote Config
     logger->info("Creating remote Config for: \"{}\"", remote_id);
-      ConnectionConfig con;
-      ConnectionConfig linkage_service;
-      auto local_conf{config_handler->get_local_config()};
-      auto algo_conf{config_handler->get_algorithm_config()};
+    ConnectionConfig con;
+    ConnectionConfig linkage_service;
+    auto local_conf{config_handler->get_local_config()};
+    auto algo_conf{config_handler->get_algorithm_config()};
     try {
       // Get Connection Profile
       con.url = j.at("connectionProfile").at("url").get<string>();
@@ -318,7 +321,8 @@ SessionResponse valid_init_json_handler(
     }
     remote_config->set_remote_client_id(remote_info.id);
     config_handler->set_remote_config(move(remote_config));
-    auto fun = bind(&ServerHandler::insert_client, server_handler.get(), placeholders::_1);
+    auto fun = bind(&ServerHandler::insert_client, server_handler.get(),
+                    placeholders::_1);
     std::thread client_creator(fun, remote_id);
     client_creator.detach();
 
