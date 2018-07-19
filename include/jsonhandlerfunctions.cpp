@@ -48,8 +48,8 @@ nlohmann::json read_json_from_disk(
     ifstream in(json_path);
     try {
       in >> content;
-    } catch (const exception& e) {
-      logger->critical("Error {}! Terminating!\n", e.what());
+    } catch (const std::ios_base::failure&  e) {
+      logger->error("Reading of file {} failed: {}",json_path.string(), e.what());
       exit(1);
     }
     return content;
@@ -300,7 +300,8 @@ SessionResponse valid_init_json_handler(
       linkage_service.url = j.at("linkageService").at("url").get<string>();
       linkage_service.authentication =
           get_auth_object(j.at("linkageService").at("authentication"));
-    } catch (const runtime_error& e) {
+    } catch (const exception& e) {
+      logger->error("Error creating remote config: {}",e.what());
       return {restbed::INTERNAL_SERVER_ERROR,
               e.what(),
               {{"Content-Length", to_string(string(e.what()).length())}}};
@@ -310,7 +311,11 @@ SessionResponse valid_init_json_handler(
     remote_config->set_linkage_service(move(linkage_service));
     auto remote_info{connection_handler->initialize_aby_server(remote_config)};
     remote_config->set_aby_port(remote_info.port);
-    connection_handler->mark_port_used(remote_info.port);
+    try{
+      connection_handler->mark_port_used(remote_info.port);
+    } catch (const exception& e){
+      logger->warn("Can not mark port as used. If server and client are the same process, that is ok.");
+    }
     remote_config->set_remote_client_id(remote_info.id);
     config_handler->set_remote_config(move(remote_config));
     auto fun = bind(&ServerHandler::insert_client, server_handler.get(), placeholders::_1);

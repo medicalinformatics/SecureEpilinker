@@ -212,7 +212,7 @@ bool LinkageJob::perform_callback(const nlohmann::json& new_id) const {
   send_curl(curl_request, move(response_promise));
   response_stream.wait();
   auto stream = response_stream.get();
-  logger->debug("Callback response:\n{}\n", stream.str());
+  logger->trace("Callback response:\n{}\n", stream.str());
   return true; //TODO(TK) return correct success bool
 }
 }  // namespace sel
