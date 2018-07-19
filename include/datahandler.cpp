@@ -4,9 +4,30 @@
 #include "localconfiguration.h"
 #include <memory>
 #include <mutex>
+#include "clear_epilinker.h"
 
 using namespace std;
 namespace sel {
+
+#ifdef DEBUG_SEL_REST
+bool Debugger::all_values_set() const{
+  return client_input && server_input && epilink_config;
+}
+
+void Debugger::compute_int() {
+  int_result = clear_epilink::calc_integer({*client_input, *server_input},*epilink_config);
+}
+
+void Debugger::compute_double() {
+  double_result = clear_epilink::calc_exact({*client_input, *server_input},*epilink_config);
+}
+
+void Debugger::reset() {
+  client_input.reset(); server_input.reset(); epilink_config.reset();
+  int_result = {}; double_result = {};
+  run = false;
+}
+#endif
 
 size_t DataHandler::poll_database() {
   const auto local_configuration{m_config_handler->get_local_config()};

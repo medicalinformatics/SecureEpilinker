@@ -72,7 +72,13 @@ SecureEpilinker::Result LocalServer::run_server() {
   m_aby_server.build_circuit(nvals);
   m_aby_server.run_setup_phase();
   logger->debug("Starting Server Computation");
+  EpilinkServerInput data{{m_data->data}};
   auto server_result{m_aby_server.run_as_server({m_data->data})};
+  m_aby_server.reset();
+#ifdef DEBUG_SEL_REST
+  auto debugger{m_data_handler->get_epilink_debug()};
+  debugger->server_input = std::make_shared<EpilinkServerInput>(data);
+#endif
   return server_result;
   }
 

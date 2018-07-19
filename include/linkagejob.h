@@ -55,6 +55,9 @@ class LinkageJob {
  private:
   void signal_server(std::promise<size_t>&);
   bool perform_callback(const nlohmann::json&) const;
+#ifdef DEBUG_SEL_REST
+  void print_data() const;
+#endif
   JobId m_id;
   JobStatus m_status{JobStatus::QUEUED};
   std::map<FieldName, FieldEntry> m_data;
