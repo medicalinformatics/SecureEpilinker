@@ -19,7 +19,7 @@ file(MAKE_DIRECTORY ${SecureEpiLinker_INSTALL_PREFIX})
 add_subdirectory(extern)
 
 # build main application
-set(EPIRESTSRC 
+set(EPIRESTSRC
       include/resourcehandler.cpp
       include/validator.cpp
       include/jsonmethodhandler.cpp
@@ -40,9 +40,9 @@ set(EPIRESTSRC
       include/monitormethodhandler.cpp
       include/tempselmethodhandler.cpp)
 
-    set(EPIRESTHEAD 
-      include/resourcehandler.h 
-      include/validator.h 
+    set(EPIRESTHEAD
+      include/resourcehandler.h
+      include/validator.h
       include/methodhandler.hpp
       include/jsonmethodhandler.h
       include/remoteconfiguration.h
@@ -121,7 +121,9 @@ set_property(TARGET sel PROPERTY CXX_STANDARD 17)
 target_compile_options(sel PRIVATE "-Wall" "-Wpedantic" "-Wextra" "-fexceptions")
 #Debug Version
 target_compile_options(sel PRIVATE "-O0" "-ggdb" "-g3"
-  "-DDEBUG_SEL_RESULT")
+  "-DDEBUG_SEL_CLEAR"
+  "-DDEBUG_SEL_RESULT"
+  "-DDEBUG_SEL_REST")
 #target_compile_options(sel PRIVATE "-O2" "-s" "-DNDEBUG"
   #"-fsanitize-address-use-after-scope" "-fsanitize=undefined")
 
