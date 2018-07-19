@@ -109,6 +109,10 @@ void LinkageJob::run_job() {
   // Prepare Data, weights and exchange groups
 
   logger->info("Job {} started\n", m_id);
+#ifdef DEBUG_SEL_REST
+  auto debugger = m_parent->get_data_handler()->get_epilink_debug();
+  debugger->reset();
+#endif
 
   try {
     // Get number of records from server
@@ -125,11 +129,41 @@ void LinkageJob::run_job() {
     epilinker->build_circuit(nvals_value);
     epilinker->run_setup_phase();
     EpilinkClientInput client_input{m_data, nvals_value};
+    // run mpc
     const auto client_share{epilinker->run_as_client(client_input)};
-    logger->info("Client result:\nIndex: {}, Match: {}, TMatch:{}\n", client_share.index, client_share.match, client_share.tmatch);
+    // reset epilinker for the next linkage
+    epilinker->reset();
+#ifdef DEBUG_SEL_REST
+    print_data();
+#endif
+    logger->info("Client Result: {}", client_share);
     //TODO(tk) send result to linkage server
     nlohmann::json result_id{{"idType", "srl1"},{"idString", "3lk4j3Y4l5j"}};
     perform_callback(result_id);
+#ifdef DEBUG_SEL_REST
+    debugger->client_input = make_shared<EpilinkClientInput>(client_input);
+    if(!(debugger->epilink_config)) {
+      debugger->epilink_config = make_shared<EpilinkConfig>(make_epilink_config(m_local_config, m_algo_config));
+    }
+    //debugger->epilink_config->set_precisions(5,11);
+    logger->debug("Clear Precision: Dice {},\tWeight {}", debugger->epilink_config->dice_prec,debugger->epilink_config->weight_prec);
+    if(debugger->all_values_set()){
+      if(!debugger->run) {
+      fmt::print("============= Integer Computation ============\n");
+      debugger->compute_int();
+      logger->info("Integer Result: {}", debugger->int_result);
+      fmt::print("============= Double Computation =============\n");
+      debugger->compute_double();
+      logger->info("Double Result: {}", debugger->double_result);
+      debugger->run=true;
+      }
+    } else {
+      string ss{debugger->server_input?"Set":"Not Set"};
+      string cs{debugger->client_input?"Set":"Not Set"};
+      string ec{debugger->epilink_config?"Set":"Not Set"};
+      logger->warn("Server: {}, Client: {}, Config: {}\n", ss, cs, ec);
+    }
+#endif
     m_status = JobStatus::DONE;
   } catch (const exception& e) {
     logger->error("Error running MPC Client: {}\n", e.what());
@@ -215,4 +249,25 @@ bool LinkageJob::perform_callback(const nlohmann::json& new_id) const {
   logger->trace("Callback response:\n{}\n", stream.str());
   return true; //TODO(TK) return correct success bool
 }
+
+#ifdef DEBUG_SEL_REST
+void LinkageJob::print_data() const {
+  auto logger{get_default_logger()};
+  string input_string;
+  for (auto& p : m_data) {
+    input_string += "-------------------------------\n" + p.first +
+                    "\n-------------------------------"
+                    "\n";
+    const auto& d = p.second;
+    bool empty{!d};
+    input_string += "Field "s + (empty ? "" : "not ") + "empty ";
+    if (!empty) {
+      for (const auto& byte : d.value())
+        input_string += to_string(byte) + " ";
+    }
+    input_string += "\n";
+  }
+  logger->trace(input_string);
+}
+#endif
 }  // namespace sel

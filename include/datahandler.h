@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include "secure_epilinker.h"
+#include "clear_epilinker.h"
 
 namespace sel {
 class ConfigurationHandler;
@@ -37,17 +38,37 @@ struct ServerData {
   std::vector<std::map<std::string, std::string>> ids;
   ToDate todate;
 };
+#ifdef DEBUG_SEL_REST
+struct Debugger{
+  std::shared_ptr<sel::EpilinkClientInput> client_input;
+  std::shared_ptr<sel::EpilinkServerInput> server_input;
+  std::shared_ptr<sel::EpilinkConfig> epilink_config;
+  clear_epilink::Result<CircUnit> int_result;
+  clear_epilink::Result<double> double_result;
+  bool run{false};
+  bool all_values_set() const;
+  void compute_int();
+  void compute_double();
+  void reset();
+};
+#endif
 class DataHandler {
  public:
   void set_config_handler(std::shared_ptr<ConfigurationHandler>);
   std::shared_ptr<const ServerData> get_database() const;
   size_t poll_database();
   size_t poll_database_diff();  // TODO(TK) Not implemented yet. Use full update
+#ifdef DEBUG_SEL_REST
+  Debugger* get_epilink_debug() { return m_epilink_debug;}
+#endif
  private:
   mutable std::mutex m_db_mutex;
   std::shared_ptr<const ServerData> m_database;
   std::unique_ptr<DatabaseFetcher> m_database_fetcher;
   std::shared_ptr<const ConfigurationHandler> m_config_handler;
+#ifdef DEBUG_SEL_REST
+  Debugger* m_epilink_debug{new Debugger};
+#endif
 };
 
 }  // namespace sel

@@ -41,6 +41,8 @@ void ServerHandler::insert_client(RemoteId id) {
   auto local_config{m_config_handler->get_local_config()};
   auto epilink_config{make_epilink_config(
       local_config, m_config_handler->get_algorithm_config())};
+  //epilink_config.set_precisions(6,11);
+  m_logger->debug("Client Precision: Dice {},\tWeight {}", epilink_config.dice_prec, epilink_config.weight_prec);
   auto aby_info{local_config->get_aby_info()};
   auto remote_config{m_config_handler->get_remote_config(id)};
   //FIXME(TK): Temporary hardcoded target
@@ -56,6 +58,8 @@ void ServerHandler::insert_server(ClientId id, RemoteAddress remote_address) {
   auto local_config{m_config_handler->get_local_config()};
   auto epilink_config{make_epilink_config(
       local_config, m_config_handler->get_algorithm_config())};
+  //epilink_config.set_precisions(6,11);
+  m_logger->debug("Server Precision: Dice {},\tWeight {}", epilink_config.dice_prec, epilink_config.weight_prec);
   auto aby_info{local_config->get_aby_info()};
   SecureEpilinker::ABYConfig aby_config{
       SERVER, aby_info.boolean_sharing, move(remote_address.ip),
@@ -108,7 +112,7 @@ std::shared_ptr<LocalServer> ServerHandler::get_local_server(const ClientId& cli
 
 void ServerHandler::run_server(ClientId client_id, std::shared_ptr<const ServerData> data) {
   const auto result{get_local_server(client_id)->launch_comparison(move(data))};
-  m_logger->info("Server Result\nIndex: {}, Match: {}, TMatch: {}\n", result.index, result.match, result.tmatch);
+  m_logger->info("Server Result\n{}",result);
   const auto ids{get_local_server(client_id)->get_ids()};
   string id_string;
   for (size_t i = 0; i!= ids.size(); ++i){
