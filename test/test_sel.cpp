@@ -77,6 +77,7 @@ EpilinkConfig dkfz_cfg {
 bool run_both{false};
 e_role role;
 
+#ifdef DEBUG_SEL_CIRCUIT
 Result run(SecureEpilinker& linker,
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
   print("Calling run_as_{}()\n", run_both ? "both" : ((role==CLIENT) ? "client" : "server"));
@@ -86,8 +87,8 @@ Result run(SecureEpilinker& linker,
   } else {
     return linker.run_as_both(in_client, in_server);
   }
-
 }
+#endif
 
 EpilinkInput input_simple(uint32_t nvals) {
   print("data_int_1: {}\n", data_int_1);
@@ -277,7 +278,12 @@ int main(int argc, char *argv[])
     linker.build_circuit(nvals);
     linker.run_setup_phase();
 
+#ifdef DEBUG_SEL_CIRCUIT
     Result res = run(linker, in.client, in.server);
+#else
+    Result res = (role == CLIENT) ?
+      linker.run_as_client(in.client) : linker.run_as_server(in.server);
+#endif
 
     print("Result:\n{}", res);
   }
