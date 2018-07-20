@@ -212,6 +212,35 @@ EpilinkInput input_random(const EpilinkConfig& cfg,
   return {cfg, in_client, in_server};
 }
 
+EpilinkInput input_empty(uint32_t nvals) {
+  // First test: only one bin field, single byte bitmask
+  EpilinkConfig epi_cfg {
+    {
+      {"bm_1", f_bm1},
+      {"bm_2", f_bm2},
+    }, // fields
+    {}, // exchange groups
+    Threshold, TThreshold // size_bitmask, (tent.) thresholds
+  };
+
+  EpilinkClientInput in_client {
+    {
+      {"bm_1", Bitmask{0x33}},
+      {"bm_2", Bitmask{0x44}},
+    }, // record
+    2 // nvals
+  };
+
+  EpilinkServerInput in_server {
+    {
+      {"bm_1", { nullopt, Bitmask{0x31} }}, // 1-bit mismatch for #1
+      {"bm_2", { Bitmask{0x43}, nullopt }}, // 2-bit mismatch for #0
+    } // records
+  };
+
+  return {epi_cfg, in_client, in_server};
+}
+
 int main(int argc, char *argv[])
 {
   bool role_server = false;
