@@ -121,6 +121,22 @@ struct ABYTester {
     party.ExecCircuit();
   }
 
+  void test_deterministic_aby_chaos() {
+    size_t abits = 1, bbits = 1;
+    vector<uint8_t> adata(bitbytes(abits), 0xff), bdata(bitbytes(bbits), 0);
+    BoolShare ain(bc, adata.data(), abits, SERVER, nvals);
+    BoolShare bin(bc, bdata.data(), bbits, CLIENT, nvals);
+    auto band = (bin & bin);
+    auto a_ain = to_arith(ain);
+    auto a_band = to_arith(band);
+
+    //print_share(band, "b & b");
+    //print_share(a_ain, "arith(a)");
+    print_share(a_band, "arith(b & b)");
+
+    party.ExecCircuit();
+  }
+
   void test_mult_const() {
     vector<uint32_t> vin(nvals);
     iota(vin.begin(), vin.end(), 0);
@@ -353,7 +369,8 @@ int main(int argc, char *argv[])
   //tester.test_split_accumulate();
   //tester.test_split_select_quotient_target();
   //tester.test_max_quotient();
-  tester.test_bm_input();
+  //tester.test_bm_input();
+  tester.test_deterministic_aby_chaos();
 
   return 0;
 }
