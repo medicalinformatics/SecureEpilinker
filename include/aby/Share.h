@@ -337,10 +337,6 @@ class OutShare: private Share {
     return sh->get_clear_value<T>();
   }
 
-  void write_clear_value_vec(uint32_t** vec, uint32_t* bitlen, uint32_t* nvals) {
-    return sh->get_clear_value_vec(vec, bitlen, nvals);
-  }
-
   std::vector<uint32_t> get_clear_value_vec();
 };
 

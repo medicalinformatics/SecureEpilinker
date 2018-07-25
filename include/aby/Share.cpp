@@ -101,14 +101,10 @@ BoolShare BoolShare::zeropad(uint32_t bitlen) const {
 vector<uint32_t> OutShare::get_clear_value_vec() {
   uint32_t* arr;
   uint32_t nvals, bitlen;
-  write_clear_value_vec(&arr, &bitlen, &nvals);
+  sh->get_clear_value_vec(&arr, &bitlen, &nvals);
   assert(bitlen == 32); // TODO <= 32
 
-  vector<uint32_t> vec(nvals);
-  for (size_t i = 0; i != nvals; ++i) {
-    // TODO more general case bitlen < 32
-    vec[i] = arr[i];
-  }
+  vector<uint32_t> vec(arr, arr+nvals);
 
   return vec;
 }
