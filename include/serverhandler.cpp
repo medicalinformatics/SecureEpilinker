@@ -83,6 +83,8 @@ shared_ptr<const LinkageJob> ServerHandler::get_linkage_job(const JobId& j_id) c
   } catch (const exception& e) {
     m_logger->error("Error in get_linkage_job: {}", e.what());
   }
+  // this return is to silence the compiler warning and will never be executed
+  return nullptr;
 }
 
 uint16_t ServerHandler::get_server_port(const ClientId& id) const {
@@ -91,6 +93,8 @@ uint16_t ServerHandler::get_server_port(const ClientId& id) const {
   } catch (const exception& e) {
     m_logger->error("Error in get_server_port: {}", e.what());
   }
+  // this return is to silence the compiler warning and will never be executed
+  return 0u;
 }
 shared_ptr<SecureEpilinker> ServerHandler::get_epilink_client(const RemoteId& remote_id){
   try{
@@ -98,6 +102,8 @@ shared_ptr<SecureEpilinker> ServerHandler::get_epilink_client(const RemoteId& re
   } catch (const exception& e) {
     m_logger->error("Error in get_epilink_client: {}", e.what());
   }
+  // this return is to silence the compiler warning and will never be executed
+  return nullptr;
 }
 
 std::shared_ptr<LocalServer> ServerHandler::get_local_server(const ClientId& client_id) const {
@@ -106,6 +112,8 @@ std::shared_ptr<LocalServer> ServerHandler::get_local_server(const ClientId& cli
   } catch (const exception& e) {
     m_logger->error("Error in get_local_server: {}", e.what());
   }
+  // this return is to silence the compiler warning and will never be executed
+  return nullptr;
 }
 
 void ServerHandler::run_server(ClientId client_id, std::shared_ptr<const ServerData> data) {
