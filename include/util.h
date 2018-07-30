@@ -195,6 +195,9 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
 // specialization for uint8_t / unsigned char
 std::ostream& operator<< (std::ostream& out, const std::vector<uint8_t>& v);
 
+/**
+ * Functions to trim whitespace from strings
+ */
 // trim from start (in place)
 static inline void ltrim(std::string &s) {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
@@ -232,6 +235,10 @@ static inline std::string trim_copy(std::string s) {
     trim(s);
     return s;
 }
+
+/**
+ *  Split delimiter separated strings into containers
+ */
 template<typename Out>
 void split(const std::string &s, char delim, Out result) {
     std::stringstream ss(s);
@@ -243,6 +250,8 @@ void split(const std::string &s, char delim, Out result) {
 std::vector<std::string> split(const std::string &s, char delim);
 std::string generate_id();
 
+// safeGetline to handle \n or \r\n from Stackoverflow User user763305
+// https://stackoverflow.com/questions/6089231/getting-std-ifstream-to-handle-lf-cr-and-crlf#6089413
 std::istream& safeGetline(std::istream&, std::string&);
 std::vector<std::string> get_headers(std::istream& is,const std::string& header);
 
