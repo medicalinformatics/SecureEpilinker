@@ -1,25 +1,11 @@
 {
+"localId": "TUDA",
 "localAuthentication": {
   "authType": "apiKey",
   "sharedKey": "123abc"
 },
 "dataService": {
   "url": "http://127.0.0.1:8800/Communicator/getAllRecords"
-},
-"connectionProfile": {
-  "url": "127.0.0.1:8080",
-  "idType": "lid",
-  "authentication": {
-    "authType": "apiKey",
-    "sharedKey": "xkcd123"
-  }
-},
-"linkageService": {
-  "url": "https://ls.mitro.dkfz.de/",
-  "authentication": {
-    "authType": "apiKey",
-    "sharedKey": "bcd234"
-  }
 },
 "algorithm": {
   "algoType": "epilink",
@@ -57,7 +43,7 @@
     "errorRate": 0.005,
     "comparator": "binary",
     "fieldType": "integer",
-    "bitlength": 5
+    "bitlength": 11
 
     },
     {
@@ -66,7 +52,7 @@
     "errorRate": 0.002,
     "comparator": "binary",
     "fieldType": "integer",
-    "bitlength": 4
+    "bitlength": 11
 
     },
     {

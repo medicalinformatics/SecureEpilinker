@@ -1,9 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "id": "https://www.cbs.tu-darmstadt.de/secureepilink/schemas/init-schema.json",
+  "id": "https://www.cbs.tu-darmstadt.de/secureepilink/schemas/local-init-schema.json",
   "definitions": {
     "authentication": {
-      "type": "object",
       "properties": {
         "authType": {"enum": ["none","apiKey"]},
         "additionalProperties": {
@@ -13,7 +12,6 @@
       "required": ["authType"]
     },
     "field": {
-      "type": "object",
       "properties": {
         "name": {
           "type": "string"
@@ -47,38 +45,17 @@
       "additionalProperties": false
     }
   },
-  "type": "object",
   "properties": {
+    "localId": {"type": "string"},
     "localAuthentication": {"$ref": "#/definitions/authentication"},
     "dataService": {
-      "type": "object",
       "properties": {
         "url": {"type": "string"}
       },
       "required": ["url"],
       "additionalProperties": false
     },
-    "connectionProfile": {
-      "type": "object",
-      "properties": {
-        "url": {"type": "string"},
-        "authentication": {"$ref": "#/definitions/authentication"},
-      "  idType": {"type": "string"}
-      },
-      "required": ["url", "authentication", "idType"],
-      "additionalProperties": true
-    },
-    "linkageService": {
-      "type": "object",
-      "properties": {
-      "authentication": { "$ref": "#/definitions/authentication"},
-      "url": { "type": "string"}
-      },
-      "required": ["url", "authentication"],
-      "additionalProperties": false
-    },
     "algorithm": {
-      "type": "object",
       "properties": {
         "algoType": {"enum": ["epilink"]},
         "threshold_match": {"type": "number"},
@@ -92,5 +69,6 @@
       "additionalProperties": false
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "required": ["localId", "localAuthentication", "dataService", "algorithm"]
 }

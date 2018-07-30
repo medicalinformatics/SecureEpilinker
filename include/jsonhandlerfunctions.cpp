@@ -44,7 +44,8 @@ ServerConfig make_server_config_from_json(nlohmann::json json) {
   e_sharing boolean_sharing;
   (json.at("booleanSharing").get<string>() == "yao") ? boolean_sharing = S_YAO
                                                      : boolean_sharing = S_BOOL;
-  return {json.at("initSchemaPath").get<std::string>(),
+  return {json.at("localInitSchemaPath").get<std::string>(),
+          json.at("remoteInitSchemaPath").get<std::string>(),
           json.at("linkRecordSchemaPath").get<std::string>(),
           json.at("serverKeyPath").get<std::string>(),
           json.at("serverCertificatePath").get<std::string>(),
@@ -252,7 +253,7 @@ SessionResponse valid_linkrecord_json_handler(
   }
 }
 
-SessionResponse valid_init_json_handler(
+SessionResponse valid_init_remote_json_handler(
     const nlohmann::json& j,
     RemoteId remote_id,
     const shared_ptr<ConfigurationHandler>& config_handler,
@@ -260,10 +261,58 @@ SessionResponse valid_init_json_handler(
     const shared_ptr<ConnectionHandler>& connection_handler) {
   auto logger{get_default_logger()};
   logger->trace("Payload: {}", j.dump(2));
-  if (remote_id == "local") {
+    logger->info("Creating remote Config for: \"{}\"", remote_id);
+    ConnectionConfig con;
+    ConnectionConfig linkage_service;
+    auto local_conf{config_handler->get_local_config()};
+    auto algo_conf{config_handler->get_algorithm_config()};
+    try {
+      // Get Connection Profile
+      con.url = j.at("connectionProfile").at("url").get<string>();
+      con.authentication =
+          get_auth_object(j.at("connectionProfile").at("authentication"));
+      // Get Linkage Service Config
+      linkage_service.url = j.at("linkageService").at("url").get<string>();
+      linkage_service.authentication =
+          get_auth_object(j.at("linkageService").at("authentication"));
+    } catch (const exception& e) {
+      logger->error("Error creating remote config: {}", e.what());
+      return {restbed::INTERNAL_SERVER_ERROR,
+              e.what(),
+              {{"Content-Length", to_string(string(e.what()).length())}}};
+    }
+    auto remote_config = make_shared<RemoteConfiguration>(remote_id);
+    remote_config->set_connection_profile(move(con));
+    remote_config->set_linkage_service(move(linkage_service));
+    auto remote_info{connection_handler->initialize_aby_server(remote_config)};
+    remote_config->set_aby_port(remote_info.port);
+    try {
+      connection_handler->mark_port_used(remote_info.port);
+    } catch (const exception& e) {
+      logger->warn(
+          "Can not mark port as used. If server and client are the same "
+          "process, that is ok.");
+    }
+    remote_config->set_remote_client_id(remote_info.id);
+    config_handler->set_remote_config(move(remote_config));
+    auto fun = bind(&ServerHandler::insert_client, server_handler.get(),
+                    placeholders::_1);
+    std::thread client_creator(fun, remote_id);
+    client_creator.detach();
+
+    return {restbed::OK, "", {{"Connection", "Close"}}};
+}
+
+SessionResponse valid_init_local_json_handler(
+    const nlohmann::json& j,
+    RemoteId,
+    const shared_ptr<ConfigurationHandler>& config_handler,
+    const shared_ptr<ServerHandler>&,
+    const shared_ptr<ConnectionHandler>&) {
+  auto logger{get_default_logger()};
+  logger->trace("Payload: {}", j.dump(2));
     auto local_config = make_shared<LocalConfiguration>();
     logger->info("Creating local configuration\n");
-    vector<ML_Field> fields;
     auto algo{make_shared<AlgorithmConfig>()};
     try {
       // Get local Authentication
@@ -307,46 +356,6 @@ SessionResponse valid_init_json_handler(
               e.what(),
               {{"Content-Length", to_string(string(e.what()).length())}}};
     }
-  } else {  // remote Config
-    logger->info("Creating remote Config for: \"{}\"", remote_id);
-    ConnectionConfig con;
-    ConnectionConfig linkage_service;
-    auto local_conf{config_handler->get_local_config()};
-    auto algo_conf{config_handler->get_algorithm_config()};
-    try {
-      // Get Connection Profile
-      con.url = j.at("connectionProfile").at("url").get<string>();
-      con.authentication =
-          get_auth_object(j.at("connectionProfile").at("authentication"));
-      // Get Linkage Service Config
-      linkage_service.url = j.at("linkageService").at("url").get<string>();
-      linkage_service.authentication =
-          get_auth_object(j.at("linkageService").at("authentication"));
-    } catch (const exception& e) {
-      logger->error("Error creating remote config: {}",e.what());
-      return {restbed::INTERNAL_SERVER_ERROR,
-              e.what(),
-              {{"Content-Length", to_string(string(e.what()).length())}}};
-    }
-    auto remote_config = make_shared<RemoteConfiguration>(remote_id);
-    remote_config->set_connection_profile(move(con));
-    remote_config->set_linkage_service(move(linkage_service));
-    auto remote_info{connection_handler->initialize_aby_server(remote_config)};
-    remote_config->set_aby_port(remote_info.port);
-    try{
-      connection_handler->mark_port_used(remote_info.port);
-    } catch (const exception& e){
-      logger->warn("Can not mark port as used. If server and client are the same process, that is ok.");
-    }
-    remote_config->set_remote_client_id(remote_info.id);
-    config_handler->set_remote_config(move(remote_config));
-    auto fun = bind(&ServerHandler::insert_client, server_handler.get(),
-                    placeholders::_1);
-    std::thread client_creator(fun, remote_id);
-    client_creator.detach();
-
-    return {restbed::OK, "", {{"Connection", "Close"}}};
-  }
 }
 
 SessionResponse invalid_json_handler(valijson::ValidationResults& results) {
