@@ -95,10 +95,6 @@ AuthenticationConfig const* LocalConfiguration::get_local_authentication()
   return m_local_authentication.get();
 }
 
-LocalConfiguration::AbyInfo LocalConfiguration::get_aby_info() const {
-  return m_aby_info;
-}
-
 nlohmann::json LocalConfiguration::get_comparison_json() const {
   nlohmann::json j;
   j["exchangeGroups"] = m_exchange_groups;
