@@ -30,6 +30,7 @@
 #include "valijson/validation_results.hpp"
 
 namespace sel {
+ServerConfig make_server_config_from_json(nlohmann::json);
 nlohmann::json read_json_from_disk(const std::experimental::filesystem::path&);
 
 std::unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json&);

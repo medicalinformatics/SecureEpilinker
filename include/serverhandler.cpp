@@ -43,7 +43,7 @@ void ServerHandler::insert_client(RemoteId id) {
       local_config, m_config_handler->get_algorithm_config())};
   //epilink_config.set_precisions(6,11);
   m_logger->debug("Client Precision: Dice {},\tWeight {}", epilink_config.dice_prec, epilink_config.weight_prec);
-  auto aby_info{local_config->get_aby_info()};
+  auto aby_info{m_config_handler->get_server_config()};
   auto remote_config{m_config_handler->get_remote_config(id)};
   SecureEpilinker::ABYConfig aby_config{
       CLIENT, aby_info.boolean_sharing, remote_config->get_remote_host(),
@@ -58,7 +58,7 @@ void ServerHandler::insert_server(ClientId id, RemoteAddress remote_address) {
       local_config, m_config_handler->get_algorithm_config())};
   //epilink_config.set_precisions(6,11);
   m_logger->debug("Server Precision: Dice {},\tWeight {}", epilink_config.dice_prec, epilink_config.weight_prec);
-  auto aby_info{local_config->get_aby_info()};
+  auto aby_info{m_config_handler->get_server_config()};
   SecureEpilinker::ABYConfig aby_config{
       SERVER, aby_info.boolean_sharing, move(remote_address.ip),
       remote_address.port, aby_info.aby_threads};

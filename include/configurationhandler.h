@@ -42,8 +42,10 @@ class ConfigurationHandler {
   void set_local_config(std::shared_ptr<LocalConfiguration>&&);
   void set_algorithm_config(std::shared_ptr<AlgorithmConfig>&&);
   void set_remote_config(std::shared_ptr<RemoteConfiguration>&&);
+  void set_server_config(ServerConfig&&);
 
   size_t get_remote_count() const;
+  ServerConfig get_server_config() const;
 
  private:
   std::shared_ptr<LocalConfiguration> m_local_config;
@@ -51,6 +53,7 @@ class ConfigurationHandler {
   std::map<RemoteId, std::shared_ptr<RemoteConfiguration>>
       m_remote_configs;
   std::shared_ptr<ConnectionHandler> m_connection_handler;
+  ServerConfig m_server_config;
   mutable std::mutex m_local_mutex;
   mutable std::mutex m_remote_mutex;  // Maybe one Mutex per remote? (perf)
   mutable std::mutex m_algo_mutex;

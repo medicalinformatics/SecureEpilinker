@@ -7,5 +7,9 @@
 "linkRecordSchemaPath": "../data/linkrecord-schema.json",
 "useSSL": true,
 "bindAddress": "0.0.0.0",
-"restWorkerThreads": 2
+"restWorkerThreads": 2,
+"defaultPageSize": 25,
+"abyThreads": 1,
+"booleanSharing": "yao",
+"logFilePath": "./secure_epilinker.log"
 }
