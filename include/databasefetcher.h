@@ -42,6 +42,11 @@ class DatabaseFetcher {
                   const std::string& url,
                   AuthenticationConfig const* l_auth);
 
+  DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf,
+                  std::shared_ptr<const AlgorithmConfig> algo_conf,
+                  const std::string& url,
+                  AuthenticationConfig const* l_auth,
+                  size_t page_size);
   void set_url(const std::string& url) { m_url = url; }
   void set_page_size(unsigned size) { m_page_size = size; }
   size_t get_todate() const { return m_todate; }
@@ -52,15 +57,15 @@ class DatabaseFetcher {
   void get_page_data(const nlohmann::json&);
   std::map<FieldName, VFieldEntry> m_data;
   std::vector<std::map<std::string, std::string>> m_ids;
-  unsigned m_page_size{25u};
-  unsigned m_last_page{1u};
-  unsigned m_page{1u};
   std::string m_next_page;
   size_t m_todate;
   std::string m_url;
   std::shared_ptr<const LocalConfiguration> m_local_config;
   std::shared_ptr<const AlgorithmConfig> m_algo_config;
   AuthenticationConfig const* m_local_authentication;
+  unsigned m_page_size{25u};
+  unsigned m_last_page{1u};
+  unsigned m_page{1u};
   std::shared_ptr<spdlog::logger> m_logger;
 };
 

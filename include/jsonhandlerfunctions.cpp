@@ -40,6 +40,25 @@
 
 using namespace std;
 namespace sel {
+ServerConfig make_server_config_from_json(nlohmann::json json) {
+  e_sharing boolean_sharing;
+  (json.at("booleanSharing").get<string>() == "yao") ? boolean_sharing = S_YAO
+                                                     : boolean_sharing = S_BOOL;
+  return {json.at("initSchemaPath").get<std::string>(),
+          json.at("linkRecordSchemaPath").get<std::string>(),
+          json.at("serverKeyPath").get<std::string>(),
+          json.at("serverCertificatePath").get<std::string>(),
+          json.at("serverDHPath").get<std::string>(),
+          json.at("logFilePath").get<std::string>(),
+          json.at("useSSL").get<bool>(),
+          json.at("port").get<uint16_t>(),
+          json.at("bindAddress").get<string>(),
+          json.at("restWorkerThreads").get<size_t>(),
+          json.at("defaultPageSize").get<size_t>(),
+          json.at("abyThreads").get<uint32_t>(),
+          boolean_sharing};
+}
+
 nlohmann::json read_json_from_disk(
     const experimental::filesystem::path& json_path) {
   auto logger{get_default_logger()};

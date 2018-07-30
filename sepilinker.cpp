@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     ("c,config", "Config file name", cxxopts::value<std::string>()->default_value("../data/serverconf.json"))
     ("i,initschema", "File name of initializeation schema", cxxopts::value<std::string>())
     ("l,linkschema", "File name of linkRecord schema", cxxopts::value<std::string>())
-    ("L,logfile", "File name of log file", cxxopts::value<std::string>()->default_value("secure_epilink.log"))
+    ("L,logfile", "File name of log file", cxxopts::value<std::string>())
     ("k,key", "File name of server key", cxxopts::value<std::string>())
     ("v,verbose", "Log more information")
     ("d,dh", "File name of Diffi-Hellman group", cxxopts::value<std::string>())
@@ -88,8 +88,11 @@ int main(int argc, char* argv[]) {
   if(cmdoptions.count("port")){
     server_config["port"] = cmdoptions["port"].as<unsigned>();
   }
+  if(cmdoptions.count("logfile")){
+    server_config["logFilePath"] = cmdoptions["logfile"].as<std::string>();
+  }
 
-  createLogger(cmdoptions["logfile"].as<std::string>());
+  createLogger(server_config.at("logFilePath").get<std::string>());
   switch(cmdoptions.count("verbose")){
     case 0: spdlog::set_level(spdlog::level::warn); break;
     case 1: spdlog::set_level(spdlog::level::info); break;
@@ -109,12 +112,15 @@ int main(int argc, char* argv[]) {
 
   connections->set_config_handler(configurations);
   data->set_config_handler(configurations);
+  configurations->set_server_config(make_server_config_from_json(server_config));
+
   // Create JSON Validator
+  auto restconf{configurations->get_server_config()};
   auto init_validator = std::make_shared<sel::Validator>(
-      read_json_from_disk(server_config.at("initSchemaPath").get<std::string>()));
+      read_json_from_disk(restconf.init_schema_file));
   auto linkrecord_validator =
       std::make_shared<sel::Validator>(read_json_from_disk(
-          server_config.at("linkRecordSchemaPath").get<std::string>()));
+          restconf.link_record_schema_file));
   auto null_validator = std::make_shared<sel::Validator>();
   // Create Handler for POST Request with JSON payload (using the validator)
   auto init_methodhandler =
@@ -165,23 +171,23 @@ int main(int argc, char* argv[]) {
 
   // Setup REST Server
   auto settings = std::make_shared<restbed::Settings>();
-  settings->set_worker_limit(server_config.at("restWorkerThreads").get<unsigned>());
-  if(server_config.at("useSSL").get<bool>()){
+  settings->set_worker_limit(restconf.rest_worker);
+  if(restconf.use_ssl){
   // Setup SSL Connection
   auto ssl_settings = std::make_shared<restbed::SSLSettings>();
     ssl_settings->set_http_disabled(true);
     ssl_settings->set_private_key(restbed::Uri(
-      "file://" + server_config.at("serverKeyPath").get<std::string>()));
+      "file://" + restconf.ssl_key_file.string()));
     ssl_settings->set_certificate(restbed::Uri(
-      "file://" + server_config.at("serverCertificatePath").get<std::string>()));
+      "file://" + restconf.ssl_cert_file.string()));
     ssl_settings->set_temporary_diffie_hellman(restbed::Uri(
-      "file://" + server_config.at("serverDHPath").get<std::string>()));
-    ssl_settings->set_port(server_config.at("port").get<unsigned>());
-    ssl_settings->set_bind_address(server_config.at("bindAddress").get<std::string>());
+      "file://" + restconf.ssl_dh_file.string()));
+    ssl_settings->set_port(restconf.server_port);
+    ssl_settings->set_bind_address(restconf.bind_address);
     settings->set_ssl_settings(ssl_settings);
   } else {
-    settings->set_bind_address(server_config.at("bindAddress").get<std::string>());
-    settings->set_port(server_config.at("port").get<unsigned>());
+    settings->set_bind_address(restconf.bind_address);
+    settings->set_port(restconf.server_port);
   }
 
   initializer.publish(service);

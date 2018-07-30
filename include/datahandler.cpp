@@ -34,8 +34,8 @@ size_t DataHandler::poll_database() {
   DatabaseFetcher database_fetcher{
       local_configuration, m_config_handler->get_algorithm_config(),
       local_configuration->get_data_service(),
-      local_configuration->get_local_authentication()};
-  database_fetcher.set_page_size(25u);  // TODO(TK): Magic number raus!
+      local_configuration->get_local_authentication(),
+      m_config_handler->get_server_config().default_page_size};
   auto data{database_fetcher.fetch_data()};
   lock_guard<mutex> lock(m_db_mutex);
   m_database = make_shared<const ServerData>(ServerData{

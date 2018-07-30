@@ -29,6 +29,9 @@
 #include <sstream>
 #include <curlpp/Easy.hpp>
 #include <nlohmann/json.hpp>
+
+#include <experimental/filesystem>
+#include "secure_epilinker.h"
 namespace sel{
 
 // Forward Declarations
@@ -68,6 +71,22 @@ struct SessionResponse {
   int return_code;
   std::string body;
   std::multimap<std::string, std::string> headers;
+};
+
+struct ServerConfig {
+  std::experimental::filesystem::path init_schema_file;
+  std::experimental::filesystem::path link_record_schema_file;
+  std::experimental::filesystem::path ssl_key_file;
+  std::experimental::filesystem::path ssl_cert_file;
+  std::experimental::filesystem::path ssl_dh_file;
+  std::experimental::filesystem::path log_file;
+  bool use_ssl;
+  uint16_t server_port;
+  std::string bind_address;
+  size_t rest_worker;
+  size_t default_page_size;
+  uint32_t aby_threads;
+  e_sharing boolean_sharing;
 };
 
 void to_json(nlohmann::json& j, const AlgorithmConfig& c);

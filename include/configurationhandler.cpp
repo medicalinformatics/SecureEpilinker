@@ -75,6 +75,14 @@ size_t ConfigurationHandler::get_remote_count() const {
   return m_remote_configs.size();
 }
 
+void ConfigurationHandler::set_server_config(ServerConfig&& server_config){
+  m_server_config = move(server_config);
+}
+
+ServerConfig ConfigurationHandler::get_server_config() const {
+  return m_server_config;
+}
+
 EpilinkConfig make_epilink_config(shared_ptr<const LocalConfiguration> local_config,
                                     shared_ptr<const AlgorithmConfig> algo_config){
 return {local_config->get_fields(),
