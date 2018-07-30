@@ -39,12 +39,6 @@ namespace sel {
 
 class LocalConfiguration {
  public:
-  struct AbyInfo{
-    size_t default_page_size{25u};
-    uint32_t aby_threads{1u};
-    e_sharing boolean_sharing{S_YAO};
-  };
-
   LocalConfiguration() = default;
   LocalConfiguration(std::string&& url,
                      std::unique_ptr<AuthenticationConfig> local_auth);
@@ -65,7 +59,6 @@ class LocalConfiguration {
   std::string print_auth_type() const;
   AuthenticationConfig const* get_local_authentication() const;
 
-  AbyInfo get_aby_info() const;
   nlohmann::json get_comparison_json() const;
 
  private:
@@ -73,7 +66,6 @@ class LocalConfiguration {
   std::map<FieldName, ML_Field> m_fields;
   std::vector<IndexSet> m_exchange_groups;
   std::string m_data_service_url;
-  AbyInfo m_aby_info;
 };
 
 void to_json (nlohmann::json&, const ML_Field&);
