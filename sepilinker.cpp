@@ -53,7 +53,8 @@ int main(int argc, char* argv[]) {
   cxxopts::Options options("Secure EpiLinker", "Secure Multi Party Recard Linkage via EpiLink algorithm, Version 0.1.0");
   options.add_options()
     ("c,config", "Config file name", cxxopts::value<std::string>()->default_value("../data/serverconf.json"))
-    ("i,initschema", "File name of initializeation schema", cxxopts::value<std::string>())
+    ("i,localschema", "File name of local initialization schema", cxxopts::value<std::string>())
+    ("I,remoteschema", "File name of remote initialization schema", cxxopts::value<std::string>())
     ("l,linkschema", "File name of linkRecord schema", cxxopts::value<std::string>())
     ("L,logfile", "File name of log file", cxxopts::value<std::string>())
     ("k,key", "File name of server key", cxxopts::value<std::string>())
@@ -70,8 +71,11 @@ int main(int argc, char* argv[]) {
   auto server_config = read_json_from_disk(cmdoptions["config"].as<std::string>());
 
   // Override config file
-  if(cmdoptions.count("initschema")){
-    server_config["initSchemaPath"] = cmdoptions["initschema"].as<std::string>();
+  if(cmdoptions.count("localschema")){
+    server_config["localInitSchemaPath"] = cmdoptions["localschema"].as<std::string>();
+  }
+  if(cmdoptions.count("remoteschema")){
+    server_config["remoteInitSchemaPath"] = cmdoptions["remoteschema"].as<std::string>();
   }
   if(cmdoptions.count("linkschema")){
     server_config["linkRecordSchemaPath"] = cmdoptions["linkschema"].as<std::string>();
@@ -116,16 +120,22 @@ int main(int argc, char* argv[]) {
 
   // Create JSON Validator
   auto restconf{configurations->get_server_config()};
-  auto init_validator = std::make_shared<sel::Validator>(
-      read_json_from_disk(restconf.init_schema_file));
+  auto init_local_validator = std::make_shared<sel::Validator>(
+      read_json_from_disk(restconf.local_init_schema_file));
+  auto init_remote_validator = std::make_shared<sel::Validator>(
+      read_json_from_disk(restconf.remote_init_schema_file));
   auto linkrecord_validator =
       std::make_shared<sel::Validator>(read_json_from_disk(
           restconf.link_record_schema_file));
   auto null_validator = std::make_shared<sel::Validator>();
-  // Create Handler for POST Request with JSON payload (using the validator)
-  auto init_methodhandler =
+  // Create Handlers for INIT Phase
+  auto init_local_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "PUT", configurations, connections, servers,init_validator);
+          "PUT", configurations, connections, servers,init_local_validator);
+  auto init_remote_methodhandler =
+      sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
+          "PUT", configurations, connections, servers,init_remote_validator);
+  // Create Handlers for Record Linkage phase
   auto linkrecord_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
           "POST", configurations, connections, servers, linkrecord_validator);
@@ -133,6 +143,7 @@ int main(int argc, char* argv[]) {
   auto jobmonitor_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::MonitorMethodHandler>(
           "GET", servers);
+  // Create Handlers for temporary inter SEL communication
   auto temp_selconnect_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::TempSelMethodHandler>(
           "POST", connections, servers, data);
@@ -141,10 +152,14 @@ int main(int argc, char* argv[]) {
           "POST", configurations, connections, servers, null_validator);
 
   // Add Validation Callbacks
-  auto devptr_init =
-      dynamic_cast<sel::JsonMethodHandler*>(init_methodhandler.get());
-  devptr_init->set_valid_callback(sel::valid_init_json_handler);
-  devptr_init->set_invalid_callback(sel::invalid_json_handler);
+  auto devptr_init_loc =
+      dynamic_cast<sel::JsonMethodHandler*>(init_local_methodhandler.get());
+  devptr_init_loc->set_valid_callback(sel::valid_init_local_json_handler);
+  devptr_init_loc->set_invalid_callback(sel::invalid_json_handler);
+  auto devptr_init_rem =
+      dynamic_cast<sel::JsonMethodHandler*>(init_remote_methodhandler.get());
+  devptr_init_rem->set_valid_callback(sel::valid_init_remote_json_handler);
+  devptr_init_rem->set_invalid_callback(sel::invalid_json_handler);
   auto devptr_linkrecord =
       dynamic_cast<sel::JsonMethodHandler*>(linkrecord_methodhandler.get());
   devptr_linkrecord->set_valid_callback(valid_linkrecord_json_handler);
@@ -154,8 +169,11 @@ int main(int argc, char* argv[]) {
   devptr_temp_link->set_valid_callback(valid_temp_link_json_handler);
   devptr_temp_link->set_invalid_callback(invalid_json_handler);
   // Create Ressource on <url/init> and instruct to use the built MethodHandler
-  sel::ResourceHandler initializer{"/init/{remote_id: .*}"};
-  initializer.add_method(init_methodhandler);
+  sel::ResourceHandler local_initializer{"/initLocal"};
+  local_initializer.add_method(init_local_methodhandler);
+
+  sel::ResourceHandler remote_initializer{"/initRemote/{remote_id: .*}"};
+  remote_initializer.add_method(init_remote_methodhandler);
 
   // Create Ressource on <url/linkRecord> and instruct to use the built MethodHandler
   sel::ResourceHandler linkrecord_handler{"/linkRecord/{remote_id: .*}"};
@@ -190,7 +208,8 @@ int main(int argc, char* argv[]) {
     settings->set_port(restconf.server_port);
   }
 
-  initializer.publish(service);
+  local_initializer.publish(service);
+  remote_initializer.publish(service);
   linkrecord_handler.publish(service);
   jobmonitor_handler.publish(service);
   selconnect_handler.publish(service);

@@ -45,7 +45,14 @@ SessionResponse valid_temp_link_json_handler(
     const std::shared_ptr<ServerHandler>&,
     const std::shared_ptr<ConnectionHandler>&);
 
-SessionResponse valid_init_json_handler(
+SessionResponse valid_init_local_json_handler(
+    const nlohmann::json&,
+    RemoteId,
+    const std::shared_ptr<ConfigurationHandler>&,
+    const std::shared_ptr<ServerHandler>&,
+    const std::shared_ptr<ConnectionHandler>&);
+
+SessionResponse valid_init_remote_json_handler(
     const nlohmann::json&,
     RemoteId,
     const std::shared_ptr<ConfigurationHandler>&,

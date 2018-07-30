@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://www.cbs.tu-darmstadt.de/secureepilink/schemas/remote-init-schema.json",
+  "definitions": {
+    "authentication": {
+      "properties": {
+        "authType": {"enum": ["none","apiKey"]},
+        "additionalProperties": {
+          "sharedKey": {"type": "string"}
+        }
+      },
+      "required": ["authType"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "connectionProfile": {
+      "properties": {
+        "url": {"type": "string"},
+        "authentication": {"$ref": "#/definitions/authentication"}
+      },
+      "required": ["url", "authentication"],
+      "additionalProperties": false
+    },
+    "linkageService": {
+      "properties": {
+      "authentication": { "$ref": "#/definitions/authentication"},
+      "url": { "type": "string"}
+      },
+      "required": ["url", "authentication"],
+      "additionalProperties": false
+    },
+    "matchingAllowed": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["connectionProfile", "linkageService"]
+}

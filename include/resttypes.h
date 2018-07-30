@@ -74,7 +74,8 @@ struct SessionResponse {
 };
 
 struct ServerConfig {
-  std::experimental::filesystem::path init_schema_file;
+  std::experimental::filesystem::path local_init_schema_file;
+  std::experimental::filesystem::path remote_init_schema_file;
   std::experimental::filesystem::path link_record_schema_file;
   std::experimental::filesystem::path ssl_key_file;
   std::experimental::filesystem::path ssl_cert_file;
