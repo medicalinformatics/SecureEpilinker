@@ -58,6 +58,12 @@ public:
   SecureEpilinker(ABYConfig aby_config, EpilinkConfig epi_config);
   ~SecureEpilinker();
 
+  /**
+   * Opens the network connection of two SecureEpilinkers as specified in the
+   * ABY configuration. This is a blocking call.
+   */
+  void connect();
+
   /*
    * TODO It is currently not possible to build an ABY circuit without
    * specifying the inputs, as all circuits start with the InputGates. Hence,
