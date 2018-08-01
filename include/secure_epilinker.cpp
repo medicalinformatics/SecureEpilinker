@@ -532,6 +532,11 @@ SecureEpilinker::SecureEpilinker(ABYConfig config, EpilinkConfig epi_config) :
 // pimpl.
 SecureEpilinker::~SecureEpilinker() = default;
 
+void SecureEpilinker::connect() {
+  // Currently, we only let the aby parties connect, which runs the Base OTs.
+  party.InitOnline();
+}
+
 void SecureEpilinker::build_circuit(const uint32_t) {
   // TODO When separation of setup, online phase and input setting is done in
   // ABY, call selc->build_circuit() here instead of in run()
