@@ -111,7 +111,7 @@ struct EpilinkServerInput {
 std::vector<CircUnit> rescale_weights(const std::vector<Weight>& weights,
     size_t prec, Weight max_weight = 0);
 
-CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight);
+unsigned long long rescale_weight(Weight weight, size_t prec, Weight max_weight);
 
 /**
  * bits required to store hammingweight of bitmask of given size

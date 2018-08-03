@@ -161,9 +161,9 @@ vector<CircUnit> rescale_weights(const vector<Weight>& weights,
   return ret;
 }
 
-CircUnit rescale_weight(Weight weight, size_t prec, Weight max_weight) {
-  CircUnit max_el = (1ULL << prec) - 1ULL;
-  return (weight/max_weight) * max_el;
+unsigned long long rescale_weight(Weight weight, size_t prec, Weight max_weight) {
+  unsigned long long max_el = (1ULL << prec) - 1ULL;
+  return llround((weight/max_weight) * max_el);
 }
 
 size_t hw_size(size_t size) {
