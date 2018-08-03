@@ -53,6 +53,8 @@ class RemoteConfiguration {
   void set_aby_port(uint16_t port);
   std::string get_remote_host() const;
 
+  void set_matching_mode(bool);
+  bool get_matching_mode() const;
  protected:
  private:
   RemoteId m_connection_id;
@@ -60,6 +62,7 @@ class RemoteConfiguration {
   ConnectionConfig m_connection_profile;
   ConnectionConfig m_linkage_service;
   uint16_t m_aby_port;
+  bool m_matching_mode{false};
 };
 
 }  // Namespace sel

@@ -50,7 +50,8 @@ class LinkageJob {
    void add_data_field(const FieldName& fieldname, DataField field);
    JobStatus get_status() const;
    JobId get_id() const;
-   void run_job();
+   void run_linkage_job();
+   void run_matching_job();
    void set_local_config(std::shared_ptr<LocalConfiguration>);
  private:
   void signal_server(std::promise<size_t>&);

@@ -272,6 +272,24 @@ SessionResponse valid_init_remote_json_handler(
       con.authentication =
           get_auth_object(j.at("connectionProfile").at("authentication"));
       // Get Linkage Service Config
+    bool matching_mode;
+    if (!j.count("matchingAllowed")) {
+      matching_mode = false;
+    } else {
+      matching_mode = j["matchingAllowed"].get<bool>();
+      remote_config->set_matching_mode(matching_mode);
+#ifndef SEL_MATCHING_MODE
+      if (matching_mode) {
+        logger->critical(
+            "Matching Mode needs compile flag"
+            " \"SEL_MATCHING_MODE\" to work. Terminating!");
+        exit(3);
+      }
+#endif
+    }
+
+    // Get Linkage Service Config, if not in matching mode
+    if (!matching_mode) {
       linkage_service.url = j.at("linkageService").at("url").get<string>();
       linkage_service.authentication =
           get_auth_object(j.at("linkageService").at("authentication"));

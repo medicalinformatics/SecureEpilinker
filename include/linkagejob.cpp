@@ -102,7 +102,7 @@ JobId LinkageJob::get_id() const {
   return m_id;
 }
 
-void LinkageJob::run_job() {
+void LinkageJob::run_linkage_job() {
   auto logger{get_default_logger()};
   m_status = JobStatus::RUNNING;
 
@@ -137,13 +137,19 @@ void LinkageJob::run_job() {
     print_data();
 #endif
     logger->info("Client Result: {}", client_share);
-    //TODO(tk) send result to linkage server
-    nlohmann::json result_id{{"idType", "srl1"},{"idString", "3lk4j3Y4l5j"}};
-    perform_callback(result_id);
+    nlohmann::json result{{"idType", "srl1"},{"idString", "3lk4j3Y4l5j"}};
+    if(!m_remote_config->get_matching_mode()){
+      //TODO(tk) send result to linkage server
+    } else {
+      #ifdef SEL_MATCHING_MODE
+      result = {{"match", true}, {"tmatch", true}};
+      #endif
+    }
+    perform_callback(result);
 #ifdef DEBUG_SEL_REST
     debugger->client_input = make_shared<EpilinkClientInput>(client_input);
     if(!(debugger->epilink_config)) {
-      debugger->epilink_config = make_shared<EpilinkConfig>(make_epilink_config(m_local_config, m_algo_config));
+      debugger->epilink_config = make_shared<EpilinkConfig>(make_epilink_config(m_local_config, m_algo_config, m_remote_config->get_matching_mode()));
     }
     //debugger->epilink_config->set_precisions(5,11);
     logger->debug("Clear Precision: Dice {},\tWeight {}", debugger->epilink_config->dice_prec,debugger->epilink_config->weight_prec);
@@ -169,6 +175,12 @@ void LinkageJob::run_job() {
     logger->error("Error running MPC Client: {}\n", e.what());
     m_status = JobStatus::FAULT;
   }
+}
+
+void LinkageJob::run_matching_job() {
+  auto logger{get_default_logger()};
+  logger->warn("A matching job is starting.");
+  run_linkage_job();
 }
 
 void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {

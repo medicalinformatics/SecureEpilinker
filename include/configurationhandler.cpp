@@ -84,11 +84,14 @@ ServerConfig ConfigurationHandler::get_server_config() const {
 }
 
 EpilinkConfig make_epilink_config(shared_ptr<const LocalConfiguration> local_config,
-                                    shared_ptr<const AlgorithmConfig> algo_config){
+                                    shared_ptr<const AlgorithmConfig> algo_config,
+                                    bool matching_mode){
 return {local_config->get_fields(),
         local_config->get_exchange_groups(),
         algo_config->threshold_match,
-        algo_config->threshold_non_match };
+        algo_config->threshold_non_match,
+        matching_mode};
+}
 }
 }  // namespace sel
 

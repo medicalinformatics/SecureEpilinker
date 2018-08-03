@@ -48,8 +48,9 @@ LocalServer::LocalServer(ClientId client_id,
           {m_config_handler->get_local_config()->get_fields(),
            m_config_handler->get_local_config()->get_exchange_groups(),
            m_config_handler->get_algorithm_config()->threshold_match,
-           m_config_handler->get_algorithm_config()->threshold_non_match}) {}
 LocalServer::LocalServer(ClientId client_id,
+           m_config_handler->get_algorithm_config()->threshold_non_match,
+           m_config_handler->get_remote_config(remote_id)->get_matching_mode()}) {}
                          SecureEpilinker::ABYConfig aby_config,
                          EpilinkConfig epi_config,
                          shared_ptr<DataHandler> data_handler,
