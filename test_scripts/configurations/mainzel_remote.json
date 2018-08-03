@@ -1,0 +1,18 @@
+{
+  "connectionProfile": {
+    "authentication": {
+      "authType": "apiKey",
+      "sharedKey": "einKey"
+    },
+    "idType": "lid",
+    "url": "192.168.0.101:8081"
+  },
+  "linkageService": {
+    "authentication": {
+      "authType": "apiKey",
+      "sharedKey": "einKey"
+    },
+    "idType": "lid",
+    "url": "192.168.0.101:8081"
+  }
+}
