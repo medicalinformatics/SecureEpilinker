@@ -40,9 +40,9 @@ bool check_exchange_group(const IndexSet&,
 
 SessionResponse valid_temp_link_json_handler(
     const nlohmann::json&,
-    const ClientId&,
     const std::shared_ptr<ConfigurationHandler>&,
     const std::shared_ptr<ServerHandler>&,
+    const RemoteId& remote_id,
     const std::shared_ptr<ConnectionHandler>&);
 
 SessionResponse valid_init_local_json_handler(

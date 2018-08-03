@@ -35,21 +35,21 @@ struct ServerData;
 class LocalServer {
  public:
   LocalServer() = default;
-  LocalServer(ClientId,
+  LocalServer(RemoteId,
               std::string,
-              uint16_t,
+              Port,
               std::shared_ptr<DataHandler>,
               std::shared_ptr<ConfigurationHandler>);
-  LocalServer(ClientId,
+  LocalServer(RemoteId,
               SecureEpilinker::ABYConfig,
               EpilinkConfig,
               std::shared_ptr<DataHandler>,
               std::shared_ptr<ConfigurationHandler>);
-  ClientId get_id() const;
+  RemoteId get_id() const;
   SecureEpilinker::Result run_server();
   SecureEpilinker::Result launch_comparison(std::shared_ptr<const ServerData>);
   bool compare_configuration(const nlohmann::json&) const;
-  uint16_t get_port() const;
+  Port get_port() const;
   std::string get_ip() const;
 
 
@@ -57,9 +57,9 @@ class LocalServer {
   std::shared_ptr<DataHandler> get_data_handler() const {return m_data_handler;}
 
  private:
-  ClientId m_client_id;
+  RemoteId m_remote_id;
   std::string m_client_ip;
-  uint16_t m_client_port;
+  Port m_client_port;
   std::shared_ptr<const ServerData> m_data;
   std::shared_ptr<DataHandler> m_data_handler;
   std::shared_ptr<ConfigurationHandler> m_config_handler;

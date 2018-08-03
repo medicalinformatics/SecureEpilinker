@@ -41,19 +41,19 @@ class ServerHandler {
   public:
     ServerHandler(std::shared_ptr<ConfigurationHandler>, std::shared_ptr<DataHandler>);
     void insert_client(RemoteId);
-    void insert_server(ClientId, RemoteAddress);
+    void insert_server(RemoteId, RemoteAddress);
     void add_linkage_job(const RemoteId&, std::shared_ptr<LinkageJob>&&);
     std::shared_ptr<const LinkageJob> get_linkage_job(const JobId&) const;
-    std::shared_ptr<LocalServer> get_local_server(const ClientId&) const;
-    uint16_t get_server_port(const ClientId&) const;
+    std::shared_ptr<LocalServer> get_local_server(const RemoteId&) const;
+    Port get_server_port(const RemoteId&) const;
     std::shared_ptr<SecureEpilinker> get_epilink_client(const RemoteId&);
-    void run_server(ClientId, std::shared_ptr<const ServerData>);
+    void run_server(RemoteId, std::shared_ptr<const ServerData>);
     std::shared_ptr<DataHandler> get_data_handler() {return m_data_handler;}
   private:
     std::map<JobId, RemoteId> m_job_remote_mapping;
     std::map<RemoteId, std::shared_ptr<SecureEpilinker>> m_aby_clients;
     std::map<RemoteId, std::map<JobId, std::shared_ptr<LinkageJob>> > m_client_jobs;
-    std::map<ClientId, std::shared_ptr<LocalServer>> m_server;
+    std::map<RemoteId, std::shared_ptr<LocalServer>> m_server;
     std::shared_ptr<ConfigurationHandler> m_config_handler;
     std::shared_ptr<DataHandler> m_data_handler;
     std::shared_ptr<spdlog::logger> m_logger;

@@ -1,5 +1,5 @@
 /**
-\file    localserver.h
+\file    localserver.cpp
 \author  Tobias Kussel <kussel@cbs.tu-darmstadt.de>
 \copyright SEL - Secure EpiLinker
     Copyright (C) 2018 Computational Biology & Simulation Group TU-Darmstadt
@@ -19,6 +19,7 @@
 #include "localserver.h"
 #include <string>
 #include "configurationhandler.h"
+#include "remoteconfiguration.h"
 #include "datahandler.h"
 #include "fmt/format.h"
 #include "localconfiguration.h"
@@ -31,12 +32,12 @@
 using namespace std;
 namespace sel {
 
-LocalServer::LocalServer(ClientId client_id,
+LocalServer::LocalServer(RemoteId remote_id,
                          std::string client_ip,
-                         uint16_t client_port,
+                         Port client_port,
                          shared_ptr<DataHandler> data_handler,
                          shared_ptr<ConfigurationHandler> config_handler)
-    : m_client_id(move(client_id)),
+    : m_remote_id(move(remote_id)),
       m_client_ip(move(client_ip)),
       m_client_port(client_port),
       m_data_handler(move(data_handler)),
@@ -48,22 +49,22 @@ LocalServer::LocalServer(ClientId client_id,
           {m_config_handler->get_local_config()->get_fields(),
            m_config_handler->get_local_config()->get_exchange_groups(),
            m_config_handler->get_algorithm_config()->threshold_match,
-LocalServer::LocalServer(ClientId client_id,
            m_config_handler->get_algorithm_config()->threshold_non_match,
            m_config_handler->get_remote_config(remote_id)->get_matching_mode()}) {}
+LocalServer::LocalServer(RemoteId remote_id,
                          SecureEpilinker::ABYConfig aby_config,
                          EpilinkConfig epi_config,
                          shared_ptr<DataHandler> data_handler,
                          shared_ptr<ConfigurationHandler> config_handler)
-    : m_client_id(move(client_id)),
+    : m_remote_id(move(remote_id)),
       m_client_ip(aby_config.remote_host),
       m_client_port(aby_config.port),
       m_data_handler(move(data_handler)),
       m_config_handler(move(config_handler)),
       m_aby_server( aby_config, epi_config) {}
 
-ClientId LocalServer::get_id() const {
-  return m_client_id;
+RemoteId LocalServer::get_id() const {
+  return m_remote_id;
 }
 
 SecureEpilinker::Result LocalServer::run_server() {
@@ -88,7 +89,8 @@ SecureEpilinker::Result LocalServer::launch_comparison(
   m_data = move(data);
   return run_server();
 }
-uint16_t LocalServer::get_port() const {
+
+Port LocalServer::get_port() const {
   return m_client_port;
 }
 
