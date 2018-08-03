@@ -70,6 +70,11 @@ shared_ptr<RemoteConfiguration> ConfigurationHandler::get_remote_config(
   }
 }
 
+bool ConfigurationHandler::remote_exists(const RemoteId& remote_id) {
+  lock_guard<mutex> lock(m_remote_mutex);
+  return m_remote_configs.find(remote_id) != m_remote_configs.end();
+}
+
 size_t ConfigurationHandler::get_remote_count() const {
   lock_guard<mutex> lock(m_remote_mutex);
   return m_remote_configs.size();
