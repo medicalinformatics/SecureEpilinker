@@ -39,8 +39,12 @@ ServerHandler::ServerHandler(
 
 void ServerHandler::insert_client(RemoteId id) {
   auto local_config{m_config_handler->get_local_config()};
+  auto remote_config{m_config_handler->get_remote_config(id)};
   auto epilink_config{make_epilink_config(
-      local_config, m_config_handler->get_algorithm_config())};
+      local_config, m_config_handler->get_algorithm_config(), remote_config->get_matching_mode())};
+  if(remote_config->get_matching_mode()){
+    m_logger->warn("Client created with matching mode enanabled!");
+  }
   //epilink_config.set_precisions(6,11);
   m_logger->debug("Client Precision: Dice {},\tWeight {}", epilink_config.dice_prec, epilink_config.weight_prec);
   auto aby_info{m_config_handler->get_server_config()};
@@ -54,8 +58,12 @@ void ServerHandler::insert_client(RemoteId id) {
 
 void ServerHandler::insert_server(ClientId id, RemoteAddress remote_address) {
   auto local_config{m_config_handler->get_local_config()};
+  auto remote_config{m_config_handler->get_remote_config(id)};
   auto epilink_config{make_epilink_config(
-      local_config, m_config_handler->get_algorithm_config())};
+      local_config, m_config_handler->get_algorithm_config(), remote_config->get_matching_mode())};
+  if(remote_config->get_matching_mode()){
+    m_logger->warn("Server created with matching mode enanabled!");
+  }
   //epilink_config.set_precisions(6,11);
   m_logger->debug("Server Precision: Dice {},\tWeight {}", epilink_config.dice_prec, epilink_config.weight_prec);
   auto aby_info{m_config_handler->get_server_config()};

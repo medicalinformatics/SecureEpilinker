@@ -60,7 +60,7 @@ class ConfigurationHandler {
 };
 
 EpilinkConfig make_epilink_config(std::shared_ptr<const LocalConfiguration>,
-                                    std::shared_ptr<const AlgorithmConfig>);
+                                    std::shared_ptr<const AlgorithmConfig>, bool);
 }  // namespace sel
 
 #endif /* end of include guard: SEL_CONFIGURATIONHANDLER_H */
