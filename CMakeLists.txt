@@ -29,6 +29,7 @@ set(EPIRESTSRC
       include/configurationhandler.cpp
       include/databasefetcher.cpp
       include/datahandler.cpp
+      include/headermethodhandler.cpp
       include/jsonhandlerfunctions.cpp
       include/resttypes.cpp
       include/seltypes.cpp
@@ -53,6 +54,7 @@ set(EPIRESTSRC
       include/configurationhandler.h
       include/databasefetcher.h
       include/datahandler.h
+      include/headermethodhandler.h
       include/jsonhandlerfunctions.h
       include/resttypes.h
       include/restresponses.hpp
