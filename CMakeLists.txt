@@ -64,8 +64,8 @@ set(EPIRESTSRC
       include/monitormethodhandler.h
       include/tempselmethodhandler.h)
 
-set(SELABYSOURCES "include/util.cpp" "include/util.cpp" "include/aby/Share.cpp"
-  "include/aby/gadgets.cpp" "include/aby/util.cpp")
+set(SELABYSOURCES "include/math.cpp" "include/util.cpp"
+  "include/aby/Share.cpp" "include/aby/gadgets.cpp" "include/aby/util.cpp")
 
 set(SELSOURCES ${SELABYSOURCES}
   "include/epilink_input.cpp" "include/secure_epilinker.cpp"
