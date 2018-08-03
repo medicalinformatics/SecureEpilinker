@@ -32,11 +32,12 @@ namespace sel {
 EpilinkConfig::EpilinkConfig(
       std::map<FieldName, ML_Field> fields_,
       std::vector<IndexSet> exchange_groups_,
-      double threshold, double tthreshold) :
+      double threshold, double tthreshold, size_t bitlen) :
   fields {fields_},
   exchange_groups {exchange_groups_},
   threshold {threshold},
   tthreshold {tthreshold},
+  bitlen {bitlen},
   nfields {fields.size()},
   max_weight{sel::max_element(fields, [](auto f){return f.second.weight;})}
   {
@@ -53,22 +54,20 @@ EpilinkConfig::EpilinkConfig(
     weight and dice coefficient d. The denominator w is itself potentially a
     sum of weights. So in order for the CircUnit to not overflow for a product
     of the form sum_n(d * w) * sum_n(w), it has to hold that
-    ceil_log2(n^2) + dice_prec + 2*weight_prec <= BitLen = sizeof(CircUnit).
-    dice_prec = (BitLen - ceil_log2(nfields))/2; // TODO better this one and
-                                                 //custom integer division
-    weight_prec = ceil_divide((BitLen - ceil_log2(nfields)), 2); // TODO ^^^
+    ceil_log2(n^2) + dice_prec + 2*weight_prec <= bitlen = sizeof(CircUnit).
+    TODO: Currently we set the precisions to have max prec for dice such that it
+    still fits the 16-bit int-div... Ideal precision can be seen in set_ideal_precision()
     */
     dice_prec = (16 - 1 - hw_size(max_bm_size)); // -1 because of factor 2
-    weight_prec = (BitLen - ceil_log2(nfields*nfields) - dice_prec)/2;
+    weight_prec = (bitlen - ceil_log2(nfields*nfields) - dice_prec)/2;
     // Division by 2 for weight_prec initialization could have wasted one bit
     // which we cannot add to dice precision because it would overflow the
     // 16-bit integer division input... Need better int-div
-    //if (dice_prec + 2*weight_prec + ceil_log2(nfields*nfields) < BitLen) ++dice_prec;
-    assert (dice_prec + 2*weight_prec + ceil_log2(nfields*nfields) <= BitLen);
+    assert (dice_prec + 2*weight_prec + ceil_log2(nfields*nfields) <= bitlen);
 
 #ifdef DEBUG_SEL_INPUT
-    print("BitLen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
-        BitLen, nfields, dice_prec, weight_prec);
+    print("bitlen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
+        bitlen, nfields, dice_prec, weight_prec);
 #endif
 
     // Sanity checks of exchange groups
@@ -78,21 +77,21 @@ EpilinkConfig::EpilinkConfig(
       for (const auto& fname : group) {
         // Check if exchange groups are disjoint
         auto [_, is_new] = xgunion.insert(fname);
-        if (!is_new) throw logic_error(fmt::format(
+        if (!is_new) throw invalid_argument(fmt::format(
             "Exchange groups must be distinct! Field {} specified multiple times.", fname));
 
         const auto& f = fields.at(fname);
 
         // Check same comparators
         if (f.comparator != f0.comparator) {
-          throw logic_error{fmt::format(
+          throw invalid_argument{fmt::format(
               "Cannot compare field '{}' of type {} with field '{}' of type {}",
               f.name, f.comparator, f0.name, f0.comparator)};
         }
 
         // Check same bitsize
         if (f.bitsize != f0.bitsize) {
-          throw runtime_error{fmt::format(
+          throw invalid_argument{fmt::format(
               "Cannot compare field '{}' of bitsize {} with field '{}' of bitsize {}",
               f.name, f.bitsize, f0.name, f0.bitsize)};
         }
@@ -101,12 +100,32 @@ EpilinkConfig::EpilinkConfig(
   }
 
 void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
-  if (dice_prec_ + 2*weight_prec_ + ceil_log2(nfields*nfields) > BitLen) {
-    throw runtime_error("Given dice and weight precision would potentially let the CircUnit overflow!");
+#ifdef DEBUG_SEL_INPUT
+  print("New dice precision: {}; weight precision: {}\n",
+      dice_prec_, weight_prec_);
+#endif
+  if (dice_prec_ + 2*weight_prec_ + ceil_log2(nfields*nfields) > bitlen) {
+    throw invalid_argument("Given dice and weight precision would potentially "
+        "cause overflows in current bitlen!");
   }
 
   dice_prec = dice_prec_;
   weight_prec = weight_prec_;
+}
+
+void EpilinkConfig::set_ideal_precision() {
+  size_t bits_av = bitlen - ceil_log2(nfields*nfields);
+  size_t dice_prec = (bits_av)/3;
+  size_t weight_prec = dice_prec;
+
+  // Distribute wasted bits
+  if (bits_av % 3 == 1) {
+    ++dice_prec;
+  } else if (bits_av % 3 == 2) {
+    ++weight_prec;
+  }
+
+  set_precisions(dice_prec, weight_prec);
 }
 
 EpilinkServerInput::EpilinkServerInput(

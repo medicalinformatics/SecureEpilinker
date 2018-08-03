@@ -51,6 +51,9 @@ struct EpilinkConfig {
   const double threshold; // threshold for definitive match
   const double tthreshold; // threshold for tentative match
 
+  // bitlength to use for precision calculation and validation
+  const size_t bitlen = BitLen;
+
   // calculated fields for faster access
   const size_t nfields; // total number of field
   size_t dice_prec, weight_prec; // bit precisions
@@ -59,15 +62,25 @@ struct EpilinkConfig {
   EpilinkConfig(
       std::map<FieldName, ML_Field> fields,
       std::vector<IndexSet> exchange_groups,
-      double threshold, double tthreshold
+      double threshold, double tthreshold,
+      size_t bitlen = BitLen
   );
   ~EpilinkConfig() = default;
 
   /**
    * Manually set bit precisions for dice-coefficients and weight fields
-   * Sum of both must be smaller than (BitLen - ceil_log2(nfields))
+   * dice_prec + 2*weight_prec must be smaller than (bitlen - ceil_log2(nfields))
    */
   void set_precisions(size_t dice_prec_, size_t weight_prec_);
+
+  /**
+   * Set ideal precisions, equally distributing available bits to weight and
+   * dice precision such that 2*wp + dp = bitlen - ceil_log2(n*n).
+   * TODO: As of now, this cannot be used with the ABY circuit yet because we
+   * use a fixed 16-bit integer division. The constructor sets the precisions
+   * accordingly.
+   */
+  void set_ideal_precision();
 };
 
 struct EpilinkClientInput {
