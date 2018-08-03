@@ -34,6 +34,7 @@
 #include "remoteconfiguration.h"
 #include "restbed"
 #include "resttypes.h"
+#include "restresponses.hpp"
 #include "serverhandler.h"
 #include "util.h"
 #include "valijson/validation_results.hpp"
@@ -231,15 +232,10 @@ SessionResponse valid_linkrecord_json_handler(
         server_handler->add_linkage_job(remote_id, move(job));
       } catch (const exception& e) {
         logger->error("Error in job creation: {}", e.what());
-        return {restbed::BAD_REQUEST,
-                e.what(),
-                {{"Content-Length", to_string(string(e.what()).length())},
-                 {"Connection", "Close"}}};
+        return responses::status_error(restbed::BAD_REQUEST,e.what());
       }
     } else {
-      return {restbed::UNAUTHORIZED,
-              "No connection initialized",
-              {{"Content-Length", "25"}, {"Connection", "Close"}}};
+      return responses::not_initialized;
     }
     return {restbed::ACCEPTED,
             "Job Queued",
@@ -247,10 +243,7 @@ SessionResponse valid_linkrecord_json_handler(
              {"Connection", "Close"},
              {"Location", "/jobs/" + job_id}}};
   } catch (const runtime_error& e) {
-    return {restbed::INTERNAL_SERVER_ERROR,
-            e.what(),
-            {{"Content-Length", to_string(string(e.what()).length())},
-             {"Connection", "Close"}}};
+    return responses::status_error(restbed::INTERNAL_SERVER_ERROR, e.what());
   }
 }
 
@@ -371,12 +364,10 @@ SessionResponse valid_init_local_json_handler(
       algo->threshold_non_match =
           j.at("algorithm").at("threshold_non_match").get<double>();
       config_handler->set_algorithm_config(move(algo));
-      return {restbed::OK, "", {{"Connection", "Close"}}};
-    } catch (const runtime_error& e) {
-      return {restbed::INTERNAL_SERVER_ERROR,
-              e.what(),
-              {{"Content-Length", to_string(string(e.what()).length())}}};
     }
+    return {restbed::OK, "", {{"Connection", "Close"}}};
+  } catch (const runtime_error& e) {
+    return responses::status_error(restbed::INTERNAL_SERVER_ERROR, e.what());
 }
 
 SessionResponse invalid_json_handler(valijson::ValidationResults& results) {
@@ -396,9 +387,6 @@ SessionResponse invalid_json_handler(valijson::ValidationResults& results) {
 
     ++err_num;
   }
-  return {
-      restbed::BAD_REQUEST,
-      err,
-      {{"Content-Length", to_string(err.length())}, {"Connection", "Close"}}};
+  return responses::status_error( restbed::BAD_REQUEST, err);
 }
 }  // namespace sel
