@@ -46,6 +46,7 @@ struct ABYTester {
     cout << "Testing ABY with role: " << get_role_name(role) <<
      " with sharing: " << get_sharing_name(sharing) << " nvals: " << nvals <<
      " bitlen: " << bitlen << endl;
+    party.InitOnline();
   }
 
   // Dynamic converters, dependent on main bool sharing
@@ -122,16 +123,16 @@ struct ABYTester {
   }
 
   void test_deterministic_aby_chaos() {
-    size_t abits = 1, bbits = 1;
-    vector<uint8_t> adata(bitbytes(abits), 0xff), bdata(bitbytes(bbits), 0);
-    BoolShare ain(bc, adata.data(), abits, SERVER, nvals);
+    size_t bbits = 8;
+    vector<uint8_t> bdata(bitbytes(bbits) * nvals, 0);
+    iota(bdata.begin(), bdata.end(), 0);
     BoolShare bin(bc, bdata.data(), bbits, CLIENT, nvals);
+    auto a_bin = to_arith(bin);
     auto band = (bin & bin);
-    auto a_ain = to_arith(ain);
     auto a_band = to_arith(band);
 
-    //print_share(band, "b & b");
-    //print_share(a_ain, "arith(a)");
+    print_share(band, "b & b");
+    print_share(a_bin, "arith(b)");
     print_share(a_band, "arith(b & b)");
 
     party.ExecCircuit();
