@@ -75,8 +75,9 @@ nlohmann::json read_json_from_disk(
     ifstream in(json_path);
     try {
       in >> content;
-    } catch (const std::ios_base::failure&  e) {
-      logger->error("Reading of file {} failed: {}",json_path.string(), e.what());
+    } catch (const std::ios_base::failure& e) {
+      logger->error("Reading of file {} failed: {}", json_path.string(),
+                    e.what());
       exit(1);
     }
     return content;
@@ -174,7 +175,8 @@ SessionResponse valid_linkrecord_json_handler(
             switch (field_config.type) {
               case FieldType::BITMASK: {
                 if (!(f->is_string())) {
-                  throw runtime_error("Invalid field type in field "s+f.key());
+                  throw runtime_error("Invalid field type in field "s +
+                                      f.key());
                 }
                 const auto b64string{f->get<string>()};
                 if (trim_copy(b64string).empty()) {
@@ -195,21 +197,24 @@ SessionResponse valid_linkrecord_json_handler(
               }
               case FieldType::INTEGER: {
                 if (!(f->is_number_integer())) {
-                  throw runtime_error("Invalid field type in field "s+f.key());
+                  throw runtime_error("Invalid field type in field "s +
+                                      f.key());
                 }
                 tempfield = f->get<int>();
                 break;
               }
               case FieldType::NUMBER: {
                 if (!(f->is_number())) {
-                  throw runtime_error("Invalid field type in field "s+f.key());
+                  throw runtime_error("Invalid field type in field "s +
+                                      f.key());
                 }
                 tempfield = f->get<double>();
                 break;
               }
               case FieldType::STRING: {
                 if (!(f->is_string())) {
-                  throw runtime_error("Invalid field type in field "s+f.key());
+                  throw runtime_error("Invalid field type in field "s +
+                                      f.key());
                 }
                 auto content{f->get<string>()};
                 if (trim_copy(content).empty()) {
@@ -219,7 +224,9 @@ SessionResponse valid_linkrecord_json_handler(
                 }
                 break;
               }
-              default: { throw runtime_error("Invalid field type in field "s+f.key()); }
+              default: {
+                throw runtime_error("Invalid field type in field "s + f.key());
+              }
             }       // Switch
           } else {  // field type is null
             tempfield = nullptr;
@@ -308,48 +315,47 @@ SessionResponse valid_init_local_json_handler(
     const shared_ptr<ConnectionHandler>&) {
   auto logger{get_default_logger()};
   logger->trace("Payload: {}", j.dump(2));
-    auto local_config = make_shared<LocalConfiguration>();
-    logger->info("Creating local configuration\n");
-    auto algo{make_shared<AlgorithmConfig>()};
-    try {
-      // Get local Authentication
-      auto l_auth{get_auth_object(j.at("localAuthentication"))};
-      local_config->set_local_auth(move(l_auth));
-      // Get Dataservice
-      auto url{j.at("dataService").at("url").get<string>()};
-      local_config->set_data_service(move(url));
-      // Get Field Descriptions
-      IndexSet fieldnames;
-      for (const auto& f : j.at("algorithm").at("fields")) {
-        ML_Field tempfield(
-            f.at("name").get<string>(), f.at("frequency").get<double>(),
-            f.at("errorRate").get<double>(), f.at("comparator").get<string>(),
-            f.at("fieldType").get<string>(), f.at("bitlength").get<size_t>());
-        local_config->add_field(move(tempfield));
-        fieldnames.emplace(f.at("name").get<string>());
+  auto local_config = make_shared<LocalConfiguration>();
+  logger->info("Creating local configuration\n");
+  auto algo{make_shared<AlgorithmConfig>()};
+  try {
     // Get local ID
     local_config->set_local_id(j.at("localId"));
-      }
-      for (const auto& eg : j.at("algorithm").at("exchangeGroups")) {
-        IndexSet egroup;
-        for (const auto& f : eg) {
-          egroup.emplace(f.get<string>());
-        }
-        if (check_exchange_group(fieldnames, egroup)) {
-          local_config->add_exchange_group(egroup);
-        } else {
-          throw runtime_error("Invalid Exchange Group! Field doesn't exist!");
-        }
-      }
-      config_handler->set_local_config(move(local_config));
-      // Get Algorithm Config
-      algo->type = str_to_atype(j.at("algorithm").at("algoType").get<string>());
-      algo->threshold_match =
-          j.at("algorithm").at("threshold_match").get<double>();
-      algo->threshold_non_match =
-          j.at("algorithm").at("threshold_non_match").get<double>();
-      config_handler->set_algorithm_config(move(algo));
+    // Get local Authentication
+    auto l_auth{get_auth_object(j.at("localAuthentication"))};
+    local_config->set_local_auth(move(l_auth));
+    // Get Dataservice
+    auto url{j.at("dataService").at("url").get<string>()};
+    local_config->set_data_service(move(url));
+    // Get Field Descriptions
+    IndexSet fieldnames;
+    for (const auto& f : j.at("algorithm").at("fields")) {
+      ML_Field tempfield(
+          f.at("name").get<string>(), f.at("frequency").get<double>(),
+          f.at("errorRate").get<double>(), f.at("comparator").get<string>(),
+          f.at("fieldType").get<string>(), f.at("bitlength").get<size_t>());
+      local_config->add_field(move(tempfield));
+      fieldnames.emplace(f.at("name").get<string>());
     }
+    for (const auto& eg : j.at("algorithm").at("exchangeGroups")) {
+      IndexSet egroup;
+      for (const auto& f : eg) {
+        egroup.emplace(f.get<string>());
+      }
+      if (check_exchange_group(fieldnames, egroup)) {
+        local_config->add_exchange_group(egroup);
+      } else {
+        throw runtime_error("Invalid Exchange Group! Field doesn't exist!");
+      }
+    }
+    config_handler->set_local_config(move(local_config));
+    // Get Algorithm Config
+    algo->type = str_to_atype(j.at("algorithm").at("algoType").get<string>());
+    algo->threshold_match =
+        j.at("algorithm").at("threshold_match").get<double>();
+    algo->threshold_non_match =
+        j.at("algorithm").at("threshold_non_match").get<double>();
+    config_handler->set_algorithm_config(move(algo));
     return {restbed::OK, "", {{"Connection", "Close"}}};
   } catch (const runtime_error& e) {
     return responses::status_error(restbed::INTERNAL_SERVER_ERROR, e.what());

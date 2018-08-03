@@ -19,8 +19,8 @@
 #include "configurationhandler.h"
 #include <memory>
 #include <mutex>
-#include "connectionhandler.h"
 #include "localconfiguration.h"
+#include "connectionhandler.h"
 #include "remoteconfiguration.h"
 #include "resttypes.h"
 #include "logger.h"

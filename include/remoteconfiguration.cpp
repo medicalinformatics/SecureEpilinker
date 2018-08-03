@@ -20,9 +20,9 @@
 #include <mutex>
 #include "apikeyconfig.hpp"
 #include "logger.h"
+#include "resttypes.h"
 #include "seltypes.h"
 #include "util.h"
-#include "resttypes.h"
 
 #include "connectionhandler.h"
 #include "serverhandler.h"
