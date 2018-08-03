@@ -110,6 +110,8 @@ SessionResponse valid_temp_link_json_handler(
   logger->info("Recieved Linkage Request");
   // TODO(TK) Authorization
   common_port = server_handler->get_server_port(client_id);
+  if (config_handler->remote_exists(remote_id)) {
+      remote_config->mark_mutually_initialized();
 
   if (!(server_handler->get_local_server(client_id)->compare_configuration(j))){
     response.return_code = restbed::FORBIDDEN;
@@ -119,6 +121,9 @@ SessionResponse valid_temp_link_json_handler(
                         {"Connection", "Close"}};
     logger->debug("Non matching configs!");
     return response;
+  } else {
+    logger->info("Remote does not exist. Wait for pairing");
+    return responses::not_initialized;
   }
   logger->debug("Matching configs!");
   auto data_handler{
@@ -158,13 +163,9 @@ SessionResponse valid_linkrecord_json_handler(
       job_id = job->get_id();
       logger->info("Created Job on Path: {}", job_id);
       try {
-        CallbackConfig callback;
-        callback.url = j.at("callback").at("url").get<string>();
-        callback.idType =
-            j.at("callback").at("patientId").at("idType").get<string>();
-        callback.idString =
-            j.at("callback").at("patientId").at("idString").get<string>();
-        job->set_callback(move(callback));
+        job->set_callback(j.at("callback")
+                              .at("url")
+                              .get<string>());  // no move to use copy elision
 
         for (auto f = j.at("fields").begin(); f != j.at("fields").end(); ++f) {
           const auto& field_config = local_config->get_field(f.key());

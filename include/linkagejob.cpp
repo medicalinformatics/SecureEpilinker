@@ -58,7 +58,7 @@ LinkageJob::LinkageJob(shared_ptr<const LocalConfiguration> l_conf,
       m_remote_config(move(r_conf)),
       m_parent(move(server_handler)) {}
 
-void LinkageJob::set_callback(CallbackConfig cc) {
+void LinkageJob::set_callback(string&& cc) {
   m_callback = move(cc);
 }
 
@@ -228,21 +228,17 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
     // get nvals from response header
     nvals.set_value(stoull(get_headers(stream, "Record-Number").front()));
   } catch (const exception& e) {
-    logger->error("Error performing callback: {}", e.what());
+    logger->error("Error performing initMPC call: {}", e.what());
   }
 }
 
 bool LinkageJob::perform_callback(const nlohmann::json& new_id) const {
   auto logger{get_default_logger()};
   curlpp::Easy curl_request;
-  nlohmann::json data_json{ {"patientId", {
-                          {"idType", m_callback.idType},
-                          {"idString", m_callback.idString}
-                        }},
-                        {"newId", {
+  nlohmann::json data_json{"newId", {
                           {"idType", new_id["idType"].get<string>()},
                           {"idString", new_id["idString"].get<string>()} }
-                        }};
+                        };
   auto data{data_json.dump()};
   promise<stringstream> response_promise;
   future<stringstream> response_stream{response_promise.get_future()};
@@ -254,7 +250,7 @@ bool LinkageJob::perform_callback(const nlohmann::json& new_id) const {
       "Content-Type: application/json",
       "Content-Length: "s+to_string(data.length())};
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
-  curl_request.setOpt(new curlpp::Options::Url(m_callback.url));
+  curl_request.setOpt(new curlpp::Options::Url(m_callback));
   curl_request.setOpt(new cURLpp::Options::Verbose(false));
   curl_request.setOpt(new curlpp::Options::Post(true));
   curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
@@ -262,7 +258,7 @@ bool LinkageJob::perform_callback(const nlohmann::json& new_id) const {
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
   curl_request.setOpt(new curlpp::options::Header(1));
-  logger->debug("Sending callback to: {}\n", m_callback.url);
+  logger->debug("Sending callback to: {}\n", m_callback);
   send_curl(curl_request, move(response_promise));
   response_stream.wait();
   auto stream = response_stream.get();
