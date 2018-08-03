@@ -26,6 +26,14 @@ namespace sel {
 
 /******************** BoolShare ********************/
 
+BoolShare operator>>(const BoolShare& me, uint32_t shift) {
+  if (shift == 0) return me;
+  auto wires = me.get()->get_wires();
+  wires.erase(wires.begin(), wires.begin()+shift);
+
+  return BoolShare{me.get_circuit(), wires};
+}
+
 BoolShare apply_file_binary(const BoolShare& a, const BoolShare& b,
     uint32_t a_bits, uint32_t b_bits, const string& fn) {
   assert (a.get_nvals() == b.get_nvals());
@@ -46,7 +54,7 @@ BoolShare apply_file_binary(const BoolShare& a, const BoolShare& b,
 
 vector<BoolShare> BoolShare::split(uint32_t new_nval) const {
   const size_t bitlen{get_bitlen()}, nvals{get_nvals()},
-      numshares{ceil_divide(nvals, new_nval)};
+      numshares{ceil_div<uint32_t>(nvals, new_nval)};
   vector<vector<uint32_t>> split_wires;
   split_wires.reserve(bitlen);
   vector<uint32_t> new_nvals(numshares, new_nval);
@@ -72,7 +80,7 @@ vector<BoolShare> BoolShare::split(uint32_t new_nval) const {
 }
 
 vector<ArithShare> ArithShare::split(uint32_t new_nval) const {
-  const size_t nvals{get_nvals()}, numshares{ceil_divide(nvals, new_nval)};
+  const size_t nvals{get_nvals()}, numshares{ceil_div<uint32_t>(nvals, new_nval)};
   vector<uint32_t> new_nvals(numshares, new_nval);
   if (nvals%new_nval) new_nvals.back() = nvals%new_nval;
 
