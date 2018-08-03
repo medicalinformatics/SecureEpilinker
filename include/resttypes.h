@@ -55,12 +55,6 @@ struct ConnectionConfig {
   std::unique_ptr<AuthenticationConfig> authentication;
 };
 
-struct CallbackConfig {
-  std::string url;
-  std::string idType;
-  std::string idString;
-};
-
 struct AlgorithmConfig {
   AlgorithmType type;
   double threshold_match;
