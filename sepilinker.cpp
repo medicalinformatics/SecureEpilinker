@@ -117,6 +117,7 @@ int main(int argc, char* argv[]) {
   connections->set_config_handler(configurations);
   data->set_config_handler(configurations);
   configurations->set_server_config(make_server_config_from_json(server_config));
+  connections->populate_aby_ports();
 
   // Create JSON Validator
   auto restconf{configurations->get_server_config()};
