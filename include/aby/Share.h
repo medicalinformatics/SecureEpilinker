@@ -242,13 +242,26 @@ class BoolShare: public Share {
     return me;
   }
 
+  friend BoolShare operator>>(const BoolShare& me, uint32_t shift);
+
   BoolShare mux(const BoolShare& sh_true, const BoolShare& sh_false) const {
     return BoolShare{bcirc, bcirc->PutMUXGate(sh_true.sh.get(), sh_false.sh.get(), sh.get())};
   }
 
-  // Unary functions
+  /**
+   * Invert bits of share
+   */
   BoolShare operator~() const {
     return BoolShare{bcirc, bcirc->PutINVGate(sh.get())};
+  }
+
+  /**
+   * Resize down to the given bitlength, discarding most significant bits
+   */
+  BoolShare& set_bitlength(uint32_t bits) {
+    assert(bits <= sh->get_bitlength()); // Otherwise we have uninitialized gates
+    sh->set_bitlength(bits);
+    return *this;
   }
 
   /**
@@ -260,7 +273,10 @@ class BoolShare: public Share {
     return BoolShare{s.bcirc, s.bcirc->PutHammingWeightGate(s.get())};
   }
 
-  // Binary functions
+  /**
+   * Run circuit specification from given file path and inputs.
+   * Only the specified bits will be used.
+   */
   friend BoolShare apply_file_binary(const BoolShare& a, const BoolShare& b,
       uint32_t a_bits, uint32_t b_bits, const std::string& fn);
 
