@@ -42,7 +42,7 @@ struct Input {
 // Result type
 template<typename T>
 struct Result {
-  CircUnit index;
+  T index;
   bool match;
   bool tmatch;
   T sum_field_weights;
@@ -60,10 +60,15 @@ struct Result {
  *    Performs a high precision calculation using doubles.
  *    This implementation can be used to evaluate the errors introduced by the
  *    integer circuit implementation of EpiLink
+ * There's also the general integer type template calc<T> which can be used with
+ * T = uint{8,16,32,64}_t to compare circuits of different arithmetic precision
+ * Don't forget to then also set bitlen to that type's bitlength when creating
+ * the EpilinkConfig, and possibly adjust precisions with set_precisions().
  */
 Result<CircUnit> calc_integer(const Input& input, const EpilinkConfig& cfg);
 Result<double> calc_exact(const Input& input, const EpilinkConfig& cfg);
 
+template<typename T> Result<T> calc(const Input& input, const EpilinkConfig& cfg);
 
 } /* end of namespace sel::clear_epilink */
 
@@ -82,7 +87,7 @@ struct formatter<sel::clear_epilink::Result<T>> {
         "best index: {}; match(/tent.)? {}/{}\n"
         "sum(field-weights): {" + type_spec + "}; "
         "sum(weights): {" + type_spec + "}; score: {}\n"
-        , r.index, r.match, r.tmatch
+        , (uint64_t)r.index, r.match, r.tmatch
         , r.sum_field_weights, r.sum_weights,
         (((double)r.sum_field_weights)/r.sum_weights)
         );

@@ -18,6 +18,7 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <iostream>
 #include "util.h"
 #include "clear_epilinker.h"
 
@@ -64,15 +65,17 @@ bool operator<(const FieldWeight<T>& left, const FieldWeight<T>& right) {
   if (right.w == 0) return false;
   if (left.w == 0) return true;
 #ifdef DEBUG_SEL_CLEAR
-  if constexpr(is_same_v<T, CircUnit>) {
-    CircUnit a = left.fw * right.w;
-    CircUnit b = right.fw * left.w;
-    uint64_t al = uint64_t(left.fw) * right.w;
-    uint64_t bl = uint64_t(right.fw) * left.w;
-    if (a != al) print("< Overflow left: {:x}*{:x} = {:x} != {:x}\n",
-        left.fw, right.w, a, al);
-    if (b != bl) print("< Overflow right: {:x}*{:x} = {:x} != {:x}\n",
-        right.fw, left.w, b, bl);
+  using uint128_t = unsigned __int128;
+  // Overflow detection if T is less than 128 bits in size
+  if constexpr(is_integral_v<T>) {
+    T a = left.fw * right.w;
+    T b = right.fw * left.w;
+    uint128_t al = uint128_t(left.fw) * right.w;
+    uint128_t bl = uint128_t(right.fw) * left.w;
+    if (a != al) print("< Overflow left: {:x}*{:x} = {:x} != {:x}{:x}\n",
+        left.fw, right.w, a, (uint64_t)(al>>64), (uint64_t)(al));
+    if (b != bl) print("< Overflow right: {:x}*{:x} = {:x} != {:x}{:x}\n",
+        right.fw, left.w, b, (uint64_t)(bl>>64), (uint64_t)(bl));
   }
 #endif
   return left.fw * right.w < right.fw * left.w;
@@ -104,17 +107,28 @@ Input::Input(const EpilinkClientInput& in_client,
 
 template<typename T> constexpr
 T scale(T val, size_t prec) {
-  if constexpr (is_same_v<T, CircUnit>) val <<= prec;
+  if constexpr (is_integral_v<T>) val <<= prec;
   return val;
 }
 
+/**
+ * Dice coefficient of hamming weights
+ * Note that for integral T, we use rounding integer division, that is
+ * (x+(y/2))/y, because x/y always rounds down, which would lead to a bias.
+ */
 template<typename T>
 T dice(const Bitmask& left, const Bitmask& right, size_t prec) {
-  size_t hw_plus = hw(left) + hw(right);
+  T hw_plus = hw(left) + hw(right);
   if (hw_plus == 0) return 0;
 
-  size_t hw_and = hw(bm_and(left, right));
-  return (T)(2 * scale<T>(hw_and, prec)) / (T)(hw_plus);
+  T hw_and = hw(bm_and(left, right));
+  T numerator;
+  if constexpr (is_integral_v<T>) {
+    numerator = (hw_and << (prec+1)) + (hw_plus>>1);
+  } else {
+    numerator = 2 * hw_and;
+  }
+  return numerator / hw_plus;
 }
 
 template<typename T>
@@ -124,13 +138,19 @@ T equality(const Bitmask& left, const Bitmask& right, size_t prec) {
 
 template<typename T>
 bool test_threshold(const FieldWeight<T>& q, const double thr, const size_t prec) {
-  return (T)(thr * scale<T>(1, prec)) * q.w < q.fw;
+  T threshold;
+  if constexpr (is_integral_v<T>) {
+    threshold = llround(thr * (1 << prec));
+  } else {
+    threshold = thr;
+  }
+  return threshold * q.w < q.fw;
 }
 
 template<typename T>
 T scaled_weight(const FieldName& ileft, const FieldName& iright, const EpilinkConfig& cfg) {
   const double _weight = (cfg.fields.at(ileft).weight + cfg.fields.at(iright).weight)/2;
-  if constexpr (is_same_v<T, CircUnit>) {
+  if constexpr (is_integral_v<T>) {
     return rescale_weight(_weight, cfg.weight_prec, cfg.max_weight);
   } else {
     return _weight;
@@ -180,13 +200,15 @@ FieldWeight<T> field_weight(const Input& input, const EpilinkConfig& cfg,
       ftype, ileft, iright, idx, weight, comp, weight*comp);
 #endif
 
-  return {comp * weight, weight};
+  return {(T)(comp * weight), weight};
 }
 
 #ifdef DEBUG_SEL_CLEAR
-template<typename Ref>
+// Integer type printer
+template<typename Ref, typename T,
+  typename enable_if<is_integral_v<T>>::type* = nullptr>
 void print_score(const string& pfx, const Ref& r,
-    const FieldWeight<CircUnit>& score, const size_t prec) {
+    const FieldWeight<T>& score, const size_t prec) {
   print(">>> {} {} score: {:x}/({:x} << {} = {:x}) = {}\n",
       pfx, r, score.fw, score.w, prec, (score.w << prec),
       ((double)score.fw)/(score.w << prec));
@@ -244,7 +266,15 @@ FieldWeight<T> best_group_weight(const Input& input, const EpilinkConfig& cfg,
 
 template<typename T>
 Result<T> calc(const Input& input, const EpilinkConfig& cfg) {
-  // lock inputs during calculation
+  // Check for integral types that cfg.bitlen matches the type's bitlength
+  if constexpr (is_integral_v<T>) {
+    if (cfg.bitlen != sizeof(T) * 8) {
+      print(cerr,
+          "Warning: EpilinkConfig's bitlength {} doesn't match the type's {}. "
+          "You may want to match them.\n", cfg.bitlen, sizeof(T)*8);
+    }
+  }
+
   const size_t nvals = input.nvals;
 
   // Accumulator of individual field_weights
@@ -286,7 +316,7 @@ Result<T> calc(const Input& input, const EpilinkConfig& cfg) {
 
   // 2. Determine best score (index)
   const auto best_score_it = max_element(scores.cbegin(), scores.cend());
-  const CircUnit best_idx = distance(scores.cbegin(), best_score_it);
+  const T best_idx = distance(scores.cbegin(), best_score_it);
   const auto& best_score = *best_score_it;
 
   // 3. Test thresholds
@@ -299,6 +329,12 @@ Result<T> calc(const Input& input, const EpilinkConfig& cfg) {
   return {best_idx, match, tmatch,
     best_score.fw, scale<T>(best_score.w, cfg.dice_prec)};
 }
+
+// calc template instantiations for integral types
+template Result<uint8_t> calc<uint8_t>(const Input& input, const EpilinkConfig& cfg);
+template Result<uint16_t> calc<uint16_t>(const Input& input, const EpilinkConfig& cfg);
+template Result<uint32_t> calc<uint32_t>(const Input& input, const EpilinkConfig& cfg);
+template Result<uint64_t> calc<uint64_t>(const Input& input, const EpilinkConfig& cfg);
 
 Result<CircUnit> calc_integer(const Input& input, const EpilinkConfig& cfg) {
   return calc<CircUnit>(input, cfg);
