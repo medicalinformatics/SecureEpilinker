@@ -68,6 +68,11 @@ EpilinkConfig::EpilinkConfig(
     // 16-bit integer division input... Need better int-div
     assert (dice_prec + 2*weight_prec + ceil_log2(nfields*nfields) <= bitlen);
 
+#ifndef SEL_MATCHING_MODE
+    if (matching_mode) throw invalid_argument(
+        "This SEL is compiled without matching mode (-DSEL_MATCHING_MODE)!");
+#endif
+
 #ifdef DEBUG_SEL_INPUT
     print("bitlen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
         bitlen, nfields, dice_prec, weight_prec);

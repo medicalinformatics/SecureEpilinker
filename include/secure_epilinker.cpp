@@ -217,13 +217,25 @@ public:
 #endif
 
 #ifdef DEBUG_SEL_RESULT
-      //TODO Actually return W = sum of non-empty field weights
+    // If result debugging is enabled, we let all parties learn all fields plus
+    // the individual {field-,}weight-sums.
+    // matching mode flag is ignored - it's basically always on.
     return {out(max_idx[0], ALL), out(match, ALL), out(tmatch, ALL),
       out(sum_field_weights.num, ALL),
       out(sum_field_weights.den, ALL)};
-#else
+#else // !DEBUG_SEL_RESULT - Normal productive mode
+#ifdef SEL_MATCHING_MODE
+    // Only if matching mode is to be compiled in, will the cfg.mathcing_mode
+    // flag have an effect on the result
+    if (cfg.matching_mode) {
+      return {out_shared(max_idx[0]), out(match, ALL), out(tmatch, ALL)};
+    } else {
+      return {out_shared(max_idx[0]), out_shared(match), out_shared(tmatch)};
+    }
+#else // !SEL_MATCHING_MODE - don't compile matching mode, always give shared output
     return {out_shared(max_idx[0]), out_shared(match), out_shared(tmatch)};
-#endif
+#endif // SEL_MATCHING_MODE
+#endif // DEBUG_SEL_RESULT
   }
 
 private:
