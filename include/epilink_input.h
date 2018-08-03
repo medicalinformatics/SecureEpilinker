@@ -51,6 +51,9 @@ struct EpilinkConfig {
   const double threshold; // threshold for definitive match
   const double tthreshold; // threshold for tentative match
 
+  // whether to use matching mode
+  const bool matching_mode = false;
+
   // bitlength to use for precision calculation and validation
   const size_t bitlen = BitLen;
 
@@ -63,6 +66,7 @@ struct EpilinkConfig {
       std::map<FieldName, ML_Field> fields,
       std::vector<IndexSet> exchange_groups,
       double threshold, double tthreshold,
+      bool matching_mode = false,
       size_t bitlen = BitLen
   );
   ~EpilinkConfig() = default;

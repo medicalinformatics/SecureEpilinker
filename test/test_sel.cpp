@@ -321,7 +321,8 @@ int main(int argc, char *argv[])
   print("32Bit ideal Result:\n{}", res_32bit_id);
 
   // Copy config and make it 64 bit
-  EpilinkConfig cfg64{in.cfg.fields, in.cfg.exchange_groups, in.cfg.threshold, in.cfg.tthreshold, 64};
+  EpilinkConfig cfg64{in.cfg.fields, in.cfg.exchange_groups,
+    in.cfg.threshold, in.cfg.tthreshold, false , 64};
   auto res_64bit = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
   print("64bit Result:\n{}", res_64bit);
 
