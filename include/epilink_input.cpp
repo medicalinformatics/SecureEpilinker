@@ -32,11 +32,14 @@ namespace sel {
 EpilinkConfig::EpilinkConfig(
       std::map<FieldName, ML_Field> fields_,
       std::vector<IndexSet> exchange_groups_,
-      double threshold, double tthreshold, size_t bitlen) :
+      double threshold, double tthreshold,
+      bool matching_mode,
+      size_t bitlen) :
   fields {fields_},
   exchange_groups {exchange_groups_},
   threshold {threshold},
   tthreshold {tthreshold},
+  matching_mode {matching_mode},
   bitlen {bitlen},
   nfields {fields.size()},
   max_weight{sel::max_element(fields, [](auto f){return f.second.weight;})}
