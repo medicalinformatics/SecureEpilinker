@@ -198,12 +198,14 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
   // Create http request
   promise<stringstream> response_promise;
   future<stringstream> response_stream = response_promise.get_future();
+  // TODO(TK): get inter SEL Authorization stuff done
+  string data{"{}"};
   list<string> headers{
       "Authorization: ",
       "SEL-Identifier: "s + m_local_config->get_local_id(),
       "Expect:",
       "Content-Type: application/json",
-      "Content-Length: "s+to_string(algo_comp_conf.dump().size())};
+      "Content-Length: "s+to_string(data.size())};
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
   curl_request.setOpt(new curlpp::Options::Url(
       "https://"s + m_remote_config->get_remote_host() + ':' +
@@ -213,7 +215,7 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
   curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
-  curl_request.setOpt(new curlpp::Options::PostFieldSize(algo_comp_conf.dump().size()));
+  curl_request.setOpt(new curlpp::Options::PostFieldSize(data.size()));
   curl_request.setOpt(new curlpp::options::Header(1));
   logger->debug("Sending linkage request\n");
   try{

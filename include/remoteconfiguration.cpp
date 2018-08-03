@@ -18,10 +18,21 @@
 
 #include "remoteconfiguration.h"
 #include <mutex>
+#include "apikeyconfig.hpp"
+#include "logger.h"
 #include "seltypes.h"
 #include "util.h"
 #include "resttypes.h"
 
+#include "connectionhandler.h"
+#include "serverhandler.h"
+#include <curlpp/Easy.hpp>
+#include <curlpp/Infos.hpp>
+#include <curlpp/Options.hpp>
+#include <curlpp/cURLpp.hpp>
+#include <future>
+#include <iostream>
+#include <sstream>
 using namespace std;
 namespace sel {
 
@@ -69,6 +80,14 @@ bool RemoteConfiguration::get_matching_mode() const {
   return m_matching_mode;
 }
 
+void RemoteConfiguration::mark_mutually_initialized() const {
+  m_mutually_initialized = true;
+}
+
+bool RemoteConfiguration::get_mutual_initialization_status() const {
+  return m_mutually_initialized;
+}
+
 void RemoteConfiguration::test_configuration(
     const RemoteId& client_id,
     const nlohmann::json& client_config,
@@ -113,6 +132,7 @@ void RemoteConfiguration::test_configuration(
   if (!common_port.empty()) {
     logger->info("Client registered common Port {}", common_port.front());
     set_aby_port(stoul(common_port.front()));
+    mark_mutually_initialized();
     try {
       connection_handler->mark_port_used(m_aby_port);
     } catch (const exception& e) {
@@ -120,6 +140,10 @@ void RemoteConfiguration::test_configuration(
           "Can not mark port as used. If server and client are the same "
           "process, that is ok.");
     }
+    auto fun = bind(&ServerHandler::insert_client, server_handler.get(),
+                    placeholders::_1);
+    std::thread client_creator(fun, m_connection_id);
+    client_creator.detach();
   }
 }
 }  // namespace sel

@@ -76,12 +76,16 @@ void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
 
 void ServerHandler::add_linkage_job(const RemoteId& remote_id, std::shared_ptr<LinkageJob>&& job){
   const auto job_id{job->get_id()};
+  if(m_config_handler->get_remote_config(remote_id)->get_mutual_initialization_status()) {
   m_job_remote_mapping.emplace(job->get_id(), remote_id);
   m_client_jobs[remote_id].emplace(job->get_id(),move(job));
   try{
   m_client_jobs.at(remote_id).at(job_id)->run_linkage_job();
   } catch (const exception& e) {
     m_logger->error("Error in add_linkage_job: {}", e.what());
+  }
+  } else {
+    m_logger->error("Can not create linkage job {}: Connection to remote Secure EpiLinker is not properly initialized", job_id);
   }
 }
 
@@ -125,6 +129,7 @@ std::shared_ptr<LocalServer> ServerHandler::get_local_server(const RemoteId& rem
 }
 
 void ServerHandler::run_server(RemoteId remote_id, std::shared_ptr<const ServerData> data) {
+  if(m_config_handler->get_remote_config(remote_id)->get_mutual_initialization_status()){
   const auto result{get_local_server(remote_id)->launch_comparison(move(data))};
   m_logger->info("Server Result\n{}",result);
   const auto ids{get_local_server(remote_id)->get_ids()};
@@ -138,5 +143,8 @@ void ServerHandler::run_server(RemoteId remote_id, std::shared_ptr<const ServerD
   }
   m_logger->info("IDs:\n{}", id_string);
   // TODO(TK): Send result and ids to linkage server
+  } else {
+    m_logger->error("Can not execute linkage job server: Connection to remote Secure EpiLinker {} is not properly initialized",remote_id);
+  }
 }
 }  // namespace sel

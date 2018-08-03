@@ -30,6 +30,7 @@ set(EPIRESTSRC
       include/databasefetcher.cpp
       include/datahandler.cpp
       include/headermethodhandler.cpp
+      include/headerhandlerfunctions.cpp
       include/jsonhandlerfunctions.cpp
       include/resttypes.cpp
       include/seltypes.cpp
@@ -39,7 +40,7 @@ set(EPIRESTSRC
       include/logger.cpp
       include/base64.cpp
       include/monitormethodhandler.cpp
-      include/tempselmethodhandler.cpp)
+    )
 
     set(EPIRESTHEAD
       include/resourcehandler.h
@@ -55,6 +56,7 @@ set(EPIRESTSRC
       include/databasefetcher.h
       include/datahandler.h
       include/headermethodhandler.h
+      include/headerhandlerfunctions.h
       include/jsonhandlerfunctions.h
       include/resttypes.h
       include/restresponses.hpp
@@ -65,7 +67,7 @@ set(EPIRESTSRC
       include/logger.h
       include/base64.h
       include/monitormethodhandler.h
-      include/tempselmethodhandler.h)
+    )
 
 set(SELABYSOURCES "include/math.cpp" "include/util.cpp"
   "include/aby/Share.cpp" "include/aby/gadgets.cpp" "include/aby/util.cpp")

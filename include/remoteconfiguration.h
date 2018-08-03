@@ -55,7 +55,11 @@ class RemoteConfiguration {
 
   void set_matching_mode(bool);
   bool get_matching_mode() const;
+
+  bool get_mutual_initialization_status() const;
+
   void test_configuration(const RemoteId&, const nlohmann::json&, const std::shared_ptr<ConnectionHandler>&, const std::shared_ptr<ServerHandler>&);
+  void mark_mutually_initialized() const; // changes mutable flag
  protected:
  private:
   RemoteId m_connection_id;
@@ -63,6 +67,7 @@ class RemoteConfiguration {
   ConnectionConfig m_linkage_service;
   Port m_aby_port;
   bool m_matching_mode{false};
+  mutable bool m_mutually_initialized{false};
 };
 
 }  // Namespace sel
