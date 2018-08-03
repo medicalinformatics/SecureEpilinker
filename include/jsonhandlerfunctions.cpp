@@ -349,6 +349,8 @@ SessionResponse valid_init_local_json_handler(
             f.at("fieldType").get<string>(), f.at("bitlength").get<size_t>());
         local_config->add_field(move(tempfield));
         fieldnames.emplace(f.at("name").get<string>());
+    // Get local ID
+    local_config->set_local_id(j.at("localId"));
       }
       for (const auto& eg : j.at("algorithm").at("exchangeGroups")) {
         IndexSet egroup;
