@@ -30,7 +30,6 @@
 #include "include/jsonhandlerfunctions.h"
 #include "include/headermethodhandler.h"
 #include "include/headerhandlerfunctions.h"
-#include "include/tempselmethodhandler.h"
 
 #include "fmt/format.h"
 #include "nlohmann/json.hpp"
