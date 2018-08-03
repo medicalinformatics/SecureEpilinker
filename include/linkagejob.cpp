@@ -195,10 +195,6 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
   auto logger{get_default_logger()};
   std::this_thread::sleep_for(1s);
   curlpp::Easy curl_request;
-  // Create configurations to com,pare
-  nlohmann::json algo_comp_conf{*m_algo_config};
-  algo_comp_conf.emplace_back(m_local_config->get_comparison_json());
-  auto data{algo_comp_conf.dump()};
   // Create http request
   promise<stringstream> response_promise;
   future<stringstream> response_stream = response_promise.get_future();

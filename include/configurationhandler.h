@@ -44,6 +44,8 @@ class ConfigurationHandler {
   void set_remote_config(std::shared_ptr<RemoteConfiguration>&&);
   bool remote_exists(const RemoteId&);
   void set_server_config(ServerConfig&&);
+  bool compare_configuration(const nlohmann::json&, const RemoteId&) const;
+  nlohmann::json make_comparison_config(const RemoteId&) const;
 
   size_t get_remote_count() const;
   ServerConfig get_server_config() const;

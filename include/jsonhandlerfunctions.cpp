@@ -111,43 +111,32 @@ SessionResponse valid_temp_link_json_handler(
     const shared_ptr<ConnectionHandler>&) {
   auto logger{get_default_logger()};
   SessionResponse response;
-  uint16_t common_port;
   string client_ip;
   logger->info("Recieved Linkage Request");
   // TODO(TK) Authorization
-  common_port = server_handler->get_server_port(client_id);
   if (config_handler->remote_exists(remote_id)) {
+    // negotiate common ABY port
+    auto client_ports{client_config.at("availableAbyPorts").get<set<Port>>()};
+    Port common_port = connection_handler->choose_common_port(client_ports);
+    logger->debug("Common port: {}", common_port);
+    // The aby port information is not needed for config comparison
+    auto client_comparison_config = client_config;
+    client_comparison_config.erase("availableAbyPorts");
+    // Compare Configs
+    if (config_handler->compare_configuration(client_comparison_config, remote_id)) {
+      logger->info("Valid config");
+      const auto remote_config{config_handler->get_remote_config(remote_id)};
+      remote_config->set_aby_port(common_port);
       remote_config->mark_mutually_initialized();
 
-  if (!(server_handler->get_local_server(client_id)->compare_configuration(j))){
-    response.return_code = restbed::FORBIDDEN;
-    response.body = "Algorithm configuration does not match"s;
-    response.headers = {{"Content-Length", to_string(response.body.length())},
-                        {"Remote-Identifier", client_id},
-                        {"Connection", "Close"}};
-    logger->debug("Non matching configs!");
-    return response;
+    } else {
+      logger->error("Invalid Configs");
+      return responses::status_error(restbed::BAD_REQUEST,"Configurations are not compatible");
+    }
   } else {
     logger->info("Remote does not exist. Wait for pairing");
     return responses::not_initialized;
   }
-  logger->debug("Matching configs!");
-  auto data_handler{
-      server_handler->get_local_server(client_id)->get_data_handler()};
-  auto nvals{data_handler->poll_database()};
-  auto data{data_handler->get_database()};
-  response.return_code = restbed::OK;
-  response.body = "Linkage server running"s;
-  response.headers = {{"Content-Length", to_string(response.body.length())},
-                      {"Remote-Identifier", client_id},
-                      {"Record-Number", to_string(nvals)},
-                      {"SEL-Port", to_string(common_port)},
-                      {"Connection", "Close"}};
-  std::thread server_runner([client_id, data, server_handler]() {
-    server_handler->run_server(client_id, data);
-  });
-  server_runner.detach();
-  return response;
 }
 
 SessionResponse valid_linkrecord_json_handler(

@@ -59,7 +59,6 @@ class LocalConfiguration {
   std::string print_auth_type() const;
   AuthenticationConfig const* get_local_authentication() const;
 
-  nlohmann::json get_comparison_json() const;
   void set_local_id(std::string&&);
   std::string get_local_id() const;
 

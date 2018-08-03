@@ -32,6 +32,8 @@
 
 namespace sel {
 class MatchingJob;
+class ServerHandler;
+class ConnectionHandler;
 
 class RemoteConfiguration {
   /**
@@ -53,6 +55,7 @@ class RemoteConfiguration {
 
   void set_matching_mode(bool);
   bool get_matching_mode() const;
+  void test_configuration(const RemoteId&, const nlohmann::json&, const std::shared_ptr<ConnectionHandler>&, const std::shared_ptr<ServerHandler>&);
  protected:
  private:
   RemoteId m_connection_id;

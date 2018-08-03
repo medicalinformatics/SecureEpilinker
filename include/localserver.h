@@ -48,7 +48,6 @@ class LocalServer {
   RemoteId get_id() const;
   SecureEpilinker::Result run_server();
   SecureEpilinker::Result launch_comparison(std::shared_ptr<const ServerData>);
-  bool compare_configuration(const nlohmann::json&) const;
   Port get_port() const;
   std::string get_ip() const;
 

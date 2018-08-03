@@ -69,4 +69,57 @@ bool RemoteConfiguration::get_matching_mode() const {
   return m_matching_mode;
 }
 
+void RemoteConfiguration::test_configuration(
+    const RemoteId& client_id,
+    const nlohmann::json& client_config,
+    const shared_ptr<ConnectionHandler>& connection_handler,
+    const shared_ptr<ServerHandler>& server_handler) {
+  auto logger{get_default_logger()};
+  auto data = client_config.dump();
+  promise<stringstream> response_promise;
+  future<stringstream> response_stream{response_promise.get_future()};
+  curlpp::Easy curl_request;
+  const auto auth{dynamic_cast<const APIKeyConfig*>(
+      m_connection_profile.authentication.get())};
+  list<string> headers{"Authorization: "s + auth->get_key(),
+                       "Expect:", "Content-Type: application/json",
+                       "Content-Length: "s + to_string(data.length())};
+  curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
+  curl_request.setOpt(new curlpp::Options::Url(
+      "https://"s + get_remote_host() + ':' +
+      to_string(get_remote_signaling_port()) + "/testConfig/" + client_id));
+  curl_request.setOpt(new curlpp::Options::Verbose(false));
+  curl_request.setOpt(new curlpp::Options::Post(true));
+  curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
+  curl_request.setOpt(new curlpp::Options::PostFieldSize(data.size()));
+  curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
+  curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
+  curl_request.setOpt(new curlpp::options::Header(1));
+  logger->debug("Sending config test to: {}\n", m_connection_profile.url);
+  send_curl(curl_request, move(response_promise));
+  response_stream.wait();
+  auto stream = response_stream.get();
+  logger->trace("Config test response:\n{}\n", stream.str());
+  const auto response_string{stream.str()};
+  if(response_string.find("No connection initialized") != response_string.npos){
+    logger->info("Waiting for remote side to initialize connection");
+    return;
+  }
+  if(response_string.find("Configurations are not compatible") != response_string.npos){
+    logger->error("Configuration is not compatible to remote config");
+    return;
+  }
+  const auto common_port{get_headers(stream, "SEL-Port")};
+  if (!common_port.empty()) {
+    logger->info("Client registered common Port {}", common_port.front());
+    set_aby_port(stoul(common_port.front()));
+    try {
+      connection_handler->mark_port_used(m_aby_port);
+    } catch (const exception& e) {
+      logger->warn(
+          "Can not mark port as used. If server and client are the same "
+          "process, that is ok.");
+    }
+  }
+}
 }  // namespace sel
