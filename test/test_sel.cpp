@@ -311,8 +311,23 @@ int main(int argc, char *argv[])
     print("Result:\n{}", res);
   }
 
-  auto res_local = clear_epilink::calc_integer({in.client, in.server}, in.cfg);
-  print("Local Result:\n{}", res_local);
+  print("----- Local Calculations -----\n");
+  auto res_32bit = clear_epilink::calc_integer({in.client, in.server}, in.cfg);
+  print("32Bit Result:\n{}", res_32bit);
+
+  EpilinkConfig cfg2 = in.cfg; // copy to set ideal prec
+  cfg2.set_ideal_precision();
+  auto res_32bit_id = clear_epilink::calc_integer({in.client, in.server}, cfg2);
+  print("32Bit ideal Result:\n{}", res_32bit_id);
+
+  // Copy config and make it 64 bit
+  EpilinkConfig cfg64{in.cfg.fields, in.cfg.exchange_groups, in.cfg.threshold, in.cfg.tthreshold, 64};
+  auto res_64bit = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
+  print("64bit Result:\n{}", res_64bit);
+
+  cfg64.set_ideal_precision(); // use ideal precision
+  auto res_64bit_id = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
+  print("64bit ideal Result:\n{}", res_64bit_id);
 
   auto res_exact = clear_epilink::calc_exact({in.client, in.server}, in.cfg);
   print("Exact Result:\n{}", res_exact);
