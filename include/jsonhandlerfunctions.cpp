@@ -32,6 +32,7 @@
 #include "logger.h"
 #include "nlohmann/json.hpp"
 #include "remoteconfiguration.h"
+#include "configurationhandler.h"
 #include "restbed"
 #include "resttypes.h"
 #include "restresponses.hpp"
@@ -103,17 +104,14 @@ bool check_exchange_group(const IndexSet& fieldnames,
   return fields_present;
 }
 
-SessionResponse valid_temp_link_json_handler(
-    const nlohmann::json& j,
-    const shared_ptr<ConfigurationHandler>&,
+SessionResponse valid_test_config_json_handler(
+    const nlohmann::json& client_config,
     const RemoteId& remote_id,
+    const shared_ptr<ConfigurationHandler>& config_handler,
     const shared_ptr<ServerHandler>& server_handler,
-    const shared_ptr<ConnectionHandler>&) {
+    const shared_ptr<ConnectionHandler>& connection_handler) {
   auto logger{get_default_logger()};
   SessionResponse response;
-  string client_ip;
-  logger->info("Recieved Linkage Request");
-  // TODO(TK) Authorization
   if (config_handler->remote_exists(remote_id)) {
     // negotiate common ABY port
     auto client_ports{client_config.at("availableAbyPorts").get<set<Port>>()};
@@ -129,6 +127,12 @@ SessionResponse valid_temp_link_json_handler(
       remote_config->set_aby_port(common_port);
       remote_config->mark_mutually_initialized();
 
+      logger->info("Building MPC Server");
+      auto fun = bind(&ServerHandler::insert_server,server_handler.get(),remote_id,placeholders::_1);
+      RemoteAddress tempadr{remote_config->get_remote_host(),common_port};
+      std::thread server_creator(fun, tempadr);
+      server_creator.detach();
+      return responses::server_initialized(common_port);
     } else {
       logger->error("Invalid Configs");
       return responses::status_error(restbed::BAD_REQUEST,"Configurations are not compatible");
@@ -164,6 +168,7 @@ SessionResponse valid_linkrecord_json_handler(
 
         for (auto f = j.at("fields").begin(); f != j.at("fields").end(); ++f) {
           const auto& field_config = local_config->get_field(f.key());
+          // TODO(TK): Remove variant and consolidate parsing
           DataField tempfield;
           if (!(f->is_null())) {
             switch (field_config.type) {
@@ -217,7 +222,6 @@ SessionResponse valid_linkrecord_json_handler(
               default: { throw runtime_error("Invalid field type in field "s+f.key()); }
             }       // Switch
           } else {  // field type is null
-            logger->debug("NULL Field: {}", f.key());
             tempfield = nullptr;
           }
           job->add_data_field(field_config.name, move(tempfield));
@@ -249,17 +253,18 @@ SessionResponse valid_init_remote_json_handler(
     const shared_ptr<ConnectionHandler>& connection_handler) {
   auto logger{get_default_logger()};
   logger->trace("Payload: {}", j.dump(2));
-    logger->info("Creating remote Config for: \"{}\"", remote_id);
-    ConnectionConfig con;
-    ConnectionConfig linkage_service;
-    auto local_conf{config_handler->get_local_config()};
-    auto algo_conf{config_handler->get_algorithm_config()};
-    try {
-      // Get Connection Profile
-      con.url = j.at("connectionProfile").at("url").get<string>();
-      con.authentication =
-          get_auth_object(j.at("connectionProfile").at("authentication"));
-      // Get Linkage Service Config
+  logger->info("Creating remote Config for: \"{}\"", remote_id);
+  ConnectionConfig con;
+  ConnectionConfig linkage_service;
+  auto local_conf{config_handler->get_local_config()};
+  auto algo_conf{config_handler->get_algorithm_config()};
+  auto remote_config = make_shared<RemoteConfiguration>(remote_id);
+  try {
+    // Get Connection Profile
+    con.url = j.at("connectionProfile").at("url").get<string>();
+    con.authentication =
+        get_auth_object(j.at("connectionProfile").at("authentication"));
+    remote_config->set_connection_profile(move(con));
     bool matching_mode;
     if (!j.count("matchingAllowed")) {
       matching_mode = false;
@@ -281,32 +286,18 @@ SessionResponse valid_init_remote_json_handler(
       linkage_service.url = j.at("linkageService").at("url").get<string>();
       linkage_service.authentication =
           get_auth_object(j.at("linkageService").at("authentication"));
-    } catch (const exception& e) {
-      logger->error("Error creating remote config: {}", e.what());
-      return {restbed::INTERNAL_SERVER_ERROR,
-              e.what(),
-              {{"Content-Length", to_string(string(e.what()).length())}}};
+      remote_config->set_linkage_service(move(linkage_service));
     }
-    auto remote_config = make_shared<RemoteConfiguration>(remote_id);
-    remote_config->set_connection_profile(move(con));
-    remote_config->set_linkage_service(move(linkage_service));
-    auto remote_info{connection_handler->initialize_aby_server(remote_config)};
-    remote_config->set_aby_port(remote_info.port);
-    try {
-      connection_handler->mark_port_used(remote_info.port);
-    } catch (const exception& e) {
-      logger->warn(
-          "Can not mark port as used. If server and client are the same "
-          "process, that is ok.");
-    }
-    remote_config->set_remote_client_id(remote_info.id);
-    config_handler->set_remote_config(move(remote_config));
-    auto fun = bind(&ServerHandler::insert_client, server_handler.get(),
-                    placeholders::_1);
-    std::thread client_creator(fun, remote_id);
-    client_creator.detach();
-
-    return {restbed::OK, "", {{"Connection", "Close"}}};
+  } catch (const exception& e) {
+    logger->error("Error creating remote config: {}", e.what());
+    return responses::status_error(restbed::INTERNAL_SERVER_ERROR, e.what());
+  }
+  config_handler->set_remote_config(move(remote_config));
+  auto placed_config{config_handler->get_remote_config(remote_id)};
+  // Test connection and negotiate common port
+  placed_config->test_configuration(config_handler->get_local_config()->get_local_id(), config_handler->make_comparison_config(remote_id), connection_handler, server_handler);
+  // TODO(TK): Error handling
+  return {restbed::OK, "", {{"Connection", "Close"}}};
 }
 
 SessionResponse valid_init_local_json_handler(
@@ -362,6 +353,7 @@ SessionResponse valid_init_local_json_handler(
     return {restbed::OK, "", {{"Connection", "Close"}}};
   } catch (const runtime_error& e) {
     return responses::status_error(restbed::INTERNAL_SERVER_ERROR, e.what());
+  }
 }
 
 SessionResponse invalid_json_handler(valijson::ValidationResults& results) {

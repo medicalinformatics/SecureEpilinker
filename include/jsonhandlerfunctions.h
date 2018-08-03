@@ -38,11 +38,11 @@ std::unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json&);
 bool check_exchange_group(const IndexSet&,
                           const IndexSet&);
 
-SessionResponse valid_temp_link_json_handler(
-    const nlohmann::json&,
-    const std::shared_ptr<ConfigurationHandler>&,
-    const std::shared_ptr<ServerHandler>&,
+SessionResponse valid_test_config_json_handler(
+    const nlohmann::json& j,
     const RemoteId& remote_id,
+    const std::shared_ptr<ConfigurationHandler>& config_handler,
+    const std::shared_ptr<ServerHandler>& server_handler,
     const std::shared_ptr<ConnectionHandler>&);
 
 SessionResponse valid_init_local_json_handler(

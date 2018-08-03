@@ -54,10 +54,11 @@ Port ConnectionHandler::use_free_port() {
   return 0u;
 }
 
-ConnectionHandler::RemoteInfo ConnectionHandler::initialize_aby_server(
 set<Port> ConnectionHandler::get_free_ports() const {
   return m_aby_available_ports;
 }
+
+Port ConnectionHandler::initialize_aby_server(
     shared_ptr<RemoteConfiguration> remote_config) {
   if (m_aby_available_ports.empty()) {
     throw std::runtime_error("No available port for smpc communication");
@@ -66,16 +67,21 @@ set<Port> ConnectionHandler::get_free_ports() const {
   auto port{remote_config->get_remote_signaling_port()};
   curlpp::Easy curl_request;
   stringstream response_stream;
+  string data{"{\"Test\": true}"};
   list<string> headers{
-    "Authorization: SEL ABCD",
+    "Authorization: SEL ABCD", // Need to get AUTH
     "Available-Ports: "s+get_available_ports(),
-    "Remote-Identifier: "s+id,
-    "SEL-Init: True"};
+    "Content-Type: application/json",
+    "Content-Length: "s+to_string(data.size()),
+    "Expect:"
+    };
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
   curl_request.setOpt(new curlpp::Options::Url("https://"s+ip+':'+to_string(port)+"/testConfig/"+m_config_handler->get_local_config()->get_local_id()));
   curl_request.setOpt(new curlpp::Options::Post(true));
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
+  curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
+  curl_request.setOpt(new curlpp::Options::PostFieldSize(data.size()));
   curl_request.setOpt(new curlpp::Options::WriteStream(&response_stream));
   curl_request.setOpt(new curlpp::options::Header(1));
   curl_request.perform();
@@ -83,8 +89,8 @@ set<Port> ConnectionHandler::get_free_ports() const {
   if(resph.empty()){
     throw runtime_error("No common available port for smpc communication");
   }
-  return {id, sel_port};
   Port sel_port = stoul(resph.front());
+  return sel_port;
 }
 
 Port ConnectionHandler::choose_common_port(const set<Port>& remote_ports) {

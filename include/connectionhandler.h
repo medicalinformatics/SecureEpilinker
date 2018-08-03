@@ -77,7 +77,7 @@ class ConnectionHandler {
   Port choose_common_port(const std::set<Port>&);
   void mark_port_used(Port);
 
-  RemoteInfo initialize_aby_server(std::shared_ptr<RemoteConfiguration>);
+  Port initialize_aby_server(std::shared_ptr<RemoteConfiguration>);
 
  private:
   std::string get_available_ports() const;

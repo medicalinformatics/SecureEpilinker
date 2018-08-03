@@ -28,6 +28,8 @@
 #include "include/resourcehandler.h"
 #include "include/validator.h"
 #include "include/jsonhandlerfunctions.h"
+#include "include/headermethodhandler.h"
+#include "include/headerhandlerfunctions.h"
 #include "include/tempselmethodhandler.h"
 
 #include "fmt/format.h"
@@ -148,13 +150,13 @@ int main(int argc, char* argv[]) {
       sel::MethodHandler::create_methodhandler<sel::MonitorMethodHandler>(
           "GET", servers);
   // Create Handlers for temporary inter SEL communication
-  auto temp_selconnect_methodhandler =
-      sel::MethodHandler::create_methodhandler<sel::TempSelMethodHandler>(
-          "POST", connections, servers, data);
-  auto temp_link_methodhandler =
+  auto test_config_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
           "POST", configurations, connections, servers,null_validator,
           sel::valid_test_config_json_handler, sel::invalid_json_handler);
+  auto init_mpc_methodhandler =
+      sel::MethodHandler::create_methodhandler<sel::HeaderMethodHandler>(
+          "POST", nullptr, nullptr, servers, data, sel::init_mpc);
 
   // Create Ressource on <url/init> and instruct to use the built MethodHandler
   sel::ResourceHandler local_initializer{"/initLocal"};
@@ -170,10 +172,10 @@ int main(int argc, char* argv[]) {
   // The jobid is provided in the url
   sel::ResourceHandler jobmonitor_handler{"/jobs/{job_id: .*}"};
   jobmonitor_handler.add_method(jobmonitor_methodhandler);
-  sel::ResourceHandler selconnect_handler{"/selconnect"};
-  selconnect_handler.add_method(temp_selconnect_methodhandler);
-  sel::ResourceHandler sellink_handler{"/sellink/{remote_id: .*}"};
-  sellink_handler.add_method(temp_link_methodhandler);
+  sel::ResourceHandler test_config_handler{"/testConfig/{remote_id: .*}"};
+  test_config_handler.add_method(test_config_methodhandler);
+  sel::ResourceHandler sellink_handler{"/initMPC/{parameter: .*}"};
+  sellink_handler.add_method(init_mpc_methodhandler);
 
   // Setup REST Server
   auto settings = std::make_shared<restbed::Settings>();
@@ -200,7 +202,7 @@ int main(int argc, char* argv[]) {
   remote_initializer.publish(service);
   linkrecord_handler.publish(service);
   jobmonitor_handler.publish(service);
-  selconnect_handler.publish(service);
+  test_config_handler.publish(service);
   sellink_handler.publish(service);
   logger->info("Service Running\n");
   service.start(settings);  // Eventloop
