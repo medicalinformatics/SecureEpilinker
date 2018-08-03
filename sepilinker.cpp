@@ -131,14 +131,17 @@ int main(int argc, char* argv[]) {
   // Create Handlers for INIT Phase
   auto init_local_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "PUT", configurations, connections, servers,init_local_validator);
+          "PUT", configurations, connections, servers,init_local_validator,
+          sel::valid_init_local_json_handler, sel::invalid_json_handler);
   auto init_remote_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "PUT", configurations, connections, servers,init_remote_validator);
+          "PUT", configurations, connections, servers,init_remote_validator,
+          sel::valid_init_remote_json_handler, sel::invalid_json_handler);
   // Create Handlers for Record Linkage phase
   auto linkrecord_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "POST", configurations, connections, servers, linkrecord_validator);
+          "POST", configurations, connections, servers, linkrecord_validator,
+          sel::valid_linkrecord_json_handler, sel::invalid_json_handler);
   // Create GET-Handler for job status monitoring
   auto jobmonitor_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::MonitorMethodHandler>(
@@ -149,25 +152,9 @@ int main(int argc, char* argv[]) {
           "POST", connections, servers, data);
   auto temp_link_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "POST", configurations, connections, servers, null_validator);
+          "POST", configurations, connections, servers,null_validator,
+          sel::valid_test_config_json_handler, sel::invalid_json_handler);
 
-  // Add Validation Callbacks
-  auto devptr_init_loc =
-      dynamic_cast<sel::JsonMethodHandler*>(init_local_methodhandler.get());
-  devptr_init_loc->set_valid_callback(sel::valid_init_local_json_handler);
-  devptr_init_loc->set_invalid_callback(sel::invalid_json_handler);
-  auto devptr_init_rem =
-      dynamic_cast<sel::JsonMethodHandler*>(init_remote_methodhandler.get());
-  devptr_init_rem->set_valid_callback(sel::valid_init_remote_json_handler);
-  devptr_init_rem->set_invalid_callback(sel::invalid_json_handler);
-  auto devptr_linkrecord =
-      dynamic_cast<sel::JsonMethodHandler*>(linkrecord_methodhandler.get());
-  devptr_linkrecord->set_valid_callback(valid_linkrecord_json_handler);
-  devptr_linkrecord->set_invalid_callback(invalid_json_handler);
-  auto devptr_temp_link =
-      dynamic_cast<sel::JsonMethodHandler*>(temp_link_methodhandler.get());
-  devptr_temp_link->set_valid_callback(valid_temp_link_json_handler);
-  devptr_temp_link->set_invalid_callback(invalid_json_handler);
   // Create Ressource on <url/init> and instruct to use the built MethodHandler
   sel::ResourceHandler local_initializer{"/initLocal"};
   local_initializer.add_method(init_local_methodhandler);

@@ -25,7 +25,6 @@
 #include "methodhandler.hpp"
 #include "restbed"
 #include "resttypes.h"
-//#include "seltypes.h"
 #include "serverhandler.h"
 #include "valijson/validation_results.hpp"
 
@@ -40,26 +39,42 @@ class JsonMethodHandler : public MethodHandler {
    * Handles Requests with JSON Data
    */
  public:
-  explicit JsonMethodHandler(
-      const std::string& method,
-      std::shared_ptr<ConfigurationHandler> configuration_handler,
-      std::shared_ptr<ConnectionHandler> connection_handler,
-      std::shared_ptr<ServerHandler> server_handler)
-      : MethodHandler(method),
-        m_configuration_handler(move(configuration_handler)),
-        m_connection_handler(move(connection_handler)),
-        m_server_handler(move(server_handler)) {}
-
-  explicit JsonMethodHandler(
+  JsonMethodHandler(
       const std::string& method,
       std::shared_ptr<ConfigurationHandler> configuration_handler,
       std::shared_ptr<ConnectionHandler> connection_handler,
       std::shared_ptr<ServerHandler> server_handler,
-      std::shared_ptr<Validator> validator)
+      std::function<SessionResponse(
+                              const nlohmann::json&,
+                              const std::string&,
+                              const std::shared_ptr<ConfigurationHandler>&,
+                              const std::shared_ptr<ServerHandler>&,
+                              const std::shared_ptr<ConnectionHandler>&)> valid = nullptr,
+      std::function<SessionResponse(valijson::ValidationResults&)> invalid = nullptr)
+      : MethodHandler(method),
+        m_configuration_handler(move(configuration_handler)),
+        m_connection_handler(move(connection_handler)),
+        m_server_handler(move(server_handler)),
+        m_valid_callback(valid), m_invalid_callback(invalid) {}
+
+  JsonMethodHandler(
+      const std::string& method,
+      std::shared_ptr<ConfigurationHandler> configuration_handler,
+      std::shared_ptr<ConnectionHandler> connection_handler,
+      std::shared_ptr<ServerHandler> server_handler,
+      std::shared_ptr<Validator> validator,
+      std::function<SessionResponse(
+                              const nlohmann::json&,
+                              const std::string&,
+                              const std::shared_ptr<ConfigurationHandler>&,
+                              const std::shared_ptr<ServerHandler>&,
+                              const std::shared_ptr<ConnectionHandler>&)> valid = nullptr,
+      std::function<SessionResponse(valijson::ValidationResults&)> invalid = nullptr)
       : MethodHandler(method, validator),
         m_configuration_handler(move(configuration_handler)),
         m_connection_handler(move(connection_handler)),
-        m_server_handler(move(server_handler)) {}
+        m_server_handler(move(server_handler)),
+        m_valid_callback(valid), m_invalid_callback(invalid) {}
 
   ~JsonMethodHandler(){};
 
