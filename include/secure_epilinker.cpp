@@ -75,31 +75,36 @@ ArithQuotient sum(const vector<FieldWeight>& fweights) {
 }
 
 /**
- * Calculates dice coefficient of given bitmasks and their hamming weights, up
- * to the specified precision
+ * Calculates dice coefficient of given bitmasks via their hamming weights, up
+ * to the specified precision.
+ * Note that we use rounding integer division, that is (x+(y/2))/y, because x/y
+ * always rounds down, which would lead to a bias.
  */
 BoolShare dice_coefficient(const BoolShare& x, const BoolShare& y,
     const BoolShare& hw_x, const BoolShare& hw_y, size_t prec) {
-  // calc HW of AND and bit-shift to multiply with 2 and get dice precision
-  // for integer-divivision
-  BoolShare hw_and = hammingweight(x & y);
-  BoolShare hw_and_shifted = hw_and << (prec + 1);
-#ifdef DEBUG_SEL_CIRCUIT
-  print_share(hw_and, "hw_and");
-  print_share(hw_and_shifted, "hw_and_shifted");
-#endif
-
-  // Add single HWs
+  // 1. Add single HWs
   BoolShare hw_plus = hw_x + hw_y;
-#ifdef DEBUG_SEL_CIRCUIT
-  print_share(hw_plus, "hw_plus");
-#endif
+
+  // 2. Calc HW of x&y and bit-shift to multiply with 2 and reach dice precision.
+  // Additionally add hw_plus/2 to have rounding integer-div
+  BoolShare hw_and = hammingweight(x & y);
+  BoolShare hw_and_num = hw_and << (prec + 1); // *2 and dice precision
+  hw_and_num += (hw_plus >> 1); // rounding integer-div
+  // In theory, the addition could have exceeded 16 bits. But this is very
+  // unlikely because then all 10 most significant bits of hw_and would need to
+  // be set, while we deal with a rather sparse bitmask.
+  hw_and_num.set_bitlength(16);
 
   // int-divide
-  BoolShare dice = apply_file_binary(hw_and_shifted, hw_plus, 16, 16, "circ/int_div_16.aby");
+  BoolShare dice = apply_file_binary(hw_and_num, hw_plus, 16, 16, "circ/int_div_16.aby");
+
 #ifdef DEBUG_SEL_CIRCUIT
+  print_share(hw_and, "hw_and");
+  print_share(hw_and_num, "hw_and_num");
+  print_share(hw_plus, "hw_plus");
   print_share(dice, "dice coeff");
 #endif
+
   return dice;
 }
 
@@ -282,10 +287,10 @@ private:
     assert(const_idx.get_nvals() == nvals);
 
 
-    CircUnit T = cfg.threshold * (1 << cfg.dice_prec);
-    CircUnit Tt = cfg.tthreshold * (1 << cfg.dice_prec);
+    CircUnit T = llround(cfg.threshold * (1 << cfg.dice_prec));
+    CircUnit Tt = llround(cfg.tthreshold * (1 << cfg.dice_prec));
 #ifdef DEBUG_SEL_INPUT
-    cout << " T: " << hex << T << " Tt: " << hex << Tt << endl;
+    cout << " T: " << hex << T << " Tt: " << Tt << endl;
 #endif
 
     const_threshold = constant(acirc, T, BitLen);
