@@ -42,6 +42,7 @@ class ConfigurationHandler {
   void set_local_config(std::shared_ptr<LocalConfiguration>&&);
   void set_algorithm_config(std::shared_ptr<AlgorithmConfig>&&);
   void set_remote_config(std::shared_ptr<RemoteConfiguration>&&);
+  bool remote_exists(const RemoteId&);
   void set_server_config(ServerConfig&&);
 
   size_t get_remote_count() const;
