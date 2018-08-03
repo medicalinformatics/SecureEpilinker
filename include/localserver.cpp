@@ -98,10 +98,5 @@ string LocalServer::get_ip() const {
   return m_client_ip;
 }
 
-bool LocalServer::compare_configuration(const nlohmann::json& client_config) const {
-  nlohmann::json server_config{*(m_config_handler->get_algorithm_config())};
-  server_config.emplace_back(m_config_handler->get_local_config()->get_comparison_json());
-
-  return client_config == server_config;
 }
 }  // namespace sel

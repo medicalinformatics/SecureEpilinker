@@ -97,6 +97,31 @@ return {local_config->get_fields(),
         algo_config->threshold_non_match,
         matching_mode};
 }
+
+nlohmann::json ConfigurationHandler::make_comparison_config(const RemoteId& remote_id) const {
+  nlohmann::json server_config({});
+  {
+  lock_guard<mutex> local_lock(m_local_mutex);
+  server_config["fields"] = m_local_config->get_fields();
+  server_config["exchangeGroups"] = m_local_config->get_exchange_groups();
+  }
+  {
+  lock_guard<mutex> remote_lock(m_remote_mutex);
+  server_config["matchingMode"] = m_remote_configs.at(remote_id)->get_matching_mode();
+  }
+  {
+  lock_guard<mutex> algo_lock(m_algo_mutex);
+  server_config["threshold_match"] = m_algo_config->threshold_match;
+  server_config["threshold_non_match"] = m_algo_config->threshold_non_match;
+  }
+  server_config["availableAbyPorts"] = m_connection_handler->get_free_ports();
+  return server_config;
+}
+bool ConfigurationHandler::compare_configuration(const nlohmann::json& client_config, const RemoteId& remote_id) const{
+  nlohmann::json server_config;
+  server_config = make_comparison_config(remote_id);
+  server_config.erase(server_config.find("availableAbyPorts"));
+  return client_config == server_config;
 }
 }  // namespace sel
 

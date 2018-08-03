@@ -95,11 +95,6 @@ AuthenticationConfig const* LocalConfiguration::get_local_authentication()
   return m_local_authentication.get();
 }
 
-nlohmann::json LocalConfiguration::get_comparison_json() const {
-  nlohmann::json j;
-  j["exchangeGroups"] = m_exchange_groups;
-  j["fields"] = m_fields;
-  return j;
 void LocalConfiguration::set_local_id(string&& local_id){
   m_local_id = move(local_id);
 }
