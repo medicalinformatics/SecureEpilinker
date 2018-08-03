@@ -41,6 +41,7 @@ using JobId = std::string;
 using RemoteId = std::string;
 using ClientId = std::string;
 using ToDate = size_t;
+using Port = uint16_t;
 
 enum class AlgorithmType { EPILINK };
 enum class AuthenticationType { NONE, API_KEY };
