@@ -50,6 +50,7 @@ class LocalServer {
   SecureEpilinker::Result launch_comparison(std::shared_ptr<const ServerData>);
   Port get_port() const;
   std::string get_ip() const;
+  SecureEpilinker& get_epilinker();
 
 
   std::vector<std::map<std::string, std::string>> get_ids() const {return m_data->ids;}

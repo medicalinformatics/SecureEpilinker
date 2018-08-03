@@ -98,5 +98,7 @@ string LocalServer::get_ip() const {
   return m_client_ip;
 }
 
+SecureEpilinker& LocalServer::get_epilinker() {
+  return m_aby_server;
 }
 }  // namespace sel
