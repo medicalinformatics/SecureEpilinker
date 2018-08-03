@@ -100,6 +100,12 @@ nlohmann::json LocalConfiguration::get_comparison_json() const {
   j["exchangeGroups"] = m_exchange_groups;
   j["fields"] = m_fields;
   return j;
+void LocalConfiguration::set_local_id(string&& local_id){
+  m_local_id = move(local_id);
+}
+
+string LocalConfiguration::get_local_id() const {
+  return m_local_id;
 }
 
 void to_json(nlohmann::json& j, const ML_Field& f) {

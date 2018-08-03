@@ -61,7 +61,6 @@ ConnectionHandler::RemoteInfo ConnectionHandler::initialize_aby_server(
   }
   auto ip{remote_config->get_remote_host()};
   auto port{remote_config->get_remote_signaling_port()};
-  auto id{generate_id()};
   curlpp::Easy curl_request;
   stringstream response_stream;
   list<string> headers{
@@ -70,7 +69,7 @@ ConnectionHandler::RemoteInfo ConnectionHandler::initialize_aby_server(
     "Remote-Identifier: "s+id,
     "SEL-Init: True"};
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
-  curl_request.setOpt(new curlpp::Options::Url("https://"s+ip+':'+to_string(port)+"/selconnect"));
+  curl_request.setOpt(new curlpp::Options::Url("https://"s+ip+':'+to_string(port)+"/testConfig/"+m_config_handler->get_local_config()->get_local_id()));
   curl_request.setOpt(new curlpp::Options::Post(true));
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));

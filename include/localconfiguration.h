@@ -60,12 +60,15 @@ class LocalConfiguration {
   AuthenticationConfig const* get_local_authentication() const;
 
   nlohmann::json get_comparison_json() const;
+  void set_local_id(std::string&&);
+  std::string get_local_id() const;
 
  private:
   std::unique_ptr<AuthenticationConfig> m_local_authentication;
   std::map<FieldName, ML_Field> m_fields;
   std::vector<IndexSet> m_exchange_groups;
   std::string m_data_service_url;
+  std::string m_local_id;
 };
 
 void to_json (nlohmann::json&, const ML_Field&);

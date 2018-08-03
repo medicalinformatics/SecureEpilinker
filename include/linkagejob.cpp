@@ -203,15 +203,15 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
   promise<stringstream> response_promise;
   future<stringstream> response_stream = response_promise.get_future();
   list<string> headers{
-      "Authorization: SEL ABCD",
-      "Remote-Identifier: "s + m_remote_config->get_remote_client_id(),
+      "Authorization: ",
+      "SEL-Identifier: "s + m_local_config->get_local_id(),
       "Expect:",
       "Content-Type: application/json",
       "Content-Length: "s+to_string(algo_comp_conf.dump().size())};
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
   curl_request.setOpt(new curlpp::Options::Url(
       "https://"s + m_remote_config->get_remote_host() + ':' +
-      to_string(m_remote_config->get_remote_signaling_port()) + "/sellink/"+m_remote_config->get_remote_client_id()));
+      to_string(m_remote_config->get_remote_signaling_port()) + "/initMPC/"+m_local_config->get_local_id()));
   curl_request.setOpt(new curlpp::Options::Post(true));
   curl_request.setOpt(new curlpp::Options::Verbose(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
