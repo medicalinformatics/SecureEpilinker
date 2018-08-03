@@ -22,6 +22,7 @@
 #include <iostream>
 #include "epilink_input.h"
 #include "util.h"
+#include "math.h"
 
 using namespace std;
 using fmt::print;

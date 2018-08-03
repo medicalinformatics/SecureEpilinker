@@ -18,6 +18,7 @@
 
 #include <fmt/format.h>
 #include "Share.h"
+#include "../math.h"
 
 using namespace std;
 
