@@ -41,7 +41,7 @@ class AuthenticationConfig;
 
   struct RemoteAddress {
     std::string ip;
-    uint16_t port;
+    Port port;
     explicit RemoteAddress(std::string url) {
       auto temp = split(url,':');
       port = std::stoul(temp.back());
@@ -49,7 +49,7 @@ class AuthenticationConfig;
       if(ip == "localhost")
         ip = "127.0.0.1";
     }
-    RemoteAddress(std::string ip, uint16_t port) : ip(ip), port(port) {}
+    RemoteAddress(std::string ip, Port port) : ip(ip), port(port) {}
   };
 class ConnectionHandler {
   /**
@@ -72,9 +72,9 @@ class ConnectionHandler {
   std::shared_ptr<LocalConfiguration> get_local_configuration() const;
   std::shared_ptr<RemoteConfiguration> get_remote_configuration(const RemoteId&);
 
-  uint16_t get_free_port();
   uint16_t choose_common_port(const std::string&);
-  void mark_port_used(uint16_t);
+  Port use_free_port();
+  void mark_port_used(Port);
 
   RemoteInfo initialize_aby_server(std::shared_ptr<RemoteConfiguration>);
 
@@ -83,7 +83,6 @@ class ConnectionHandler {
   std::shared_ptr<ConfigurationHandler> m_config_handler;
   std::shared_ptr<restbed::Service> m_service;
   // TODO(TK): parameterize available ports
-  std::set<uint16_t> m_aby_available_ports{1337u,1338u,1339u,1340u,1341u, 1342u, 1343u};
   std::mutex m_port_mutex;
 };
 

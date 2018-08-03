@@ -30,7 +30,7 @@ RemoteConfiguration::RemoteConfiguration(RemoteId c_id)
 
 RemoteConfiguration::~RemoteConfiguration() {}
 
-uint16_t RemoteConfiguration::get_remote_signaling_port() const {
+Port RemoteConfiguration::get_remote_signaling_port() const {
   auto parts{split(m_connection_profile.url, ':')};
   // {{192.168.1.1},{8080}}
   return stoi(parts.back());
@@ -53,22 +53,18 @@ RemoteId RemoteConfiguration::get_id() const {
   return m_connection_id;
 }
 
-uint16_t RemoteConfiguration::get_aby_port() const {
+Port RemoteConfiguration::get_aby_port() const {
   return m_aby_port;
 }
 
-void RemoteConfiguration::set_aby_port(uint16_t port) {
+void RemoteConfiguration::set_aby_port(Port port) {
   m_aby_port = port;
 }
 
-void RemoteConfiguration::set_remote_client_id(string id) {
-  m_remote_client_id = move(id);
 void RemoteConfiguration::set_matching_mode(bool matching_mode) {
   m_matching_mode = matching_mode;
 }
 
-ClientId RemoteConfiguration::get_remote_client_id() const {
-  return m_remote_client_id;
 bool RemoteConfiguration::get_matching_mode() const {
   return m_matching_mode;
 }

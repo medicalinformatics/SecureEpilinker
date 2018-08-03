@@ -56,7 +56,7 @@ void ServerHandler::insert_client(RemoteId id) {
   m_aby_clients.emplace(id, make_shared<SecureEpilinker>(aby_config,epilink_config));
 }
 
-void ServerHandler::insert_server(ClientId id, RemoteAddress remote_address) {
+void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
   auto local_config{m_config_handler->get_local_config()};
   auto remote_config{m_config_handler->get_remote_config(id)};
   auto epilink_config{make_epilink_config(
@@ -79,7 +79,7 @@ void ServerHandler::add_linkage_job(const RemoteId& remote_id, std::shared_ptr<L
   m_job_remote_mapping.emplace(job->get_id(), remote_id);
   m_client_jobs[remote_id].emplace(job->get_id(),move(job));
   try{
-  m_client_jobs.at(remote_id).at(job_id)->run_job();
+  m_client_jobs.at(remote_id).at(job_id)->run_linkage_job();
   } catch (const exception& e) {
     m_logger->error("Error in add_linkage_job: {}", e.what());
   }
@@ -95,7 +95,7 @@ shared_ptr<const LinkageJob> ServerHandler::get_linkage_job(const JobId& j_id) c
   return nullptr;
 }
 
-uint16_t ServerHandler::get_server_port(const ClientId& id) const {
+Port ServerHandler::get_server_port(const RemoteId& id) const {
   try{
   return m_server.at(id)->get_port();
   } catch (const exception& e) {
@@ -114,9 +114,9 @@ shared_ptr<SecureEpilinker> ServerHandler::get_epilink_client(const RemoteId& re
   return nullptr;
 }
 
-std::shared_ptr<LocalServer> ServerHandler::get_local_server(const ClientId& client_id) const {
+std::shared_ptr<LocalServer> ServerHandler::get_local_server(const RemoteId& remote_id) const {
   try{
-  return m_server.at(client_id);
+  return m_server.at(remote_id);
   } catch (const exception& e) {
     m_logger->error("Error in get_local_server: {}", e.what());
   }
@@ -124,10 +124,10 @@ std::shared_ptr<LocalServer> ServerHandler::get_local_server(const ClientId& cli
   return nullptr;
 }
 
-void ServerHandler::run_server(ClientId client_id, std::shared_ptr<const ServerData> data) {
-  const auto result{get_local_server(client_id)->launch_comparison(move(data))};
+void ServerHandler::run_server(RemoteId remote_id, std::shared_ptr<const ServerData> data) {
+  const auto result{get_local_server(remote_id)->launch_comparison(move(data))};
   m_logger->info("Server Result\n{}",result);
-  const auto ids{get_local_server(client_id)->get_ids()};
+  const auto ids{get_local_server(remote_id)->get_ids()};
   string id_string;
   for (size_t i = 0; i!= ids.size(); ++i){
     id_string += "Index: "+ to_string(i) + " IDs: ";

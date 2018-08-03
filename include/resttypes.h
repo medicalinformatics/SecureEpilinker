@@ -39,7 +39,6 @@ class AuthenticationConfig;
 
 using JobId = std::string;
 using RemoteId = std::string;
-using ClientId = std::string;
 using ToDate = size_t;
 using Port = uint16_t;
 
@@ -83,7 +82,7 @@ struct ServerConfig {
   std::experimental::filesystem::path ssl_dh_file;
   std::experimental::filesystem::path log_file;
   bool use_ssl;
-  uint16_t server_port;
+  Port server_port;
   std::string bind_address;
   size_t rest_worker;
   size_t default_page_size;

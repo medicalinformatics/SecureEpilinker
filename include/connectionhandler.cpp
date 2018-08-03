@@ -28,7 +28,6 @@ computations
 #include "localconfiguration.h"
 #include "remoteconfiguration.h"
 #include "restbed"
-//#include "seltypes.h"
 #include <curlpp/cURLpp.hpp>
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>
@@ -44,7 +43,7 @@ shared_ptr<restbed::Service> ConnectionHandler::get_service() const {
   return m_service;
 }
 
-uint16_t ConnectionHandler::get_free_port() {
+Port ConnectionHandler::use_free_port() {
   if (auto it = m_aby_available_ports.begin(); !m_aby_available_ports.empty()) {
     auto port = *it;
     m_aby_available_ports.erase(it);
@@ -82,8 +81,8 @@ ConnectionHandler::RemoteInfo ConnectionHandler::initialize_aby_server(
   if(resph.empty()){
     throw runtime_error("No common available port for smpc communication");
   }
-  uint16_t sel_port = stoul(resph.front());
   return {id, sel_port};
+  Port sel_port = stoul(resph.front());
 }
 
 uint16_t ConnectionHandler::choose_common_port(const string& remote_ports) {
@@ -112,7 +111,7 @@ string ConnectionHandler::get_available_ports() const {
   result.pop_back();  // remove trailing comma
   return result;
 }
-void ConnectionHandler::mark_port_used(uint16_t port) {
+void ConnectionHandler::mark_port_used(Port port) {
   if (auto it = m_aby_available_ports.find(port);
       it != m_aby_available_ports.end()) {
     lock_guard<mutex> lock(m_port_mutex);

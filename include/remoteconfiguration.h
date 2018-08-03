@@ -45,12 +45,10 @@ class RemoteConfiguration {
   void set_linkage_service(ConnectionConfig cconfig);
 
   RemoteId get_id() const;
-  void set_remote_client_id(std::string id);
-  ClientId get_remote_client_id() const;
 
-  uint16_t get_remote_signaling_port() const;
-  uint16_t get_aby_port() const;
-  void set_aby_port(uint16_t port);
+  Port get_remote_signaling_port() const;
+  Port get_aby_port() const;
+  void set_aby_port(Port port);
   std::string get_remote_host() const;
 
   void set_matching_mode(bool);
@@ -58,10 +56,9 @@ class RemoteConfiguration {
  protected:
  private:
   RemoteId m_connection_id;
-  ClientId m_remote_client_id;
   ConnectionConfig m_connection_profile;
   ConnectionConfig m_linkage_service;
-  uint16_t m_aby_port;
+  Port m_aby_port;
   bool m_matching_mode{false};
 };
 

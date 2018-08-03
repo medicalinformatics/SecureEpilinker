@@ -52,7 +52,7 @@ ServerConfig make_server_config_from_json(nlohmann::json json) {
           json.at("serverDHPath").get<std::string>(),
           json.at("logFilePath").get<std::string>(),
           json.at("useSSL").get<bool>(),
-          json.at("port").get<uint16_t>(),
+          json.at("port").get<Port>(),
           json.at("bindAddress").get<string>(),
           json.at("restWorkerThreads").get<size_t>(),
           json.at("defaultPageSize").get<size_t>(),
@@ -99,8 +99,8 @@ bool check_exchange_group(const IndexSet& fieldnames,
 
 SessionResponse valid_temp_link_json_handler(
     const nlohmann::json& j,
-    const ClientId& client_id,
     const shared_ptr<ConfigurationHandler>&,
+    const RemoteId& remote_id,
     const shared_ptr<ServerHandler>& server_handler,
     const shared_ptr<ConnectionHandler>&) {
   auto logger{get_default_logger()};
