@@ -55,6 +55,7 @@ set(EPIRESTSRC
       include/datahandler.h
       include/jsonhandlerfunctions.h
       include/resttypes.h
+      include/restresponses.hpp
       include/seltypes.h
       include/serverhandler.h
       include/linkagejob.h
