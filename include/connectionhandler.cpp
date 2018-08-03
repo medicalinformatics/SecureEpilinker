@@ -55,6 +55,9 @@ Port ConnectionHandler::use_free_port() {
 }
 
 ConnectionHandler::RemoteInfo ConnectionHandler::initialize_aby_server(
+set<Port> ConnectionHandler::get_free_ports() const {
+  return m_aby_available_ports;
+}
     shared_ptr<RemoteConfiguration> remote_config) {
   if (m_aby_available_ports.empty()) {
     throw std::runtime_error("No available port for smpc communication");
@@ -84,21 +87,17 @@ ConnectionHandler::RemoteInfo ConnectionHandler::initialize_aby_server(
   Port sel_port = stoul(resph.front());
 }
 
-uint16_t ConnectionHandler::choose_common_port(const string& remote_ports) {
-  set<uint16_t> remote_ports_set;
-  auto remote_ports_vec{split(remote_ports, ',')};  // Expects ports as csv
-  for (const auto& port : remote_ports_vec) {
-    remote_ports_set.emplace(stoul(port));
-  }
-  vector<uint16_t> intersection;
+Port ConnectionHandler::choose_common_port(const set<Port>& remote_ports) {
+  vector<Port> intersection;
   lock_guard<mutex> lock(m_port_mutex);
   set_intersection(m_aby_available_ports.begin(), m_aby_available_ports.end(),
-                   remote_ports_set.begin(), remote_ports_set.end(),
+                   remote_ports.begin(), remote_ports.end(),
                    back_inserter(intersection));
+
   if (intersection.empty()) {
     throw runtime_error("No common available port for smpc communication");
   }
-  m_aby_available_ports.erase(intersection.front());
+  m_aby_available_ports.erase(m_aby_available_ports.find(intersection.front()));
   return intersection.front();
 }
 
@@ -117,6 +116,11 @@ void ConnectionHandler::mark_port_used(Port port) {
     m_aby_available_ports.erase(it);
   } else {
     throw runtime_error("Can not mark port used: invalid port");
+  }
+}
+void ConnectionHandler::populate_aby_ports() {
+  if(m_config_handler){
+    m_aby_available_ports = m_config_handler->get_server_config().avaliable_aby_ports;
   }
 }
 }  // namespace sel

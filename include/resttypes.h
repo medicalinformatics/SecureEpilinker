@@ -82,6 +82,7 @@ struct ServerConfig {
   size_t default_page_size;
   uint32_t aby_threads;
   e_sharing boolean_sharing;
+  std::set<Port> avaliable_aby_ports;
 };
 
 void to_json(nlohmann::json& j, const AlgorithmConfig& c);

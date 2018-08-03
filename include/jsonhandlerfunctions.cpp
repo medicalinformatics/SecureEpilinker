@@ -45,6 +45,10 @@ ServerConfig make_server_config_from_json(nlohmann::json json) {
   e_sharing boolean_sharing;
   (json.at("booleanSharing").get<string>() == "yao") ? boolean_sharing = S_YAO
                                                      : boolean_sharing = S_BOOL;
+  std::set<Port> aby_ports;
+  for (auto p : json.at("abyPorts")) {
+    aby_ports.emplace(p.get<Port>());
+  }
   return {json.at("localInitSchemaPath").get<std::string>(),
           json.at("remoteInitSchemaPath").get<std::string>(),
           json.at("linkRecordSchemaPath").get<std::string>(),
@@ -58,7 +62,8 @@ ServerConfig make_server_config_from_json(nlohmann::json json) {
           json.at("restWorkerThreads").get<size_t>(),
           json.at("defaultPageSize").get<size_t>(),
           json.at("abyThreads").get<uint32_t>(),
-          boolean_sharing};
+          boolean_sharing,
+          aby_ports};
 }
 
 nlohmann::json read_json_from_disk(
