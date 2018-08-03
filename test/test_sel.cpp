@@ -25,7 +25,7 @@ struct EpilinkInput {
 ML_Field f_int1 (
   //name, f, e, comparator, type, bitsize
   "int_1", 1.0,
-  FieldComparator::BINARY, FieldType::INTEGER, 32
+  FieldComparator::BINARY, FieldType::INTEGER, 29
 );
 
 Bitmask data_int_1 = {0xde, 0xad, 0xbe, 0xef};
@@ -114,6 +114,28 @@ EpilinkInput input_simple(uint32_t nvals) {
   return {epi_cfg, in_client, in_server};
 }
 
+EpilinkInput input_simple_bm(uint32_t nvals) {
+  // Only one bm field, single byte integer
+  EpilinkConfig epi_cfg {
+    { {"bm_1", f_bm1}, }, // fields
+    {}, // exchange groups
+    Threshold, TThreshold // size_bitmask, (tent.) thresholds
+  };
+
+  //Bitmask data_int_zero(data_int_1.size(), 0);
+
+  EpilinkClientInput in_client {
+    { {"bm_1", Bitmask{0b01110111}} }, // record
+    nvals // nvals
+  };
+
+  EpilinkServerInput in_server {
+    { {"bm_1", vector<FieldEntry>(nvals, Bitmask{0b11101110})} } // records
+  };
+
+  return {epi_cfg, in_client, in_server};
+}
+
 EpilinkInput input_exchange_grp(uint32_t nvals) {
   // First test: only one bin field, single byte bitmask
   EpilinkConfig epi_cfg {
@@ -123,7 +145,7 @@ EpilinkInput input_exchange_grp(uint32_t nvals) {
       {"bm_1", f_bm1},
       {"bm_2", f_bm2},
     }, // fields
-    {{"int_1", "int_2"}}, // exchange groups
+    {{"bm_1", "bm_2"}}, // exchange groups
     Threshold, TThreshold // size_bitmask, (tent.) thresholds
   };
 
@@ -139,10 +161,10 @@ EpilinkInput input_exchange_grp(uint32_t nvals) {
 
   EpilinkServerInput in_server {
     {
-      {"bm_1", vector<FieldEntry>(nvals, Bitmask{0x33})},
-      {"bm_2", vector<FieldEntry>(nvals, Bitmask{0x42})}, // 1-bit mismatch
-      {"int_1", vector<FieldEntry>(nvals, data_int_2)},
-      {"int_2", vector<FieldEntry>(nvals, data_int_1)}
+      {"bm_1", vector<FieldEntry>(nvals, Bitmask{0x44})}, // 2-bit mismatch
+      {"bm_2", vector<FieldEntry>(nvals, Bitmask{0x35})}, // 1-bit mismatch
+      {"int_1", vector<FieldEntry>(nvals, data_int_1)},
+      {"int_2", vector<FieldEntry>(nvals, data_int_2)}
     } // records
   };
 
@@ -221,7 +243,7 @@ EpilinkInput input_empty(uint32_t nvals) {
       {"bm_2", f_bm2},
     }, // fields
     {}, // exchange groups
-    Threshold, TThreshold // size_bitmask, (tent.) thresholds
+    Threshold, TThreshold // (tent.) thresholds
   };
 
   EpilinkClientInput in_client {
@@ -271,7 +293,8 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  const auto in = input_random(dkfz_cfg, nvals);
+  const auto in = input_random(dkfz_cfg, nvals, 1, .8);
+  //const auto in = input_simple_bm(nvals);
 
   if(!op["local-only"].as<bool>()) {
     SecureEpilinker linker{aby_cfg, in.cfg};
