@@ -298,6 +298,7 @@ int main(int argc, char *argv[])
 
   if(!op["local-only"].as<bool>()) {
     SecureEpilinker linker{aby_cfg, in.cfg};
+    linker.connect();
     linker.build_circuit(nvals);
     linker.run_setup_phase();
 
