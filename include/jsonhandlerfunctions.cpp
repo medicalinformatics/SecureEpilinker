@@ -35,6 +35,7 @@
 #include "configurationhandler.h"
 #include "restbed"
 #include "resttypes.h"
+#include "restutils.h"
 #include "restresponses.hpp"
 #include "serverhandler.h"
 #include "util.h"
@@ -167,72 +168,8 @@ SessionResponse valid_linkrecord_json_handler(
                               .at("url")
                               .get<string>());  // no move to use copy elision
 
-        for (auto f = j.at("fields").begin(); f != j.at("fields").end(); ++f) {
-          const auto& field_config = local_config->get_field(f.key());
-          // TODO(TK): Remove variant and consolidate parsing
-          DataField tempfield;
-          if (!(f->is_null())) {
-            switch (field_config.type) {
-              case FieldType::BITMASK: {
-                if (!(f->is_string())) {
-                  throw runtime_error("Invalid field type in field "s +
-                                      f.key());
-                }
-                const auto b64string{f->get<string>()};
-                if (trim_copy(b64string).empty()) {
-                  tempfield = nullptr;
-                } else {
-                  auto tempbytearray{
-                      base64_decode(b64string, field_config.bitsize)};
-                  if (!check_bloom_length(tempbytearray,
-                                          field_config.bitsize)) {
-                    logger->warn(
-                        "Bits set after bloomfilterlength. Maybe there is "
-                        "something "
-                        "wrong. Set to zero.");
-                  }
-                  tempfield = tempbytearray;
-                }
-                break;
-              }
-              case FieldType::INTEGER: {
-                if (!(f->is_number_integer())) {
-                  throw runtime_error("Invalid field type in field "s +
-                                      f.key());
-                }
-                tempfield = f->get<int>();
-                break;
-              }
-              case FieldType::NUMBER: {
-                if (!(f->is_number())) {
-                  throw runtime_error("Invalid field type in field "s +
-                                      f.key());
-                }
-                tempfield = f->get<double>();
-                break;
-              }
-              case FieldType::STRING: {
-                if (!(f->is_string())) {
-                  throw runtime_error("Invalid field type in field "s +
-                                      f.key());
-                }
-                auto content{f->get<string>()};
-                if (trim_copy(content).empty()) {
-                  tempfield = nullptr;
-                } else {
-                  tempfield = f->get<string>();
-                }
-                break;
-              }
-              default: {
-                throw runtime_error("Invalid field type in field "s + f.key());
-              }
-            }       // Switch
-          } else {  // field type is null
-            tempfield = nullptr;
-          }
-          job->add_data_field(field_config.name, move(tempfield));
-        }
+        auto data{parse_json_fields(local_config,j)};
+        job->add_data(move(data));
 
         server_handler->add_linkage_job(remote_id, move(job));
       } catch (const exception& e) {

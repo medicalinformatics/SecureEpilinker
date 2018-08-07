@@ -1,0 +1,76 @@
+#include "restutils.h"
+#include <tuple>
+#include <map>
+#include "epilink_input.h"
+#include "nlohmann/json.hpp"
+#include "seltypes.h"
+#include "util.h"
+#include "base64.h"
+#include "logger.h"
+#include "localconfiguration.h"
+
+using namespace std;
+namespace sel {
+    // FIXME(TK) I do s.th. *very* unsafe and use bitlength user input directly
+    // for memcpy. DO SOME SANITY CHECKS OR THIS SOFTWARE WILL BREAK AND ALLOW
+    // ARBITRARY REMOTE CODE EXECUTION!
+pair<FieldName, FieldEntry> parse_json_field(const ML_Field& field,
+                                            const nlohmann::json& json) {
+  auto logger{get_default_logger()};
+  if (!(json.is_null())) {
+    switch (field.type) {
+      case FieldType::INTEGER: {
+        const auto content{json.get<int>()};
+        Bitmask temp(bitbytes(field.bitsize));
+        ::memcpy(temp.data(), &content, bitbytes(field.bitsize));
+        return make_pair(field.name, move(temp));
+        break;
+      }
+      case FieldType::NUMBER: {
+        const auto content{json.get<double>()};
+        Bitmask temp(bitbytes(field.bitsize));
+        ::memcpy(temp.data(), &content, bitbytes(field.bitsize));
+        return make_pair(field.name, move(temp));
+        break;
+      }
+      case FieldType::STRING: {
+        const auto content{json.get<string>()};
+        if (trim_copy(content).empty()) {
+          return make_pair(field.name, nullopt);
+        } else {
+          const auto temp_char_array{content.c_str()};
+          Bitmask temp(bitbytes(field.bitsize));
+          ::memcpy(temp.data(), temp_char_array, bitbytes(field.bitsize));
+          return make_pair(field.name, move(temp));
+        }
+        break;
+      }
+      case FieldType::BITMASK: {
+        auto temp = json.get<string>();
+        if (!trim_copy(temp).empty()) {
+          auto bloom = base64_decode(temp, field.bitsize);
+          if (!check_bloom_length(bloom, field.bitsize)) {
+            logger->warn(
+                "Bits set after bloomfilterlength. There might be a "
+                "problem. Set to zero.\n");
+          }
+          return make_pair(field.name, move(bloom));
+        } else {
+          return make_pair(field.name, nullopt);
+        }
+      }
+    }
+  } else {  // field has type null
+    return make_pair(field.name, nullopt);
+  }
+}
+
+map<FieldName, FieldEntry> parse_json_fields(shared_ptr<const LocalConfiguration> local_config,
+                                            const nlohmann::json& json) {
+  map<FieldName, FieldEntry> result;
+  for (auto f = json.at("fields").begin(); f != json.at("fields").end(); ++f) {
+    result[f.key()] = move(parse_json_field(local_config->get_field(f.key()), *f).second);
+  }
+  return result;
+  }
+}  // namespace sel

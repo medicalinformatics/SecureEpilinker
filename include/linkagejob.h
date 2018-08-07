@@ -47,7 +47,8 @@ class LinkageJob {
    LinkageJob();
    LinkageJob(std::shared_ptr<const LocalConfiguration>, std::shared_ptr<const RemoteConfiguration>, std::shared_ptr<const AlgorithmConfig>, std::shared_ptr<ServerHandler>);
    void set_callback(std::string&& cc);
-   void add_data_field(const FieldName& fieldname, DataField field);
+   void add_data_field(const FieldName& fieldname, FieldEntry field);
+   void add_data(std::map<FieldName, FieldEntry>);
    JobStatus get_status() const;
    JobId get_id() const;
    void run_linkage_job();
