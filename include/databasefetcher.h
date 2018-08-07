@@ -39,12 +39,12 @@ class DatabaseFetcher {
   ServerData fetch_data();
   DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf,
                   std::shared_ptr<const AlgorithmConfig> algo_conf,
-                  const std::string& url,
+                  std::string url,
                   AuthenticationConfig const* l_auth);
 
   DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf,
                   std::shared_ptr<const AlgorithmConfig> algo_conf,
-                  const std::string& url,
+                  std::string url,
                   AuthenticationConfig const* l_auth,
                   size_t page_size);
   void set_url(const std::string& url) { m_url = url; }

@@ -63,35 +63,12 @@ void LinkageJob::set_callback(string&& cc) {
 }
 
 void LinkageJob::add_data_field(const FieldName& fieldname,
-                                DataField datafield) {
-  FieldEntry temp_entry;
-  const auto field_info{m_local_config->get_field(fieldname)};
-    // FIXME(TK) I do s.th. *very* unsafe and use bitlength user input directly
-    // for memcpy. DO SOME SANITY CHECKS OR THIS SOFTWARE WILL BREAK AND ALLOW
-    // ARBITRARY REMOTE CODE EXECUTION!
-  if(holds_alternative<nullptr_t>(datafield)) {
-    temp_entry = nullopt;
-  } else if (holds_alternative<int>(datafield)) {
-    const auto content{get<int>(datafield)};
-      Bitmask temp(bitbytes(field_info.bitsize));
-      ::memcpy(temp.data(), &content, bitbytes(field_info.bitsize));
-      temp_entry = move(temp);
-  } else if (holds_alternative<double>(datafield)) {
-    const auto content{get<double>(datafield)};
-      Bitmask temp(bitbytes(field_info.bitsize));
-      ::memcpy(temp.data(), &content, bitbytes(field_info.bitsize));
-      temp_entry = move(temp);
-  } else if (holds_alternative<string>(datafield)) {
-    const auto content{get<string>(datafield)};
-      const auto temp_char_array{content.c_str()};
-      Bitmask temp(bitbytes(field_info.bitsize));
-      ::memcpy(temp.data(), temp_char_array, bitbytes(field_info.bitsize));
-      temp_entry = move(temp);
-  } else if (holds_alternative<Bitmask>(datafield)) {
-    const auto content{get<Bitmask>(datafield)};
-      temp_entry = move(content);
-  }
-  m_data.emplace(fieldname, temp_entry);
+                                FieldEntry datafield) {
+  m_data.emplace(fieldname, move(datafield));
+}
+
+void LinkageJob::add_data(map<FieldName, FieldEntry> data) {
+  m_data = move(data);
 }
 
 JobStatus LinkageJob::get_status() const {

@@ -38,6 +38,7 @@
 #include "nlohmann/json.hpp"
 #include "restbed"
 #include "resttypes.h"
+#include "restutils.h"
 #include "util.h"
 
 using namespace std;
@@ -45,23 +46,23 @@ namespace sel {
 DatabaseFetcher::DatabaseFetcher(
     std::shared_ptr<const LocalConfiguration> local_conf,
     std::shared_ptr<const AlgorithmConfig> algo_conf,
-    const std::string& url,
+    std::string url,
     AuthenticationConfig const* l_auth)
-    : m_url(url),
-      m_local_config(local_conf),
-      m_algo_config(algo_conf),
+    : m_url(move(url)),
+      m_local_config(move(local_conf)),
+      m_algo_config(move(algo_conf)),
       m_local_authentication(l_auth),
       m_logger{get_default_logger()} {}
 
 DatabaseFetcher::DatabaseFetcher(
     std::shared_ptr<const LocalConfiguration> local_conf,
     std::shared_ptr<const AlgorithmConfig> algo_conf,
-    const std::string& url,
+    std::string url,
     AuthenticationConfig const* l_auth,
     size_t page_size)
-    : m_url(url),
-      m_local_config(local_conf),
-      m_algo_config(algo_conf),
+    : m_url(move(url)),
+      m_local_config(move(local_conf)),
+      m_algo_config(move(algo_conf)),
       m_local_authentication(l_auth),
       m_page_size(page_size),
       m_logger{get_default_logger()} {}
@@ -125,78 +126,26 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
   if (!page_data.count("records")) {
     throw runtime_error("Invalid JSON Data: missing records section");
   }
-  map<FieldName, VFieldEntry> temp_data;
 
   for (const auto& rec : page_data["records"]) {
     if (!rec.count("fields")) {
       throw runtime_error("Invalid JSON Data: missing fields");
     }
-    // FIXME(TK) I do s.th. *very* unsafe and use bitlength user input directly
-    // for memcpy. DO SOME SANITY CHECKS OR THIS SOFTWARE WILL BREAK AND ALLOW
-    // ARBITRARY REMOTE CODE EXECUTION!
-    for (auto f = rec["fields"].begin(); f != rec["fields"].end(); ++f) {
-      const auto field_info{m_local_config->get_field(f.key())};
-      if (!(f->is_null())) {
-        switch (field_info.type) {
-          case FieldType::INTEGER: {
-            const auto content{f->get<int>()};
-            Bitmask temp(bitbytes(field_info.bitsize));
-            ::memcpy(temp.data(), &content, bitbytes(field_info.bitsize));
-            temp_data[f.key()].emplace_back(move(temp));
-            break;
-          }
-          case FieldType::NUMBER: {
-            const auto content{f->get<double>()};
-            Bitmask temp(bitbytes(field_info.bitsize));
-            ::memcpy(temp.data(), &content, bitbytes(field_info.bitsize));
-            temp_data[f.key()].emplace_back(move(temp));
-            break;
-          }
-          case FieldType::STRING: {
-            const auto content{f->get<string>()};
-            if (trim_copy(content).empty()) {
-              temp_data[f.key()].emplace_back(nullopt);
-            } else {
-              const auto temp_char_array{content.c_str()};
-              Bitmask temp(bitbytes(field_info.bitsize));
-              ::memcpy(temp.data(), temp_char_array,
-                       bitbytes(field_info.bitsize));
-              temp_data[f.key()].emplace_back(move(temp));
-            }
-            break;
-          }
-          case FieldType::BITMASK: {
-            auto temp = f->get<string>();
-            if (!trim_copy(temp).empty()) {
-              auto bloom = base64_decode(temp, field_info.bitsize);
-              if (!check_bloom_length(bloom, field_info.bitsize)) {
-                m_logger->warn(
-                    "Bits set after bloomfilterlength. There might be a "
-                    "problem. Set to zero.\n");
-              }
-              temp_data[f.key()].emplace_back(move(bloom));
-            } else {
-              temp_data[f.key()].emplace_back(nullopt);
-            }
-          }
-        }
-      } else { // field has type null
-        temp_data[f.key()].emplace_back(nullopt);
-      }
-      if (!rec.count("ids")) {
-        throw runtime_error("Invalid JSON Data: missing ids");
-      }
+    if (!rec.count("ids")) {
+      throw runtime_error("Invalid JSON Data: missing ids");
     }
+    // get data
+    auto data_fields{parse_json_fields(m_local_config,rec)};
+    for (auto& fields : data_fields){
+      m_data[fields.first].emplace_back(move(fields.second));
+    }
+    // get ids
     map<string, string> tempmap;
     for (auto i = rec["ids"].begin(); i != rec["ids"].end(); ++i) {
       tempmap.emplace((*i).at("idType").get<string>(),
                       (*i).at("idString").get<string>());
     }
     m_ids.emplace_back(move(tempmap));
-  }
-  for (auto& field : temp_data) {  // Append page data to main data
-    m_data[field.first].insert(m_data[field.first].end(), field.second.begin(),
-                               field.second.end());
   }
 }
 

@@ -25,7 +25,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <variant>
 #include <vector>
 #include <set>
 #include <cmath>
@@ -33,7 +32,6 @@
 
 namespace sel {
 
-using DataField = std::variant<int, double, std::string, std::vector<uint8_t>, std::nullptr_t>;
 using FieldName = std::string;
 using IndexSet = std::set<FieldName>;
 // weight type
