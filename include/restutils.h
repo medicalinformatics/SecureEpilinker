@@ -24,12 +24,14 @@
 #include <tuple>
 #include "nlohmann/json.hpp"
 #include "localconfiguration.h"
+#include <experimental/filesystem>
+#include <memory>
 
 
 
 namespace sel{
 std::pair<FieldName, FieldEntry> parse_json_field(const ML_Field&, const nlohmann::json&);
 std::map<FieldName,FieldEntry> parse_json_fields(std::shared_ptr<const LocalConfiguration>, const nlohmann::json&);
-
+nlohmann::json read_json_from_disk(const std::experimental::filesystem::path&);
 } // namespace sel
 #endif /* end of include guard: SEL_RESTUTILS_H */

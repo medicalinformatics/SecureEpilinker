@@ -68,25 +68,6 @@ ServerConfig make_server_config_from_json(nlohmann::json json) {
           aby_ports};
 }
 
-nlohmann::json read_json_from_disk(
-    const experimental::filesystem::path& json_path) {
-  auto logger{get_default_logger()};
-  nlohmann::json content;
-  if (experimental::filesystem::exists(json_path)) {
-    ifstream in(json_path);
-    try {
-      in >> content;
-    } catch (const std::ios_base::failure& e) {
-      logger->error("Reading of file {} failed: {}", json_path.string(),
-                    e.what());
-      exit(1);
-    }
-    return content;
-  } else {
-    throw runtime_error(json_path.string() + " does not exist!");
-    return content;  // To silence warning, will never be executed
-  }
-}
 
 unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json& j) {
   auto l_auth_type{str_to_authtype(j["authType"].get<string>())};
