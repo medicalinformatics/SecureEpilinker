@@ -167,6 +167,10 @@ int main(int argc, char* argv[]) {
   // Create Ressource on <url/linkRecord> and instruct to use the built MethodHandler
   sel::ResourceHandler linkrecord_handler{"/linkRecord/{remote_id: .*}"};
   linkrecord_handler.add_method(linkrecord_methodhandler);
+#ifdef SEL_MATCHING_MODE
+  sel::ResourceHandler matchrecord_handler{"/matchRecord/{remote_id: .*}"};
+  matchrecord_handler.add_method(linkrecord_methodhandler);
+#endif
   // Create Ressource on <url/jobs> and instruct to use the built MethodHandler
   // The jobid is provided in the url
   sel::ResourceHandler jobmonitor_handler{"/jobs/{job_id: .*}"};
