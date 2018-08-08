@@ -8,6 +8,8 @@
 #include "base64.h"
 #include "logger.h"
 #include "localconfiguration.h"
+#include <experimental/filesystem>
+#include <fstream>
 
 using namespace std;
 namespace sel {
@@ -24,14 +26,12 @@ pair<FieldName, FieldEntry> parse_json_field(const ML_Field& field,
         Bitmask temp(bitbytes(field.bitsize));
         ::memcpy(temp.data(), &content, bitbytes(field.bitsize));
         return make_pair(field.name, move(temp));
-        break;
       }
       case FieldType::NUMBER: {
         const auto content{json.get<double>()};
         Bitmask temp(bitbytes(field.bitsize));
         ::memcpy(temp.data(), &content, bitbytes(field.bitsize));
         return make_pair(field.name, move(temp));
-        break;
       }
       case FieldType::STRING: {
         const auto content{json.get<string>()};
@@ -43,7 +43,6 @@ pair<FieldName, FieldEntry> parse_json_field(const ML_Field& field,
           ::memcpy(temp.data(), temp_char_array, bitbytes(field.bitsize));
           return make_pair(field.name, move(temp));
         }
-        break;
       }
       case FieldType::BITMASK: {
         auto temp = json.get<string>();
@@ -73,4 +72,24 @@ map<FieldName, FieldEntry> parse_json_fields(shared_ptr<const LocalConfiguration
   }
   return result;
   }
+
+nlohmann::json read_json_from_disk(
+    const experimental::filesystem::path& json_path) {
+  auto logger{get_default_logger()};
+  nlohmann::json content;
+  if (experimental::filesystem::exists(json_path)) {
+    ifstream in(json_path);
+    try {
+      in >> content;
+    } catch (const std::ios_base::failure& e) {
+      logger->error("Reading of file {} failed: {}", json_path.string(),
+                    e.what());
+      exit(1);
+    }
+    return content;
+  } else {
+    throw runtime_error(json_path.string() + " does not exist!");
+    return content;  // To silence warning, will never be executed
+  }
+}
 }  // namespace sel
