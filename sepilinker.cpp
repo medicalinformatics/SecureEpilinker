@@ -176,6 +176,7 @@ int main(int argc, char* argv[]) {
   // The jobid is provided in the url
   sel::ResourceHandler jobmonitor_handler{"/jobs/{job_id: .*}"};
   jobmonitor_handler.add_method(jobmonitor_methodhandler);
+  // Ressources for internal usage. Not exposed in public API
   sel::ResourceHandler test_config_handler{"/testConfig/{remote_id: .*}"};
   test_config_handler.add_method(test_config_methodhandler);
   sel::ResourceHandler sellink_handler{"/initMPC/{parameter: .*}"};
