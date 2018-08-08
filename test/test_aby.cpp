@@ -2,6 +2,7 @@
 #include <algorithm>
 #include "cxxopts.hpp"
 #include "../include/util.h"
+#include "../include/math.h"
 #include "../include/aby/Share.h"
 #include "../include/aby/gadgets.h"
 #include "abycore/aby/abyparty.h"
