@@ -56,7 +56,7 @@ class ConnectionHandler {
    * Handle connection configurations and jobs. Dispatch ABY computations
    */
  public:
-  ConnectionHandler(restbed::Service* service);
+  explicit ConnectionHandler(restbed::Service* service);
 
   bool connection_exists(const RemoteId& c_id) const;
 
@@ -83,7 +83,6 @@ class ConnectionHandler {
   std::string get_available_ports() const;
   std::shared_ptr<ConfigurationHandler> m_config_handler;
   std::shared_ptr<restbed::Service> m_service;
-  // TODO(TK): parameterize available ports
   std::set<Port> m_aby_available_ports;
   std::mutex m_port_mutex;
 };
