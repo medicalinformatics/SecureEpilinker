@@ -659,3 +659,28 @@ specific requirements.
 if any, to sign a "copyright disclaimer" for the program, if necessary.
 For more information on this, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>.
+
+
+LICENSING OF DEPENDENCIES
+cURLpp - MIT https://opensource.org/licenses/MIT
+  libcURL - MIT/X derivate https://curl.haxx.se/docs/copyright.html
+ABY - AGPL v3.0 https://github.com/encryptogroup/ABY/blob/public/LICENSE
+  ENCRYPTO_utils - AGPL v3.0 https://github.com/encryptogroup/ENCRYPTO_utils/blob/master/LICENSE
+  OTExtension - AGPL v3.0 https://github.com/encryptogroup/OTExtension/blob/master/LICENSE
+  MIRACL - Split license: AGPL / Special https://libraries.docs.miracl.com/miracl-explained/licensing
+  OpenSSL - Double License OpenSSL / SSLeay https://github.com/openssl/openssl/blob/master/LICENSE
+CXXOpts - MIT https://github.com/jarro2783/cxxopts/blob/master/LICENSE
+nlohmann/json - MIT https://github.com/nlohmann/json/blob/develop/LICENSE.MIT
+spdlog - MIT https://github.com/gabime/spdlog/blob/v1.x/LICENSE
+fmtlib - BSD https://github.com/fmtlib/fmt/blob/master/LICENSE.rst
+valijson - BSD https://github.com/tristanpenman/valijson/blob/master/LICENSE
+  urdl - Boost https://www.boost.org/LICENSE_1_0.txt
+    Boost.Asio - Boost https://www.boost.org/LICENSE_1_0.txt
+      OpenSSL - Double License OpenSSL / SSLeay https://github.com/openssl/openssl/blob/master/LICENSE
+      Boost.System - Boost https://www.boost.org/LICENSE_1_0.txt
+    OpenSSL - Double License OpenSSL / SSLeay https://github.com/openssl/openssl/blob/master/LICENSE
+restbed - Split license: AGPL / CPL https://github.com/Corvusoft/restbed/blob/master/LICENSE
+  OpenSSL - Double License OpenSSL / SSLeay https://github.com/openssl/openssl/blob/master/LICENSE
+  Boost.Asio - Boost https://www.boost.org/LICENSE_1_0.txt
+    OpenSSL - Double License OpenSSL / SSLeay https://github.com/openssl/openssl/blob/master/LICENSE
+    Boost.System - Boost https://www.boost.org/LICENSE_1_0.txt
