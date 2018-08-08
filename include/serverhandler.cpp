@@ -83,7 +83,13 @@ void ServerHandler::add_linkage_job(const RemoteId& remote_id, std::shared_ptr<L
   m_job_remote_mapping.emplace(job->get_id(), remote_id);
   m_client_jobs[remote_id].emplace(job->get_id(),move(job));
   try{
-  m_client_jobs.at(remote_id).at(job_id)->run_linkage_job();
+    if(!m_config_handler->get_remote_config(remote_id)->get_matching_mode()){
+      m_client_jobs.at(remote_id).at(job_id)->run_linkage_job();
+    } else {
+#ifdef SEL_MATCHING_MODE
+      m_client_jobs.at(remote_id).at(job_id)->run_matching_job();
+#endif
+    }
   } catch (const exception& e) {
     m_logger->error("Error in add_linkage_job: {}", e.what());
   }
