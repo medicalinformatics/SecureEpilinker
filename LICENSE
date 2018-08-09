@@ -684,3 +684,7 @@ restbed - Split license: AGPL / CPL https://github.com/Corvusoft/restbed/blob/ma
   Boost.Asio - Boost https://www.boost.org/LICENSE_1_0.txt
     OpenSSL - Double License OpenSSL / SSLeay https://github.com/openssl/openssl/blob/master/LICENSE
     Boost.System - Boost https://www.boost.org/LICENSE_1_0.txt
+Licensing of C++ STL is dependent on on the choice of compiler
+  for GCCs libstdc++ - GPL https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html#manual.intro.status.license.gpl
+  for Clangs libc++ - Dual MIT / UIUC https://llvm.org/docs/DeveloperPolicy.html#license
+  ...
