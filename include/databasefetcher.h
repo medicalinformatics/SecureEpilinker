@@ -56,9 +56,11 @@ class DatabaseFetcher {
   nlohmann::json request_page(const std::string& url) const;
   void get_page_data(const nlohmann::json&);
   std::map<FieldName, VFieldEntry> m_data;
-  std::vector<std::map<std::string, std::string>> m_ids;
+  std::vector<std::string> m_ids;
   std::string m_next_page;
   size_t m_todate;
+  RemoteId m_local_id;
+  RemoteId m_remote_id;
   std::string m_url;
   std::shared_ptr<const LocalConfiguration> m_local_config;
   std::shared_ptr<const AlgorithmConfig> m_algo_config;

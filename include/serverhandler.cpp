@@ -144,11 +144,7 @@ void ServerHandler::run_server(RemoteId remote_id, std::shared_ptr<const ServerD
   const auto ids{get_local_server(remote_id)->get_ids()};
   string id_string;
   for (size_t i = 0; i!= ids.size(); ++i){
-    id_string += "Index: "+ to_string(i) + " IDs: ";
-    for (const auto& id : ids[i]){
-      id_string += "\"" + id.first + ":" + id.second + "\"";
-    }
-    id_string += "\n";
+    id_string += "Index: "+ to_string(i) + " ID: " + ids.at(i) + '\n';
   }
   m_logger->info("IDs:\n{}", id_string);
   // TODO(TK): Send result and ids to linkage server

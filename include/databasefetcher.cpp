@@ -81,6 +81,14 @@ ServerData DatabaseFetcher::fetch_data() {
   if (page.count("toDate")) {
     m_todate = page.at("toDate").get<size_t>();
   }
+  if (!page.count("remoteId")) {
+    throw runtime_error("Invalid JSON Data: missing remoteId");
+  }
+  if (!page.count("localId")) {
+    throw runtime_error("Invalid JSON Data: missing localId");
+  }
+  m_remote_id = page["remoteId"].get<RemoteId>();
+  m_local_id = page["localId"].get<RemoteId>();
 
   for (; m_page != m_last_page; ++m_page) {
     get_page_data(page);
@@ -109,14 +117,11 @@ ServerData DatabaseFetcher::fetch_data() {
   input_string +=
       "------------------------------\nIDs\n-----------------------------\n";
   for (const auto& m : m_ids) {
-    for (const auto& i : m) {
-      input_string += "Type: " + i.first + ", ID: " + i.second + "; ";
-    }
-    input_string += "\n";
+      input_string += "ID: " + m + '\n';
   }
   m_logger->trace("Recieved Inputs:\n{}", input_string);
 #endif
-  return {move(m_data), move(m_ids), move(m_todate)};
+  return {move(m_data), move(m_ids), move(m_todate), move(m_local_id), move(m_remote_id)};
 }
 
 void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
@@ -131,21 +136,16 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
     if (!rec.count("fields")) {
       throw runtime_error("Invalid JSON Data: missing fields");
     }
-    if (!rec.count("ids")) {
-      throw runtime_error("Invalid JSON Data: missing ids");
+    if (!rec.count("id")) {
+      throw runtime_error("Invalid JSON Data: missing id");
     }
     // get data
     auto data_fields{parse_json_fields(m_local_config,rec)};
     for (auto& fields : data_fields){
       m_data[fields.first].emplace_back(move(fields.second));
     }
-    // get ids
-    map<string, string> tempmap;
-    for (auto i = rec["ids"].begin(); i != rec["ids"].end(); ++i) {
-      tempmap.emplace((*i).at("idType").get<string>(),
-                      (*i).at("idString").get<string>());
-    }
-    m_ids.emplace_back(move(tempmap));
+    // get id
+    m_ids.emplace_back(rec.at("id").get<string>());
   }
 }
 

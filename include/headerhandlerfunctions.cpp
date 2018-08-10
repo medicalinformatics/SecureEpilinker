@@ -31,7 +31,7 @@ namespace sel{
 
 SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
                               const shared_ptr<const restbed::Request>&,
-                              const multimap<string,string>& headers,
+                              const multimap<string,string>&,
                               string remote_id,
                               const shared_ptr<ConfigurationHandler>&,
                               const shared_ptr<ConnectionHandler>&,
@@ -45,7 +45,7 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
   // TODO(TK) Authorization
   common_port = server_handler->get_server_port(remote_id);
 
-  auto nvals{data_handler->poll_database()};
+  auto nvals{data_handler->poll_database(remote_id)};
   auto data{data_handler->get_database()};
   response.return_code = restbed::OK;
   response.body = "Linkage server running"s;

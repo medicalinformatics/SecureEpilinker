@@ -35,8 +35,10 @@ class DatabaseFetcher;
 
 struct ServerData {
   std::map<FieldName, VFieldEntry> data;
-  std::vector<std::map<std::string, std::string>> ids;
+  std::vector<std::string> ids;
   ToDate todate;
+  RemoteId local_id;
+  RemoteId remote_id;
 };
 #ifdef DEBUG_SEL_REST
 struct Debugger{
@@ -56,7 +58,7 @@ class DataHandler {
  public:
   void set_config_handler(std::shared_ptr<ConfigurationHandler>);
   std::shared_ptr<const ServerData> get_database() const;
-  size_t poll_database();
+  size_t poll_database(const RemoteId&);
   size_t poll_database_diff();  // TODO(TK) Not implemented yet. Use full update
 #ifdef DEBUG_SEL_REST
   Debugger* get_epilink_debug() { return m_epilink_debug;}
