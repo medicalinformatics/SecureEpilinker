@@ -21,6 +21,8 @@
    "lastPageNumber":3,
    "pageSize": 2,
    "todate":1524096000,
+   "localId": "TUDA2",
+   "remoteId": "TUDA1",
    "records":[ 
       { 
          "fields":{ 
@@ -33,12 +35,7 @@
             "plz":"65434",
             "ort":"TGkgRXVyb3BhbiBsaW5ndWVzIGVzIG1lbWJyZXMgZGVsIHNhbSBmYW1pbGllLiBMb3Igc2VwYXJhdCBleGlz"
          },
-         "ids":[ 
-            { 
-               "idType":"lid",
-               "idString":"11111"
-            }
-         ]
+         "id": "ID1"
       },
       { 
          "fields":{ 
@@ -51,12 +48,7 @@
             "plz":"65432",
             "ort":"SmVtYW5kIG11c3N0ZSBKb3NlZiBLLiB2ZXJsZXVtZGV0IGhhYmVuLCBkZW5uIG9obmUgZGFzcyBlciBldHdh"
          },
-         "ids":[ 
-            { 
-               "idType":"lid",
-               "idString":"11112"
-            }
-         ]
+         "id": "ID2"
       }
    ]
 }
