@@ -276,8 +276,7 @@ private:
     return (bcirc->GetContext() == S_YAO) ? a2y(bcirc, s) : a2b(bcirc, ccirc, s);
   }
 
-  ArithShare to_arith(const BoolShare& s_) {
-    BoolShare s{s_.zeropad(BitLen)}; // fix for aby issue #46
+  ArithShare to_arith(const BoolShare& s) {
     return (bcirc->GetContext() == S_YAO) ? y2a(acirc, ccirc, s) : b2a(acirc, s);
   }
 
