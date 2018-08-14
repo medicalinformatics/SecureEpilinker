@@ -150,6 +150,15 @@ std::vector<ToValue> transform_map_vec(const std::map<Key, FromValue>& _map,
 }
 
 /**
+ * Whether vector contains element
+ */
+template <typename T>
+bool vec_contains(const std::vector<T>& vec, const T& element) {
+  return std::find(vec.cbegin(), vec.cend(), element) != vec.cend();
+}
+
+
+/**
  * Return maximum element (by value) from given vector
  */
 template <class Value>
