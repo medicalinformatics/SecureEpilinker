@@ -1,26 +1,22 @@
-#include <random>
 #include "cxxopts.hpp"
 #include "fmt/format.h"
 #include "../include/util.h"
 #include "../include/secure_epilinker.h"
 #include "../include/clear_epilinker.h"
 #include "abycore/aby/abyparty.h"
+#include "random_input_generator.h"
 
-using namespace sel;
 using namespace std;
-using Result = SecureEpilinker::Result;
 using fmt::print;
+
+namespace sel::test {
+
+using Result = SecureEpilinker::Result;
 
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
 constexpr double Threshold = 0.9;
 constexpr double TThreshold = 0.7;
-
-struct EpilinkInput {
-  EpilinkConfig cfg;
-  EpilinkClientInput client;
-  EpilinkServerInput server;
-};
 
 ML_Field f_int1 (
   //name, f, e, comparator, type, bitsize
@@ -171,70 +167,6 @@ EpilinkInput input_exchange_grp(uint32_t nvals) {
   return {epi_cfg, in_client, in_server};
 }
 
-mt19937 gen(73);
-uniform_int_distribution<> rndbyte(0, 0xff);
-
-Bitmask random_bm(size_t bitsize, int density_shift) {
-  Bitmask bm(bitbytes(bitsize));
-  for(auto& b : bm) {
-    b = rndbyte(gen);
-    for (int i = 0; i != abs(density_shift); ++i) {
-      if (density_shift > 0)  b |= rndbyte(gen);
-      else if (density_shift < 0)  b &= rndbyte(gen);
-    }
-  }
-  // set most significant bits to 0 if bitsize%8
-  if (bitsize%8) bm.back() >>= (8-bitsize%8);
-  return bm;
-}
-
-/**
- * Generates random input for the given EpilinkConfig.
- *
- * bm_density_shift controls the density of randomly set bits in the bitmasks:
- *   = 0 - equal number of 1s and 0s
- *   > 0 - more 1s than 0s
- *   < 0 - less 1s than 0s
- *
- * bin_match_prob gives the random probability with which a database bin field
- * is set to the corresponding client record entry. Otherwise the probability of
- * a match for randomly generated binary fields would diminishingly low.
- */
-EpilinkInput input_random(const EpilinkConfig& cfg,
-    uint32_t nvals, int bm_density_shift = 0, double bin_match_prob = .5) {
-  EpilinkClientInput in_client {
-    transform_map(dkfz_cfg.fields, [&bm_density_shift](const ML_Field& f)
-      -> FieldEntry {
-        return random_bm(f.bitsize,
-            (f.comparator == FieldComparator::DICE) ? bm_density_shift : 0);
-      }),
-      nvals
-  };
-
-  bernoulli_distribution rndmatch(bin_match_prob);
-
-  EpilinkServerInput in_server {
-    transform_map(dkfz_cfg.fields,
-      [&nvals, &bm_density_shift, &rndmatch, &in_client](const ML_Field& f)
-      -> VFieldEntry {
-        VFieldEntry ve;
-        ve.reserve(nvals);
-        for (auto i = 0; i < nvals; ++i) {
-          if (f.comparator == FieldComparator::DICE) {
-            ve.emplace_back(random_bm(f.bitsize, bm_density_shift));
-          } else if (rndmatch(gen)) {
-            ve.emplace_back(in_client.record.at(f.name));
-          } else {
-            ve.emplace_back(random_bm(f.bitsize, 0));
-          }
-        }
-        return ve;
-      })
-  };
-
-  return {cfg, in_client, in_server};
-}
-
 EpilinkInput input_empty(uint32_t nvals) {
   // First test: only one bin field, single byte bitmask
   EpilinkConfig epi_cfg {
@@ -248,7 +180,7 @@ EpilinkInput input_empty(uint32_t nvals) {
 
   EpilinkClientInput in_client {
     {
-      {"bm_1", Bitmask{0x33}},
+      {"bm_1", nullopt},
       {"bm_2", Bitmask{0x44}},
     }, // record
     2 // nvals
@@ -257,12 +189,17 @@ EpilinkInput input_empty(uint32_t nvals) {
   EpilinkServerInput in_server {
     {
       {"bm_1", { nullopt, Bitmask{0x31} }}, // 1-bit mismatch for #1
-      {"bm_2", { Bitmask{0x43}, nullopt }}, // 2-bit mismatch for #0
+      {"bm_2", { Bitmask{0x43}, Bitmask{0x44} }}, // 2-bit mismatch for #0
     } // records
   };
 
   return {epi_cfg, in_client, in_server};
 }
+
+} /* END namespace sel::test */
+
+using namespace sel;
+using namespace sel::test;
 
 int main(int argc, char *argv[])
 {
@@ -293,8 +230,12 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  const auto in = input_random(dkfz_cfg, nvals, 1, .8);
-  //const auto in = input_simple_bm(nvals);
+  RandomInputGenerator random_input(dkfz_cfg);
+  random_input.set_client_empty_fields({"ort"});
+  random_input.set_server_empty_field_probability(0);
+  const auto in = random_input.generate(nvals);
+
+  //const auto in = input_empty(nvals);
 
   if(!op["local-only"].as<bool>()) {
     SecureEpilinker linker{aby_cfg, in.cfg};
