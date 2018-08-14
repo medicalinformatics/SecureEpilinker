@@ -149,7 +149,10 @@ target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3"
   "-DDEBUG_SEL_GADGETS")
 
 # Test Secure Epilinker
-add_executable(test_sel test/test_sel.cpp ${SELSOURCES} ${SELHEADER})
+add_executable(test_sel
+  test/test_sel.cpp
+  test/random_input_generator.cpp test/random_input_generator.h
+  ${SELSOURCES} ${SELHEADER})
 add_dependencies(test_sel ABY)
 add_dependencies(test_sel OTExtension)
 add_dependencies(test_sel MIRACL)
