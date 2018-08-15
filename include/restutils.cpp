@@ -92,4 +92,23 @@ nlohmann::json read_json_from_disk(
     return content;  // To silence warning, will never be executed
   }
 }
+vector<string> get_headers(istream& is,const string& header){
+  vector<string> responsevec;
+  string line;
+  while(safeGetline(is,line)){
+    responsevec.emplace_back(line);
+  }
+  vector<string> headers;
+  for(const auto& line : responsevec){
+    if(auto pos = line.find(header); pos != string::npos){
+      headers.emplace_back(line.substr(header.length()+2));
+    }
+  }
+  return headers;
+}
+vector<string> get_headers(const string& is,const string& header){
+  stringstream stream;
+  stream << is;
+  return get_headers(stream, header);
+  }
 }  // namespace sel
