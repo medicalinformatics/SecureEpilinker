@@ -8,6 +8,7 @@
 #include "base64.h"
 #include "logger.h"
 #include "localconfiguration.h"
+#include "remoteconfiguration.h"
 #include <experimental/filesystem>
 #include <fstream>
 
@@ -111,4 +112,11 @@ vector<string> get_headers(const string& is,const string& header){
   stream << is;
   return get_headers(stream, header);
   }
+
+string assemble_remote_url(RemoteConfiguration const *remote_config) {
+  return remote_config->get_remote_scheme() + "://" + remote_config->get_remote_host() + ':' + to_string(remote_config->get_remote_signaling_port());
+}
+string assemble_remote_url(const shared_ptr<const RemoteConfiguration>& remote_config) {
+  return assemble_remote_url(remote_config.get());
+}
 }  // namespace sel

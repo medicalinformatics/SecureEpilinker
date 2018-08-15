@@ -24,6 +24,7 @@
 #include <tuple>
 #include "nlohmann/json.hpp"
 #include "localconfiguration.h"
+#include "remoteconfiguration.h"
 #include <experimental/filesystem>
 #include <memory>
 
@@ -33,6 +34,8 @@ namespace sel{
 std::pair<FieldName, FieldEntry> parse_json_field(const ML_Field&, const nlohmann::json&);
 std::map<FieldName,FieldEntry> parse_json_fields(std::shared_ptr<const LocalConfiguration>, const nlohmann::json&);
 nlohmann::json read_json_from_disk(const std::experimental::filesystem::path&);
+std::string assemble_remote_url(const std::shared_ptr<const RemoteConfiguration>&);
+std::string assemble_remote_url(RemoteConfiguration const * );
 std::vector<std::string> get_headers(std::istream& is,const std::string& header);
 std::vector<std::string> get_headers(const std::string&,const std::string& header);
 } // namespace sel

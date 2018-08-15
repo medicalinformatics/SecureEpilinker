@@ -23,6 +23,7 @@
 #include "resttypes.h"
 #include "seltypes.h"
 #include "util.h"
+#include <restbed>
 
 #include "connectionhandler.h"
 #include "serverhandler.h"
@@ -42,15 +43,18 @@ RemoteConfiguration::RemoteConfiguration(RemoteId c_id)
 RemoteConfiguration::~RemoteConfiguration() {}
 
 Port RemoteConfiguration::get_remote_signaling_port() const {
-  auto parts{split(m_connection_profile.url, ':')};
-  // {{192.168.1.1},{8080}}
-  return stoi(parts.back());
+  restbed::Uri address{m_connection_profile.url};
+  return address.get_port();
+}
+
+string RemoteConfiguration::get_remote_scheme() const {
+  restbed::Uri address{m_connection_profile.url};
+  return address.get_scheme();
 }
 
 string RemoteConfiguration::get_remote_host() const {
-  auto parts{split(m_connection_profile.url, ':')};
-  // {{192.168.1.1},{8080}}
-  return parts.front();
+  restbed::Uri address{m_connection_profile.url};
+  return address.get_authority();
 }
 
 void RemoteConfiguration::set_connection_profile(ConnectionConfig cconfig) {
