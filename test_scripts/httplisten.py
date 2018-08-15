@@ -38,6 +38,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         
         #print((self.rfile.read(length)))
+        content_len = int(self.headers.get('Content-Length', 0))
+        post_body = self.rfile.read(content_len)
         print("<----- Request End -----\n")
         
         if(request_path.find("page=2")== -1 and request_path.find("page=3")== -1):
@@ -51,6 +53,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         if(request_path.find("page=3")!= -1):
             with open('database/page3.json', 'r') as myfile:
                 msg=myfile.read().replace('\n', '')
+        if(request_path.find("linkCallback")!= -1):
+            print("Callback recieved:", post_body)
         self.send_response(200,'')
         self.send_header('Content-Length', str(len(msg)))
         self.end_headers()
