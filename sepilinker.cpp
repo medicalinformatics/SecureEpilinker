@@ -64,6 +64,7 @@ int main(int argc, char* argv[]) {
     ("d,dh", "File name of Diffi-Hellman group", cxxopts::value<std::string>())
     ("C,cert", "File name of server certificate", cxxopts::value<std::string>())
     ("p,port", "Port for listening", cxxopts::value<unsigned>())
+    ("s,ssl", "Use SSL")
     ("h,help", " Print this help");
   auto cmdoptions{options.parse(argc,argv)};
   if(cmdoptions.count("help")) {
@@ -96,6 +97,9 @@ int main(int argc, char* argv[]) {
   }
   if(cmdoptions.count("logfile")){
     server_config["logFilePath"] = cmdoptions["logfile"].as<std::string>();
+  }
+  if(cmdoptions.count("ssl")){
+    server_config["useSSL"] = true;
   }
 
   create_file_logger(server_config.at("logFilePath").get<std::string>());
