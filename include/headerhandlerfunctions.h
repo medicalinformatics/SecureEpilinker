@@ -61,4 +61,13 @@ SessionResponse init_mpc(const std::shared_ptr<restbed::Session>&,
                               const std::shared_ptr<ServerHandler>& server_handler,
                               const std::shared_ptr<DataHandler>& data_handler,
                               const std::shared_ptr<spdlog::logger>& logger);
+SessionResponse test_configs(const std::shared_ptr<restbed::Session>&,
+                              const std::shared_ptr<const restbed::Request>&,
+                              const std::multimap<std::string,std::string>& headers,
+                              std::string remote_id,
+                              const std::shared_ptr<ConfigurationHandler>&,
+                              const std::shared_ptr<ConnectionHandler>&,
+                              const std::shared_ptr<ServerHandler>& server_handler,
+                              const std::shared_ptr<DataHandler>& data_handler,
+                              const std::shared_ptr<spdlog::logger>& logger);
 } // namespace sel
