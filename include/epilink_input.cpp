@@ -29,6 +29,11 @@ using fmt::print;
 
 namespace sel {
 
+size_t bit_usage(const size_t dice_prec,
+    const size_t weight_prec, const size_t nfields) {
+  return dice_prec + 2*weight_prec + ceil_log2(nfields*nfields);
+}
+
 EpilinkConfig::EpilinkConfig(
       std::map<FieldName, ML_Field> fields_,
       std::vector<IndexSet> exchange_groups_,
@@ -66,7 +71,7 @@ EpilinkConfig::EpilinkConfig(
     // Division by 2 for weight_prec initialization could have wasted one bit
     // which we cannot add to dice precision because it would overflow the
     // 16-bit integer division input... Need better int-div
-    assert (dice_prec + 2*weight_prec + ceil_log2(nfields*nfields) <= bitlen);
+    assert (bit_usage(dice_prec, weight_prec, nfields) <= bitlen);
 
 #ifndef SEL_MATCHING_MODE
     if (matching_mode) throw invalid_argument(
@@ -112,7 +117,8 @@ void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
   print("New dice precision: {}; weight precision: {}\n",
       dice_prec_, weight_prec_);
 #endif
-  if (dice_prec_ + 2*weight_prec_ + ceil_log2(nfields*nfields) > bitlen) {
+
+  if (bit_usage(dice_prec, weight_prec, nfields) > bitlen) {
     throw invalid_argument("Given dice and weight precision would potentially "
         "cause overflows in current bitlen!");
   }
