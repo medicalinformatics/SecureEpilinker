@@ -19,7 +19,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include "fmt/format.h"
-using fmt::format, fmt::print;
+using fmt::format;
 #include "abycore/sharing/sharing.h"
 #include "util.h"
 #include "secure_epilinker.h"
@@ -27,6 +27,7 @@ using fmt::format, fmt::print;
 #include "aby/Share.h"
 #include "aby/gadgets.h"
 #include "seltypes.h"
+#include "logger.h"
 
 using namespace std;
 
@@ -300,9 +301,9 @@ private:
 
     CircUnit T = llround(cfg.threshold * (1 << cfg.dice_prec));
     CircUnit Tt = llround(cfg.tthreshold * (1 << cfg.dice_prec));
-#ifdef DEBUG_SEL_INPUT
-    cout << " T: " << hex << T << " Tt: " << Tt << endl;
-#endif
+
+    get_default_logger()->debug(
+        "Rescaled threshold: {:x}/ tentative: {:x}", T, Tt);
 
     const_threshold = constant(acirc, T, BitLen);
     const_tthreshold = constant(acirc, Tt, BitLen);
@@ -570,7 +571,8 @@ void SecureEpilinker::run_setup_phase() {
 SecureEpilinker::Result SecureEpilinker::run_as_client(
     const EpilinkClientInput& input) {
   if (!is_setup) {
-    cerr << "Warning: Implicitly running setup phase." << endl;
+    get_default_logger()->warn(
+        "SecureEpilinker::run_as_client: Implicitly running setup phase.");
     run_setup_phase();
   }
   selc->set_input(input);
@@ -580,7 +582,8 @@ SecureEpilinker::Result SecureEpilinker::run_as_client(
 SecureEpilinker::Result SecureEpilinker::run_as_server(
     const EpilinkServerInput& input) {
   if (!is_setup) {
-    cerr << "Warning: Implicitly running setup phase." << endl;
+    get_default_logger()->warn(
+        "SecureEpilinker::run_as_server: Implicitly running setup phase.");
     run_setup_phase();
   }
   selc->set_input(input);
@@ -591,7 +594,8 @@ SecureEpilinker::Result SecureEpilinker::run_as_server(
 SecureEpilinker::Result SecureEpilinker::run_as_both(
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
   if (!is_setup) {
-    cerr << "Warning: Implicitly running setup phase." << endl;
+    get_default_logger()->warn(
+        "SecureEpilinker::run_as_both: Implicitly running setup phase.");
     run_setup_phase();
   }
   selc->set_both_inputs(in_client, in_server);
