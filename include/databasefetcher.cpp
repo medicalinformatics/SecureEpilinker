@@ -114,11 +114,13 @@ ServerData DatabaseFetcher::fetch_data() {
       input_string += "\n";
     }
   }
+#ifndef SEL_MATCHING_MODE
   input_string +=
       "------------------------------\nIDs\n-----------------------------\n";
   for (const auto& m : m_ids) {
       input_string += "ID: " + m + '\n';
   }
+#endif
   m_logger->trace("Recieved Inputs:\n{}", input_string);
 #endif
   return {move(m_data), move(m_ids), move(m_todate), move(m_local_id), move(m_remote_id)};
@@ -136,18 +138,20 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
     if (!rec.count("fields")) {
       throw runtime_error("Invalid JSON Data: missing fields");
     }
-    if (!rec.count("id")) {
-      throw runtime_error("Invalid JSON Data: missing id");
-    }
     // get data
-    auto data_fields{parse_json_fields(m_local_config,rec)};
-    for (auto& fields : data_fields){
-      m_data[fields.first].emplace_back(move(fields.second));
+      auto data_fields{parse_json_fields(m_local_config,rec)};
+      for (auto& fields : data_fields){
+        m_data[fields.first].emplace_back(move(fields.second));
+      }
+#ifndef SEL_MATCHING_MODE
+      // get id
+      if (!rec.count("id")) {
+        throw runtime_error("Invalid JSON Data: missing id");
+      }
+      m_ids.emplace_back(rec.at("id").get<string>());
+#endif
     }
-    // get id
-    m_ids.emplace_back(rec.at("id").get<string>());
   }
-}
 
   nlohmann::json DatabaseFetcher::get_next_page() const {
     return request_page(m_next_page);
