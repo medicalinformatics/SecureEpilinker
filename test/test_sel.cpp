@@ -1,9 +1,11 @@
 #include "cxxopts.hpp"
 #include "fmt/format.h"
+#include "abycore/aby/abyparty.h"
+
+#include "../include/logger.h"
 #include "../include/util.h"
 #include "../include/secure_epilinker.h"
 #include "../include/clear_epilinker.h"
-#include "abycore/aby/abyparty.h"
 #include "random_input_generator.h"
 
 using namespace std;
@@ -216,12 +218,23 @@ int main(int argc, char *argv[])
     ("n,nvals", "Parallellity", cxxopts::value(nvals))
     ("r,run-both", "Use run_as_both()", cxxopts::value(run_both))
     ("L,local-only", "Only run local calculations on clear values. Doesn't initialize the SecureEpilinker.")
+    ("v,verbose", "Set verbosity. May be specified multiple times to log on "
+      "info/debug/trace level. Default level is warning.")
     ("h,help", "Print help");
   auto op = options.parse(argc, argv);
 
   if (op["help"].as<bool>()) {
     cout << options.help() << endl;
     return 0;
+  }
+
+  // Logger
+  createTerminalLogger();
+  switch(op.count("verbose")){
+    case 0: spdlog::set_level(spdlog::level::warn); break;
+    case 1: spdlog::set_level(spdlog::level::info); break;
+    case 2: spdlog::set_level(spdlog::level::debug); break;
+    default: spdlog::set_level(spdlog::level::trace); break;
   }
 
   role = role_server ? SERVER : CLIENT;
