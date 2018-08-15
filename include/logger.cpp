@@ -27,19 +27,43 @@
 #include <spdlog/sinks/dist_sink.h>
 
 using namespace std;
+
 namespace sel{
-void createLogger(const std::string& filename){
+
+constexpr char logger_name[]{"default"};
+constexpr size_t async_log_queue_size{8192u};
+constexpr size_t log_file_size{1024u*1024u*5u};
+constexpr unsigned log_history{5u};
+constexpr unsigned logging_threads{3u};
+
+void createMultisinkLogger(const vector<spdlog::sink_ptr>& sinks) {
   spdlog::flush_on(spdlog::level::debug);
   spdlog::flush_every(30s);
   spdlog::init_thread_pool(async_log_queue_size,logging_threads);
-  std::vector<spdlog::sink_ptr> sinks;
-  sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-  sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(filename,log_file_size,log_history));
-  //for(auto& sink : sinks) {
-    //sink->set_level(level);
-  //}
 
   auto multisink = std::make_shared<spdlog::logger>(logger_name, sinks.begin(), sinks.end());
   spdlog::register_logger(multisink);
 }
-} // namespace sel
+
+void createFileLogger(const std::string& filename) {
+  vector<spdlog::sink_ptr> sinks = {
+    make_shared<spdlog::sinks::stdout_color_sink_mt>(),
+    make_shared<spdlog::sinks::rotating_file_sink_mt>(filename,log_file_size,log_history)
+  };
+
+  createMultisinkLogger(sinks);
+}
+
+void createTerminalLogger() {
+  vector<spdlog::sink_ptr> sinks = {
+    make_shared<spdlog::sinks::stdout_color_sink_mt>()
+  };
+
+  createMultisinkLogger(sinks);
+}
+
+std::shared_ptr<spdlog::logger> get_default_logger(){
+  return spdlog::get(logger_name);
+}
+
+} /* END namespace sel */
