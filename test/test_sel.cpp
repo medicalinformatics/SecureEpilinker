@@ -48,28 +48,30 @@ ML_Field f_bm2 (
   FieldComparator::DICE, FieldType::BITMASK, 8
 );
 
-EpilinkConfig dkfz_cfg {
-  { // begin map<string, ML_Field>
-    { "vorname",
-      ML_Field("vorname", 0.000235, 0.01, "dice", "bitmask", 500) },
-    { "nachname",
-      ML_Field("nachname", 0.0000271, 0.008, "dice", "bitmask", 500) },
-    { "geburtsname",
-      ML_Field("geburtsname", 0.0000271, 0.008, "dice", "bitmask", 500) },
-    { "geburtstag",
-      ML_Field("geburtstag", 0.0333, 0.005, "binary", "integer", 5) },
-    { "geburtsmonat",
-      ML_Field("geburtsmonat", 0.0833, 0.002, "binary", "integer", 4) },
-    { "geburtsjahr",
-      ML_Field("geburtsjahr", 0.0286, 0.004, "binary", "integer", 11) },
-    { "plz",
-      ML_Field("plz", 0.01, 0.04, "binary", "string", 40) },
-    { "ort",
-      ML_Field("ort", 0.01, 0.04, "dice", "bitmask", 500) }
-  }, // end map<string, ML_Field>
-  { { "vorname", "nachname", "geburtsname" } }, // exchange groups
-  Threshold, TThreshold
-};
+EpilinkConfig make_dkfz_cfg() {
+  return {
+    { // begin map<string, ML_Field>
+      { "vorname",
+        ML_Field("vorname", 0.000235, 0.01, "dice", "bitmask", 500) },
+      { "nachname",
+        ML_Field("nachname", 0.0000271, 0.008, "dice", "bitmask", 500) },
+      { "geburtsname",
+        ML_Field("geburtsname", 0.0000271, 0.008, "dice", "bitmask", 500) },
+      { "geburtstag",
+        ML_Field("geburtstag", 0.0333, 0.005, "binary", "integer", 5) },
+      { "geburtsmonat",
+        ML_Field("geburtsmonat", 0.0833, 0.002, "binary", "integer", 4) },
+      { "geburtsjahr",
+        ML_Field("geburtsjahr", 0.0286, 0.004, "binary", "integer", 11) },
+      { "plz",
+        ML_Field("plz", 0.01, 0.04, "binary", "string", 40) },
+      { "ort",
+        ML_Field("ort", 0.01, 0.04, "dice", "bitmask", 500) }
+    }, // end map<string, ML_Field>
+    { { "vorname", "nachname", "geburtsname" } }, // exchange groups
+    Threshold, TThreshold
+  };
+}
 
 // Whether to use run_as_{client/server}() or run_as_both()
 bool run_both{false};
@@ -243,6 +245,7 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
+  const auto dkfz_cfg = make_dkfz_cfg();
   RandomInputGenerator random_input(dkfz_cfg);
   random_input.set_client_empty_fields({"ort"});
   random_input.set_server_empty_field_probability(0);
