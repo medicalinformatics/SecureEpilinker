@@ -149,6 +149,10 @@ int main(int argc, char* argv[]) {
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
           "POST", configurations, connections, servers, linkrecord_validator,
           sel::valid_linkrecord_json_handler, sel::invalid_json_handler);
+  auto matchrecord_methodhandler =
+      sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
+          "POST", configurations, connections, servers, linkrecord_validator,
+          sel::valid_linkrecord_json_handler, sel::invalid_json_handler);
   // Create GET-Handler for job status monitoring
   auto jobmonitor_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::MonitorMethodHandler>(
@@ -177,7 +181,7 @@ int main(int argc, char* argv[]) {
   linkrecord_handler.add_method(linkrecord_methodhandler);
 #ifdef SEL_MATCHING_MODE
   sel::ResourceHandler matchrecord_handler{"/matchRecord/{remote_id: .*}"};
-  matchrecord_handler.add_method(linkrecord_methodhandler);
+  matchrecord_handler.add_method(matchrecord_methodhandler);
 #endif
   sel::ResourceHandler testconfig_handler{"/test/{parameter: .*}"};
   testconfig_handler.add_method(testconfig_methodhandler);
@@ -215,6 +219,7 @@ int main(int argc, char* argv[]) {
   local_initializer.publish(service);
   remote_initializer.publish(service);
   linkrecord_handler.publish(service);
+  matchrecord_handler.publish(service);
   jobmonitor_handler.publish(service);
   test_config_handler.publish(service);
   testconfig_handler.publish(service);
