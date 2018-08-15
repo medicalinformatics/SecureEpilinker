@@ -36,30 +36,36 @@ constexpr size_t log_file_size{1024u*1024u*5u};
 constexpr unsigned log_history{5u};
 constexpr unsigned logging_threads{3u};
 
-void createMultisinkLogger(const vector<spdlog::sink_ptr>& sinks) {
+void setup_default_logger() {
   spdlog::flush_on(spdlog::level::debug);
   spdlog::flush_every(30s);
   spdlog::init_thread_pool(async_log_queue_size,logging_threads);
+}
 
+void register_multisink_logger(const vector<spdlog::sink_ptr>& sinks) {
   auto multisink = std::make_shared<spdlog::logger>(logger_name, sinks.begin(), sinks.end());
   spdlog::register_logger(multisink);
 }
 
-void createFileLogger(const std::string& filename) {
+void create_file_logger(const std::string& filename) {
+  setup_default_logger();
+
   vector<spdlog::sink_ptr> sinks = {
     make_shared<spdlog::sinks::stdout_color_sink_mt>(),
     make_shared<spdlog::sinks::rotating_file_sink_mt>(filename,log_file_size,log_history)
   };
 
-  createMultisinkLogger(sinks);
+  register_multisink_logger(sinks);
 }
 
-void createTerminalLogger() {
+void create_terminal_logger() {
+  setup_default_logger();
+
   vector<spdlog::sink_ptr> sinks = {
     make_shared<spdlog::sinks::stdout_color_sink_mt>()
-  };
+ };
 
-  createMultisinkLogger(sinks);
+  register_multisink_logger(sinks);
 }
 
 std::shared_ptr<spdlog::logger> get_default_logger(){
