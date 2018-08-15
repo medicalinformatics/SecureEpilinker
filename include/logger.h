@@ -29,12 +29,12 @@ namespace sel {
 /**
  * Create a rotating file + stdout logger
  */
-void createFileLogger(const std::string& filename);
+void create_file_logger(const std::string& filename);
 
 /**
  * Create a colored stdout logger
  */
-void createTerminalLogger();
+void create_terminal_logger();
 
 /**
  * Returns the default logger, which got created by any create*() function

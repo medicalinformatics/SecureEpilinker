@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
   }
 
   // Logger
-  createTerminalLogger();
+  create_terminal_logger();
   switch(op.count("verbose")){
     case 0: spdlog::set_level(spdlog::level::warn); break;
     case 1: spdlog::set_level(spdlog::level::info); break;

@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
     server_config["logFilePath"] = cmdoptions["logfile"].as<std::string>();
   }
 
-  createFileLogger(server_config.at("logFilePath").get<std::string>());
+  create_file_logger(server_config.at("logFilePath").get<std::string>());
   switch(cmdoptions.count("verbose")){
     case 0: spdlog::set_level(spdlog::level::warn); break;
     case 1: spdlog::set_level(spdlog::level::info); break;
