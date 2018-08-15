@@ -256,7 +256,6 @@ std::string generate_id();
 // safeGetline to handle \n or \r\n from Stackoverflow User user763305
 // https://stackoverflow.com/questions/6089231/getting-std-ifstream-to-handle-lf-cr-and-crlf#6089413
 std::istream& safeGetline(std::istream&, std::string&);
-std::vector<std::string> get_headers(std::istream& is,const std::string& header);
 
 } // namespace sel
 

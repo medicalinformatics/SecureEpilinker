@@ -33,5 +33,7 @@ namespace sel{
 std::pair<FieldName, FieldEntry> parse_json_field(const ML_Field&, const nlohmann::json&);
 std::map<FieldName,FieldEntry> parse_json_fields(std::shared_ptr<const LocalConfiguration>, const nlohmann::json&);
 nlohmann::json read_json_from_disk(const std::experimental::filesystem::path&);
+std::vector<std::string> get_headers(std::istream& is,const std::string& header);
+std::vector<std::string> get_headers(const std::string&,const std::string& header);
 } // namespace sel
 #endif /* end of include guard: SEL_RESTUTILS_H */

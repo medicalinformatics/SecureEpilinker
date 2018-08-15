@@ -134,18 +134,4 @@ std::istream& safeGetline(std::istream& is, std::string& t)
         }
     }
 }
-vector<string> get_headers(istream& is,const string& header){
-  vector<string> responsevec;
-  string line;
-  while(safeGetline(is,line)){
-    responsevec.emplace_back(line);
-  }
-  vector<string> headers;
-  for(const auto& line : responsevec){
-    if(auto pos = line.find(header); pos != string::npos){
-      headers.emplace_back(line.substr(header.length()+2));
-    }
-  }
-  return headers;
-}
 } // namespace sel
