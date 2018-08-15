@@ -25,6 +25,7 @@
 #include "seltypes.h"
 #include "util.h"
 #include <restbed>
+#include "logger.h"
 
 #include "connectionhandler.h"
 #include "serverhandler.h"

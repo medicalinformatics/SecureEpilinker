@@ -134,7 +134,7 @@ SessionResponse valid_linkrecord_json_handler(
     const shared_ptr<ConnectionHandler>&) {
   auto logger{get_default_logger()};
   try {
-    logger->trace("Payload: {}", j.dump(2));
+    logger->trace("Link/MatchRecord Payload: {}", j.dump(2));
     JobId job_id;
     if (config_handler->get_remote_count()) {
       const auto local_config{config_handler->get_local_config()};

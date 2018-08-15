@@ -18,9 +18,11 @@
 
 #include "serverhandler.h"
 #include <string>
+#include "apikeyconfig.hpp"
 #include "configurationhandler.h"
 #include "localconfiguration.h"
 #include "remoteconfiguration.h"
+#include "restutils.h"
 #include "secure_epilinker.h"
 #include "connectionhandler.h"
 #include "epilink_input.h"
