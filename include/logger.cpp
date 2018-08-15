@@ -43,7 +43,7 @@ void setup_default_logger() {
 }
 
 void register_multisink_logger(const vector<spdlog::sink_ptr>& sinks) {
-  auto multisink = std::make_shared<spdlog::logger>(logger_name, sinks.begin(), sinks.end());
+  auto multisink = make_shared<spdlog::logger>(logger_name, sinks.begin(), sinks.end());
   spdlog::register_logger(multisink);
 }
 
