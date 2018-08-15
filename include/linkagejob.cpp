@@ -25,6 +25,7 @@ later version. This program is distributed in the hope that it will be useful,
 #include "localconfiguration.h"
 #include "seltypes.h"
 #include "resttypes.h"
+#include "restutils.h"
 #include "serverhandler.h"
 
 #include "epilink_input.h"
@@ -35,12 +36,6 @@ later version. This program is distributed in the hope that it will be useful,
 #include "util.h"
 #include "logger.h"
 
-#include <curlpp/Easy.hpp>
-#include <curlpp/Infos.hpp>
-#include <curlpp/Options.hpp>
-#include <curlpp/cURLpp.hpp>
-#include <iostream>
-#include <sstream>
 #include <future>
 
 using namespace std;
@@ -114,15 +109,16 @@ void LinkageJob::run_linkage_job() {
     print_data();
 #endif
     logger->info("Client Result: {}", client_share);
-    nlohmann::json result{{"idType", "srl1"},{"idString", "3lk4j3Y4l5j"}};
     if(!m_remote_config->get_matching_mode()){
-      //TODO(tk) send result to linkage server
+      auto response{send_result_to_linkageservice(client_share, "client", m_local_config, m_remote_config)};
+      if (response.return_code == 200) {
+        perform_callback(response.body);
+      }
     } else {
       #ifdef SEL_MATCHING_MODE
-      result = {{"match", true}, {"tmatch", true}};
+      //result = {{"match", true}, {"tmatch", true}};
       #endif
     }
-    perform_callback(result);
 #ifdef DEBUG_SEL_REST
     debugger->client_input = make_shared<EpilinkClientInput>(client_input);
     if(!(debugger->epilink_config)) {
@@ -171,75 +167,37 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
 void LinkageJob::signal_server(promise<size_t>& nvals) {
   auto logger{get_default_logger()};
   std::this_thread::sleep_for(1s);
-  curlpp::Easy curl_request;
-  // Create http request
-  promise<stringstream> response_promise;
-  future<stringstream> response_stream = response_promise.get_future();
   // TODO(TK): get inter SEL Authorization stuff done
   string data{"{}"};
   list<string> headers{
       "Authorization: ",
       "SEL-Identifier: "s + m_local_config->get_local_id(),
-      "Expect:",
-      "Content-Type: application/json",
-      "Content-Length: "s+to_string(data.size())};
-  curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
-  curl_request.setOpt(new curlpp::Options::Url(
-      "https://"s + m_remote_config->get_remote_host() + ':' +
-      to_string(m_remote_config->get_remote_signaling_port()) + "/initMPC/"+m_local_config->get_local_id()));
-  curl_request.setOpt(new curlpp::Options::Post(true));
-  curl_request.setOpt(new curlpp::Options::Verbose(false));
-  curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
-  curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
-  curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
-  curl_request.setOpt(new curlpp::Options::PostFieldSize(data.size()));
-  curl_request.setOpt(new curlpp::options::Header(1));
+      "Content-Type: application/json"};
+  string url{assemble_remote_url(m_remote_config) + "/initMPC/"+m_local_config->get_local_id()};
   logger->debug("Sending linkage request\n");
   try{
-    send_curl(curl_request, move(response_promise));
-    response_stream.wait();
-    auto stream = response_stream.get();
-    logger->debug("Response stream:\n{}\n", stream.str());
+    auto response{perform_post_request(url, data, headers, true)};
+    logger->debug("Response stream:\n{} - {}\n",response.return_code, response.body);
     // get nvals from response header
-    nvals.set_value(stoull(get_headers(stream, "Record-Number").front()));
+    nvals.set_value(stoull(get_headers(response.body, "Record-Number").front()));
   } catch (const exception& e) {
     logger->error("Error performing initMPC call: {}", e.what());
   }
 }
 
-bool LinkageJob::perform_callback(const nlohmann::json& new_id) const {
+bool LinkageJob::perform_callback(const string& body) const {
   auto logger{get_default_logger()};
-  curlpp::Easy curl_request;
-  nlohmann::json data_json{"newId", {
-                          {"idType", new_id["idType"].get<string>()},
-                          {"idString", new_id["idString"].get<string>()} }
-                        };
-  auto data{data_json.dump()};
-  promise<stringstream> response_promise;
-  future<stringstream> response_stream{response_promise.get_future()};
   const auto auth{m_local_config->get_local_authentication()};
   auto local_auth =  dynamic_cast<const APIKeyConfig*>(auth);
   list<string> headers{
       "Authorization: "s+local_auth->get_key(),
-      "Expect:",
-      "Content-Type: application/json",
-      "Content-Length: "s+to_string(data.length())};
-  curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
-  curl_request.setOpt(new curlpp::Options::Url(m_callback));
-  curl_request.setOpt(new cURLpp::Options::Verbose(false));
-  curl_request.setOpt(new curlpp::Options::Post(true));
-  curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
-  curl_request.setOpt(new curlpp::Options::PostFieldSize(data.size()));
-  curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
-  curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
-  curl_request.setOpt(new curlpp::options::Header(1));
+      "Content-Type: application/json"};
   logger->debug("Sending callback to: {}\n", m_callback);
-  send_curl(curl_request, move(response_promise));
-  response_stream.wait();
-  auto stream = response_stream.get();
-  logger->trace("Callback response:\n{}\n", stream.str());
-  return true; //TODO(TK) return correct success bool
+  auto response{perform_post_request(m_callback, body, headers, true)};
+  logger->trace("Callback response:\n{} - {}\n", response.return_code, response.body);
+  return response.return_code == 200;
 }
+
 
 #ifdef DEBUG_SEL_REST
 void LinkageJob::print_data() const {

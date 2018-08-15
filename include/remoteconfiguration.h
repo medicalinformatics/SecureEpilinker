@@ -45,6 +45,7 @@ class RemoteConfiguration {
   void set_connection_profile(ConnectionConfig cconfig);
 
   void set_linkage_service(ConnectionConfig cconfig);
+  ConnectionConfig const * get_linkage_service() const;
 
   RemoteId get_id() const;
 

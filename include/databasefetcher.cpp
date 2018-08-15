@@ -149,45 +149,35 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
   }
 }
 
-nlohmann::json DatabaseFetcher::get_next_page() const {
-  return request_page(m_next_page);
-}
-
-nlohmann::json DatabaseFetcher::request_page(const string& url) const {
-  curlpp::Easy curl_request;
-  stringstream response_stream;
-  list<string> headers;
-  curl_request.setOpt(new curlpp::Options::Url(url));
-  curl_request.setOpt(new curlpp::Options::HttpGet(true));
-  curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
-  curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
-  curl_request.setOpt(new curlpp::Options::WriteStream(&response_stream));
-  curl_request.setOpt(new curlpp::options::Header(0));
-  m_logger->debug("DB request address: {}", url);
-  if (m_local_authentication->get_type() == AuthenticationType::API_KEY) {
-    auto apiauth = dynamic_cast<const APIKeyConfig*>(m_local_authentication);
-    headers.emplace_back("Authorization: mainzellisteApiKey apiKey=\""s +
-                         apiauth->get_key() + "\"");
+  nlohmann::json DatabaseFetcher::get_next_page() const {
+    return request_page(m_next_page);
   }
-  curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
-  curl_request.perform();
-  auto responsecode = curlpp::Infos::ResponseCode::get(curl_request);
-  // TODO(TK): Better response handling needed
-  if (responsecode != 400 && responsecode != 401) {
-    if (!(response_stream.str().empty())) {
-      m_logger->trace("Response Data:\n{}\n", response_stream.str());
-    } else {
-      throw runtime_error("No valid data returned from Database");
+
+  nlohmann::json DatabaseFetcher::request_page(const string& url) const {
+    list<string> headers;
+    m_logger->debug("DB request address: {}", url);
+    if (m_local_authentication->get_type() == AuthenticationType::API_KEY) {
+      auto apiauth = dynamic_cast<const APIKeyConfig*>(m_local_authentication);
+      m_logger->debug("ApiKey for DB: {}", apiauth->get_key());
+      headers.emplace_back("Authorization: apiKey apiKey=\""s +
+                           apiauth->get_key() + "\"");
     }
-    try {
-      return nlohmann::json::parse(response_stream.str());
-    } catch (const exception& e) {
-      m_logger->error("Error parsing JSON from database: {}", e.what());
+    auto response{perform_get_request(url,headers, false)};
+    if (response.return_code == 200) {
+      if (!(response.body.empty())) {
+        m_logger->trace("Response Data:\n{} - {}\n",response.return_code, response.body);
+      } else {
+        throw runtime_error("No valid data returned from Database");
+      }
+      try {
+        return nlohmann::json::parse(response.body);
+      } catch (const exception& e) {
+        m_logger->error("Error parsing JSON from database: {}", e.what());
+        return nlohmann::json();
+      }
+    } else {
+      m_logger->error("Error getting data from data service: {} - {}", response.return_code, response.body);
       return nlohmann::json();
     }
-  } else {
-    m_logger->error("Error parsing JSON from database");
-    return nlohmann::json();
   }
-}
 }  // namespace sel
