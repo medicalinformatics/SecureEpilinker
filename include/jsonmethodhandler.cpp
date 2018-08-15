@@ -81,7 +81,7 @@ void JsonMethodHandler::handle_method(
           use_data(session, data, remote_id);
         });
   } else {
-    session->close(restbed::LENGTH_REQUIRED);
+    session->close(restbed::LENGTH_REQUIRED, "", {{"Connection", "Close"}});
   }
 }
 

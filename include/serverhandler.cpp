@@ -137,19 +137,35 @@ std::shared_ptr<LocalServer> ServerHandler::get_local_server(const RemoteId& rem
   return nullptr;
 }
 
-void ServerHandler::run_server(RemoteId remote_id, std::shared_ptr<const ServerData> data) {
-  if(m_config_handler->get_remote_config(remote_id)->get_mutual_initialization_status()){
-  const auto result{get_local_server(remote_id)->launch_comparison(move(data))};
-  m_logger->info("Server Result\n{}",result);
-  const auto ids{get_local_server(remote_id)->get_ids()};
-  string id_string;
-  for (size_t i = 0; i!= ids.size(); ++i){
-    id_string += "Index: "+ to_string(i) + " ID: " + ids.at(i) + '\n';
-  }
-  m_logger->info("IDs:\n{}", id_string);
-  // TODO(TK): Send result and ids to linkage server
+void ServerHandler::run_server(RemoteId remote_id,
+                               std::shared_ptr<const ServerData> data) {
+  auto remote_config{m_config_handler->get_remote_config(remote_id)};
+  auto local_config{m_config_handler->get_local_config()};
+  if (remote_config->get_mutual_initialization_status()) {
+    const auto result{
+        get_local_server(remote_id)->launch_comparison(move(data))};
+    m_logger->info("Server Result\n{}", result);
+    const auto ids{get_local_server(remote_id)->get_ids()};
+    string id_string;
+    for (size_t i = 0; i != ids.size(); ++i) {
+      id_string += "Index: " + to_string(i) + " ID: " + ids.at(i) + '\n';
+    }
+    m_logger->info("IDs:\n{}", id_string);
+    if (!remote_config->get_matching_mode()) {
+      auto linkage_service{remote_config->get_linkage_service()};
+      string url{linkage_service->url + "/linkageResult/" +
+                 local_config->get_local_id() + '/' + remote_id};
+      m_logger->debug("Sending server result to Linkage Service URL {}", url);
+      auto response{send_result_to_linkageservice(result, "server",
+                                                  local_config, remote_config)};
+      m_logger->trace("Linkage Server responded with {} - {}",
+                      response.return_code, response.body);
+    }
   } else {
-    m_logger->error("Can not execute linkage job server: Connection to remote Secure EpiLinker {} is not properly initialized",remote_id);
+    m_logger->error(
+        "Can not execute linkage job server: Connection to remote Secure "
+        "EpiLinker {} is not properly initialized",
+        remote_id);
   }
 }
 }  // namespace sel

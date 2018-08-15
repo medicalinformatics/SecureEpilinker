@@ -21,19 +21,13 @@
 #include "apikeyconfig.hpp"
 #include "logger.h"
 #include "resttypes.h"
+#include "restutils.h"
 #include "seltypes.h"
 #include "util.h"
 #include <restbed>
 
 #include "connectionhandler.h"
 #include "serverhandler.h"
-#include <curlpp/Easy.hpp>
-#include <curlpp/Infos.hpp>
-#include <curlpp/Options.hpp>
-#include <curlpp/cURLpp.hpp>
-#include <future>
-#include <iostream>
-#include <sstream>
 using namespace std;
 namespace sel {
 
@@ -99,40 +93,25 @@ void RemoteConfiguration::test_configuration(
     const shared_ptr<ServerHandler>& server_handler) {
   auto logger{get_default_logger()};
   auto data = client_config.dump();
-  promise<stringstream> response_promise;
-  future<stringstream> response_stream{response_promise.get_future()};
-  curlpp::Easy curl_request;
   const auto auth{dynamic_cast<const APIKeyConfig*>(
       m_connection_profile.authentication.get())};
   list<string> headers{"Authorization: "s + auth->get_key(),
-                       "Expect:", "Content-Type: application/json",
-                       "Content-Length: "s + to_string(data.length())};
-  curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
-  curl_request.setOpt(new curlpp::Options::Url(
-      "https://"s + get_remote_host() + ':' +
-      to_string(get_remote_signaling_port()) + "/testConfig/" + client_id));
-  curl_request.setOpt(new curlpp::Options::Verbose(false));
-  curl_request.setOpt(new curlpp::Options::Post(true));
-  curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
-  curl_request.setOpt(new curlpp::Options::PostFieldSize(data.size()));
-  curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
-  curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
-  curl_request.setOpt(new curlpp::options::Header(1));
-  logger->debug("Sending config test to: {}\n", m_connection_profile.url);
-  send_curl(curl_request, move(response_promise));
-  response_stream.wait();
-  auto stream = response_stream.get();
-  logger->trace("Config test response:\n{}\n", stream.str());
-  const auto response_string{stream.str()};
-  if(response_string.find("No connection initialized") != response_string.npos){
+                       "Content-Type: application/json" };
+  string url{assemble_remote_url(this) + "/testConfig/" + client_id};
+
+  logger->debug("Sending config test to: {}\n", url);
+  auto response{perform_post_request(url, data, headers, true)};
+  logger->trace("Config test response:\n{} - {}\n", response.return_code, response.body );
+
+  if(response.body.find("No connection initialized") != response.body.npos){
     logger->info("Waiting for remote side to initialize connection");
     return;
   }
-  if(response_string.find("Configurations are not compatible") != response_string.npos){
+  if(response.body.find("Configurations are not compatible") != response.body.npos){
     logger->error("Configuration is not compatible to remote config");
     return;
   }
-  const auto common_port{get_headers(stream, "SEL-Port")};
+  const auto common_port{get_headers(response.body, "SEL-Port")};
   if (!common_port.empty()) {
     logger->info("Client registered common Port {}", common_port.front());
     set_aby_port(stoul(common_port.front()));
@@ -150,4 +129,9 @@ void RemoteConfiguration::test_configuration(
     client_creator.detach();
   }
 }
+
+ConnectionConfig const * RemoteConfiguration::get_linkage_service() const {
+return &m_linkage_service;
+}
+
 }  // namespace sel

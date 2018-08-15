@@ -56,7 +56,7 @@ class LinkageJob {
    void set_local_config(std::shared_ptr<LocalConfiguration>);
  private:
   void signal_server(std::promise<size_t>&);
-  bool perform_callback(const nlohmann::json&) const;
+  bool perform_callback(const std::string&) const;
 #ifdef DEBUG_SEL_REST
   void print_data() const;
 #endif

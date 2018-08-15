@@ -27,12 +27,8 @@ computations
 #include <vector>
 #include "localconfiguration.h"
 #include "remoteconfiguration.h"
+#include "restutils.h"
 #include "restbed"
-#include <curlpp/cURLpp.hpp>
-#include <curlpp/Easy.hpp>
-#include <curlpp/Options.hpp>
-#include <curlpp/Infos.hpp>
-#include <sstream>
 
 using namespace std;
 namespace sel {
@@ -63,33 +59,19 @@ Port ConnectionHandler::initialize_aby_server(
   if (m_aby_available_ports.empty()) {
     throw std::runtime_error("No available port for smpc communication");
   }
-  auto ip{remote_config->get_remote_host()};
-  auto port{remote_config->get_remote_signaling_port()};
-  curlpp::Easy curl_request;
-  stringstream response_stream;
-  string data{"{\"Test\": true}"};
+  string data{"{}"};
   list<string> headers{
-    "Authorization: SEL ABCD", // Need to get AUTH
+    "Authorization: SEL ABCD", //FIXME(TK) Need to get AUTH
     "Available-Ports: "s+get_available_ports(),
     "Content-Type: application/json",
-    "Content-Length: "s+to_string(data.size()),
-    "Expect:"
     };
-  curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
-  curl_request.setOpt(new curlpp::Options::Url("https://"s+ip+':'+to_string(port)+"/testConfig/"+m_config_handler->get_local_config()->get_local_id()));
-  curl_request.setOpt(new curlpp::Options::Post(true));
-  curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
-  curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
-  curl_request.setOpt(new curlpp::Options::PostFields(data.c_str()));
-  curl_request.setOpt(new curlpp::Options::PostFieldSize(data.size()));
-  curl_request.setOpt(new curlpp::Options::WriteStream(&response_stream));
-  curl_request.setOpt(new curlpp::options::Header(1));
-  curl_request.perform();
-  auto resph(get_headers(response_stream, "SEL-Port"));
-  if(resph.empty()){
+  string url{assemble_remote_url(remote_config)+"/testConfig/"+m_config_handler->get_local_config()->get_local_id()};
+  auto response{perform_post_request(url, data, headers, true)};
+  auto resp_port(get_headers(response.body, "SEL-Port"));
+  if(resp_port.empty()){
     throw runtime_error("No common available port for smpc communication");
   }
-  Port sel_port = stoul(resph.front());
+  Port sel_port = stoul(resp_port.front());
   return sel_port;
 }
 
