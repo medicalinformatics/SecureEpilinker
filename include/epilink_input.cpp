@@ -23,6 +23,7 @@
 #include "epilink_input.h"
 #include "util.h"
 #include "math.h"
+#include "logger.h"
 
 using namespace std;
 using fmt::print;
@@ -73,14 +74,13 @@ EpilinkConfig::EpilinkConfig(
     // 16-bit integer division input... Need better int-div
     assert (bit_usage(dice_prec, weight_prec, nfields) <= bitlen);
 
+    get_default_logger()->debug("New EpilinkConfig: "
+        "bitlen: {}; nfields: {}; dice precision: {}; weight precision: {}",
+        bitlen, nfields, dice_prec, weight_prec);
+
 #ifndef SEL_MATCHING_MODE
     if (matching_mode) throw invalid_argument(
         "This SEL is compiled without matching mode (-DSEL_MATCHING_MODE)!");
-#endif
-
-#ifdef DEBUG_SEL_INPUT
-    print("bitlen: {}; nfields: {}; dice precision: {}; weight precision: {}\n",
-        bitlen, nfields, dice_prec, weight_prec);
 #endif
 
     // Sanity checks of exchange groups
@@ -113,10 +113,8 @@ EpilinkConfig::EpilinkConfig(
   }
 
 void EpilinkConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
-#ifdef DEBUG_SEL_INPUT
-  print("New dice precision: {}; weight precision: {}\n",
+  get_default_logger()->debug("Precisions changed to dice: {}; weight: {}",
       dice_prec_, weight_prec_);
-#endif
 
   if (bit_usage(dice_prec, weight_prec, nfields) > bitlen) {
     throw invalid_argument("Given dice and weight precision would potentially "
@@ -164,13 +162,6 @@ vector<CircUnit> rescale_weights(const vector<Weight>& weights,
   transform(weights.cbegin(), weights.cend(), ret.begin(),
       [&max_weight, &prec] (double w) ->
       CircUnit { return rescale_weight(w, prec, max_weight); });
-
-#if DEBUG_SEL_INPUT
-  cout << "Transformed weights: ";
-  for (auto& w : ret)
-    cout << "0x" << hex << w << ", ";
-  cout << endl;
-#endif
 
   return ret;
 }
