@@ -43,7 +43,7 @@ set(EPIRESTSRC
       include/monitormethodhandler.cpp
     )
 
-    set(EPIRESTHEAD
+set(EPIRESTHEAD
       include/resourcehandler.h
       include/validator.h
       include/methodhandler.hpp
@@ -71,22 +71,37 @@ set(EPIRESTSRC
       include/monitormethodhandler.h
     )
 
-set(SELABYSOURCES "include/math.cpp" "include/util.cpp"
-  "include/aby/Share.cpp" "include/aby/gadgets.cpp" "include/aby/util.cpp")
+set(SELABYSOURCES
+  "include/math.cpp"
+  "include/util.cpp"
+  "include/aby/Share.cpp"
+  "include/aby/gadgets.cpp"
+  "include/aby/util.cpp"
+  )
 
 set(SELSOURCES ${SELABYSOURCES}
-  "include/epilink_input.cpp" "include/secure_epilinker.cpp"
+  "include/epilink_input.cpp"
+  "include/secure_epilinker.cpp"
   "include/clear_epilinker.cpp"
-  "include/seltypes.cpp")
+  "include/seltypes.cpp"
+  "include/logger.cpp"
+  )
 
-set(SELABYHEADER "include/math.h" "include/util.h"
-  "include/aby/Share.h" "include/aby/gadgets.h"
-  "include/aby/util.h")
+set(SELABYHEADER
+  "include/math.h"
+  "include/util.h"
+  "include/aby/Share.h"
+  "include/aby/gadgets.h"
+  "include/aby/util.h"
+  )
 
 set(SELHEADER ${SELABYHEADER}
-  "include/epilink_input.h" "include/secure_epilinker.h"
+  "include/epilink_input.h"
+  "include/secure_epilinker.h"
   "include/clear_epilinker.h"
-  "include/seltypes.h")
+  "include/seltypes.h"
+  "include/logger.h"
+  )
 
 add_executable (sel sepilinker.cpp ${EPIRESTSRC} ${EPIRESTHEAD} ${SELSOURCES} ${SELHEADER})
 add_dependencies(sel ABY)
@@ -157,6 +172,7 @@ add_dependencies(test_sel ABY)
 add_dependencies(test_sel OTExtension)
 add_dependencies(test_sel MIRACL)
 add_dependencies(test_sel ENCRYPTO_utils)
+target_include_directories(test_sel PRIVATE extern/spdlog/include)
 target_link_libraries(test_sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
   OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
 target_link_libraries(test_sel PRIVATE fmt::fmt-header-only cxxopts)
