@@ -15,6 +15,7 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 \brief Configuration of logging instances
 */
+
 #ifndef SEL_LOGGER_H
 #define SEL_LOGGER_H
 #pragma once
@@ -23,17 +24,23 @@
 #include <memory>
 #include <spdlog/spdlog.h>
 
-namespace sel{
-constexpr char logger_name[]{"default"};
-constexpr size_t async_log_queue_size{8192u};
-constexpr size_t log_file_size{1024u*1024u*5u};
-constexpr unsigned log_history{5u};
-constexpr unsigned logging_threads{3u};
+namespace sel {
 
-void createLogger(const std::string& filename);
-inline std::shared_ptr<spdlog::logger> get_default_logger(){
-  return spdlog::get(logger_name);
-}
+/**
+ * Create a rotating file + stdout logger
+ */
+void createFileLogger(const std::string& filename);
+
+/**
+ * Create a colored stdout logger
+ */
+void createTerminalLogger();
+
+/**
+ * Returns the default logger, which got created by any create*() function
+ */
+std::shared_ptr<spdlog::logger> get_default_logger();
 
 } // namespace sel
+
 #endif /* end of include guard: SEL_LOGGER_H */
