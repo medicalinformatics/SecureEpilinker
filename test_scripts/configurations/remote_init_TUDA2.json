@@ -1,13 +1,13 @@
 {
 "connectionProfile": {
-  "url": "127.0.0.1:8081",
+  "url": "http://127.0.0.1:8081",
   "authentication": {
     "authType": "apiKey",
     "sharedKey": "xkcd123"
   }
 },
 "linkageService": {
-  "url": "https://ls.mitro.dkfz.de/",
+  "url": "http://127.0.0.1:5000",
   "authentication": {
     "authType": "apiKey",
     "sharedKey": "bcd234"
