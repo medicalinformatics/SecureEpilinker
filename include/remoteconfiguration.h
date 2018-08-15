@@ -52,6 +52,7 @@ class RemoteConfiguration {
   Port get_aby_port() const;
   void set_aby_port(Port port);
   std::string get_remote_host() const;
+  std::string get_remote_scheme() const;
 
   void set_matching_mode(bool);
   bool get_matching_mode() const;
