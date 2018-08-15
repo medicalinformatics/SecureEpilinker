@@ -35,5 +35,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["connectionProfile", "linkageService"]
+  "required": ["connectionProfile"]
 }
