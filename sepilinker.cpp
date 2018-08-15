@@ -162,6 +162,9 @@ int main(int argc, char* argv[]) {
       sel::MethodHandler::create_methodhandler<sel::HeaderMethodHandler>(
           "POST", nullptr, nullptr, servers, data, sel::init_mpc);
 
+  auto testconfig_methodhandler =
+      sel::MethodHandler::create_methodhandler<sel::HeaderMethodHandler>(
+          "GET", configurations, connections, servers, data, sel::test_configs);
   // Create Ressource on <url/init> and instruct to use the built MethodHandler
   sel::ResourceHandler local_initializer{"/initLocal"};
   local_initializer.add_method(init_local_methodhandler);
@@ -176,6 +179,8 @@ int main(int argc, char* argv[]) {
   sel::ResourceHandler matchrecord_handler{"/matchRecord/{remote_id: .*}"};
   matchrecord_handler.add_method(linkrecord_methodhandler);
 #endif
+  sel::ResourceHandler testconfig_handler{"/test/{parameter: .*}"};
+  testconfig_handler.add_method(testconfig_methodhandler);
   // Create Ressource on <url/jobs> and instruct to use the built MethodHandler
   // The jobid is provided in the url
   sel::ResourceHandler jobmonitor_handler{"/jobs/{job_id: .*}"};
@@ -212,6 +217,7 @@ int main(int argc, char* argv[]) {
   linkrecord_handler.publish(service);
   jobmonitor_handler.publish(service);
   test_config_handler.publish(service);
+  testconfig_handler.publish(service);
   sellink_handler.publish(service);
   logger->info("Service Running\n");
   service.start(settings);  // Eventloop

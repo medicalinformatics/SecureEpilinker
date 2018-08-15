@@ -220,7 +220,7 @@ SessionResponse valid_init_remote_json_handler(
   config_handler->set_remote_config(move(remote_config));
   auto placed_config{config_handler->get_remote_config(remote_id)};
   // Test connection and negotiate common port
-  placed_config->test_configuration(config_handler->get_local_config()->get_local_id(), config_handler->make_comparison_config(remote_id), connection_handler, server_handler);
+  //placed_config->test_configuration(config_handler->get_local_config()->get_local_id(), config_handler->make_comparison_config(remote_id), connection_handler, server_handler);
   // TODO(TK): Error handling
   return {restbed::OK, "", {{"Connection", "Close"}}};
 }

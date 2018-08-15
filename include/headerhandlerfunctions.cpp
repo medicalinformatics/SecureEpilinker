@@ -60,4 +60,25 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
   server_runner.detach();
   return response;
 }
+
+SessionResponse test_configs(const shared_ptr<restbed::Session>&,
+                              const shared_ptr<const restbed::Request>&,
+                              const multimap<string,string>&,
+                              string remote_id,
+                              const shared_ptr<ConfigurationHandler>& config_handler,
+                              const shared_ptr<ConnectionHandler>& connection_handler,
+                              const shared_ptr<ServerHandler>& server_handler,
+                              const shared_ptr<DataHandler>& data_handler,
+                              const shared_ptr<spdlog::logger>& logger) {
+  SessionResponse response;
+  logger->info("Recieved Test Request from {}", remote_id);
+  config_handler->get_remote_config(remote_id)->test_configuration(config_handler->get_local_config()->get_local_id(), config_handler->make_comparison_config(remote_id), connection_handler, server_handler);
+  response.return_code = restbed::OK;
+  response.body = "Linkage server running"s;
+  response.headers = {{"Content-Length", to_string(response.body.length())},
+                      {"SEL-Identifier", remote_id},
+                      {"Connection", "Close"}};
+  return response;
+}
+
 } // namespace sel
