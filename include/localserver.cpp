@@ -101,4 +101,8 @@ string LocalServer::get_ip() const {
 SecureEpilinker& LocalServer::get_epilinker() {
   return m_aby_server;
 }
+
+void LocalServer::connect_server() {
+  m_aby_server.connect();
+}
 }  // namespace sel
