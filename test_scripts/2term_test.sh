@@ -3,4 +3,5 @@
 ./l_init_tuda2.sh
 ./r_init_tuda1_twoterm.sh
 ./r_init_tuda2.sh
+./lr_test_twoterm.sh
 ./link_tuda1_to_tuda2.sh
