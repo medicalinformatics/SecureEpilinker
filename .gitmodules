@@ -1,15 +1,6 @@
-[submodule "extern/miracl"]
-	path = extern/MIRACL
-	url = https://github.com/MIRACL/miracl.git
-[submodule "extern/ENCRYPTO_utils"]
-	path = extern/ENCRYPTO_utils
-	url = https://github.com/encryptogroup/ENCRYPTO_utils.git
-[submodule "extern/OTExtension"]
-	path = extern/OTExtension
-	url = https://github.com/encryptogroup/OTExtension.git
 [submodule "extern/ABY"]
 	path = extern/ABY
-	url = https://github.com/sebastianst/ABY.git
+	url = https://github.com/encryptogroup/ABY.git
 [submodule "extern/json"]
 	path = extern/json
 	url = https://github.com/nlohmann/json

@@ -112,10 +112,6 @@ set(SELHEADER ${SELABYHEADER}
   )
 
 add_executable (sel sepilinker.cpp ${EPIRESTSRC} ${EPIRESTHEAD} ${SELSOURCES} ${SELHEADER})
-add_dependencies(sel ABY)
-add_dependencies(sel OTExtension)
-add_dependencies(sel MIRACL)
-add_dependencies(sel ENCRYPTO_utils)
 add_dependencies(sel valijson_patch)
 # FIXME(TK): restbed patch not working. Needs to be applied manually
 message(WARNING "Restbed Patch needs to be applied manually at the moment")
@@ -138,7 +134,7 @@ target_include_directories(sel PRIVATE extern/valijson/include)
 target_include_directories(sel PRIVATE extern/curlpp/include)
 target_include_directories(sel PRIVATE extern/spdlog/include)
 # Debug Version (sanitizers linked)
-target_link_libraries(sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
+target_link_libraries(sel PRIVATE ${EXTERNALLIBS} ABY::aby gmp gmpxx rt
   OpenSSL::SSL OpenSSL::Crypto Threads::Threads stdc++fs curl curlpp
   ${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
 # Release Version
