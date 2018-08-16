@@ -51,8 +51,6 @@ void ServerHandler::insert_client(RemoteId id) {
   if(remote_config->get_matching_mode()){
     m_logger->warn("Client created with matching mode enanabled!");
   }
-  //epilink_config.set_precisions(6,11);
-  m_logger->debug("Client Precision: Dice {},\tWeight {}", epilink_config.dice_prec, epilink_config.weight_prec);
   auto aby_info{config_handler.get_server_config()};
   SecureEpilinker::ABYConfig aby_config{
       CLIENT, aby_info.boolean_sharing, remote_config->get_remote_host(),
@@ -71,8 +69,6 @@ void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
   if(remote_config->get_matching_mode()){
     m_logger->warn("Server created with matching mode enanabled!");
   }
-  //epilink_config.set_precisions(6,11);
-  m_logger->debug("Server Precision: Dice {},\tWeight {}", epilink_config.dice_prec, epilink_config.weight_prec);
   auto aby_info{config_handler.get_server_config()};
   SecureEpilinker::ABYConfig aby_config{
       SERVER, aby_info.boolean_sharing, move(remote_address.ip),
