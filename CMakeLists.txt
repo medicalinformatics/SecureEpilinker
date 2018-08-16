@@ -117,13 +117,6 @@ add_dependencies(sel valijson_patch)
 message(WARNING "Restbed Patch needs to be applied manually at the moment")
 add_dependencies(sel restbed_patch)
 
-set(EXTERNALLIBS ${SecureEpiLinker_INSTALL_PREFIX}/lib/libaby.a
-  ${SecureEpiLinker_INSTALL_PREFIX}/lib/libotextension.a
-  ${SecureEpiLinker_INSTALL_PREFIX}/lib/libencrypto_utils.a
-  ${SecureEpiLinker_INSTALL_PREFIX}/lib/libmiracl_cxx.a
-  ${SecureEpiLinker_INSTALL_PREFIX}/lib/libmiracl.a
-  )
-
 find_package(OpenSSL)
 find_package(Threads)
 
@@ -134,13 +127,11 @@ target_include_directories(sel PRIVATE extern/valijson/include)
 target_include_directories(sel PRIVATE extern/curlpp/include)
 target_include_directories(sel PRIVATE extern/spdlog/include)
 # Debug Version (sanitizers linked)
-target_link_libraries(sel PRIVATE ${EXTERNALLIBS} ABY::aby gmp gmpxx rt
-  OpenSSL::SSL OpenSSL::Crypto Threads::Threads stdc++fs curl curlpp
-  ${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
+target_link_libraries(sel PRIVATE ABY::aby OpenSSL::SSL Threads::Threads 
+  stdc++fs curl curlpp ${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
 # Release Version
-#target_link_libraries(sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
-  #OpenSSL::SSL OpenSSL::Crypto Threads::Threads stdc++fs
-  #${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
+#target_link_libraries(sel PRIVATE ABY::aby OpenSSL::SSL Threads::Threads 
+  #stdc++fs ${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
 target_link_libraries(sel PRIVATE fmt::fmt-header-only nlohmann_json
   cxxopts)
 set_property(TARGET sel PROPERTY CXX_STANDARD 17)
@@ -156,12 +147,7 @@ target_compile_options(sel PRIVATE "-O0" "-ggdb" "-g3"
 # Test-Targets
 # Test ABY Stuff
 add_executable(test_aby test/test_aby.cpp ${SELABYSOURCES} ${SELABYHEADER})
-add_dependencies(test_aby ABY)
-add_dependencies(test_aby OTExtension)
-add_dependencies(test_aby MIRACL)
-add_dependencies(test_aby ENCRYPTO_utils)
-target_link_libraries(test_aby PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
-  OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
+target_link_libraries(test_aby PRIVATE ABY::aby)
 target_link_libraries(test_aby PRIVATE fmt::fmt-header-only cxxopts)
 set_property(TARGET test_aby PROPERTY CXX_STANDARD 17)
 target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3"
@@ -172,13 +158,8 @@ add_executable(test_sel
   test/test_sel.cpp
   test/random_input_generator.cpp test/random_input_generator.h
   ${SELSOURCES} ${SELHEADER})
-add_dependencies(test_sel ABY)
-add_dependencies(test_sel OTExtension)
-add_dependencies(test_sel MIRACL)
-add_dependencies(test_sel ENCRYPTO_utils)
 target_include_directories(test_sel PRIVATE extern/spdlog/include)
-target_link_libraries(test_sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
-  OpenSSL::SSL OpenSSL::Crypto Threads::Threads stdc++fs)
+target_link_libraries(test_sel PRIVATE ABY::aby stdc++fs)
 target_link_libraries(test_sel PRIVATE fmt::fmt-header-only cxxopts nlohmann_json)
 set_property(TARGET test_sel PROPERTY CXX_STANDARD 17)
 target_compile_options(test_sel PRIVATE "-O0" "-ggdb" "-g3"
