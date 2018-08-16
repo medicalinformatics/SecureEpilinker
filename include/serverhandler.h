@@ -49,6 +49,7 @@ class ServerHandler {
     std::shared_ptr<SecureEpilinker> get_epilink_client(const RemoteId&);
     void run_server(RemoteId, std::shared_ptr<const ServerData>);
     std::shared_ptr<DataHandler> get_data_handler() {return m_data_handler;}
+    void connect_client(const RemoteId&);
   private:
     std::map<JobId, RemoteId> m_job_remote_mapping;
     std::map<RemoteId, std::shared_ptr<SecureEpilinker>> m_aby_clients;

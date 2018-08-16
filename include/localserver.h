@@ -51,7 +51,7 @@ class LocalServer {
   Port get_port() const;
   std::string get_ip() const;
   SecureEpilinker& get_epilinker();
-
+  void connect_server();
 
   std::vector<std::string> get_ids() const {return m_data->ids;}
   std::shared_ptr<DataHandler> get_data_handler() const {return m_data_handler;}

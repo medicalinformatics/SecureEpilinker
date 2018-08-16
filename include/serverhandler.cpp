@@ -55,8 +55,7 @@ void ServerHandler::insert_client(RemoteId id) {
       remote_config->get_aby_port(), aby_info.aby_threads};
   m_logger->debug("Creating client on port {}, Remote host: {}", aby_config.port, aby_config.remote_host);
   m_aby_clients.emplace(id, make_shared<SecureEpilinker>(aby_config,epilink_config));
-  auto client{get_epilink_client(id)};
-  //client->connect();
+  connect_client(id);
 }
 
 void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
@@ -75,8 +74,7 @@ void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
       remote_address.port, aby_info.aby_threads};
   m_logger->debug("Creating server on port {}, Remote host: {}\n", aby_config.port, aby_config.remote_host);
   m_server.emplace(id, make_shared<LocalServer>(id, aby_config, epilink_config, m_data_handler, m_config_handler));
-  auto& server{get_local_server(id)->get_epilinker()};
-  //server.connect();
+  get_local_server(id)->connect_server();
 }
 
 void ServerHandler::add_linkage_job(const RemoteId& remote_id, std::shared_ptr<LinkageJob>&& job){
@@ -170,4 +168,9 @@ void ServerHandler::run_server(RemoteId remote_id,
         remote_id);
   }
 }
+
+void ServerHandler::connect_client(const RemoteId& remote_id) {
+  m_aby_clients.at(remote_id)->connect();
+}
+
 }  // namespace sel
