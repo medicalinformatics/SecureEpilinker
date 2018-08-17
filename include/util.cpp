@@ -64,7 +64,7 @@ Bitmask bm_and(const Bitmask& left, const Bitmask& right) {
   size_t n = left.size();
   assert(n == right.size());
   Bitmask res(n);
-  for (auto i = 0; i != n; ++i) {
+  for (size_t i = 0; i != n; ++i) {
     res[i] = left[i] & right[i];
   }
   return res;
