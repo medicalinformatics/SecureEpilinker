@@ -52,7 +52,7 @@ const ML_Field& LocalConfiguration::get_field(
   }
 }
 
-std::map<FieldName, ML_Field> LocalConfiguration::get_fields() const {
+const std::map<FieldName, ML_Field>& LocalConfiguration::get_fields() const {
   return m_fields;
 }
 
