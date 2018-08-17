@@ -140,49 +140,50 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
       throw runtime_error("Invalid JSON Data: missing fields");
     }
     // get data
-      auto data_fields{parse_json_fields(m_local_config->get_fields(),rec)};
-      for (auto& fields : data_fields){
-        m_data[fields.first].emplace_back(move(fields.second));
-      }
+    auto data_fields{parse_json_fields(m_local_config->get_fields(),rec)};
+    for (auto& fields : data_fields){
+      m_data[fields.first].emplace_back(move(fields.second));
+    }
 #ifndef SEL_MATCHING_MODE
-      // get id
-      if (!rec.count("id")) {
-        throw runtime_error("Invalid JSON Data: missing id");
-      }
-      m_ids.emplace_back(rec.at("id").get<string>());
+    // get id
+    if (!rec.count("id")) {
+      throw runtime_error("Invalid JSON Data: missing id");
+    }
+    m_ids.emplace_back(rec.at("id").get<string>());
 #endif
-    }
   }
+}
 
-  nlohmann::json DatabaseFetcher::get_next_page() const {
-    return request_page(m_next_page);
+nlohmann::json DatabaseFetcher::get_next_page() const {
+  return request_page(m_next_page);
+}
+
+nlohmann::json DatabaseFetcher::request_page(const string& url) const {
+  list<string> headers;
+  m_logger->debug("DB request address: {}", url);
+  if (m_local_authentication->get_type() == AuthenticationType::API_KEY) {
+    auto apiauth = dynamic_cast<const APIKeyConfig*>(m_local_authentication);
+    m_logger->debug("ApiKey for DB: {}", apiauth->get_key());
+    headers.emplace_back("Authorization: apiKey apiKey=\""s +
+                          apiauth->get_key() + "\"");
   }
-
-  nlohmann::json DatabaseFetcher::request_page(const string& url) const {
-    list<string> headers;
-    m_logger->debug("DB request address: {}", url);
-    if (m_local_authentication->get_type() == AuthenticationType::API_KEY) {
-      auto apiauth = dynamic_cast<const APIKeyConfig*>(m_local_authentication);
-      m_logger->debug("ApiKey for DB: {}", apiauth->get_key());
-      headers.emplace_back("Authorization: apiKey apiKey=\""s +
-                           apiauth->get_key() + "\"");
-    }
-    auto response{perform_get_request(url,headers, false)};
-    if (response.return_code == 200) {
-      if (!(response.body.empty())) {
-        m_logger->trace("Response Data:\n{} - {}\n",response.return_code, response.body);
-      } else {
-        throw runtime_error("No valid data returned from Database");
-      }
-      try {
-        return nlohmann::json::parse(response.body);
-      } catch (const exception& e) {
-        m_logger->error("Error parsing JSON from database: {}", e.what());
-        return nlohmann::json();
-      }
+  auto response{perform_get_request(url,headers, false)};
+  if (response.return_code == 200) {
+    if (!(response.body.empty())) {
+      m_logger->trace("Response Data:\n{} - {}\n",response.return_code, response.body);
     } else {
-      m_logger->error("Error getting data from data service: {} - {}", response.return_code, response.body);
+      throw runtime_error("No valid data returned from Database");
+    }
+    try {
+      return nlohmann::json::parse(response.body);
+    } catch (const exception& e) {
+      m_logger->error("Error parsing JSON from database: {}", e.what());
       return nlohmann::json();
     }
+  } else {
+    m_logger->error("Error getting data from data service: {} - {}", response.return_code, response.body);
+    return nlohmann::json();
   }
+}
+
 }  // namespace sel
