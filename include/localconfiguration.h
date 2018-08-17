@@ -45,7 +45,7 @@ class LocalConfiguration {
 
   void add_field(ML_Field field);
   const ML_Field& get_field(const FieldName& fieldname) const;
-  std::map<FieldName, ML_Field> get_fields() const;
+  const std::map<FieldName, ML_Field>& get_fields() const;
 
   void add_exchange_group(IndexSet group);
   std::vector<IndexSet> const& get_exchange_groups() const;
