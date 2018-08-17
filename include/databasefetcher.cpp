@@ -139,7 +139,7 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
       throw runtime_error("Invalid JSON Data: missing fields");
     }
     // get data
-      auto data_fields{parse_json_fields(m_local_config,rec)};
+      auto data_fields{parse_json_fields(m_local_config->get_fields(),rec)};
       for (auto& fields : data_fields){
         m_data[fields.first].emplace_back(move(fields.second));
       }

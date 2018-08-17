@@ -73,11 +73,11 @@ pair<FieldName, FieldEntry> parse_json_field(const ML_Field& field,
   }
 }
 
-map<FieldName, FieldEntry> parse_json_fields(shared_ptr<const LocalConfiguration> local_config,
+map<FieldName, FieldEntry> parse_json_fields(const map<FieldName, ML_Field>& fields,
                                             const nlohmann::json& json) {
   map<FieldName, FieldEntry> result;
   for (auto f = json.at("fields").begin(); f != json.at("fields").end(); ++f) {
-    result[f.key()] = move(parse_json_field(local_config->get_field(f.key()), *f).second);
+    result[f.key()] = move(parse_json_field(fields.at(f.key()), *f).second);
   }
   return result;
   }
