@@ -149,7 +149,7 @@ SessionResponse valid_linkrecord_json_handler(
                               .at("url")
                               .get<string>());  // no move to use copy elision
 
-        auto data{parse_json_fields(local_config,j)};
+        auto data{parse_json_fields(local_config->get_fields(),j)};
         job->add_data(move(data));
 
         server_handler->add_linkage_job(remote_id, move(job));
