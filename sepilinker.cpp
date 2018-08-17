@@ -219,7 +219,9 @@ int main(int argc, char* argv[]) {
   local_initializer.publish(service);
   remote_initializer.publish(service);
   linkrecord_handler.publish(service);
+#ifdef SEL_MATCHING_MODE
   matchrecord_handler.publish(service);
+#endif
   jobmonitor_handler.publish(service);
   test_config_handler.publish(service);
   testconfig_handler.publish(service);
