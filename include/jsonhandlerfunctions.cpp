@@ -35,7 +35,7 @@
 #include "configurationhandler.h"
 #include "restbed"
 #include "resttypes.h"
-#include "restutils.h"
+#include "jsonutils.h"
 #include "restresponses.hpp"
 #include "serverhandler.h"
 #include "util.h"
