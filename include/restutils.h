@@ -13,27 +13,18 @@
     GNU Affero General Public License for more details.
     You should have received a copy of the GNU Affero General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>.
-  \brief utility functions regarding the secure epilinker rest inteerface
+  \brief utility functions regarding the secure epilinker rest interface
 */
 
 #ifndef SEL_RESTUTILS_H
 #define SEL_RESTUTILS_H
 
-#include "seltypes.h"
-#include "epilink_input.h"
-#include <tuple>
-#include "nlohmann/json.hpp"
 #include "localconfiguration.h"
 #include "remoteconfiguration.h"
-#include <experimental/filesystem>
 #include <memory>
 
 
-
 namespace sel{
-std::pair<FieldName, FieldEntry> parse_json_field(const ML_Field&, const nlohmann::json&);
-std::map<FieldName,FieldEntry> parse_json_fields(const std::map<FieldName, ML_Field>&, const nlohmann::json&);
-nlohmann::json read_json_from_disk(const std::experimental::filesystem::path&);
 std::string assemble_remote_url(const std::shared_ptr<const RemoteConfiguration>&);
 std::string assemble_remote_url(RemoteConfiguration const * );
 SessionResponse perform_post_request(std::string, std::string, std::list<std::string>, bool);

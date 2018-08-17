@@ -39,6 +39,7 @@
 #include "restbed"
 #include "resttypes.h"
 #include "restutils.h"
+#include "jsonutils.h"
 #include "util.h"
 
 using namespace std;

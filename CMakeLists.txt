@@ -34,6 +34,7 @@ set(EPIRESTSRC
       include/jsonhandlerfunctions.cpp
       include/resttypes.cpp
       include/restutils.cpp
+      include/jsonutils.cpp
       include/seltypes.cpp
       include/serverhandler.cpp
       include/linkagejob.cpp
@@ -62,6 +63,7 @@ set(EPIRESTHEAD
       include/resttypes.h
       include/restresponses.hpp
       include/restutils.h
+      include/jsonutils.h
       include/seltypes.h
       include/serverhandler.h
       include/linkagejob.h

@@ -27,6 +27,7 @@
 #include "include/monitormethodhandler.h"
 #include "include/resourcehandler.h"
 #include "include/restutils.h"
+#include "include/jsonutils.h"
 #include "include/validator.h"
 #include "include/jsonhandlerfunctions.h"
 #include "include/headermethodhandler.h"
