@@ -119,6 +119,42 @@ vector<string> parse_json_id_array(const nlohmann::json& json) {
   return ids;
 }
 
+map<FieldName, ML_Field> parse_json_fields_config(nlohmann::json fields_json) {
+  map<FieldName, ML_Field> fields_config;
+  for (const auto& f : fields_json) {
+    const string field_name = f.at("name").get<string>();
+    ML_Field tempfield(
+        field_name, f.at("frequency").get<double>(),
+        f.at("errorRate").get<double>(), f.at("comparator").get<string>(),
+        f.at("fieldType").get<string>(), f.at("bitlength").get<size_t>());
+    fields_config[field_name] = move(tempfield);
+  }
+
+  return fields_config;
+}
+
+vector<IndexSet> parse_json_exchange_groups(nlohmann::json xgroups_json) {
+  vector<IndexSet> xgroups;
+  xgroups.reserve(xgroups_json.size());
+  for (const auto& xgroup_json : xgroups_json) {
+    IndexSet xgroup;
+    for (auto& f : xgroup_json) {
+      xgroup.emplace(f.get<string>());
+    }
+    xgroups.emplace_back(xgroup);
+  }
+
+  return xgroups;
+}
+
+EpilinkConfig parse_json_epilink_config(nlohmann::json config_json) {
+    const auto fields = parse_json_fields_config(config_json.at("fields"));
+    const auto xgroups = parse_json_exchange_groups(config_json.at("exchangeGroups"));
+    const double threshold = config_json.at("threshold_match").get<double>();
+    const double tthreshold = config_json.at("threshold_non_match").get<double>();
+    return {fields, xgroups, threshold, tthreshold};
+}
+
 nlohmann::json read_json_from_disk(
     const experimental::filesystem::path& json_path) {
   auto logger{get_default_logger()};
