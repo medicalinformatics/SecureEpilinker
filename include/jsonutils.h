@@ -32,6 +32,9 @@ std::map<FieldName,FieldEntry> parse_json_fields(const std::map<FieldName, ML_Fi
 std::map<FieldName, std::vector<FieldEntry>> parse_json_fields_array(
     const std::map<FieldName, ML_Field>& fields, const nlohmann::json& json);
 std::vector<std::string> parse_json_id_array(const nlohmann::json& json);
+std::map<FieldName, ML_Field> parse_json_fields_config(nlohmann::json fields_json);
+std::vector<IndexSet> parse_json_exchange_groups(nlohmann::json xgroups_json);
+EpilinkConfig parse_json_epilink_config(nlohmann::json config_json);
 
 nlohmann::json read_json_from_disk(const std::experimental::filesystem::path&);
 
