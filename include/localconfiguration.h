@@ -43,10 +43,12 @@ class LocalConfiguration {
   LocalConfiguration(std::string&& url,
                      std::unique_ptr<AuthenticationConfig> local_auth);
 
+  void set_fields(std::map<FieldName, ML_Field> fields);
   void add_field(ML_Field field);
   const ML_Field& get_field(const FieldName& fieldname) const;
   const std::map<FieldName, ML_Field>& get_fields() const;
 
+  void set_exchange_groups(std::vector<IndexSet> groups);
   void add_exchange_group(IndexSet group);
   std::vector<IndexSet> const& get_exchange_groups() const;
 

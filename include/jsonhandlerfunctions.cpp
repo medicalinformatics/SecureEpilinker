@@ -78,15 +78,6 @@ unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json& j) {
   return make_unique<AuthenticationConfig>(AuthenticationType::NONE);
 }
 
-bool check_exchange_group(const IndexSet& fieldnames,
-                          const IndexSet& exchange_group) {
-  bool fields_present{true};
-  for (const auto& f : exchange_group) {
-    fields_present &= fieldnames.count(f);
-  }
-  return fields_present;
-}
-
 SessionResponse valid_test_config_json_handler(
     const nlohmann::json& client_config,
     const RemoteId& remote_id,
@@ -231,49 +222,31 @@ SessionResponse valid_init_local_json_handler(
     const shared_ptr<ConfigurationHandler>& config_handler,
     const shared_ptr<ServerHandler>&,
     const shared_ptr<ConnectionHandler>&) {
-  auto logger{get_default_logger()};
+  auto logger = get_default_logger();
   logger->trace("Payload: {}", j.dump(2));
   auto local_config = make_shared<LocalConfiguration>();
   logger->info("Creating local configuration\n");
-  auto algo{make_shared<AlgorithmConfig>()};
+  auto algo = make_shared<AlgorithmConfig>();
   try {
-    // Get local ID
     local_config->set_local_id(j.at("localId"));
-    // Get local Authentication
-    auto l_auth{get_auth_object(j.at("localAuthentication"))};
+    auto l_auth = get_auth_object(j.at("localAuthentication"));
     local_config->set_local_auth(move(l_auth));
-    // Get Dataservice
-    auto url{j.at("dataService").at("url").get<string>()};
+    auto url = j.at("dataService").at("url").get<string>();
     local_config->set_data_service(move(url));
-    // Get Field Descriptions
-    IndexSet fieldnames;
-    for (const auto& f : j.at("algorithm").at("fields")) {
-      ML_Field tempfield(
-          f.at("name").get<string>(), f.at("frequency").get<double>(),
-          f.at("errorRate").get<double>(), f.at("comparator").get<string>(),
-          f.at("fieldType").get<string>(), f.at("bitlength").get<size_t>());
-      local_config->add_field(move(tempfield));
-      fieldnames.emplace(f.at("name").get<string>());
-    }
-    for (const auto& eg : j.at("algorithm").at("exchangeGroups")) {
-      IndexSet egroup;
-      for (const auto& f : eg) {
-        egroup.emplace(f.get<string>());
-      }
-      if (check_exchange_group(fieldnames, egroup)) {
-        local_config->add_exchange_group(egroup);
-      } else {
-        throw runtime_error("Invalid Exchange Group! Field doesn't exist!");
-      }
-    }
+
+    // Epilink Config
+    auto algo_json = j.at("algorithm");
+    const auto algo_name = str_to_atype(algo_json.at("algoType").get<string>());
+    algo->type = algo_name; // TODO#36 to be removed
+    EpilinkConfig epilink_config = parse_json_epilink_config(algo_json);
+    local_config->set_fields(epilink_config.fields);// TODO#36 to be changed to setting epilink_config
+    local_config->set_exchange_groups(epilink_config.exchange_groups); // TODO#36 to be removed
+    algo->threshold_match = epilink_config.threshold; // TODO#36 to be removed
+    algo->threshold_non_match = epilink_config.tthreshold; // TODO#36 to be removed
+
     config_handler->set_local_config(move(local_config));
-    // Get Algorithm Config
-    algo->type = str_to_atype(j.at("algorithm").at("algoType").get<string>());
-    algo->threshold_match =
-        j.at("algorithm").at("threshold_match").get<double>();
-    algo->threshold_non_match =
-        j.at("algorithm").at("threshold_non_match").get<double>();
-    config_handler->set_algorithm_config(move(algo));
+    config_handler->set_algorithm_config(move(algo)); // TODO#36 to be removed
+
     return {restbed::OK, "", {{"Connection", "Close"}}};
   } catch (const runtime_error& e) {
     return responses::status_error(restbed::INTERNAL_SERVER_ERROR, e.what());

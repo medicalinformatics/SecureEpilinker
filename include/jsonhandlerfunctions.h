@@ -33,9 +33,6 @@ ServerConfig make_server_config_from_json(nlohmann::json);
 
 std::unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json&);
 
-bool check_exchange_group(const IndexSet&,
-                          const IndexSet&);
-
 SessionResponse valid_test_config_json_handler(
     const nlohmann::json& j,
     const RemoteId& remote_id,

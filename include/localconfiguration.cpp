@@ -37,6 +37,10 @@ LocalConfiguration::LocalConfiguration(
     unique_ptr<AuthenticationConfig> local_auth)
     : m_local_authentication(move(local_auth)), m_data_service_url{move(url)} {}
 
+void LocalConfiguration::set_fields(map<FieldName, ML_Field> fields) {
+  m_fields = move(fields);
+}
+
 void LocalConfiguration::add_field(ML_Field field) {
   FieldName fieldname{field.name};
   m_fields.emplace(move(fieldname), move(field));
@@ -54,6 +58,10 @@ const ML_Field& LocalConfiguration::get_field(
 
 const std::map<FieldName, ML_Field>& LocalConfiguration::get_fields() const {
   return m_fields;
+}
+
+void LocalConfiguration::set_exchange_groups(std::vector<IndexSet> groups) {
+  m_exchange_groups = groups;
 }
 
 void LocalConfiguration::add_exchange_group(IndexSet group) {
