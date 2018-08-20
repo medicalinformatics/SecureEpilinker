@@ -88,6 +88,11 @@ EpilinkConfig::EpilinkConfig(
     for (const auto& group : exchange_groups) {
       const auto& f0 = fields.at(*group.cbegin());
       for (const auto& fname : group) {
+        // Check that field is configured
+        if (!fields.count(fname)) throw invalid_argument(fmt::format(
+            "Exchange groups contains non-existing field '{}'!", fname));
+
+
         // Check if exchange groups are disjoint
         auto [_, is_new] = xgunion.insert(fname);
         if (!is_new) throw invalid_argument(fmt::format(
