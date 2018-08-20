@@ -29,6 +29,10 @@ namespace sel {
 
 std::pair<FieldName, FieldEntry> parse_json_field(const ML_Field&, const nlohmann::json&);
 std::map<FieldName,FieldEntry> parse_json_fields(const std::map<FieldName, ML_Field>&, const nlohmann::json&);
+std::map<FieldName, std::vector<FieldEntry>> parse_json_fields_array(
+    const std::map<FieldName, ML_Field>& fields, const nlohmann::json& json);
+std::vector<std::string> parse_json_id_array(const nlohmann::json& json);
+
 nlohmann::json read_json_from_disk(const std::experimental::filesystem::path&);
 
 } // namespace sel
