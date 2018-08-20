@@ -89,6 +89,36 @@ map<FieldName, FieldEntry> parse_json_fields(
   return result;
 }
 
+map<FieldName, vector<FieldEntry>> parse_json_fields_array(
+    const map<FieldName, ML_Field>& fields, const nlohmann::json& json) {
+  map<FieldName, VFieldEntry> records;
+  for (const auto& rec : json) {
+    if (!rec.count("fields")) {
+      throw runtime_error("Invalid JSON Data: missing 'fields' in records array");
+    }
+
+    auto data_fields = parse_json_fields(fields ,rec);
+    for (auto& fields : data_fields){
+      records[fields.first].emplace_back(move(fields.second));
+    }
+  }
+
+  return records;
+}
+
+vector<string> parse_json_id_array(const nlohmann::json& json) {
+  vector<string> ids;
+  for (const auto& rec : json) {
+    if (!rec.count("id")) {
+      throw runtime_error("Invalid JSON Data: missing 'id' in records array");
+    }
+
+    ids.emplace_back(rec.at("id").get<string>());
+  }
+
+  return ids;
+}
+
 nlohmann::json read_json_from_disk(
     const experimental::filesystem::path& json_path) {
   auto logger{get_default_logger()};

@@ -92,12 +92,12 @@ ServerData DatabaseFetcher::fetch_data() {
   m_local_id = page["localId"].get<RemoteId>();
 
   for (; m_page != m_last_page; ++m_page) {
-    get_page_data(page);
+    save_page_data(page);
     m_next_page = page.at("_links").at("next").at("href").get<string>();
     page = get_next_page();
   }
   // Process Data from last page
-  get_page_data(page);
+  save_page_data(page);
 
 #ifdef DEBUG_SEL_REST
   string input_string;
@@ -116,6 +116,7 @@ ServerData DatabaseFetcher::fetch_data() {
     }
   }
 #ifndef SEL_MATCHING_MODE
+  // TODO (TK) also with mathing mode compiled, but inactive.
   input_string +=
       "------------------------------\nIDs\n-----------------------------\n";
   for (const auto& m : m_ids) {
@@ -127,7 +128,7 @@ ServerData DatabaseFetcher::fetch_data() {
   return {move(m_data), move(m_ids), move(m_todate), move(m_local_id), move(m_remote_id)};
 }
 
-void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
+void DatabaseFetcher::save_page_data(const nlohmann::json& page_data) {
   if (!page_data.count("_links")) {
     throw runtime_error("Invalid JSON Data: missing _links section");
   }
@@ -135,23 +136,13 @@ void DatabaseFetcher::get_page_data(const nlohmann::json& page_data) {
     throw runtime_error("Invalid JSON Data: missing records section");
   }
 
-  for (const auto& rec : page_data["records"]) {
-    if (!rec.count("fields")) {
-      throw runtime_error("Invalid JSON Data: missing fields");
-    }
-    // get data
-    auto data_fields{parse_json_fields(m_local_config->get_fields(),rec)};
-    for (auto& fields : data_fields){
-      m_data[fields.first].emplace_back(move(fields.second));
-    }
+  const auto& records = page_data["records"];
+  const auto& fields = m_local_config->get_fields();
+  m_data = parse_json_fields_array(fields, records);
 #ifndef SEL_MATCHING_MODE
-    // get id
-    if (!rec.count("id")) {
-      throw runtime_error("Invalid JSON Data: missing id");
-    }
-    m_ids.emplace_back(rec.at("id").get<string>());
+  // TODO (TK) also with mathing mode compiled, but inactive.
+  m_ids = parse_json_id_array(records);
 #endif
-  }
 }
 
 nlohmann::json DatabaseFetcher::get_next_page() const {
