@@ -270,23 +270,21 @@ int main(int argc, char *argv[])
   }
 
   print("----- Local Calculations -----\n");
-  auto res_32bit = clear_epilink::calc_integer({in.client, in.server}, in.cfg);
+  CircuitConfig cfg32{in.cfg, false, 32};
+  auto res_32bit = clear_epilink::calc_integer({in.client, in.server}, cfg32);
   print("32Bit Result:\n{}", res_32bit);
 
-  EpilinkConfig cfg2 = in.cfg; // copy to set ideal prec
-  cfg2.set_ideal_precision();
-  auto res_32bit_id = clear_epilink::calc_integer({in.client, in.server}, cfg2);
-  print("32Bit ideal Result:\n{}", res_32bit_id);
+  cfg32.set_ideal_precision();
+  auto res_32bit_ideal = clear_epilink::calc_integer({in.client, in.server}, cfg32);
+  print("32Bit ideal Result:\n{}", res_32bit_ideal);
 
-  // Copy config and make it 64 bit
-  EpilinkConfig cfg64{in.cfg.fields, in.cfg.exchange_groups,
-    in.cfg.threshold, in.cfg.tthreshold, false , 64};
+  CircuitConfig cfg64{in.cfg, false, 64};
   auto res_64bit = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
   print("64bit Result:\n{}", res_64bit);
 
-  cfg64.set_ideal_precision(); // use ideal precision
-  auto res_64bit_id = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
-  print("64bit ideal Result:\n{}", res_64bit_id);
+  cfg64.set_ideal_precision();
+  auto res_64bit_ideal = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
+  print("64bit ideal Result:\n{}", res_64bit_ideal);
 
   auto res_exact = clear_epilink::calc_exact({in.client, in.server}, in.cfg);
   print("Exact Result:\n{}", res_exact);

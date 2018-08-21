@@ -22,6 +22,7 @@
 
 #include "fmt/format.h"
 #include "epilink_input.h"
+#include "circuit_config.h"
 #include "abycore/aby/abyparty.h"
 
 class BooleanCircuit;
@@ -55,7 +56,7 @@ public:
 #endif
   };
 
-  SecureEpilinker(ABYConfig aby_config, EpilinkConfig epi_config);
+  SecureEpilinker(ABYConfig aby_config, CircuitConfig circuit_config);
   ~SecureEpilinker();
 
   /**
@@ -106,7 +107,7 @@ private:
   BooleanCircuit* bcirc; // boolean circuit for boolean parts
   BooleanCircuit* ccirc; // intermediate conversion circuit
   ArithmeticCircuit* acirc;
-  const EpilinkConfig epicfg;
+  const CircuitConfig cfg;
 
   class SELCircuit; // forward of implementation class ~ pimpl
   std::unique_ptr<SELCircuit> selc; // ~pimpl
