@@ -82,7 +82,6 @@ void ServerHandler::add_linkage_job(const RemoteId& remote_id, std::shared_ptr<L
   if(m_config_handler->get_remote_config(remote_id)->get_mutual_initialization_status()) {
   m_job_remote_mapping.emplace(job->get_id(), remote_id);
   m_client_jobs[remote_id].emplace(job->get_id(),move(job));
-  try{
     if(!m_config_handler->get_remote_config(remote_id)->get_matching_mode()){
       m_client_jobs.at(remote_id).at(job_id)->run_linkage_job();
     } else {
@@ -90,51 +89,25 @@ void ServerHandler::add_linkage_job(const RemoteId& remote_id, std::shared_ptr<L
       m_client_jobs.at(remote_id).at(job_id)->run_matching_job();
 #endif
     }
-  } catch (const exception& e) {
-    m_logger->error("Error in add_linkage_job: {}", e.what());
-  }
   } else {
     m_logger->error("Can not create linkage job {}: Connection to remote Secure EpiLinker is not properly initialized", job_id);
   }
 }
 
 shared_ptr<const LinkageJob> ServerHandler::get_linkage_job(const JobId& j_id) const {
-  try{
   return m_client_jobs.at(m_job_remote_mapping.at(j_id)).at(j_id);
-  } catch (const exception& e) {
-    m_logger->error("Error in get_linkage_job: {}", e.what());
-  }
-  // this return is to silence the compiler warning and will never be executed
-  return nullptr;
 }
 
 Port ServerHandler::get_server_port(const RemoteId& id) const {
-  try{
   return m_server.at(id)->get_port();
-  } catch (const exception& e) {
-    m_logger->error("Error in get_server_port: {}", e.what());
-  }
-  // this return is to silence the compiler warning and will never be executed
-  return 0u;
 }
+
 shared_ptr<SecureEpilinker> ServerHandler::get_epilink_client(const RemoteId& remote_id){
-  try{
   return m_aby_clients.at(remote_id);
-  } catch (const exception& e) {
-    m_logger->error("Error in get_epilink_client: {}", e.what());
-  }
-  // this return is to silence the compiler warning and will never be executed
-  return nullptr;
 }
 
 std::shared_ptr<LocalServer> ServerHandler::get_local_server(const RemoteId& remote_id) const {
-  try{
   return m_server.at(remote_id);
-  } catch (const exception& e) {
-    m_logger->error("Error in get_local_server: {}", e.what());
-  }
-  // this return is to silence the compiler warning and will never be executed
-  return nullptr;
 }
 
 void ServerHandler::run_server(RemoteId remote_id,
