@@ -156,10 +156,10 @@ EpilinkConfig parse_json_epilink_config(nlohmann::json config_json) {
 }
 
 nlohmann::json read_json_from_disk(
-    const experimental::filesystem::path& json_path) {
+    const filesystem::path& json_path) {
   auto logger{get_default_logger()};
   nlohmann::json content;
-  if (experimental::filesystem::exists(json_path)) {
+  if (filesystem::exists(json_path)) {
     ifstream in(json_path);
     try {
       in >> content;
