@@ -200,6 +200,13 @@ EpilinkInput input_empty(uint32_t nvals) {
   return {epi_cfg, in_client, in_server};
 }
 
+EpilinkInput input_dkfz_random(size_t nvals) {
+  RandomInputGenerator random_input(make_dkfz_cfg());
+  random_input.set_client_empty_fields({"ort"});
+  random_input.set_server_empty_field_probability(0);
+  return random_input.generate(nvals);
+}
+
 } /* END namespace sel::test */
 
 using namespace sel;
@@ -245,11 +252,6 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  const auto dkfz_cfg = make_dkfz_cfg();
-  RandomInputGenerator random_input(dkfz_cfg);
-  random_input.set_client_empty_fields({"ort"});
-  random_input.set_server_empty_field_probability(0);
-  const auto in = random_input.generate(nvals);
 
   //const auto in = input_empty(nvals);
 
