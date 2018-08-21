@@ -23,7 +23,7 @@
 #include "seltypes.h"
 #include "epilink_input.h"
 #include "nlohmann/json.hpp"
-#include <experimental/filesystem>
+#include <filesystem>
 
 namespace sel {
 
@@ -36,7 +36,7 @@ std::map<FieldName, ML_Field> parse_json_fields_config(nlohmann::json fields_jso
 std::vector<IndexSet> parse_json_exchange_groups(nlohmann::json xgroups_json);
 EpilinkConfig parse_json_epilink_config(nlohmann::json config_json);
 
-nlohmann::json read_json_from_disk(const std::experimental::filesystem::path&);
+nlohmann::json read_json_from_disk(const std::filesystem::path&);
 
 } // namespace sel
 

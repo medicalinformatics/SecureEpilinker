@@ -30,7 +30,7 @@
 #include <curlpp/Easy.hpp>
 #include <nlohmann/json.hpp>
 
-#include <experimental/filesystem>
+#include <filesystem>
 #include "secure_epilinker.h"
 namespace sel{
 
@@ -68,13 +68,13 @@ struct SessionResponse {
 };
 
 struct ServerConfig {
-  std::experimental::filesystem::path local_init_schema_file;
-  std::experimental::filesystem::path remote_init_schema_file;
-  std::experimental::filesystem::path link_record_schema_file;
-  std::experimental::filesystem::path ssl_key_file;
-  std::experimental::filesystem::path ssl_cert_file;
-  std::experimental::filesystem::path ssl_dh_file;
-  std::experimental::filesystem::path log_file;
+  std::filesystem::path local_init_schema_file;
+  std::filesystem::path remote_init_schema_file;
+  std::filesystem::path link_record_schema_file;
+  std::filesystem::path ssl_key_file;
+  std::filesystem::path ssl_cert_file;
+  std::filesystem::path ssl_dh_file;
+  std::filesystem::path log_file;
   bool use_ssl;
   Port server_port;
   std::string bind_address;
