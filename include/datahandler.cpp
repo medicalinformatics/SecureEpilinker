@@ -49,7 +49,7 @@ size_t DataHandler::poll_database(const RemoteId& remote_id) {
   auto data{database_fetcher.fetch_data()};
   lock_guard<mutex> lock(m_db_mutex);
   m_database = make_shared<const ServerData>(ServerData{
-      move(data.data), move(data.ids), data.todate});
+      move(data.data), move(data.ids), data.todate, move(data.local_id), move(data.remote_id)});
   return (m_database->data.begin()->second.size());
 }
 
