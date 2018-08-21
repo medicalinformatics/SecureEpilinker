@@ -136,12 +136,14 @@ void DatabaseFetcher::save_page_data(const nlohmann::json& page_data) {
     throw runtime_error("Invalid JSON Data: missing records section");
   }
 
-  const auto& records = page_data["records"];
+  const auto& records_json = page_data["records"];
   const auto& fields = m_local_config->get_fields();
-  m_data = parse_json_fields_array(fields, records);
+  auto temp_data = parse_json_fields_array(fields, records_json);
+  append_to_map_of_vectors(temp_data, m_data);
 #ifndef SEL_MATCHING_MODE
-  // TODO (TK) also with mathing mode compiled, but inactive.
-  m_ids = parse_json_id_array(records);
+  // TODO (TK) also with matching mode compiled, but inactive.
+  auto temp_ids = parse_json_id_array(records_json);
+  m_ids.insert(m_ids.end(), temp_ids.begin(), temp_ids.end());
 #endif
 }
 
