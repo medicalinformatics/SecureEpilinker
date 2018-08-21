@@ -83,7 +83,7 @@ pair<FieldName, FieldEntry> parse_json_field(const ML_Field& field,
 map<FieldName, FieldEntry> parse_json_fields(
     const map<FieldName, ML_Field>& fields, const nlohmann::json& json) {
   map<FieldName, FieldEntry> result;
-  for (auto f = json.at("fields").begin(); f != json.at("fields").end(); ++f) {
+  for (auto f = json.begin(); f != json.end(); ++f) {
     result[f.key()] = move(parse_json_field(fields.at(f.key()), *f).second);
   }
   return result;
@@ -97,7 +97,7 @@ map<FieldName, vector<FieldEntry>> parse_json_fields_array(
       throw runtime_error("Invalid JSON Data: missing 'fields' in records array");
     }
 
-    auto data_fields = parse_json_fields(fields ,rec);
+    auto data_fields = parse_json_fields(fields, rec.at("fields"));
     for (auto& fields : data_fields){
       records[fields.first].emplace_back(move(fields.second));
     }
