@@ -149,6 +149,19 @@ std::vector<ToValue> transform_map_vec(const std::map<Key, FromValue>& _map,
   return res;
 }
 
+template <class Key, class Value>
+std::map<Key, std::vector<Value>>& append_to_map_of_vectors(
+    const std::map<Key, std::vector<Value>>& source,
+    std::map<Key, std::vector<Value>>& destination) {
+  for (const auto& x: source) {
+    const auto& source_vector = x.second;
+    auto& dest_vector = destination[x.first];
+    dest_vector.insert(dest_vector.begin(),
+        source_vector.cbegin(), source_vector.cend());
+  }
+  return destination;
+}
+
 /**
  * Whether vector contains element
  */
