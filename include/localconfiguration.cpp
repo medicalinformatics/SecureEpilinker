@@ -48,12 +48,7 @@ void LocalConfiguration::add_field(ML_Field field) {
 
 const ML_Field& LocalConfiguration::get_field(
     const FieldName& fieldname) const {
-  try {
     return cref(m_fields.at(fieldname));
-  } catch (const exception& e) {
-    auto logger{get_default_logger()};
-    logger->error("Error in get_field: {}", e.what());
-  }
 }
 
 const std::map<FieldName, ML_Field>& LocalConfiguration::get_fields() const {
