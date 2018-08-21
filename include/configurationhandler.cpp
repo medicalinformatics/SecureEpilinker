@@ -70,13 +70,7 @@ shared_ptr<const AlgorithmConfig> ConfigurationHandler::get_algorithm_config()
 shared_ptr<RemoteConfiguration> ConfigurationHandler::get_remote_config(
     const RemoteId& remote_id) const {
   lock_guard<mutex> lock(m_remote_mutex);
-  try{
   return m_remote_configs.at(remote_id);
-  } catch  (const out_of_range& e){
-    auto logger{get_default_logger()};
-    logger->error("Error in get_remote_config. Remote Id {} is unknown: {}", 
-                                                            remote_id, e.what());
-  }
 }
 
 bool ConfigurationHandler::remote_exists(const RemoteId& remote_id) {
