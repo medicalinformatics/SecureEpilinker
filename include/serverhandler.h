@@ -26,10 +26,7 @@
 #include "connectionhandler.h"
 #include <map>
 #include <memory>
-
-namespace spdlog{
-  class logger;
-}
+#include "logger.h"
 
 namespace sel {
 class LinkageJob;
@@ -38,8 +35,11 @@ class ConfigurationHandler;
 class DataHandler;
 
 class ServerHandler {
+  protected:
+    ServerHandler() = default;
   public:
-    ServerHandler(std::shared_ptr<ConfigurationHandler>, std::shared_ptr<DataHandler>);
+    static ServerHandler& get();
+    static ServerHandler const& cget();
     void insert_client(RemoteId);
     void insert_server(RemoteId, RemoteAddress);
     void add_linkage_job(const RemoteId&, std::shared_ptr<LinkageJob>&&);
@@ -48,16 +48,13 @@ class ServerHandler {
     Port get_server_port(const RemoteId&) const;
     std::shared_ptr<SecureEpilinker> get_epilink_client(const RemoteId&);
     void run_server(RemoteId, std::shared_ptr<const ServerData>);
-    std::shared_ptr<DataHandler> get_data_handler() {return m_data_handler;}
     void connect_client(const RemoteId&);
   private:
     std::map<JobId, RemoteId> m_job_remote_mapping;
     std::map<RemoteId, std::shared_ptr<SecureEpilinker>> m_aby_clients;
     std::map<RemoteId, std::map<JobId, std::shared_ptr<LinkageJob>> > m_client_jobs;
     std::map<RemoteId, std::shared_ptr<LocalServer>> m_server;
-    std::shared_ptr<ConfigurationHandler> m_config_handler;
-    std::shared_ptr<DataHandler> m_data_handler;
-    std::shared_ptr<spdlog::logger> m_logger;
+    std::shared_ptr<spdlog::logger> m_logger{get_default_logger()};
 };
 
 } // namespace sel

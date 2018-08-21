@@ -29,23 +29,28 @@ void Debugger::reset() {
 }
 #endif
 
+  DataHandler& DataHandler::get() {
+    static DataHandler singleton;
+    return singleton;
+  }
+
+  DataHandler const& DataHandler::cget() {
+    return cref(get());
+  }
+
 size_t DataHandler::poll_database(const RemoteId& remote_id) {
-  const auto local_configuration{m_config_handler->get_local_config()};
+  const auto& config_handler{ConfigurationHandler::cget()};
+  const auto local_configuration{config_handler.get_local_config()};
   DatabaseFetcher database_fetcher{
-      local_configuration, m_config_handler->get_algorithm_config(),
+      local_configuration, config_handler.get_algorithm_config(),
       local_configuration->get_data_service()+"/"+remote_id,
       local_configuration->get_local_authentication(),
-      m_config_handler->get_server_config().default_page_size};
+      config_handler.get_server_config().default_page_size};
   auto data{database_fetcher.fetch_data()};
   lock_guard<mutex> lock(m_db_mutex);
   m_database = make_shared<const ServerData>(ServerData{
       move(data.data), move(data.ids), data.todate});
   return (m_database->data.begin()->second.size());
-}
-
-void DataHandler::set_config_handler(
-    shared_ptr<ConfigurationHandler> conf_handler) {
-  m_config_handler = conf_handler;
 }
 
 size_t DataHandler:: poll_database_diff() {

@@ -41,19 +41,11 @@ class HeaderMethodHandler : public MethodHandler {
  public:
 HeaderMethodHandler(
       const std::string& method,
-      std::shared_ptr<ConfigurationHandler> config_handler,
-      std::shared_ptr<ConnectionHandler> connection_handler,
-      std::shared_ptr<ServerHandler> server_handler,
-      std::shared_ptr<DataHandler> data_handler, 
       std::function<SessionResponse(
         const std::shared_ptr<restbed::Session>&, 
         const std::shared_ptr<const restbed::Request>&,
         const std::multimap<std::string,std::string>&,
         const std::string&,
-        const std::shared_ptr<ConfigurationHandler>&,
-        const std::shared_ptr<ConnectionHandler>&,
-        const std::shared_ptr<ServerHandler>&,
-        const std::shared_ptr<DataHandler>&,
         const std::shared_ptr<spdlog::logger>&)> = nullptr);
   ~HeaderMethodHandler() = default;
   void handle_method(std::shared_ptr<restbed::Session>) const override;
@@ -62,27 +54,15 @@ HeaderMethodHandler(
         const std::shared_ptr<const restbed::Request>&,
         const std::multimap<std::string,std::string>&,
         const std::string&,
-        const std::shared_ptr<ConfigurationHandler>&,
-        const std::shared_ptr<ConnectionHandler>&,
-        const std::shared_ptr<ServerHandler>&,
-        const std::shared_ptr<DataHandler>&,
         const std::shared_ptr<spdlog::logger>&)>);
 
  private:
-  std::shared_ptr<ConfigurationHandler> m_config_handler;
-  std::shared_ptr<ConnectionHandler> m_connection_handler;
-  std::shared_ptr<ServerHandler> m_server_handler;
-  std::shared_ptr<DataHandler> m_data_handler;
   std::shared_ptr<spdlog::logger> m_logger;
   std::function<SessionResponse(
                                 const std::shared_ptr<restbed::Session>&, 
                                 const std::shared_ptr<const restbed::Request>&,
                                 const std::multimap<std::string,std::string>&,
                                 const std::string&,
-                                const std::shared_ptr<ConfigurationHandler>&,
-                                const std::shared_ptr<ConnectionHandler>&,
-                                const std::shared_ptr<ServerHandler>&,
-                                const std::shared_ptr<DataHandler>&,
                                 const std::shared_ptr<spdlog::logger>&
                                 )> m_handling_function{nullptr};
 };

@@ -33,23 +33,27 @@
 
 using namespace std;
 namespace sel {
-ServerHandler::ServerHandler(
-    std::shared_ptr<ConfigurationHandler> config_handler,
-    std::shared_ptr<DataHandler> data_handler)
-    : m_config_handler{move(config_handler)},
-      m_data_handler{move(data_handler)}, m_logger{get_default_logger()} {}
+  ServerHandler& ServerHandler::get() {
+    static ServerHandler singleton;
+    return singleton;
+  }
+
+  ServerHandler const& ServerHandler::cget(){
+    return cref(get());
+  }
 
 void ServerHandler::insert_client(RemoteId id) {
-  auto local_config{m_config_handler->get_local_config()};
-  auto remote_config{m_config_handler->get_remote_config(id)};
+  const auto& config_handler{ConfigurationHandler::cget()};
+  auto local_config{config_handler.get_local_config()};
+  auto remote_config{config_handler.get_remote_config(id)};
   auto epilink_config{make_epilink_config(
-      local_config, m_config_handler->get_algorithm_config(), remote_config->get_matching_mode())};
+      local_config, config_handler.get_algorithm_config(), remote_config->get_matching_mode())};
   if(remote_config->get_matching_mode()){
     m_logger->warn("Client created with matching mode enanabled!");
   }
   //epilink_config.set_precisions(6,11);
   m_logger->debug("Client Precision: Dice {},\tWeight {}", epilink_config.dice_prec, epilink_config.weight_prec);
-  auto aby_info{m_config_handler->get_server_config()};
+  auto aby_info{config_handler.get_server_config()};
   SecureEpilinker::ABYConfig aby_config{
       CLIENT, aby_info.boolean_sharing, remote_config->get_remote_host(),
       remote_config->get_aby_port(), aby_info.aby_threads};
@@ -59,30 +63,32 @@ void ServerHandler::insert_client(RemoteId id) {
 }
 
 void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
-  auto local_config{m_config_handler->get_local_config()};
-  auto remote_config{m_config_handler->get_remote_config(id)};
+  const auto& config_handler{ConfigurationHandler::cget()};
+  auto local_config{config_handler.get_local_config()};
+  auto remote_config{config_handler.get_remote_config(id)};
   auto epilink_config{make_epilink_config(
-      local_config, m_config_handler->get_algorithm_config(), remote_config->get_matching_mode())};
+      local_config, config_handler.get_algorithm_config(), remote_config->get_matching_mode())};
   if(remote_config->get_matching_mode()){
     m_logger->warn("Server created with matching mode enanabled!");
   }
   //epilink_config.set_precisions(6,11);
   m_logger->debug("Server Precision: Dice {},\tWeight {}", epilink_config.dice_prec, epilink_config.weight_prec);
-  auto aby_info{m_config_handler->get_server_config()};
+  auto aby_info{config_handler.get_server_config()};
   SecureEpilinker::ABYConfig aby_config{
       SERVER, aby_info.boolean_sharing, move(remote_address.ip),
       remote_address.port, aby_info.aby_threads};
   m_logger->debug("Creating server on port {}, Remote host: {}\n", aby_config.port, aby_config.remote_host);
-  m_server.emplace(id, make_shared<LocalServer>(id, aby_config, epilink_config, m_data_handler, m_config_handler));
+  m_server.emplace(id, make_shared<LocalServer>(id, aby_config, epilink_config));
   get_local_server(id)->connect_server();
 }
 
 void ServerHandler::add_linkage_job(const RemoteId& remote_id, std::shared_ptr<LinkageJob>&& job){
+  const auto& config_handler{ConfigurationHandler::cget()};
   const auto job_id{job->get_id()};
-  if(m_config_handler->get_remote_config(remote_id)->get_mutual_initialization_status()) {
+  if(config_handler.get_remote_config(remote_id)->get_mutual_initialization_status()) {
   m_job_remote_mapping.emplace(job->get_id(), remote_id);
   m_client_jobs[remote_id].emplace(job->get_id(),move(job));
-    if(!m_config_handler->get_remote_config(remote_id)->get_matching_mode()){
+    if(!config_handler.get_remote_config(remote_id)->get_matching_mode()){
       m_client_jobs.at(remote_id).at(job_id)->run_linkage_job();
     } else {
 #ifdef SEL_MATCHING_MODE
@@ -112,8 +118,9 @@ std::shared_ptr<LocalServer> ServerHandler::get_local_server(const RemoteId& rem
 
 void ServerHandler::run_server(RemoteId remote_id,
                                std::shared_ptr<const ServerData> data) {
-  auto remote_config{m_config_handler->get_remote_config(remote_id)};
-  auto local_config{m_config_handler->get_local_config()};
+  const auto& config_handler{ConfigurationHandler::cget()};
+  auto remote_config{config_handler.get_remote_config(remote_id)};
+  auto local_config{config_handler.get_local_config()};
   if (remote_config->get_mutual_initialization_status()) {
     const auto result{
         get_local_server(remote_id)->launch_comparison(move(data))};

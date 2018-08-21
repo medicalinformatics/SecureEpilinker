@@ -44,16 +44,12 @@ class MonitorMethodHandler : public MethodHandler {
    * Handles Job Monitoring Requests
    */
  public:
-  MonitorMethodHandler(const std::string& method,
-                       std::shared_ptr<ServerHandler> server_handler);
-  MonitorMethodHandler(const std::string& method,
-                       std::shared_ptr<ServerHandler> server_handler,
-                       std::shared_ptr<Validator>& validator);
+  MonitorMethodHandler(const std::string& method);
+  MonitorMethodHandler(const std::string& method, std::shared_ptr<Validator>& validator);
   ~MonitorMethodHandler() = default;
   void handle_method(std::shared_ptr<restbed::Session>) const override;
 
  private:
-  std::shared_ptr<ServerHandler> m_server_handler;
   std::shared_ptr<spdlog::logger> m_logger;
 };
 

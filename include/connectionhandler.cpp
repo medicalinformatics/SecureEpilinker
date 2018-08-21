@@ -32,8 +32,18 @@ computations
 
 using namespace std;
 namespace sel {
-ConnectionHandler::ConnectionHandler(restbed::Service* service)
-    : m_service(service) {}
+ConnectionHandler& ConnectionHandler::get(){
+  static ConnectionHandler singleton;
+  return singleton;
+}
+
+ConnectionHandler const& ConnectionHandler::cget() {
+  return cref(get());
+}
+
+  void ConnectionHandler::set_service(restbed::Service* service) {
+    m_service.reset(service);
+  }
 
 shared_ptr<restbed::Service> ConnectionHandler::get_service() const {
   return m_service;
@@ -65,7 +75,7 @@ Port ConnectionHandler::initialize_aby_server(
     "Available-Ports: "s+get_available_ports(),
     "Content-Type: application/json",
     };
-  string url{assemble_remote_url(remote_config)+"/testConfig/"+m_config_handler->get_local_config()->get_local_id()};
+  string url{assemble_remote_url(remote_config)+"/testConfig/"+ConfigurationHandler::cget().get_local_config()->get_local_id()};
   auto response{perform_post_request(url, data, headers, true)};
   auto resp_port(get_headers(response.body, "SEL-Port"));
   if(resp_port.empty()){
@@ -107,8 +117,6 @@ void ConnectionHandler::mark_port_used(Port port) {
   }
 }
 void ConnectionHandler::populate_aby_ports() {
-  if(m_config_handler){
-    m_aby_available_ports = m_config_handler->get_server_config().avaliable_aby_ports;
-  }
+    m_aby_available_ports = ConfigurationHandler::cget().get_server_config().avaliable_aby_ports;
 }
 }  // namespace sel

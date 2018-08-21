@@ -32,8 +32,11 @@ class DataHandler;
 struct AlgorithmConfig;
 
 class ConfigurationHandler {
+  protected:
+    ConfigurationHandler() = default;
  public:
-   ConfigurationHandler(std::shared_ptr<ConnectionHandler> con_handler) : m_connection_handler(std::move(con_handler)) {}
+    static ConfigurationHandler& get();
+    static ConfigurationHandler const& cget(); // static member funct. can not be const
   std::shared_ptr<const LocalConfiguration> get_local_config() const;
   std::shared_ptr<const AlgorithmConfig> get_algorithm_config() const;
   std::shared_ptr<RemoteConfiguration> get_remote_config(
@@ -55,7 +58,6 @@ class ConfigurationHandler {
   std::shared_ptr<const AlgorithmConfig> m_algo_config;
   std::map<RemoteId, std::shared_ptr<RemoteConfiguration>>
       m_remote_configs;
-  std::shared_ptr<ConnectionHandler> m_connection_handler;
   ServerConfig m_server_config;
   mutable std::mutex m_local_mutex;
   mutable std::mutex m_remote_mutex;  // Maybe one Mutex per remote? (perf)

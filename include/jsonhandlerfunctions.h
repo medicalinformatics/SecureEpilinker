@@ -35,31 +35,19 @@ std::unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json&);
 
 SessionResponse valid_test_config_json_handler(
     const nlohmann::json& j,
-    const RemoteId& remote_id,
-    const std::shared_ptr<ConfigurationHandler>& config_handler,
-    const std::shared_ptr<ServerHandler>& server_handler,
-    const std::shared_ptr<ConnectionHandler>&);
+    const RemoteId& remote_id);
 
 SessionResponse valid_init_local_json_handler(
     const nlohmann::json&,
-    RemoteId,
-    const std::shared_ptr<ConfigurationHandler>&,
-    const std::shared_ptr<ServerHandler>&,
-    const std::shared_ptr<ConnectionHandler>&);
+    RemoteId);
 
 SessionResponse valid_init_remote_json_handler(
     const nlohmann::json&,
-    RemoteId,
-    const std::shared_ptr<ConfigurationHandler>&,
-    const std::shared_ptr<ServerHandler>&,
-    const std::shared_ptr<ConnectionHandler>&);
+    RemoteId);
 
 SessionResponse valid_linkrecord_json_handler(
     const nlohmann::json&,
-    const RemoteId&,
-    const std::shared_ptr<ConfigurationHandler>&,
-    const std::shared_ptr<ServerHandler>&,
-    const std::shared_ptr<ConnectionHandler>&);
+    const RemoteId&);
 
 SessionResponse invalid_json_handler(valijson::ValidationResults&);
 
