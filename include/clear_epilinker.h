@@ -21,7 +21,7 @@
 #pragma once
 
 #include "fmt/format.h"
-#include "epilink_input.h"
+#include "circuit_config.h"
 
 namespace sel::clear_epilink {
 
@@ -65,10 +65,10 @@ struct Result {
  * Don't forget to then also set bitlen to that type's bitlength when creating
  * the EpilinkConfig, and possibly adjust precisions with set_precisions().
  */
-Result<CircUnit> calc_integer(const Input& input, const EpilinkConfig& cfg);
-Result<double> calc_exact(const Input& input, const EpilinkConfig& cfg);
+Result<CircUnit> calc_integer(const Input& input, const CircuitConfig& cfg);
+Result<double> calc_exact(const Input& input, const CircuitConfig& cfg);
 
-template<typename T> Result<T> calc(const Input& input, const EpilinkConfig& cfg);
+template<typename T> Result<T> calc(const Input& input, const CircuitConfig& cfg);
 
 } /* end of namespace sel::clear_epilink */
 

@@ -123,7 +123,7 @@ BoolShare equality(const BoolShare& x, const BoolShare& y) {
 /******************** Circuit Builder ********************/
 class SecureEpilinker::SELCircuit {
 public:
-  SELCircuit(EpilinkConfig cfg_,
+  SELCircuit(CircuitConfig cfg_,
     BooleanCircuit* bcirc, BooleanCircuit* ccirc, ArithmeticCircuit* acirc) :
     cfg{cfg_}, bcirc{bcirc}, ccirc{ccirc}, acirc{acirc},
     to_bool_closure{[this](auto x){return to_bool(x);}},
@@ -165,16 +165,15 @@ public:
   ResultShares build_circuit() {
     // Where we store all group and individual comparison weights as ariths
     vector<FieldWeight> field_weights;
-    //field_weights.reserve(cfg.bm_exchange_groups.size() + cfg.bin_exchange_groups.size());
 
     // 1. Field weights of individual fields
     // 1.1 For all exchange groups, find the permutation with the highest score
     // Where we collect indices not already used in an exchange group
     IndexSet no_x_group;
     // fill with field names, remove later
-    for (const auto& field : cfg.fields) no_x_group.emplace(field.first);
+    for (const auto& field : cfg.epi.fields) no_x_group.emplace(field.first);
     // for each group, store the best permutation's weight into field_weights
-    for (const auto& group : cfg.exchange_groups) {
+    for (const auto& group : cfg.epi.exchange_groups) {
       // add this group's field weight to vector
       field_weights.emplace_back(best_group_weight(group));
       // remove all indices that were covered by this index group
@@ -241,7 +240,7 @@ public:
 
 private:
   // Epilink config
-  const EpilinkConfig cfg;
+  const CircuitConfig cfg;
   // Circuits
   BooleanCircuit* bcirc; // boolean circuit for boolean parts
   BooleanCircuit* ccirc; // intermediate conversion circuit
@@ -299,8 +298,8 @@ private:
     assert(const_idx.get_nvals() == nvals);
 
 
-    CircUnit T = llround(cfg.threshold * (1 << cfg.dice_prec));
-    CircUnit Tt = llround(cfg.tthreshold * (1 << cfg.dice_prec));
+    CircUnit T = llround(cfg.epi.threshold * (1 << cfg.dice_prec));
+    CircUnit Tt = llround(cfg.epi.tthreshold * (1 << cfg.dice_prec));
 
     get_default_logger()->debug(
         "Rescaled threshold: {:x}/ tentative: {:x}", T, Tt);
@@ -316,7 +315,7 @@ private:
 
   EntryShare make_entry_share(const EpilinkClientInput& input,
       const FieldName& i) {
-    const auto& f = cfg.fields.at(i);
+    const auto& f = cfg.epi.fields.at(i);
     const FieldEntry& entry = input.record.at(i);
     size_t bytesize = bitbytes(f.bitsize);
     Bitmask value = entry.value_or(Bitmask(bytesize));
@@ -351,7 +350,7 @@ private:
 
   EntryShare make_entry_share(const EpilinkServerInput& input,
       const FieldName& i) {
-    const auto& f = cfg.fields.at(i);
+    const auto& f = cfg.epi.fields.at(i);
     const VFieldEntry& entries = input.database.at(i);
     size_t bytesize = bitbytes(f.bitsize);
     Bitmask dummy_bm(bytesize);
@@ -385,7 +384,7 @@ private:
   }
 
   EntryShare make_dummy_entry_share(const FieldName& i) {
-    const auto& f = cfg.fields.at(i);
+    const auto& f = cfg.epi.fields.at(i);
 
     BoolShare val(bcirc, f.bitsize, nvals); //dummy val
 
@@ -419,7 +418,7 @@ private:
   void set_one_real_input(const EpilinkInput& input) {
     assert (nvals > 0 && "call set_constants() before set_*_input()");
 
-    for (const auto& _f : cfg.fields) {
+    for (const auto& _f : cfg.epi.fields) {
       const FieldName& i = _f.first;
 
       ins[i] = make_input_share(input, i);
@@ -431,7 +430,7 @@ private:
       const EpilinkServerInput& in_server) {
     assert (nvals > 0 && "call set_constants() before set_*_input()");
 
-    for (const auto& _f : cfg.fields) {
+    for (const auto& _f : cfg.epi.fields) {
       const FieldName& i = _f.first;
 
       ins[i] = {make_entry_share(in_client, i), make_entry_share(in_server, i)};
@@ -485,13 +484,13 @@ private:
    * - Return field weight and weight
    */
   FieldWeight field_weight(const FieldName& ileft, const FieldName& iright) {
-    const ML_Field &fleft = cfg.fields.at(ileft), &fright = cfg.fields.at(iright);
+    const ML_Field &fleft = cfg.epi.fields.at(ileft), &fright = cfg.epi.fields.at(iright);
     const FieldComparator ftype = fleft.comparator;
 
     // 1. Calculate weight * delta(i,j)
     const CircUnit weight_r = rescale_weight(
         (fleft.weight + fright.weight)/2,
-        cfg.weight_prec, cfg.max_weight);
+        cfg.weight_prec, cfg.epi.max_weight);
 
     ArithShare a_weight{constant_simd(acirc, weight_r, BitLen, nvals)};
 
@@ -536,12 +535,12 @@ private:
 };
 
 /******************** Public Epilinker Interface ********************/
-SecureEpilinker::SecureEpilinker(ABYConfig config, EpilinkConfig epi_config) :
+SecureEpilinker::SecureEpilinker(ABYConfig config, CircuitConfig circuit_config) :
   party{config.role, config.remote_host, config.port, LT, BitLen, config.nthreads},
   bcirc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[config.bool_sharing]->GetCircuitBuildRoutine())},
   ccirc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[(config.bool_sharing==S_YAO)?S_BOOL:S_YAO]->GetCircuitBuildRoutine())},
   acirc{dynamic_cast<ArithmeticCircuit*>(party.GetSharings()[S_ARITH]->GetCircuitBuildRoutine())},
-  epicfg{epi_config}, selc{make_unique<SELCircuit>(epicfg, bcirc, ccirc, acirc)} {}
+  cfg{circuit_config}, selc{make_unique<SELCircuit>(cfg, bcirc, ccirc, acirc)} {}
 // TODO when ABY can separate circuit building/setup/online phases, we create
 // different SELCircuits per build_circuit()...
 
@@ -617,7 +616,7 @@ SecureEpilinker::Result SecureEpilinker::run_circuit() {
     ,res.score_numerator.get_clear_value<CircUnit>()
     // shift by dice-precision to account for precision of threshold, i.e.,
     // get denominator and numerator to same scale
-    ,(res.score_denominator.get_clear_value<CircUnit>() << epicfg.dice_prec)
+    ,(res.score_denominator.get_clear_value<CircUnit>() << cfg.dice_prec)
 #endif
   };
 }

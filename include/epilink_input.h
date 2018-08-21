@@ -35,10 +35,6 @@ using VBitmask = std::vector<Bitmask>;
 // How we save all input data
 using FieldEntry = std::optional<Bitmask>;
 using VFieldEntry = std::vector<FieldEntry>;
-// Circuit unit
-using CircUnit = uint32_t;
-using VCircUnit = std::vector<CircUnit>;
-constexpr size_t BitLen = sizeof(CircUnit)*8;
 
 struct EpilinkConfig {
   // field descriptions
@@ -51,40 +47,16 @@ struct EpilinkConfig {
   const double threshold; // threshold for definitive match
   const double tthreshold; // threshold for tentative match
 
-  // whether to use matching mode
-  const bool matching_mode = false;
-
-  // bitlength to use for precision calculation and validation
-  const size_t bitlen = BitLen;
-
-  // calculated fields for faster access
+  // pre-calculated fields
   const size_t nfields; // total number of field
-  size_t dice_prec, weight_prec; // bit precisions
   const Weight max_weight; // maximum weight for rescaling of weights
 
   EpilinkConfig(
       std::map<FieldName, ML_Field> fields,
       std::vector<IndexSet> exchange_groups,
-      double threshold, double tthreshold,
-      bool matching_mode = false,
-      size_t bitlen = BitLen
+      double threshold, double tthreshold
   );
   ~EpilinkConfig() = default;
-
-  /**
-   * Manually set bit precisions for dice-coefficients and weight fields
-   * dice_prec + 2*weight_prec must be smaller than (bitlen - ceil_log2(nfields))
-   */
-  void set_precisions(size_t dice_prec_, size_t weight_prec_);
-
-  /**
-   * Set ideal precisions, equally distributing available bits to weight and
-   * dice precision such that 2*wp + dp = bitlen - ceil_log2(n*n).
-   * TODO: As of now, this cannot be used with the ABY circuit yet because we
-   * use a fixed 16-bit integer division. The constructor sets the precisions
-   * accordingly.
-   */
-  void set_ideal_precision();
 };
 
 struct EpilinkClientInput {
@@ -107,21 +79,6 @@ struct EpilinkServerInput {
   ~EpilinkServerInput() = default;
 };
 
-/*
- * Rescales the weights so that the maximum weight is the maximum element
- * of given precision bits, i.e., 0xff...
- * This should lead to the best possible precision during calculation.
- */
-std::vector<CircUnit> rescale_weights(const std::vector<Weight>& weights,
-    size_t prec, Weight max_weight = 0);
-
-unsigned long long rescale_weight(Weight weight, size_t prec, Weight max_weight);
-
-/**
- * bits required to store hammingweight of bitmask of given size
- */
-size_t hw_size(size_t size);
-
 } // namespace sel
 
 std::ostream& operator<<(std::ostream& os,
@@ -140,11 +97,9 @@ struct formatter<sel::EpilinkConfig> {
 
   template <typename FormatContext>
   auto format(const sel::EpilinkConfig& conf, FormatContext &ctx) {
-    return format_to(ctx.begin(),"Epilink Configuration"
-      "\nThreshold match: {}"
-      "\nThreshold tentative match: {}"
-      "\nNumber of fields: {}",
-      conf.threshold, conf.tthreshold, conf.nfields
+    return format_to(ctx.begin(),
+        "EpilinkConfig\\{thresholds={};{}, nfields={}\\}",
+        conf.threshold, conf.tthreshold, conf.nfields
     );
   }
 };

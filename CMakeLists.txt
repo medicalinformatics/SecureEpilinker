@@ -83,6 +83,7 @@ set(SELABYSOURCES
 
 set(SELSOURCES ${SELABYSOURCES}
   "include/epilink_input.cpp"
+  "include/circuit_config.cpp"
   "include/secure_epilinker.cpp"
   "include/clear_epilinker.cpp"
   "include/seltypes.cpp"
@@ -99,6 +100,7 @@ set(SELABYHEADER
 
 set(SELHEADER ${SELABYHEADER}
   "include/epilink_input.h"
+  "include/circuit_config.h"
   "include/secure_epilinker.h"
   "include/clear_epilinker.h"
   "include/seltypes.h"

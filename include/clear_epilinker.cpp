@@ -148,10 +148,10 @@ bool test_threshold(const FieldWeight<T>& q, const double thr, const size_t prec
 }
 
 template<typename T>
-T scaled_weight(const FieldName& ileft, const FieldName& iright, const EpilinkConfig& cfg) {
-  const double _weight = (cfg.fields.at(ileft).weight + cfg.fields.at(iright).weight)/2;
+T scaled_weight(const FieldName& ileft, const FieldName& iright, const CircuitConfig& cfg) {
+  const double _weight = (cfg.epi.fields.at(ileft).weight + cfg.epi.fields.at(iright).weight)/2;
   if constexpr (is_integral_v<T>) {
-    return rescale_weight(_weight, cfg.weight_prec, cfg.max_weight);
+    return rescale_weight(_weight, cfg.weight_prec, cfg.epi.max_weight);
   } else {
     return _weight;
   }
@@ -159,9 +159,9 @@ T scaled_weight(const FieldName& ileft, const FieldName& iright, const EpilinkCo
 
 /******************** Algorithm Flow Components ********************/
 template<typename T>
-FieldWeight<T> field_weight(const Input& input, const EpilinkConfig& cfg,
+FieldWeight<T> field_weight(const Input& input, const CircuitConfig& cfg,
     const size_t idx, const FieldName& ileft, const FieldName& iright) {
-  const FieldComparator ftype = cfg.fields.at(ileft).comparator;
+  const FieldComparator ftype = cfg.epi.fields.at(ileft).comparator;
 
   // 1. Check if both entries have values
   const FieldEntry& client_entry = input.record.at(ileft);
@@ -223,7 +223,7 @@ void print_score(const string& pfx, const Ref& r,
 #endif
 
 template<typename T>
-FieldWeight<T> best_group_weight(const Input& input, const EpilinkConfig& cfg,
+FieldWeight<T> best_group_weight(const Input& input, const CircuitConfig& cfg,
     const size_t idx, const IndexSet& group_set) {
   vector<FieldName> group{begin(group_set), end(group_set)};
   // copy group to store permutations
@@ -265,12 +265,12 @@ FieldWeight<T> best_group_weight(const Input& input, const EpilinkConfig& cfg,
 }
 
 template<typename T>
-Result<T> calc(const Input& input, const EpilinkConfig& cfg) {
+Result<T> calc(const Input& input, const CircuitConfig& cfg) {
   // Check for integral types that cfg.bitlen matches the type's bitlength
   if constexpr (is_integral_v<T>) {
     if (cfg.bitlen != sizeof(T) * 8) {
       print(cerr,
-          "Warning: EpilinkConfig's bitlength {} doesn't match the type's {}. "
+          "Warning: CircuitConfig's bitlength {} doesn't match the type's {}. "
           "You may want to match them.\n", cfg.bitlen, sizeof(T)*8);
     }
   }
@@ -285,9 +285,9 @@ Result<T> calc(const Input& input, const EpilinkConfig& cfg) {
   // Where we collect indices not already used in an exchange group
   IndexSet no_x_group;
   // fill with field names, remove later
-  for (const auto& field : cfg.fields) no_x_group.insert(field.first);
+  for (const auto& field : cfg.epi.fields) no_x_group.insert(field.first);
   // for each group, store the best permutation's weight into field_weights
-  for (const auto& group : cfg.exchange_groups) {
+  for (const auto& group : cfg.epi.exchange_groups) {
     // add this group's field weight to vector
     for (size_t idx = 0; idx != nvals; ++idx) {
       scores[idx] += best_group_weight<T>(input, cfg, idx, group);
@@ -320,8 +320,8 @@ Result<T> calc(const Input& input, const EpilinkConfig& cfg) {
   const auto& best_score = *best_score_it;
 
   // 3. Test thresholds
-  const bool match = test_threshold(best_score, cfg.threshold, cfg.dice_prec);
-  const bool tmatch = test_threshold(best_score, cfg.tthreshold, cfg.dice_prec);
+  const bool match = test_threshold(best_score, cfg.epi.threshold, cfg.dice_prec);
+  const bool tmatch = test_threshold(best_score, cfg.epi.tthreshold, cfg.dice_prec);
 
   // Need to apply dice precision shift to sum(weights) to bring to same scale
   // as sum(field-weights). This was implicitly done in the threshold test
@@ -331,15 +331,15 @@ Result<T> calc(const Input& input, const EpilinkConfig& cfg) {
 }
 
 // calc template instantiations for integral types
-template Result<uint8_t> calc<uint8_t>(const Input& input, const EpilinkConfig& cfg);
-template Result<uint16_t> calc<uint16_t>(const Input& input, const EpilinkConfig& cfg);
-template Result<uint32_t> calc<uint32_t>(const Input& input, const EpilinkConfig& cfg);
-template Result<uint64_t> calc<uint64_t>(const Input& input, const EpilinkConfig& cfg);
+template Result<uint8_t> calc<uint8_t>(const Input& input, const CircuitConfig& cfg);
+template Result<uint16_t> calc<uint16_t>(const Input& input, const CircuitConfig& cfg);
+template Result<uint32_t> calc<uint32_t>(const Input& input, const CircuitConfig& cfg);
+template Result<uint64_t> calc<uint64_t>(const Input& input, const CircuitConfig& cfg);
 
-Result<CircUnit> calc_integer(const Input& input, const EpilinkConfig& cfg) {
+Result<CircUnit> calc_integer(const Input& input, const CircuitConfig& cfg) {
   return calc<CircUnit>(input, cfg);
 }
-Result<double> calc_exact(const Input& input, const EpilinkConfig& cfg) {
+Result<double> calc_exact(const Input& input, const CircuitConfig& cfg) {
   return calc<double>(input, cfg);
 }
 
