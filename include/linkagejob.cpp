@@ -172,12 +172,16 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
       "SEL-Identifier: "s + m_local_config->get_local_id(),
       "Content-Type: application/json"};
   string url{assemble_remote_url(m_remote_config) + "/initMPC/"+m_local_config->get_local_id()};
-  logger->debug("Sending linkage request\n");
+  logger->debug("Sending linkage request to {}\n", url);
   try{
     auto response{perform_post_request(url, data, headers, true)};
     logger->debug("Response stream:\n{} - {}\n",response.return_code, response.body);
     // get nvals from response header
-    nvals.set_value(stoull(get_headers(response.body, "Record-Number").front()));
+    if (response.return_code == 200) {
+      nvals.set_value(stoull(get_headers(response.body, "Record-Number").front()));
+    } else {
+      logger->error("Error communicating with remote epilinker: {} - {}", response.return_code, response.body);
+    }
   } catch (const exception& e) {
     logger->error("Error performing initMPC call: {}", e.what());
   }
