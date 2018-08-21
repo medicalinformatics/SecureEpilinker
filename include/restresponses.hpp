@@ -21,14 +21,14 @@
 
 namespace sel{
   namespace responses{
-  SessionResponse server_initialized(Port port){
+  inline SessionResponse server_initialized(Port port){
     return{restbed::OK, "Connection Initialized", {{"Content-Length", "22"},{"Connection", "Close"}, {"SEL-Port", std::to_string(port)}}};
   }
-  SessionResponse status_error(int status, std::string msg) {
+  inline SessionResponse status_error(int status, std::string msg) {
   return {status, msg, {{"Content-Length", std::to_string(msg.length())},
                  {"Connection", "Close"}}};
   }
-  SessionResponse not_initialized{restbed::UNAUTHORIZED, "No connection initialized", {{"Content-Length", "25"}, {"Connection", "Close"}}}; 
+  static SessionResponse not_initialized{restbed::UNAUTHORIZED, "No connection initialized", {{"Content-Length", "25"}, {"Connection", "Close"}}}; 
 
   } // namespace responses
 
