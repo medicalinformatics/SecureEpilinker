@@ -24,8 +24,10 @@ using namespace std;
 namespace sel::test {
 
 RandomInputGenerator::RandomInputGenerator(const EpilinkConfig& cfg) :
-  cfg{cfg}
-{}
+  cfg{cfg} {}
+
+RandomInputGenerator::RandomInputGenerator(EpilinkConfig&& cfg) :
+  cfg{move(cfg)} {}
 
 void RandomInputGenerator::set_bitmask_density_shift(int shift) {
   bm_density_shift = shift;
