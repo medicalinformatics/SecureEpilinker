@@ -55,22 +55,19 @@ class ConnectionHandler {
   /**
    * Handle connection configurations and jobs. Dispatch ABY computations
    */
+  protected:
+    ConnectionHandler() = default;
  public:
-  explicit ConnectionHandler(restbed::Service* service);
-
+  static  ConnectionHandler& get();
+  static  ConnectionHandler const& cget();
+  void set_service(restbed::Service*);
   bool connection_exists(const RemoteId& c_id) const;
 
-
-  void set_config_handler(std::shared_ptr<ConfigurationHandler> handler) {m_config_handler = std::move(handler);}
   void populate_aby_ports();
 
   const ML_Field& get_field(const FieldName& name);
 
   std::shared_ptr<restbed::Service> get_service() const;
-
-
-  std::shared_ptr<LocalConfiguration> get_local_configuration() const;
-  std::shared_ptr<RemoteConfiguration> get_remote_configuration(const RemoteId&);
 
   Port use_free_port();
   std::set<Port> get_free_ports() const;
@@ -81,7 +78,6 @@ class ConnectionHandler {
 
  private:
   std::string get_available_ports() const;
-  std::shared_ptr<ConfigurationHandler> m_config_handler;
   std::shared_ptr<restbed::Service> m_service;
   std::set<Port> m_aby_available_ports;
   std::mutex m_port_mutex;

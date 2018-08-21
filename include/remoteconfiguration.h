@@ -60,7 +60,7 @@ class RemoteConfiguration {
 
   bool get_mutual_initialization_status() const;
 
-  void test_configuration(const RemoteId&, const nlohmann::json&, const std::shared_ptr<ConnectionHandler>&, const std::shared_ptr<ServerHandler>&);
+  void test_configuration(const RemoteId&, const nlohmann::json&);
   void mark_mutually_initialized() const; // changes mutable flag
  protected:
  private:

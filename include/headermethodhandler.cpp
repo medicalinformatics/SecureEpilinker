@@ -32,25 +32,13 @@ using namespace std;
 namespace sel {
 HeaderMethodHandler::HeaderMethodHandler(
       const string& method,
-      shared_ptr<ConfigurationHandler> config_handler,
-      shared_ptr<ConnectionHandler> connection_handler,
-      shared_ptr<ServerHandler> server_handler,
-      shared_ptr<DataHandler> data_handler,
       function<SessionResponse(
         const std::shared_ptr<restbed::Session>&,
         const std::shared_ptr<const restbed::Request>&,
         const multimap<string,string>&,
         const string&,
-        const shared_ptr<ConfigurationHandler>&,
-        const shared_ptr<ConnectionHandler>&,
-        const shared_ptr<ServerHandler>&,
-        const shared_ptr<DataHandler>&,
         const shared_ptr<spdlog::logger>&)> handling_function)
       : MethodHandler(method),
-        m_config_handler(move(config_handler)),
-        m_connection_handler(move(connection_handler)),
-        m_server_handler(move(server_handler)),
-        m_data_handler(move(data_handler)), 
         m_logger(get_default_logger()),
         m_handling_function(move(handling_function)) {}
 
@@ -59,10 +47,6 @@ void HeaderMethodHandler::set_handling_function(function<SessionResponse(
                                   const std::shared_ptr<const restbed::Request>&,
                                   const multimap<string,string>&,
                                   const string&,
-                                  const shared_ptr<ConfigurationHandler>&,
-                                  const shared_ptr<ConnectionHandler>&,
-                                  const shared_ptr<ServerHandler>&,
-                                  const shared_ptr<DataHandler>&,
                                   const shared_ptr<spdlog::logger>&)> fun){
   m_handling_function = move(fun);
 }
@@ -79,7 +63,7 @@ void HeaderMethodHandler::handle_method(
   m_logger->debug("HeaderHandler used\nParameter: {}\nRecieved headers\n{}", parameter, header_string);
   SessionResponse response;
   if(m_handling_function){
-    response = m_handling_function(session, request, headers, parameter, m_config_handler, m_connection_handler, m_server_handler, m_data_handler, m_logger);
+    response = m_handling_function(session, request, headers, parameter, m_logger);
   } else {
     throw runtime_error("Invalid handling function");
   }

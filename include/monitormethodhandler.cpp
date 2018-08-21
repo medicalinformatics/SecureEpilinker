@@ -29,18 +29,15 @@
 using namespace std;
 namespace sel {
 MonitorMethodHandler::MonitorMethodHandler(
-    const std::string& method,
-    std::shared_ptr<ServerHandler> server_handler)
+    const std::string& method)
     : MethodHandler(method),
-      m_server_handler(move(server_handler)),
       m_logger{get_default_logger()} {}
 
 MonitorMethodHandler::MonitorMethodHandler(
     const std::string& method,
-    std::shared_ptr<ServerHandler> server_handler,
     std::shared_ptr<Validator>& validator)
     : MethodHandler(method, validator),
-      m_server_handler(move(server_handler)), m_logger{get_default_logger()} {}
+      m_logger{get_default_logger()} {}
 
 void MonitorMethodHandler::handle_method(
     shared_ptr<restbed::Session> session) const {
@@ -55,7 +52,7 @@ void MonitorMethodHandler::handle_method(
   m_logger->trace("Recieved headers:\n{}", header_string);
   SessionResponse response;
   try {
-    const auto job{m_server_handler->get_linkage_job(job_id)};
+    const auto job{ServerHandler::cget().get_linkage_job(job_id)};
     const auto status{js_enum_to_string(job->get_status())};
     response.return_code = restbed::OK;
     response.body = status;

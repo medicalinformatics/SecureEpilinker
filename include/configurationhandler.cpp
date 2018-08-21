@@ -28,6 +28,15 @@
 using namespace std;
 namespace sel {
 
+ConfigurationHandler& ConfigurationHandler::get() {
+  static ConfigurationHandler singleton;
+  return singleton;
+}
+
+ConfigurationHandler const& ConfigurationHandler::cget(){
+  return cref(get());
+}
+
 void ConfigurationHandler::set_remote_config(
     shared_ptr<RemoteConfiguration>&& remote) {
   lock_guard<mutex> lock(m_remote_mutex);
@@ -114,7 +123,7 @@ nlohmann::json ConfigurationHandler::make_comparison_config(const RemoteId& remo
   server_config["threshold_match"] = m_algo_config->threshold_match;
   server_config["threshold_non_match"] = m_algo_config->threshold_non_match;
   }
-  server_config["availableAbyPorts"] = m_connection_handler->get_free_ports();
+  server_config["availableAbyPorts"] = ConnectionHandler::cget().get_free_ports();
   return server_config;
 }
 bool ConfigurationHandler::compare_configuration(const nlohmann::json& client_config, const RemoteId& remote_id) const{
