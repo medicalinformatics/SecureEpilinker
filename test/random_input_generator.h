@@ -33,8 +33,8 @@ struct EpilinkInput {
 
 class RandomInputGenerator {
 public:
-  /* Constructor setting the EpilinkConfig */
   RandomInputGenerator(const EpilinkConfig& cfg);
+  RandomInputGenerator(EpilinkConfig&& cfg);
 
   /* Generate random input, moving the PRNG state forward */
   EpilinkInput generate(const size_t nvals);
