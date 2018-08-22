@@ -69,14 +69,15 @@ struct EpilinkClientInput {
 
 struct EpilinkServerInput {
   // Outer vector by fields, inner by records!
-  // Need to model like this for SIMD
+  // Need to model like this for ABY SIMD layout
   const std::map<FieldName, VFieldEntry> database;
 
-  const size_t nvals;
-  // default constructor - checks that all records have same size
-  // TODO: make it a move && constructor instead?
-  EpilinkServerInput(std::map<FieldName, VFieldEntry> database);
+  const size_t nvals; // calculated
+  EpilinkServerInput(const std::map<FieldName, VFieldEntry>& database);
+  EpilinkServerInput(std::map<FieldName, VFieldEntry>&& database);
   ~EpilinkServerInput() = default;
+private:
+  void check_sizes(); // called by public constructors to check sizes
 };
 
 } // namespace sel
