@@ -89,9 +89,7 @@ bool RemoteConfiguration::get_mutual_initialization_status() const {
 
 void RemoteConfiguration::test_configuration(
     const RemoteId& client_id,
-    const nlohmann::json& client_config,
-    const shared_ptr<ConnectionHandler>& connection_handler,
-    const shared_ptr<ServerHandler>& server_handler) {
+    const nlohmann::json& client_config) {
   auto logger{get_default_logger()};
   auto data = client_config.dump();
   const auto auth{dynamic_cast<const APIKeyConfig*>(
@@ -118,15 +116,13 @@ void RemoteConfiguration::test_configuration(
     set_aby_port(stoul(common_port.front()));
     mark_mutually_initialized();
     try {
-      connection_handler->mark_port_used(m_aby_port);
+      ConnectionHandler::get().mark_port_used(m_aby_port);
     } catch (const exception& e) {
       logger->warn(
           "Can not mark port as used. If server and client are the same "
           "process, that is ok.");
     }
-    auto fun = bind(&ServerHandler::insert_client, server_handler.get(),
-                    placeholders::_1);
-    std::thread client_creator(fun, m_connection_id);
+    std::thread client_creator([this](){ServerHandler::get().insert_client(m_connection_id);});
     client_creator.detach();
   }
 }

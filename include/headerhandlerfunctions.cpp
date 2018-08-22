@@ -20,6 +20,7 @@ later version. This program is distributed in the hope that it will be useful,
 #include <thread>
 #include "resttypes.h"
 #include "restbed"
+#include "restresponses.hpp"
 #include "serverhandler.h"
 #include "configurationhandler.h"
 #include "remoteconfiguration.h"
@@ -33,20 +34,22 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
                               const shared_ptr<const restbed::Request>&,
                               const multimap<string,string>&,
                               string remote_id,
-                              const shared_ptr<ConfigurationHandler>&,
-                              const shared_ptr<ConnectionHandler>&,
-                              const shared_ptr<ServerHandler>& server_handler,
-                              const shared_ptr<DataHandler>& data_handler,
                               const shared_ptr<spdlog::logger>& logger) {
   SessionResponse response;
   Port common_port;
   string client_ip;
   logger->info("Recieved Linkage Request from {}", remote_id);
   // TODO(TK) Authorization
-  common_port = server_handler->get_server_port(remote_id);
-
-  auto nvals{data_handler->poll_database(remote_id)};
-  auto data{data_handler->get_database()};
+  common_port = ServerHandler::cget().get_server_port(remote_id);
+  size_t nvals;
+  shared_ptr<const ServerData> data;
+  try {
+    nvals = DataHandler::get().poll_database(remote_id);
+    data = DataHandler::get().get_database();
+  } catch (const exception& e){
+    logger->error("Error geting data from dataservice: {}", e.what());
+    return sel::responses::status_error(restbed::INTERNAL_SERVER_ERROR, "Can not get data from dataservice");
+  }
   response.return_code = restbed::OK;
   response.body = "Linkage server running"s;
   response.headers = {{"Content-Length", to_string(response.body.length())},
@@ -54,8 +57,8 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
                       {"Record-Number", to_string(nvals)},
                       {"SEL-Port", to_string(common_port)},
                       {"Connection", "Close"}};
-  std::thread server_runner([remote_id, data, server_handler]() {
-    server_handler->run_server(remote_id, data);
+  std::thread server_runner([remote_id, data]() {
+      ServerHandler::get().run_server(remote_id, data);
   });
   server_runner.detach();
   return response;
@@ -65,14 +68,11 @@ SessionResponse test_configs(const shared_ptr<restbed::Session>&,
                               const shared_ptr<const restbed::Request>&,
                               const multimap<string,string>&,
                               string remote_id,
-                              const shared_ptr<ConfigurationHandler>& config_handler,
-                              const shared_ptr<ConnectionHandler>& connection_handler,
-                              const shared_ptr<ServerHandler>& server_handler,
-                              const shared_ptr<DataHandler>& data_handler,
                               const shared_ptr<spdlog::logger>& logger) {
   SessionResponse response;
   logger->info("Recieved Test Request from {}", remote_id);
-  config_handler->get_remote_config(remote_id)->test_configuration(config_handler->get_local_config()->get_local_id(), config_handler->make_comparison_config(remote_id), connection_handler, server_handler);
+  auto& config_handler{ConfigurationHandler::get()};
+  config_handler.get_remote_config(remote_id)->test_configuration(config_handler.get_local_config()->get_local_id(), config_handler.make_comparison_config(remote_id));
   response.return_code = restbed::OK;
   response.body = "Linkage server running"s;
   response.headers = {{"Content-Length", to_string(response.body.length())},

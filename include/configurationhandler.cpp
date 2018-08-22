@@ -28,6 +28,15 @@
 using namespace std;
 namespace sel {
 
+ConfigurationHandler& ConfigurationHandler::get() {
+  static ConfigurationHandler singleton;
+  return singleton;
+}
+
+ConfigurationHandler const& ConfigurationHandler::cget(){
+  return cref(get());
+}
+
 void ConfigurationHandler::set_remote_config(
     shared_ptr<RemoteConfiguration>&& remote) {
   lock_guard<mutex> lock(m_remote_mutex);
@@ -61,13 +70,7 @@ shared_ptr<const AlgorithmConfig> ConfigurationHandler::get_algorithm_config()
 shared_ptr<RemoteConfiguration> ConfigurationHandler::get_remote_config(
     const RemoteId& remote_id) const {
   lock_guard<mutex> lock(m_remote_mutex);
-  try{
   return m_remote_configs.at(remote_id);
-  } catch  (const out_of_range& e){
-    auto logger{get_default_logger()};
-    logger->error("Error in get_remote_config. Remote Id {} is unknown: {}", 
-                                                            remote_id, e.what());
-  }
 }
 
 bool ConfigurationHandler::remote_exists(const RemoteId& remote_id) {
@@ -114,7 +117,7 @@ nlohmann::json ConfigurationHandler::make_comparison_config(const RemoteId& remo
   server_config["threshold_match"] = m_algo_config->threshold_match;
   server_config["threshold_non_match"] = m_algo_config->threshold_non_match;
   }
-  server_config["availableAbyPorts"] = m_connection_handler->get_free_ports();
+  server_config["availableAbyPorts"] = ConnectionHandler::cget().get_free_ports();
   return server_config;
 }
 bool ConfigurationHandler::compare_configuration(const nlohmann::json& client_config, const RemoteId& remote_id) const{

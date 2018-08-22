@@ -55,8 +55,10 @@ struct Debugger{
 };
 #endif
 class DataHandler {
+  DataHandler() = default;
  public:
-  void set_config_handler(std::shared_ptr<ConfigurationHandler>);
+  static DataHandler& get();
+  static DataHandler const& cget();
   std::shared_ptr<const ServerData> get_database() const;
   size_t poll_database(const RemoteId&);
   size_t poll_database_diff();  // TODO(TK) Not implemented yet. Use full update
@@ -67,7 +69,6 @@ class DataHandler {
   mutable std::mutex m_db_mutex;
   std::shared_ptr<const ServerData> m_database;
   std::unique_ptr<DatabaseFetcher> m_database_fetcher;
-  std::shared_ptr<const ConfigurationHandler> m_config_handler;
 #ifdef DEBUG_SEL_REST
   Debugger* m_epilink_debug{new Debugger};
 #endif

@@ -94,7 +94,7 @@ void JsonMethodHandler::use_data(const shared_ptr<restbed::Session>& session,
   SessionResponse response;
   if (validation.first) {
     if (m_valid_callback) {
-      response = m_valid_callback(bodydata, remote_id, m_configuration_handler, m_server_handler, m_connection_handler);
+      response = m_valid_callback(bodydata, remote_id);
     } else {
       throw runtime_error("Invalid valid_callback!");
     }

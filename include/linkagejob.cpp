@@ -45,13 +45,11 @@ LinkageJob::LinkageJob() : m_id(generate_id()) {}
 
 LinkageJob::LinkageJob(shared_ptr<const LocalConfiguration> l_conf,
                        shared_ptr<const RemoteConfiguration> r_conf,
-                       shared_ptr<const AlgorithmConfig> algo,
-                       shared_ptr<ServerHandler> server_handler)
+                       shared_ptr<const AlgorithmConfig> algo)
     : m_id(generate_id()),
       m_local_config(move(l_conf)),
       m_algo_config(move(algo)),
-      m_remote_config(move(r_conf)),
-      m_parent(move(server_handler)) {}
+      m_remote_config(move(r_conf)) {}
 
 void LinkageJob::set_callback(string&& cc) {
   m_callback = move(cc);
@@ -97,7 +95,7 @@ void LinkageJob::run_linkage_job() {
     }
     const auto nvals_value{nvals.get()};
     logger->debug("Server has {} Records\n", nvals_value);
-    auto epilinker{m_parent->get_epilink_client(m_remote_config->get_id())};
+    auto epilinker{ServerHandler::get().get_epilink_client(m_remote_config->get_id())};
     epilinker->build_circuit(nvals_value);
     epilinker->run_setup_phase();
     EpilinkClientInput client_input{m_data, nvals_value};
@@ -174,12 +172,16 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
       "SEL-Identifier: "s + m_local_config->get_local_id(),
       "Content-Type: application/json"};
   string url{assemble_remote_url(m_remote_config) + "/initMPC/"+m_local_config->get_local_id()};
-  logger->debug("Sending linkage request\n");
+  logger->debug("Sending linkage request to {}\n", url);
   try{
     auto response{perform_post_request(url, data, headers, true)};
     logger->debug("Response stream:\n{} - {}\n",response.return_code, response.body);
     // get nvals from response header
-    nvals.set_value(stoull(get_headers(response.body, "Record-Number").front()));
+    if (response.return_code == 200) {
+      nvals.set_value(stoull(get_headers(response.body, "Record-Number").front()));
+    } else {
+      logger->error("Error communicating with remote epilinker: {} - {}", response.return_code, response.body);
+    }
   } catch (const exception& e) {
     logger->error("Error performing initMPC call: {}", e.what());
   }

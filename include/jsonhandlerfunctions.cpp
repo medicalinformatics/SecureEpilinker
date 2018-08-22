@@ -79,31 +79,30 @@ unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json& j) {
 
 SessionResponse valid_test_config_json_handler(
     const nlohmann::json& client_config,
-    const RemoteId& remote_id,
-    const shared_ptr<ConfigurationHandler>& config_handler,
-    const shared_ptr<ServerHandler>& server_handler,
-    const shared_ptr<ConnectionHandler>& connection_handler) {
+    const RemoteId& remote_id) {
   auto logger{get_default_logger()};
+  auto& config_handler{ConfigurationHandler::get()};
+  auto& connection_handler{ConnectionHandler::get()};
+
   SessionResponse response;
-  if (config_handler->remote_exists(remote_id)) {
+  if (config_handler.remote_exists(remote_id)) {
     // negotiate common ABY port
     auto client_ports{client_config.at("availableAbyPorts").get<set<Port>>()};
-    Port common_port = connection_handler->choose_common_port(client_ports);
+    Port common_port = connection_handler.choose_common_port(client_ports);
     logger->debug("Common port: {}", common_port);
     // The aby port information is not needed for config comparison
     auto client_comparison_config = client_config;
     client_comparison_config.erase("availableAbyPorts");
     // Compare Configs
-    if (config_handler->compare_configuration(client_comparison_config, remote_id)) {
+    if (config_handler.compare_configuration(client_comparison_config, remote_id)) {
       logger->info("Valid config");
-      const auto remote_config{config_handler->get_remote_config(remote_id)};
+      const auto remote_config{config_handler.get_remote_config(remote_id)};
       remote_config->set_aby_port(common_port);
       remote_config->mark_mutually_initialized();
 
       logger->info("Building MPC Server");
-      auto fun = bind(&ServerHandler::insert_server,server_handler.get(),remote_id,placeholders::_1);
       RemoteAddress tempadr{remote_config->get_remote_host(),common_port};
-      std::thread server_creator(fun, tempadr);
+      std::thread server_creator([remote_id,tempadr](){ServerHandler::get().insert_server(remote_id, tempadr);});
       server_creator.detach();
       return responses::server_initialized(common_port);
     } else {
@@ -118,20 +117,18 @@ SessionResponse valid_test_config_json_handler(
 
 SessionResponse valid_linkrecord_json_handler(
     const nlohmann::json& j,
-    const RemoteId& remote_id,
-    const shared_ptr<ConfigurationHandler>& config_handler,
-    const shared_ptr<ServerHandler>& server_handler,
-    const shared_ptr<ConnectionHandler>&) {
+    const RemoteId& remote_id) {
   auto logger{get_default_logger()};
+  const auto& config_handler{ConfigurationHandler::cget()};
+  auto& server_handler{ServerHandler::get()};
   try {
     logger->trace("Link/MatchRecord Payload: {}", j.dump(2));
     JobId job_id;
-    if (config_handler->get_remote_count()) {
-      const auto local_config{config_handler->get_local_config()};
-      const auto remote_config{config_handler->get_remote_config(remote_id)};
-      const auto algo_config{config_handler->get_algorithm_config()};
-      auto job{make_shared<LinkageJob>(local_config, remote_config, algo_config,
-                                       server_handler)};
+    if (config_handler.get_remote_count()) {
+      const auto local_config{config_handler.get_local_config()};
+      const auto remote_config{config_handler.get_remote_config(remote_id)};
+      const auto algo_config{config_handler.get_algorithm_config()};
+      auto job{make_shared<LinkageJob>(local_config, remote_config, algo_config)};
       job_id = job->get_id();
       logger->info("Created Job on Path: {}", job_id);
       try {
@@ -142,7 +139,7 @@ SessionResponse valid_linkrecord_json_handler(
         auto data = parse_json_fields(local_config->get_fields(), j.at("fields"));
         job->add_data(move(data));
 
-        server_handler->add_linkage_job(remote_id, move(job));
+        server_handler.add_linkage_job(remote_id, move(job));
       } catch (const exception& e) {
         logger->error("Error in job creation: {}", e.what());
         return responses::status_error(restbed::BAD_REQUEST,e.what());
@@ -162,17 +159,15 @@ SessionResponse valid_linkrecord_json_handler(
 
 SessionResponse valid_init_remote_json_handler(
     const nlohmann::json& j,
-    RemoteId remote_id,
-    const shared_ptr<ConfigurationHandler>& config_handler,
-    const shared_ptr<ServerHandler>& server_handler,
-    const shared_ptr<ConnectionHandler>& connection_handler) {
+    RemoteId remote_id) {
   auto logger{get_default_logger()};
+  auto& config_handler{ConfigurationHandler::get()};
   logger->trace("Payload: {}", j.dump(2));
   logger->info("Creating remote Config for: \"{}\"", remote_id);
   ConnectionConfig con;
   ConnectionConfig linkage_service;
-  auto local_conf{config_handler->get_local_config()};
-  auto algo_conf{config_handler->get_algorithm_config()};
+  auto local_conf{config_handler.get_local_config()};
+  auto algo_conf{config_handler.get_algorithm_config()};
   auto remote_config = make_shared<RemoteConfiguration>(remote_id);
   try {
     // Get Connection Profile
@@ -207,9 +202,9 @@ SessionResponse valid_init_remote_json_handler(
     logger->error("Error creating remote config: {}", e.what());
     return responses::status_error(restbed::INTERNAL_SERVER_ERROR, e.what());
   }
-  config_handler->set_remote_config(move(remote_config));
-  auto placed_config{config_handler->get_remote_config(remote_id)};
+  config_handler.set_remote_config(move(remote_config));
   // Test connection and negotiate common port
+  //auto placed_config{config_handler.get_remote_config(remote_id)};
   //placed_config->test_configuration(config_handler->get_local_config()->get_local_id(), config_handler->make_comparison_config(remote_id), connection_handler, server_handler);
   // TODO(TK): Error handling
   return {restbed::OK, "", {{"Connection", "Close"}}};
@@ -217,11 +212,9 @@ SessionResponse valid_init_remote_json_handler(
 
 SessionResponse valid_init_local_json_handler(
     const nlohmann::json& j,
-    RemoteId,
-    const shared_ptr<ConfigurationHandler>& config_handler,
-    const shared_ptr<ServerHandler>&,
-    const shared_ptr<ConnectionHandler>&) {
+    RemoteId) {
   auto logger = get_default_logger();
+  auto& config_handler{ConfigurationHandler::get()};
   logger->trace("Payload: {}", j.dump(2));
   auto local_config = make_shared<LocalConfiguration>();
   logger->info("Creating local configuration\n");
@@ -243,8 +236,8 @@ SessionResponse valid_init_local_json_handler(
     algo->threshold_match = epilink_config.threshold; // TODO#36 to be removed
     algo->threshold_non_match = epilink_config.tthreshold; // TODO#36 to be removed
 
-    config_handler->set_local_config(move(local_config));
-    config_handler->set_algorithm_config(move(algo)); // TODO#36 to be removed
+    config_handler.set_local_config(move(local_config));
+    config_handler.set_algorithm_config(move(algo)); // TODO#36 to be removed
 
     return {restbed::OK, "", {{"Connection", "Close"}}};
   } catch (const runtime_error& e) {
