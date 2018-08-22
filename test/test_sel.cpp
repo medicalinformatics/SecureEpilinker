@@ -236,6 +236,17 @@ EpilinkInput input_json(const fs::path& local_config_file_path,
   return {epi_cfg, {record, db.size()}, db};
 }
 
+EpilinkInput input_test_json() {
+  string TestScriptsDir = "../test_scripts/";
+  auto dirp = getenv("SEL_TEST_DIR");
+  if (dirp) TestScriptsDir = dirp;
+
+  return input_json(
+      TestScriptsDir + "configurations/local_init_tuda1.json"s,
+      TestScriptsDir + "configurations/validlink.json"s,
+      TestScriptsDir + "database"s);
+}
+
 } /* END namespace sel::test */
 
 using namespace sel;
@@ -281,15 +292,7 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  string TestScriptsDir = "../test_scripts/";
-  auto dirp = getenv("SEL_TEST_DIR");
-  if (dirp) TestScriptsDir = dirp;
-  const auto in = input_json(
-      TestScriptsDir + "configurations/local_init_tuda1.json"s,
-      TestScriptsDir + "configurations/validlink.json"s,
-      TestScriptsDir + "database"s);
-
-  //const auto in = input_empty(nvals);
+  const auto in = input_test_json();
 
   if(!op["local-only"].as<bool>()) {
     SecureEpilinker linker{aby_cfg, in.cfg};
