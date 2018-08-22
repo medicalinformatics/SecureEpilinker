@@ -43,8 +43,7 @@
     "errorRate": 0.005,
     "comparator": "binary",
     "fieldType": "integer",
-    "bitlength": 11
-
+    "bitlength": 5
     },
     {
     "name": "geburtsmonat",
@@ -52,8 +51,7 @@
     "errorRate": 0.002,
     "comparator": "binary",
     "fieldType": "integer",
-    "bitlength": 11
-
+    "bitlength": 4
     },
     {
     "name": "geburtsjahr",
@@ -62,7 +60,6 @@
     "comparator": "binary",
     "fieldType": "integer",
     "bitlength": 11
-
     },
     {
     "name": "plz",
@@ -71,7 +68,6 @@
     "comparator": "binary",
     "fieldType": "string",
     "bitlength": 40
-
     },
     {
     "name": "ort",
@@ -80,7 +76,7 @@
     "comparator": "dice",
     "fieldType": "bitmask",
     "bitlength": 500
-
-    }]
+    }
+  ]
   }
 }
