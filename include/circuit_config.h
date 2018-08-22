@@ -38,7 +38,7 @@ struct CircuitConfig {
   // pre-calculated fields
   size_t dice_prec, weight_prec;
 
-  CircuitConfig(EpilinkConfig epi,
+  CircuitConfig(const EpilinkConfig& epi,
       bool matching_mode = false, size_t bitlen = BitLen);
   ~CircuitConfig() = default;
 
@@ -86,8 +86,8 @@ struct formatter<sel::CircuitConfig> {
   template <typename FormatContext>
   auto format(const sel::CircuitConfig& conf, FormatContext &ctx) {
     return format_to(ctx.begin(),
-        "CircuitConfig\\{{}, mathing_mode={}, bitlen={}, "
-        "precisions\\{dice={}, weight={}\\}\\}",
+        "CircuitConfig{{{}, mathing_mode={}, bitlen={}, "
+        "precisions{{dice={}, weight={}}}}}",
         conf.epi,
         conf.matching_mode, conf.bitlen, conf.dice_prec, conf.weight_prec
     );

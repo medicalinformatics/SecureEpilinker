@@ -41,7 +41,7 @@ EpilinkConfig::EpilinkConfig(
   nfields {fields.size()},
   max_weight{sel::max_element(fields, [](auto f){return f.second.weight;})}
   {
-    get_default_logger()->debug("New {}", *this);
+    get_default_logger()->trace("Constructing {}", *this);
 
     // Sanity checks of exchange groups
     IndexSet xgunion;

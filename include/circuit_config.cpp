@@ -30,13 +30,14 @@ size_t bit_usage(const size_t dice_prec,
   return dice_prec + 2*weight_prec + ceil_log2(nfields*nfields);
 }
 
-CircuitConfig::CircuitConfig(EpilinkConfig epi_,
+CircuitConfig::CircuitConfig(const EpilinkConfig& epi_,
     bool matching_mode, size_t bitlen) :
-  epi {move(epi_)},
+  epi {epi_},
   matching_mode {matching_mode},
   bitlen {bitlen}
 {
-  get_default_logger()->debug("New {}", *this);
+  get_default_logger()->trace("Constructing CircuitConfig with {},"
+      " matching_mode={}, bitlen={}", epi, matching_mode, bitlen);
 
 #ifndef SEL_MATCHING_MODE
     if (matching_mode) throw invalid_argument(
@@ -66,6 +67,8 @@ CircuitConfig::CircuitConfig(EpilinkConfig epi_,
   // which we cannot add to dice precision because it would overflow the
   // 16-bit integer division input... Need better int-div
   assert (bit_usage(dice_prec, weight_prec, epi.nfields) <= bitlen);
+
+  get_default_logger()->trace("Constructed {}", *this);
 }
 
 void CircuitConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
