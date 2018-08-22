@@ -77,17 +77,23 @@ EpilinkConfig::EpilinkConfig(
     }
   }
 
-
-EpilinkServerInput::EpilinkServerInput(
-    std::map<FieldName, VFieldEntry> database_) :
-  database{database_},
-  nvals{database.cbegin()->second.size()}
-{
-  // check that all vectors over records have same size
+void EpilinkServerInput::check_sizes() {
   for (const auto& row : database) {
     check_vector_size(row.second, nvals, "database field "s + row.first);
   }
 }
+
+EpilinkServerInput::EpilinkServerInput(
+    const std::map<FieldName, VFieldEntry>& database_) :
+  database(database_),
+  nvals {database.cbegin()->second.size()}
+{ check_sizes(); }
+
+EpilinkServerInput::EpilinkServerInput(
+    std::map<FieldName, VFieldEntry>&& database_) :
+  database{move(database_)},
+  nvals {database.cbegin()->second.size()}
+{ check_sizes(); }
 
 
 } // namespace sel
