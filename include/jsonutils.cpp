@@ -25,39 +25,44 @@
 using namespace std;
 
 namespace sel {
-    // FIXME(TK) I do s.th. *very* unsafe and use bitlength user input directly
-    // for memcpy. DO SOME SANITY CHECKS OR THIS SOFTWARE WILL BREAK AND ALLOW
-    // ARBITRARY REMOTE CODE EXECUTION!
-pair<FieldName, FieldEntry> parse_json_field(const ML_Field& field,
+
+Bitmask check_size_and_get_as_bitmask(
+    const void* source, const size_t source_bytes, const size_t bytes_to_copy) {
+  if (bytes_to_copy > source_bytes) {
+    throw runtime_error("Field bitlength larger than field type, "
+        "cannot copy that many bytes!");
+  }
+  Bitmask ret(bytes_to_copy);
+  ::memcpy(ret.data(), source, bytes_to_copy);
+
+  return ret;
+}
+
+FieldEntry parse_json_field(const ML_Field& field,
                                             const nlohmann::json& json) {
   auto logger{get_default_logger()};
   if (!(json.is_null())) {
+    size_t field_bytes = bitbytes(field.bitsize);
     switch (field.type) {
       case FieldType::INTEGER: {
-        const auto content{json.get<int>()};
-        Bitmask temp(bitbytes(field.bitsize));
-        ::memcpy(temp.data(), &content, bitbytes(field.bitsize));
-        return make_pair(field.name, move(temp));
+        const auto content = json.get<int>();
+        return check_size_and_get_as_bitmask(&content, sizeof(int), field_bytes);
       }
       case FieldType::NUMBER: {
-        const auto content{json.get<double>()};
-        Bitmask temp(bitbytes(field.bitsize));
-        ::memcpy(temp.data(), &content, bitbytes(field.bitsize));
-        return make_pair(field.name, move(temp));
+        const auto content = json.get<double>();
+        return check_size_and_get_as_bitmask(&content, sizeof(double), field_bytes);
       }
       case FieldType::STRING: {
-        const auto content{json.get<string>()};
+        const auto content = json.get<string>();
         if (trim_copy(content).empty()) {
-          return make_pair(field.name, nullopt);
+          return nullopt;
         } else {
-          const auto temp_char_array{content.c_str()};
-          Bitmask temp(bitbytes(field.bitsize));
-          ::memcpy(temp.data(), temp_char_array, bitbytes(field.bitsize));
-          return make_pair(field.name, move(temp));
+          return check_size_and_get_as_bitmask(content.c_str(), content.size(),
+              field_bytes);
         }
       }
       case FieldType::BITMASK: {
-        auto temp = json.get<string>();
+        const auto temp = json.get<string>();
         if (!trim_copy(temp).empty()) {
           auto bloom = base64_decode(temp, field.bitsize);
           if (!check_bloom_length(bloom, field.bitsize)) {
@@ -65,26 +70,27 @@ pair<FieldName, FieldEntry> parse_json_field(const ML_Field& field,
                 "Bits set after bloomfilter length. There might be a "
                 "problem. Setting to zero.\n");
           }
-          return make_pair(field.name, move(bloom));
+          return bloom;
         } else {
-          return make_pair(field.name, nullopt);
+          return nullopt;
         }
       }
       default: {
         // silence compiler, never reached
-        return make_pair("", nullopt);
+        return nullopt;
       }
     }
   } else {  // field has type null
-    return make_pair(field.name, nullopt);
+    return nullopt;
   }
 }
 
 map<FieldName, FieldEntry> parse_json_fields(
     const map<FieldName, ML_Field>& fields, const nlohmann::json& json) {
   map<FieldName, FieldEntry> result;
-  for (auto f = json.begin(); f != json.end(); ++f) {
-    result[f.key()] = move(parse_json_field(fields.at(f.key()), *f).second);
+  for (auto f = json.cbegin(); f != json.cend(); ++f) {
+    auto entry = parse_json_field(fields.at(f.key()), *f);
+    result.emplace(f.key(), move(entry));
   }
   return result;
 }
