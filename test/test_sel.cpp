@@ -4,12 +4,18 @@
 
 #include "../include/logger.h"
 #include "../include/util.h"
+#include "../include/jsonutils.h"
 #include "../include/secure_epilinker.h"
 #include "../include/clear_epilinker.h"
 #include "random_input_generator.h"
 
+#include <filesystem>
+
 using namespace std;
 using fmt::print;
+using nlohmann::json;
+
+namespace fs = std::filesystem;
 
 namespace sel::test {
 
@@ -207,6 +213,29 @@ EpilinkInput input_dkfz_random(size_t nvals) {
   return random_input.generate(nvals);
 }
 
+EpilinkInput input_json(const fs::path& local_config_file_path,
+    const fs::path& record_file_path,
+    const fs::path& database_directory_path) {
+
+  auto config_json = read_json_from_disk(local_config_file_path).at("algorithm");
+  auto epi_cfg = parse_json_epilink_config(config_json);
+
+  auto record_json = read_json_from_disk(record_file_path).at("fields");
+  cout << record_json.dump(2) << endl;
+  auto record = parse_json_fields(epi_cfg.fields, record_json);
+
+  map<FieldName, VFieldEntry> db;
+  for (auto& f: fs::directory_iterator(database_directory_path)) {
+    if (f.path().extension() == ".json") {
+      auto db_json = read_json_from_disk(f);
+      auto temp_db = parse_json_fields_array(epi_cfg.fields, db_json.at("records"));
+      append_to_map_of_vectors(temp_db, db);
+    }
+  }
+
+  return {epi_cfg, {record, db.size()}, db};
+}
+
 } /* END namespace sel::test */
 
 using namespace sel;
@@ -252,6 +281,13 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
+  string TestScriptsDir = "../test_scripts/";
+  auto dirp = getenv("SEL_TEST_DIR");
+  if (dirp) TestScriptsDir = dirp;
+  const auto in = input_json(
+      TestScriptsDir + "configurations/local_init_tuda1.json"s,
+      TestScriptsDir + "configurations/validlink.json"s,
+      TestScriptsDir + "database"s);
 
   //const auto in = input_empty(nvals);
 

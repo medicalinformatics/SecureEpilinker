@@ -88,6 +88,8 @@ set(SELSOURCES ${SELABYSOURCES}
   "include/clear_epilinker.cpp"
   "include/seltypes.cpp"
   "include/logger.cpp"
+  "include/jsonutils.cpp"
+  "include/base64.cpp"
   )
 
 set(SELABYHEADER
@@ -105,6 +107,8 @@ set(SELHEADER ${SELABYHEADER}
   "include/clear_epilinker.h"
   "include/seltypes.h"
   "include/logger.h"
+  "include/jsonutils.h"
+  "include/base64.h"
   )
 
 add_executable (sel sepilinker.cpp ${EPIRESTSRC} ${EPIRESTHEAD} ${SELSOURCES} ${SELHEADER})
@@ -178,8 +182,8 @@ add_dependencies(test_sel MIRACL)
 add_dependencies(test_sel ENCRYPTO_utils)
 target_include_directories(test_sel PRIVATE extern/spdlog/include)
 target_link_libraries(test_sel PRIVATE ${EXTERNALLIBS} gmp gmpxx rt
-  OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
-target_link_libraries(test_sel PRIVATE fmt::fmt-header-only cxxopts)
+  OpenSSL::SSL OpenSSL::Crypto Threads::Threads stdc++fs)
+target_link_libraries(test_sel PRIVATE fmt::fmt-header-only cxxopts nlohmann_json)
 set_property(TARGET test_sel PROPERTY CXX_STANDARD 17)
 target_compile_options(test_sel PRIVATE "-O0" "-ggdb" "-g3"
   "-DDEBUG_SEL_INPUT"
