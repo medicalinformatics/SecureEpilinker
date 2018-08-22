@@ -98,7 +98,7 @@ struct formatter<sel::EpilinkConfig> {
   template <typename FormatContext>
   auto format(const sel::EpilinkConfig& conf, FormatContext &ctx) {
     return format_to(ctx.begin(),
-        "EpilinkConfig\\{thresholds={};{}, nfields={}\\}",
+        "EpilinkConfig{{thresholds={};{}, nfields={}}}",
         conf.threshold, conf.tthreshold, conf.nfields
     );
   }
