@@ -116,18 +116,17 @@ int main(int argc, char* argv[]) {
   restbed::Service service;
   curlpp::Cleanup curl_cleanup;
   // Create Connection Handler
-  auto connections = std::make_shared<sel::ConnectionHandler>(&service);
-  auto configurations = std::make_shared<sel::ConfigurationHandler>(connections);
-  auto data = std::make_shared<sel::DataHandler>();
-  auto servers = std::make_shared<sel::ServerHandler>(configurations, data);
+  auto& connections = sel::ConnectionHandler::get();
+  connections.set_service(&service);
+  auto& configurations = sel::ConfigurationHandler::get();
+  auto& data = sel::DataHandler::get();
+  auto& servers = sel::ServerHandler::get();
 
-  connections->set_config_handler(configurations);
-  data->set_config_handler(configurations);
-  configurations->set_server_config(make_server_config_from_json(server_config));
-  connections->populate_aby_ports();
+  configurations.set_server_config(make_server_config_from_json(server_config));
+  connections.populate_aby_ports();
 
   // Create JSON Validator
-  auto restconf{configurations->get_server_config()};
+  auto restconf{configurations.get_server_config()};
   auto init_local_validator = std::make_shared<sel::Validator>(
       read_json_from_disk(restconf.local_init_schema_file));
   auto init_remote_validator = std::make_shared<sel::Validator>(
@@ -139,37 +138,37 @@ int main(int argc, char* argv[]) {
   // Create Handlers for INIT Phase
   auto init_local_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "PUT", configurations, connections, servers,init_local_validator,
+          "PUT", init_local_validator,
           sel::valid_init_local_json_handler, sel::invalid_json_handler);
   auto init_remote_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "PUT", configurations, connections, servers,init_remote_validator,
+          "PUT", init_remote_validator,
           sel::valid_init_remote_json_handler, sel::invalid_json_handler);
   // Create Handlers for Record Linkage phase
   auto linkrecord_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "POST", configurations, connections, servers, linkrecord_validator,
+          "POST", linkrecord_validator,
           sel::valid_linkrecord_json_handler, sel::invalid_json_handler);
   auto matchrecord_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "POST", configurations, connections, servers, linkrecord_validator,
+          "POST", linkrecord_validator,
           sel::valid_linkrecord_json_handler, sel::invalid_json_handler);
   // Create GET-Handler for job status monitoring
   auto jobmonitor_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::MonitorMethodHandler>(
-          "GET", servers);
+          "GET");
   // Create Handlers for temporary inter SEL communication
   auto test_config_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "POST", configurations, connections, servers,null_validator,
+          "POST", null_validator,
           sel::valid_test_config_json_handler, sel::invalid_json_handler);
   auto init_mpc_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::HeaderMethodHandler>(
-          "POST", nullptr, nullptr, servers, data, sel::init_mpc);
+          "POST", sel::init_mpc);
 
   auto testconfig_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::HeaderMethodHandler>(
-          "GET", configurations, connections, servers, data, sel::test_configs);
+          "GET", sel::test_configs);
   // Create Ressource on <url/init> and instruct to use the built MethodHandler
   sel::ResourceHandler local_initializer{"/initLocal"};
   local_initializer.add_method(init_local_methodhandler);

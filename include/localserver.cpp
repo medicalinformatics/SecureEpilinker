@@ -34,33 +34,25 @@ namespace sel {
 
 LocalServer::LocalServer(RemoteId remote_id,
                          std::string client_ip,
-                         Port client_port,
-                         shared_ptr<DataHandler> data_handler,
-                         shared_ptr<ConfigurationHandler> config_handler)
+                         Port client_port)
     : m_remote_id(move(remote_id)),
       m_client_ip(move(client_ip)),
       m_client_port(client_port),
-      m_data_handler(move(data_handler)),
-      m_config_handler(move(config_handler)),
       m_aby_server(
-          {SERVER, m_config_handler->get_server_config().boolean_sharing,
+          {SERVER, ConfigurationHandler::cget().get_server_config().boolean_sharing,
            m_client_ip, m_client_port,
-           m_config_handler->get_server_config().aby_threads},
-          {m_config_handler->get_local_config()->get_fields(),
-           m_config_handler->get_local_config()->get_exchange_groups(),
-           m_config_handler->get_algorithm_config()->threshold_match,
-           m_config_handler->get_algorithm_config()->threshold_non_match,
-           m_config_handler->get_remote_config(remote_id)->get_matching_mode()}) {}
+           ConfigurationHandler::cget().get_server_config().aby_threads},
+          {ConfigurationHandler::cget().get_local_config()->get_fields(),
+           ConfigurationHandler::cget().get_local_config()->get_exchange_groups(),
+           ConfigurationHandler::cget().get_algorithm_config()->threshold_match,
+           ConfigurationHandler::cget().get_algorithm_config()->threshold_non_match,
+           ConfigurationHandler::cget().get_remote_config(remote_id)->get_matching_mode()}) {}
 LocalServer::LocalServer(RemoteId remote_id,
                          SecureEpilinker::ABYConfig aby_config,
-                         EpilinkConfig epi_config,
-                         shared_ptr<DataHandler> data_handler,
-                         shared_ptr<ConfigurationHandler> config_handler)
+                         EpilinkConfig epi_config)
     : m_remote_id(move(remote_id)),
       m_client_ip(aby_config.remote_host),
       m_client_port(aby_config.port),
-      m_data_handler(move(data_handler)),
-      m_config_handler(move(config_handler)),
       m_aby_server( aby_config, epi_config) {}
 
 RemoteId LocalServer::get_id() const {

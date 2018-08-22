@@ -37,14 +37,10 @@ class LocalServer {
   LocalServer() = default;
   LocalServer(RemoteId,
               std::string,
-              Port,
-              std::shared_ptr<DataHandler>,
-              std::shared_ptr<ConfigurationHandler>);
+              Port);
   LocalServer(RemoteId,
               SecureEpilinker::ABYConfig,
-              EpilinkConfig,
-              std::shared_ptr<DataHandler>,
-              std::shared_ptr<ConfigurationHandler>);
+              EpilinkConfig);
   RemoteId get_id() const;
   SecureEpilinker::Result run_server();
   SecureEpilinker::Result launch_comparison(std::shared_ptr<const ServerData>);
@@ -54,15 +50,12 @@ class LocalServer {
   void connect_server();
 
   std::vector<std::string> get_ids() const {return m_data->ids;}
-  std::shared_ptr<DataHandler> get_data_handler() const {return m_data_handler;}
 
  private:
   RemoteId m_remote_id;
   std::string m_client_ip;
   Port m_client_port;
   std::shared_ptr<const ServerData> m_data;
-  std::shared_ptr<DataHandler> m_data_handler;
-  std::shared_ptr<ConfigurationHandler> m_config_handler;
   SecureEpilinker m_aby_server;
 };
 
