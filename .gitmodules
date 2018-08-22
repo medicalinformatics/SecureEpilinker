@@ -10,9 +10,11 @@
 [submodule "extern/valijson"]
 	path = extern/valijson
 	url = https://github.com/tristanpenman/valijson.git
+	ignore = dirty
 [submodule "extern/restbed"]
 	path = extern/restbed
 	url = https://github.com/Corvusoft/restbed
+	ignore = dirty
 [submodule "extern/cxxopts"]
 	path = extern/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
