@@ -43,14 +43,13 @@ class LocalConfiguration {
   LocalConfiguration(std::string&& url,
                      std::unique_ptr<AuthenticationConfig> local_auth);
 
-  void set_fields(std::map<FieldName, ML_Field> fields);
-  void add_field(ML_Field field);
   const ML_Field& get_field(const FieldName& fieldname) const;
   const std::map<FieldName, ML_Field>& get_fields() const;
 
-  void set_exchange_groups(std::vector<IndexSet> groups);
-  void add_exchange_group(IndexSet group);
   std::vector<IndexSet> const& get_exchange_groups() const;
+
+  void set_epilink_config(EpilinkConfig);
+  const EpilinkConfig& get_epilink_config() const;
 
   bool field_exists(const FieldName& fieldname) const;
 
@@ -70,6 +69,7 @@ class LocalConfiguration {
   std::vector<IndexSet> m_exchange_groups;
   std::string m_data_service_url;
   std::string m_local_id;
+  EpilinkConfig m_epilink_config;
 };
 
 void to_json (nlohmann::json&, const ML_Field&);

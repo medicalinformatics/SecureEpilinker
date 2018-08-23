@@ -44,11 +44,9 @@ namespace sel {
 LinkageJob::LinkageJob() : m_id(generate_id()) {}
 
 LinkageJob::LinkageJob(shared_ptr<const LocalConfiguration> l_conf,
-                       shared_ptr<const RemoteConfiguration> r_conf,
-                       shared_ptr<const AlgorithmConfig> algo)
+                       shared_ptr<const RemoteConfiguration> r_conf)
     : m_id(generate_id()),
       m_local_config(move(l_conf)),
-      m_algo_config(move(algo)),
       m_remote_config(move(r_conf)) {}
 
 void LinkageJob::set_callback(string&& cc) {
@@ -80,7 +78,7 @@ void LinkageJob::run_linkage_job() {
 
   logger->info("Job {} started\n", m_id);
 #ifdef DEBUG_SEL_REST
-  auto debugger = m_parent->get_data_handler()->get_epilink_debug();
+  auto debugger = DataHandler::get().get_epilink_debug();
   debugger->reset();
 #endif
 
@@ -119,11 +117,11 @@ void LinkageJob::run_linkage_job() {
     }
 #ifdef DEBUG_SEL_REST
     debugger->client_input = make_shared<EpilinkClientInput>(client_input);
-    if(!(debugger->epilink_config)) {
-      debugger->epilink_config = make_shared<EpilinkConfig>(make_epilink_config(m_local_config, m_algo_config, m_remote_config->get_matching_mode()));
+    if(!(debugger->circuit_config)) {
+      debugger->circuit_config = make_shared<CircuitConfig>(make_circuit_config(m_local_config, m_remote_config));
     }
     //debugger->epilink_config->set_precisions(5,11);
-    logger->debug("Clear Precision: Dice {},\tWeight {}", debugger->epilink_config->dice_prec,debugger->epilink_config->weight_prec);
+    logger->debug("Clear Precision: Dice {},\tWeight {}", debugger->circuit_config->dice_prec,debugger->circuit_config->weight_prec);
     if(debugger->all_values_set()){
       if(!debugger->run) {
       fmt::print("============= Integer Computation ============\n");
@@ -137,7 +135,7 @@ void LinkageJob::run_linkage_job() {
     } else {
       string ss{debugger->server_input?"Set":"Not Set"};
       string cs{debugger->client_input?"Set":"Not Set"};
-      string ec{debugger->epilink_config?"Set":"Not Set"};
+      string ec{debugger->circuit_config?"Set":"Not Set"};
       logger->warn("Server: {}, Client: {}, Config: {}\n", ss, cs, ec);
     }
 #endif

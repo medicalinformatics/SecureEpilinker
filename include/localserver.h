@@ -40,7 +40,7 @@ class LocalServer {
               Port);
   LocalServer(RemoteId,
               SecureEpilinker::ABYConfig,
-              EpilinkConfig);
+              CircuitConfig);
   RemoteId get_id() const;
   SecureEpilinker::Result run_server();
   SecureEpilinker::Result launch_comparison(std::shared_ptr<const ServerData>);

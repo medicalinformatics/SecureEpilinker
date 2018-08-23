@@ -43,12 +43,6 @@ void ConfigurationHandler::set_remote_config(
   m_remote_configs[remote->get_id()] = remote;
 }
 
-void ConfigurationHandler::set_algorithm_config(
-    std::shared_ptr<AlgorithmConfig>&& algo) {
-  lock_guard<mutex> lock(m_algo_mutex);
-  m_algo_config = algo;
-}
-
 void ConfigurationHandler::set_local_config(
     shared_ptr<LocalConfiguration>&& local) {
   lock_guard<mutex> lock(m_local_mutex);
@@ -59,12 +53,6 @@ shared_ptr<const LocalConfiguration> ConfigurationHandler::get_local_config()
     const {
   lock_guard<mutex> lock(m_local_mutex);
   return m_local_config;
-}
-
-shared_ptr<const AlgorithmConfig> ConfigurationHandler::get_algorithm_config()
-    const {
-  lock_guard<mutex> lock(m_algo_mutex);
-  return m_algo_config;
 }
 
 shared_ptr<RemoteConfiguration> ConfigurationHandler::get_remote_config(
@@ -91,31 +79,24 @@ ServerConfig ConfigurationHandler::get_server_config() const {
   return m_server_config;
 }
 
-EpilinkConfig make_epilink_config(shared_ptr<const LocalConfiguration> local_config,
-                                    shared_ptr<const AlgorithmConfig> algo_config,
-                                    bool matching_mode){
-return {local_config->get_fields(),
-        local_config->get_exchange_groups(),
-        algo_config->threshold_match,
-        algo_config->threshold_non_match,
-        matching_mode};
+CircuitConfig make_circuit_config(shared_ptr<const LocalConfiguration> local_config,
+                                    shared_ptr<const RemoteConfiguration> remote_config){
+return {local_config->get_epilink_config(), remote_config->get_matching_mode()};
 }
 
 nlohmann::json ConfigurationHandler::make_comparison_config(const RemoteId& remote_id) const {
   nlohmann::json server_config({});
   {
   lock_guard<mutex> local_lock(m_local_mutex);
-  server_config["fields"] = m_local_config->get_fields();
-  server_config["exchangeGroups"] = m_local_config->get_exchange_groups();
+  auto epi_config = m_local_config->get_epilink_config();
+  server_config["fields"] = epi_config.fields;
+  server_config["exchangeGroups"] = epi_config.exchange_groups;
+  server_config["threshold_match"] = epi_config.threshold;
+  server_config["threshold_non_match"] = epi_config.tthreshold;
   }
   {
   lock_guard<mutex> remote_lock(m_remote_mutex);
   server_config["matchingMode"] = m_remote_configs.at(remote_id)->get_matching_mode();
-  }
-  {
-  lock_guard<mutex> algo_lock(m_algo_mutex);
-  server_config["threshold_match"] = m_algo_config->threshold_match;
-  server_config["threshold_non_match"] = m_algo_config->threshold_non_match;
   }
   server_config["availableAbyPorts"] = ConnectionHandler::cget().get_free_ports();
   return server_config;

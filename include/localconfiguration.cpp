@@ -37,44 +37,30 @@ LocalConfiguration::LocalConfiguration(
     unique_ptr<AuthenticationConfig> local_auth)
     : m_local_authentication(move(local_auth)), m_data_service_url{move(url)} {}
 
-void LocalConfiguration::set_fields(map<FieldName, ML_Field> fields) {
-  m_fields = move(fields);
-}
-
-void LocalConfiguration::add_field(ML_Field field) {
-  FieldName fieldname{field.name};
-  m_fields.emplace(move(fieldname), move(field));
-}
-
 const ML_Field& LocalConfiguration::get_field(
     const FieldName& fieldname) const {
-    return cref(m_fields.at(fieldname));
+    return cref(m_epilink_config.fields.at(fieldname));
+}
+
+void LocalConfiguration::set_epilink_config(EpilinkConfig config) {
+  m_epilink_config = move(config);
+}
+
+const EpilinkConfig& LocalConfiguration::get_epilink_config() const {
+  return cref(m_epilink_config);
 }
 
 const std::map<FieldName, ML_Field>& LocalConfiguration::get_fields() const {
-  return m_fields;
-}
-
-void LocalConfiguration::set_exchange_groups(std::vector<IndexSet> groups) {
-  m_exchange_groups = groups;
-}
-
-void LocalConfiguration::add_exchange_group(IndexSet group) {
-  for (const auto& f : group) {
-    if (!field_exists(f)) {
-      throw runtime_error("Invalid Exchange Group. Field(s) does not exist!");
-    }
-  }
-  m_exchange_groups.emplace_back(move(group));
+  return m_epilink_config.fields;
 }
 
 vector<IndexSet> const& LocalConfiguration::get_exchange_groups() const {
-  return m_exchange_groups;
+  return m_epilink_config.exchange_groups;
 }
 
 bool LocalConfiguration::field_exists(const FieldName& fieldname) const {
-  auto it = m_fields.find(fieldname);
-  return it == m_fields.end() ? false : true;
+  auto it = m_epilink_config.fields.find(fieldname);
+  return it == m_epilink_config.fields.end();
 }
 
 void LocalConfiguration::set_data_service(string&& url) {
@@ -105,6 +91,7 @@ void LocalConfiguration::set_local_id(string&& local_id){
 string LocalConfiguration::get_local_id() const {
   return m_local_id;
 }
+
 
 void to_json(nlohmann::json& j, const ML_Field& f) {
   j = nlohmann::json{

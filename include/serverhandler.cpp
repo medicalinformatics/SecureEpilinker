@@ -46,9 +46,8 @@ void ServerHandler::insert_client(RemoteId id) {
   const auto& config_handler{ConfigurationHandler::cget()};
   auto local_config{config_handler.get_local_config()};
   auto remote_config{config_handler.get_remote_config(id)};
-  auto epilink_config{make_epilink_config(
-      local_config, config_handler.get_algorithm_config(), remote_config->get_matching_mode())};
-  if(remote_config->get_matching_mode()){
+  auto circuit_config{make_circuit_config(local_config, remote_config)};
+  if(circuit_config.matching_mode){
     m_logger->warn("Client created with matching mode enanabled!");
   }
   auto aby_info{config_handler.get_server_config()};
@@ -56,7 +55,7 @@ void ServerHandler::insert_client(RemoteId id) {
       CLIENT, aby_info.boolean_sharing, remote_config->get_remote_host(),
       remote_config->get_aby_port(), aby_info.aby_threads};
   m_logger->debug("Creating client on port {}, Remote host: {}", aby_config.port, aby_config.remote_host);
-  m_aby_clients.emplace(id, make_shared<SecureEpilinker>(aby_config,epilink_config));
+  m_aby_clients.emplace(id, make_shared<SecureEpilinker>(aby_config,circuit_config));
   connect_client(id);
 }
 
@@ -64,9 +63,8 @@ void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
   const auto& config_handler{ConfigurationHandler::cget()};
   auto local_config{config_handler.get_local_config()};
   auto remote_config{config_handler.get_remote_config(id)};
-  auto epilink_config{make_epilink_config(
-      local_config, config_handler.get_algorithm_config(), remote_config->get_matching_mode())};
-  if(remote_config->get_matching_mode()){
+  auto circuit_config{make_circuit_config(local_config, remote_config)};
+  if(circuit_config.matching_mode){
     m_logger->warn("Server created with matching mode enanabled!");
   }
   auto aby_info{config_handler.get_server_config()};
@@ -74,7 +72,7 @@ void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
       SERVER, aby_info.boolean_sharing, move(remote_address.ip),
       remote_address.port, aby_info.aby_threads};
   m_logger->debug("Creating server on port {}, Remote host: {}\n", aby_config.port, aby_config.remote_host);
-  m_server.emplace(id, make_shared<LocalServer>(id, aby_config, epilink_config));
+  m_server.emplace(id, make_shared<LocalServer>(id, aby_config, circuit_config));
   get_local_server(id)->connect_server();
 }
 
