@@ -127,8 +127,7 @@ SessionResponse valid_linkrecord_json_handler(
     if (config_handler.get_remote_count()) {
       const auto local_config{config_handler.get_local_config()};
       const auto remote_config{config_handler.get_remote_config(remote_id)};
-      const auto algo_config{config_handler.get_algorithm_config()};
-      auto job{make_shared<LinkageJob>(local_config, remote_config, algo_config)};
+      auto job{make_shared<LinkageJob>(local_config, remote_config)};
       job_id = job->get_id();
       logger->info("Created Job on Path: {}", job_id);
       try {
@@ -167,7 +166,6 @@ SessionResponse valid_init_remote_json_handler(
   ConnectionConfig con;
   ConnectionConfig linkage_service;
   auto local_conf{config_handler.get_local_config()};
-  auto algo_conf{config_handler.get_algorithm_config()};
   auto remote_config = make_shared<RemoteConfiguration>(remote_id);
   try {
     // Get Connection Profile
@@ -218,7 +216,6 @@ SessionResponse valid_init_local_json_handler(
   logger->trace("Payload: {}", j.dump(2));
   auto local_config = make_shared<LocalConfiguration>();
   logger->info("Creating local configuration\n");
-  auto algo = make_shared<AlgorithmConfig>();
   try {
     local_config->set_local_id(j.at("localId"));
     auto l_auth = get_auth_object(j.at("localAuthentication"));
@@ -228,16 +225,9 @@ SessionResponse valid_init_local_json_handler(
 
     // Epilink Config
     auto algo_json = j.at("algorithm");
-    const auto algo_name = str_to_atype(algo_json.at("algoType").get<string>());
-    algo->type = algo_name; // TODO#36 to be removed
     EpilinkConfig epilink_config = parse_json_epilink_config(algo_json);
-    local_config->set_fields(epilink_config.fields);// TODO#36 to be changed to setting epilink_config
-    local_config->set_exchange_groups(epilink_config.exchange_groups); // TODO#36 to be removed
-    algo->threshold_match = epilink_config.threshold; // TODO#36 to be removed
-    algo->threshold_non_match = epilink_config.tthreshold; // TODO#36 to be removed
-
+    local_config->set_epilink_config(epilink_config);
     config_handler.set_local_config(move(local_config));
-    config_handler.set_algorithm_config(move(algo)); // TODO#36 to be removed
 
     return {restbed::OK, "", {{"Connection", "Close"}}};
   } catch (const runtime_error& e) {
