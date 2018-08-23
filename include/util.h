@@ -191,21 +191,40 @@ ToValue max_element(const std::map<Key, FromValue>& _map, Transformer _tr) {
 }
 
 /**
+ * RAII ostream flags saver
+ * https://stackoverflow.com/a/18822888/1523730
+ */
+class ios_flags_saver {
+  public:
+    explicit ios_flags_saver(std::ostream& _ios):
+      ios(_ios),
+      f(_ios.flags()) {}
+    ~ios_flags_saver() {
+      ios.flags(f);
+    }
+
+    ios_flags_saver(const ios_flags_saver&) = delete;
+    ios_flags_saver& operator=(const ios_flags_saver&) = delete;
+
+  private:
+    std::ostream& ios;
+    std::ios::fmtflags f;
+};
+
+/**
  * Print vectors to cout
  */
 template<typename T>
 std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
-    std::ios_base::fmtflags outf( out.flags() ); // save cout flags
-    out << "[" << std::hex;
-    size_t last = v.size() - 1;
-    for(size_t i = 0; i < v.size(); ++i) {
-        out << v[i];
-        if (i != last)
-            out << ", ";
-    }
-    out << "]";
-    out.flags(outf); // restore old flags
-    return out;
+  ios_flags_saver _flags_saver(out);
+  out << "[" << std::hex;
+  size_t last = v.size() - 1;
+  for(size_t i = 0; i < v.size(); ++i) {
+    out << v[i];
+    if (i != last) out << ", ";
+  }
+  out << "]";
+  return out;
 }
 
 // specialization for uint8_t / unsigned char
