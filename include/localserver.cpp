@@ -42,18 +42,14 @@ LocalServer::LocalServer(RemoteId remote_id,
           {SERVER, ConfigurationHandler::cget().get_server_config().boolean_sharing,
            m_client_ip, m_client_port,
            ConfigurationHandler::cget().get_server_config().aby_threads},
-          {ConfigurationHandler::cget().get_local_config()->get_fields(),
-           ConfigurationHandler::cget().get_local_config()->get_exchange_groups(),
-           ConfigurationHandler::cget().get_algorithm_config()->threshold_match,
-           ConfigurationHandler::cget().get_algorithm_config()->threshold_non_match,
-           ConfigurationHandler::cget().get_remote_config(remote_id)->get_matching_mode()}) {}
+          make_circuit_config(ConfigurationHandler::cget().get_local_config(), ConfigurationHandler::cget().get_remote_config(remote_id))) {}
 LocalServer::LocalServer(RemoteId remote_id,
                          SecureEpilinker::ABYConfig aby_config,
-                         EpilinkConfig epi_config)
+                         CircuitConfig circuit_config)
     : m_remote_id(move(remote_id)),
       m_client_ip(aby_config.remote_host),
       m_client_port(aby_config.port),
-      m_aby_server( aby_config, epi_config) {}
+      m_aby_server( aby_config, circuit_config) {}
 
 RemoteId LocalServer::get_id() const {
   return m_remote_id;
@@ -70,7 +66,7 @@ SecureEpilinker::Result LocalServer::run_server() {
   auto server_result{m_aby_server.run_as_server({m_data->data})};
   m_aby_server.reset();
 #ifdef DEBUG_SEL_REST
-  auto debugger{m_data_handler->get_epilink_debug()};
+  auto debugger{DataHandler::get().get_epilink_debug()};
   debugger->server_input = std::make_shared<EpilinkServerInput>(data);
 #endif
   return server_result;

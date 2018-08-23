@@ -11,19 +11,19 @@ namespace sel {
 
 #ifdef DEBUG_SEL_REST
 bool Debugger::all_values_set() const{
-  return client_input && server_input && epilink_config;
+  return client_input && server_input && circuit_config;
 }
 
 void Debugger::compute_int() {
-  int_result = clear_epilink::calc_integer({*client_input, *server_input},*epilink_config);
+  int_result = clear_epilink::calc_integer({*client_input, *server_input},*circuit_config);
 }
 
 void Debugger::compute_double() {
-  double_result = clear_epilink::calc_exact({*client_input, *server_input},*epilink_config);
+  double_result = clear_epilink::calc_exact({*client_input, *server_input},*circuit_config);
 }
 
 void Debugger::reset() {
-  client_input.reset(); server_input.reset(); epilink_config.reset();
+  client_input.reset(); server_input.reset(); circuit_config.reset();
   int_result = {}; double_result = {};
   run = false;
 }
@@ -42,7 +42,7 @@ size_t DataHandler::poll_database(const RemoteId& remote_id) {
   const auto& config_handler{ConfigurationHandler::cget()};
   const auto local_configuration{config_handler.get_local_config()};
   DatabaseFetcher database_fetcher{
-      local_configuration, config_handler.get_algorithm_config(),
+      local_configuration,
       local_configuration->get_data_service()+"/"+remote_id,
       local_configuration->get_local_authentication(),
       config_handler.get_server_config().default_page_size};

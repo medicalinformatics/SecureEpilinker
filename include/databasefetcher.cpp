@@ -46,24 +46,20 @@ using namespace std;
 namespace sel {
 DatabaseFetcher::DatabaseFetcher(
     std::shared_ptr<const LocalConfiguration> local_conf,
-    std::shared_ptr<const AlgorithmConfig> algo_conf,
     std::string url,
     AuthenticationConfig const* l_auth)
     : m_url(move(url)),
       m_local_config(move(local_conf)),
-      m_algo_config(move(algo_conf)),
       m_local_authentication(l_auth),
       m_logger{get_default_logger()} {}
 
 DatabaseFetcher::DatabaseFetcher(
     std::shared_ptr<const LocalConfiguration> local_conf,
-    std::shared_ptr<const AlgorithmConfig> algo_conf,
     std::string url,
     AuthenticationConfig const* l_auth,
     size_t page_size)
     : m_url(move(url)),
       m_local_config(move(local_conf)),
-      m_algo_config(move(algo_conf)),
       m_local_authentication(l_auth),
       m_page_size(page_size),
       m_logger{get_default_logger()} {}

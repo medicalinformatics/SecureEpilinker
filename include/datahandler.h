@@ -44,7 +44,7 @@ struct ServerData {
 struct Debugger{
   std::shared_ptr<sel::EpilinkClientInput> client_input;
   std::shared_ptr<sel::EpilinkServerInput> server_input;
-  std::shared_ptr<sel::EpilinkConfig> epilink_config;
+  std::shared_ptr<sel::CircuitConfig> circuit_config;
   clear_epilink::Result<CircUnit> int_result;
   clear_epilink::Result<double> double_result;
   bool run{false};
