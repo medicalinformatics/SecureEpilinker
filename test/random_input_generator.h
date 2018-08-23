@@ -52,22 +52,14 @@ public:
     * Binary match probability gives the random probability with which a
     * database binary field is set to the corresponding client record entry.
     * Otherwise the probability of a match for randomly generated binary fields
-    * would diminishingly low.
+    * would be diminishingly low.
     */
   void set_binary_match_probability(double prob);
-
-  /**
-    * Fields to set empty for client input.
-    */
   void set_client_empty_fields(const std::vector<FieldName>& empty_fields);
-
-  /**
-    * Probability with which a field is set to be empty for the server input.
-    */
   void set_server_empty_field_probability(double prob);
 
 private:
-const EpilinkConfig cfg;
+  const EpilinkConfig cfg;
   int bm_density_shift = 0;
   double bin_match_prob = .5;
   double server_empty_field_prob = .2;
