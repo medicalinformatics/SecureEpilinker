@@ -380,18 +380,6 @@ void min_index(
   return split_select_quotient_target(selector, targets, op_select, to_arith);
 }
 
-BoolShare reinterpret_share(const ArithShare& a, BooleanCircuit* bc) {
-  assert(bc->GetContext() == S_BOOL && "This crazy stuff only works with bool circuits.");
-  ArithmeticCircuit* ac = a.get_circuit();
-  // hack: this writes the share value to gate.gs.val
-  //auto aout_share = make_unique<share>(ac->PutSharedOUTGate(a.get()));
-  //uint32_t aout_gateid = aout_share->get_wire_id(0);
-  // Treat wire of arith share as bool wire and split
-  vector<uint32_t> wires = ac->PutSplitterGate(a.get()->get_wire_id(0),
-      vector<uint32_t>(ac->GetShareBitLen(), 1));
-  return BoolShare{bc, wires};
-}
-
 // TODO#13 If we can mux with ArithShares, use it here.
 ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
     const A2BConverter& to_bool, const B2AConverter& to_arith) {
