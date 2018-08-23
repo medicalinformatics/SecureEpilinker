@@ -233,7 +233,9 @@ EpilinkInput input_json(const fs::path& local_config_file_path,
     }
   }
 
-  return {epi_cfg, {record, db.size()}, db};
+  EpilinkServerInput server_in{db};
+  EpilinkClientInput client_in{record, server_in.nvals};
+  return {epi_cfg, client_in, server_in};
 }
 
 EpilinkInput input_test_json() {
