@@ -38,12 +38,10 @@ class DatabaseFetcher {
  public:
   ServerData fetch_data();
   DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf,
-                  std::shared_ptr<const AlgorithmConfig> algo_conf,
                   std::string url,
                   AuthenticationConfig const* l_auth);
 
   DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf,
-                  std::shared_ptr<const AlgorithmConfig> algo_conf,
                   std::string url,
                   AuthenticationConfig const* l_auth,
                   size_t page_size);
@@ -63,7 +61,6 @@ class DatabaseFetcher {
   RemoteId m_remote_id;
   std::string m_url;
   std::shared_ptr<const LocalConfiguration> m_local_config;
-  std::shared_ptr<const AlgorithmConfig> m_algo_config;
   AuthenticationConfig const* m_local_authentication;
   unsigned m_page_size{25u};
   unsigned m_last_page{1u};
