@@ -38,24 +38,29 @@ using VFieldEntry = std::vector<FieldEntry>;
 
 struct EpilinkConfig {
   // field descriptions
-  const std::map<FieldName, ML_Field> fields;
+  std::map<FieldName, ML_Field> fields;
 
   // exchange groups by index
-  const std::vector<IndexSet> exchange_groups;
+  std::vector<IndexSet> exchange_groups;
 
   // thresholds
-  const double threshold; // threshold for definitive match
-  const double tthreshold; // threshold for tentative match
+  double threshold; // threshold for definitive match
+  double tthreshold; // threshold for tentative match
 
   // pre-calculated fields
-  const size_t nfields; // total number of field
-  const Weight max_weight; // maximum weight for rescaling of weights
+  size_t nfields; // total number of field
+  Weight max_weight; // maximum weight for rescaling of weights
 
   EpilinkConfig(
       std::map<FieldName, ML_Field> fields,
       std::vector<IndexSet> exchange_groups,
       double threshold, double tthreshold
   );
+  EpilinkConfig() = default;
+  EpilinkConfig(const EpilinkConfig&) = default;
+  EpilinkConfig(EpilinkConfig&&) = default;
+  EpilinkConfig& operator=(const EpilinkConfig&) = default;
+  EpilinkConfig& operator=(EpilinkConfig&&) = default;
   ~EpilinkConfig() = default;
 };
 
