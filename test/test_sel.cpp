@@ -209,7 +209,6 @@ EpilinkInput input_empty(uint32_t nvals) {
 EpilinkInput input_dkfz_random(size_t nvals) {
   RandomInputGenerator random_input(make_dkfz_cfg());
   random_input.set_client_empty_fields({"ort"});
-  random_input.set_server_empty_field_probability(0);
   return random_input.generate(nvals);
 }
 
