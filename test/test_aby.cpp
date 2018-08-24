@@ -1,12 +1,13 @@
-#include <numeric>
-#include <algorithm>
-#include "cxxopts.hpp"
 #include "../include/util.h"
 #include "../include/math.h"
 #include "../include/aby/Share.h"
 #include "../include/aby/gadgets.h"
 #include "abycore/aby/abyparty.h"
 #include "abycore/sharing/sharing.h"
+#include "cxxopts.hpp"
+#include <numeric>
+#include <algorithm>
+#include <random>
 
 using namespace std;
 using namespace sel;
@@ -34,15 +35,17 @@ struct ABYTester {
   bool zeropad;
   const B2AConverter to_arith_closure;
   const A2BConverter to_bool_closure;
+  mt19937 gen;
 
-  ABYTester(e_role role, e_sharing sharing, uint32_t nvals, uint32_t bitlen, uint32_t nthreads, bool _zeropad) :
+  ABYTester(e_role role, e_sharing sharing, uint32_t nvals, uint32_t bitlen, uint32_t nthreads, bool _zeropad, uint_fast32_t random_seed) :
     role{role}, bitlen{bitlen}, nvals{nvals}, party{role, "127.0.0.1", 5676, LT, bitlen, nthreads},
     bc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[sharing]->GetCircuitBuildRoutine())},
     cc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[(sharing==S_YAO)?S_BOOL:S_YAO]->GetCircuitBuildRoutine())},
     ac{dynamic_cast<ArithmeticCircuit*>(party.GetSharings()[S_ARITH]->GetCircuitBuildRoutine())},
     zeropad{_zeropad},
     to_arith_closure{[this](auto x){return to_arith(x);}},
-    to_bool_closure{[this](auto x){return to_bool(x);}}
+    to_bool_closure{[this](auto x){return to_bool(x);}},
+    gen(random_seed)
   {
     cout << "Testing ABY with role: " << get_role_name(role) <<
      " with sharing: " << get_sharing_name(sharing) << " nvals: " << nvals <<
@@ -57,6 +60,15 @@ struct ABYTester {
   ArithShare to_arith(const BoolShare& s_) {
     BoolShare s = zeropad ? s_.zeropad(bitlen) : s_; // fix for aby issue #46
     return (bc->GetContext() == S_YAO) ? y2a(ac, cc, s) : b2a(ac, s);
+  }
+
+  vector<uint64_t> make_random_vector(size_t bitrange) {
+    uniform_int_distribution<uint64_t> random_value(0, (1ull << bitrange)-1);
+    vector<uint64_t> v(nvals);
+    for (auto& x : v) {
+      x = random_value(gen);
+    }
+    return v;
   }
 
   void test_bm_input() {
@@ -285,28 +297,39 @@ struct ABYTester {
   }
 
   void test_split_select_quotient_target() {
-    vector<uint32_t> data_num(nvals), data_den(nvals);
-    // 1/4, 2/5, 3/6, ...
-    iota(data_num.begin(), data_num.end(), 1);
-    iota(data_den.begin(), data_den.end(), 4);
+    size_t num_bits = llround(2*((double)(bitlen)/3));
+    size_t den_bits = llround((double)(bitlen)/3);
+    assert (num_bits + den_bits == bitlen);
+    auto data_num = make_random_vector(num_bits);
+    auto data_den = make_random_vector(den_bits);
     cout << "numerators: " << data_num << "\ndenominators: " << data_den << endl;
 
-    ArithQuotient inq = {ArithShare{ac, data_num.data(), bitlen, SERVER, nvals},
-      ArithShare{ac, data_den.data(), bitlen, CLIENT, nvals}};
+    uint64_t max_num = 0, max_den = 1;
+    size_t max_idx = numeric_limits<size_t>::max();
+    for (size_t i = 0; i < nvals; ++i) {
+      auto num = data_num[i], den = data_den[i];
+      if (den == 0) continue;
+      if (num * max_den > max_num * den) {
+        max_den = den, max_num = num;
+        max_idx = i;
+      }
+    }
+    fmt::print("Maximum num: {:x}, den: {:x}, index: {:x}\n", max_num, max_den, max_idx);
+
+    ArithQuotient inq = {
+      ArithShare{ac, data_num.data(), bitlen, SERVER, nvals},
+      ArithShare{ac, data_den.data(), bitlen, CLIENT, nvals}
+    };
     print_share(inq.num, "num");
     print_share(inq.den, "den");
 
-    vector<BoolShare> targets;
-    ArithQuotientSelector op_select = [this](auto a, auto b) {
-      ArithShare ax = a.num * b.den;
-      ArithShare bx = b.num * a.den;
-      return to_bool(ax) > to_bool(bx);
-    };
-
-    split_select_quotient_target(inq, targets, op_select, to_arith_closure);
+    vector<BoolShare> targets = {ascending_numbers_constant(bc, nvals)};
+    ArithQuotientSelector op_max = make_max_selector(to_bool_closure);
+    split_select_quotient_target(inq, targets, op_max, to_arith_closure);
 
     print_share(inq.num, "max.num");
     print_share(inq.den, "max.den");
+    print_share(targets[0], "index of max");
 
     party.ExecCircuit();
   }
@@ -341,6 +364,7 @@ int main(int argc, char *argv[])
   uint32_t bitlen = 32;
   uint32_t nthreads = 1;
   bool zeropad = false;
+  uint_fast32_t random_seed = 73;
 
   cxxopts::Options options{"test_aby", "Test ABY related components"};
   options.add_options()
@@ -349,6 +373,7 @@ int main(int argc, char *argv[])
     ("n,nvals", "Parallellity", cxxopts::value(nvals))
     ("b,bitlen", "Bitlength", cxxopts::value(bitlen))
     ("z,zeropad", "Enable zeropadding before B2A conversion", cxxopts::value(zeropad))
+    ("R,random-seed", "Random generator seed", cxxopts::value(random_seed))
     ("h,help", "Print help");
   auto op = options.parse(argc, argv);
 
@@ -359,7 +384,7 @@ int main(int argc, char *argv[])
 
   e_role role = role_server ? SERVER : CLIENT;
 
-  ABYTester tester{role, (e_sharing)sharing, nvals, bitlen, nthreads, zeropad};
+  ABYTester tester{role, (e_sharing)sharing, nvals, bitlen, nthreads, zeropad, random_seed};
 
   //tester.test_split_select_target();
   //tester.test_add();
@@ -369,10 +394,10 @@ int main(int argc, char *argv[])
   //tester.test_conversion();
   //tester.test_reinterpret();
   //tester.test_split_accumulate();
-  //tester.test_split_select_quotient_target();
+  tester.test_split_select_quotient_target();
   //tester.test_max_quotient();
   //tester.test_bm_input();
-  tester.test_deterministic_aby_chaos();
+  //tester.test_deterministic_aby_chaos();
 
   return 0;
 }
