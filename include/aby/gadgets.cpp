@@ -287,6 +287,9 @@ void split_select_quotient_target(
       cnvals++;
       rem = 0;
     }
+#ifdef DEBUG_SEL_GADGETS
+    string tag = format("({}+{}) ", cnvals, rem);
+#endif
 
     vector<ArithShare> splits_num = selector.num.split(cnvals);
     vector<ArithShare> splits_den = selector.den.split(cnvals);
@@ -307,6 +310,10 @@ void split_select_quotient_target(
       stack_selector.den = move(splits_den.back());
       for(size_t i=0; i!=ntargets; ++i)
         stack_targets[i] = move(tsplits[i].back());
+#ifdef DEBUG_SEL_GADGETS
+      print_share(stack_selector.num, tag+"stack.num");
+      print_share(stack_selector.den, tag+"stack.den");
+#endif
 
       assert (stack_selector.num.get_nvals() == 1);
     }
@@ -322,10 +329,11 @@ void split_select_quotient_target(
     for(size_t i=0; i!=ntargets; ++i)
       targets[i] = cmp.mux(tsplits[i][0], tsplits[i][1]);
 #ifdef DEBUG_SEL_GADGETS
-    print_share(cmp, format("cmp ({})", cnvals));
-    print_share(acmp, format("acmp ({})", cnvals));
-    print_share(one, format("one ({})", cnvals));
-    print_share(notacmp, format("notacmp ({})", cnvals));
+    print_share(cmp, tag+"comparison");
+    print_share(splits_num[0], tag+"splits0.num");
+    print_share(splits_den[0], tag+"splits0.den");
+    print_share(splits_num[1], tag+"splits1.num");
+    print_share(splits_den[1], tag+"splits1.den");
 #endif
   }
   // finally accumulate with stack
