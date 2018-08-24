@@ -125,6 +125,10 @@ T dice(const Bitmask& left, const Bitmask& right, size_t prec) {
   T numerator;
   if constexpr (is_integral_v<T>) {
     numerator = (hw_and << (prec+1)) + (hw_plus>>1);
+#ifdef DEBUG_SEL_CLEAR
+    print("dice (({:x}<<{:x} = {:x}) + {:x} = {:x}) / {:x} =\n",
+        hw_and, (prec+1), hw_and << (prec+1), (hw_plus>>1), numerator, hw_plus);
+#endif
   } else {
     numerator = 2 * hw_and;
   }
@@ -227,11 +231,11 @@ FieldWeight<T> best_group_weight(const Input& input, const CircuitConfig& cfg,
     const size_t idx, const IndexSet& group_set) {
   vector<FieldName> group{begin(group_set), end(group_set)};
   // copy group to store permutations
-  vector<FieldName> groupPerm{group.begin(), group.end()};
+  vector<FieldName> groupPerm = group;
   size_t size = group.size();
 
 #ifdef DEBUG_SEL_CLEAR
-  print("---------- Group {} ----------\n", group);
+  print("---------- Group {} [{}]----------\n", group, idx);
   vector<FieldName> groupBest;
 #endif
 
