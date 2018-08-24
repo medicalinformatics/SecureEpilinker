@@ -40,7 +40,7 @@
 
 std::string base64_encode(uint8_t const* buf, unsigned int bufLen);
 std::vector<uint8_t> base64_decode(std::string const&, unsigned int);
-bool check_bloom_length(std::vector<uint8_t>& bloom, const unsigned bloomlength);
+bool check_bloom_length_and_clear_padding(std::vector<uint8_t>& bloom, const unsigned bloomlength);
 std::string print_bytearray(const std::vector<uint8_t>&);
 std::string print_byte(uint8_t);
 

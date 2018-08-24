@@ -142,16 +142,13 @@ std::vector<uint8_t> base64_decode(std::string const& encoded_string, unsigned i
   return ret;
 }
 
-bool check_bloom_length(std::vector<uint8_t>& bloom,
+bool check_bloom_length_and_clear_padding(std::vector<uint8_t>& bloom,
                         const unsigned bloomlength) {
-  const unsigned restbits{bloomlength % 8u};
-  if (restbits != 0) {  // Bloomfilter length not byte aligned
-    auto shiftbyte{bloom.back()};
-    shiftbyte &= (0xFF << (8u - restbits));
-    if (bloom.back() != shiftbyte) {  // "padding" not zero
-      bloom.back() = shiftbyte;       // set remainder to zero
-      return false;
-    }
+  const unsigned restbits = bloomlength % 8u;
+  auto& rear = bloom.back();
+  if (restbits && (rear >> restbits)) {  // Bits set outside Bloomfilter length
+    rear &= (1u << restbits) - 1u;
+    return false;
   }
   return true;
 }
