@@ -101,5 +101,8 @@ ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
 ArithQuotient max(const std::vector<ArithQuotient>& qs,
     const A2BConverter& to_bool, const B2AConverter& to_arith);
 
+BoolShare ascending_numbers_constant(BooleanCircuit* bcirc,
+    size_t nvals, size_t start = 0);
+
 } // namespace sel
 #endif /* end of include guard: SEL_ABY_GADGETS_H */
