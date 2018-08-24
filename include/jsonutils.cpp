@@ -65,7 +65,7 @@ FieldEntry parse_json_field(const ML_Field& field,
         const auto temp = json.get<string>();
         if (!trim_copy(temp).empty()) {
           auto bloom = base64_decode(temp, field.bitsize);
-          if (!check_bloom_length(bloom, field.bitsize)) {
+          if (!check_bloom_length_and_clear_padding(bloom, field.bitsize)) {
             logger->warn(
                 "Bits set after bloomfilter length. There might be a "
                 "problem. Setting to zero.\n");
