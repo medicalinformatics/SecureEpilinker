@@ -193,7 +193,7 @@ public:
     // 3. Determine index of max score of all nvals calculations
     // Create targets vector with const_idx copy to pass to
     // split_select_quotient_target().
-    vector<BoolShare> max_idx{1, const_idx};
+    vector<BoolShare> max_idx = {const_idx};
     split_select_quotient_target(sum_field_weights, max_idx,
         make_max_selector(to_bool_closure), to_arith_closure);
 
@@ -286,15 +286,7 @@ private:
 
   void set_constants(uint32_t nvals) {
     this->nvals = nvals;
-    // build constant index vector
-    vector<BoolShare> numbers;
-    numbers.reserve(nvals);
-    for (CircUnit i = 0; i != nvals; ++i) {
-      // TODO Make true SIMD constants available in ABY and implement offline
-      // AND with constant
-      numbers.emplace_back(constant(bcirc, i, ceil_log2_min1(nvals)));
-    }
-    const_idx = vcombine_bool(numbers);
+    const_idx = ascending_numbers_constant(bcirc, nvals);
     assert(const_idx.get_nvals() == nvals);
 
 

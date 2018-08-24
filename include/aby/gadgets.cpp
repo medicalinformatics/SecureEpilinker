@@ -446,4 +446,16 @@ BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
   return {num, den};
 }
 
+BoolShare ascending_numbers_constant(BooleanCircuit* bcirc,
+    size_t nvals, size_t start) {
+  // TODO Make true SIMD constants available in ABY and implement offline
+  // AND with constant
+  vector<BoolShare> numbers;
+  numbers.reserve(nvals);
+  for (size_t i = 0; i != nvals; ++i) {
+    numbers.emplace_back(constant(bcirc, i, ceil_log2_min1(nvals)));
+  }
+  return vcombine_bool(numbers);
+}
+
 } // namespace sel
