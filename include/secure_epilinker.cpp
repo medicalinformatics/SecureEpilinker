@@ -75,51 +75,6 @@ ArithQuotient sum(const vector<FieldWeight>& fweights) {
   return {sum(fws), sum(ws)};
 }
 
-/**
- * Calculates dice coefficient of given bitmasks via their hamming weights, up
- * to the specified precision.
- * Note that we use rounding integer division, that is (x+(y/2))/y, because x/y
- * always rounds down, which would lead to a bias.
- */
-BoolShare dice_coefficient(const BoolShare& x, const BoolShare& y,
-    const BoolShare& hw_x, const BoolShare& hw_y, size_t prec) {
-  // 1. Add single HWs
-  BoolShare hw_plus = hw_x + hw_y;
-
-  // 2. Calc HW of x&y and bit-shift to multiply with 2 and reach dice precision.
-  // Additionally add hw_plus/2 to have rounding integer-div
-  BoolShare hw_and = hammingweight(x & y);
-  BoolShare hw_and_num = hw_and << (prec + 1); // *2 and dice precision
-  hw_and_num += (hw_plus >> 1); // rounding integer-div
-  // In theory, the addition could have exceeded 16 bits. But this is very
-  // unlikely because then all 10 most significant bits of hw_and would need to
-  // be set, while we deal with a rather sparse bitmask.
-  hw_and_num.set_bitlength(16);
-
-  // int-divide
-  BoolShare dice = apply_file_binary(hw_and_num, hw_plus, 16, 16, "circ/int_div_16.aby");
-
-#ifdef DEBUG_SEL_CIRCUIT
-  print_share(hw_and, "hw_and");
-  print_share(hw_and_num, "hw_and_num");
-  print_share(hw_plus, "hw_plus");
-  print_share(dice, "dice coeff");
-#endif
-
-  return dice;
-}
-
-/*
- * Binary-compares two shares
- */
-BoolShare equality(const BoolShare& x, const BoolShare& y) {
-  BoolShare cmp{(x == y)};
-#ifdef DEBUG_SEL_CIRCUIT
-  print_share(cmp, "equality");
-#endif
-  return cmp;
-}
-
 /******************** Circuit Builder ********************/
 class SecureEpilinker::SELCircuit {
 public:
@@ -433,8 +388,9 @@ private:
   FieldWeight best_group_weight(const IndexSet& group_set) {
     vector<FieldName> group{begin(group_set), end(group_set)};
     // copy group to store permutations
-    vector<FieldName> groupPerm{group.begin(), group.end()};
+    vector<FieldName> groupPerm = group;
     size_t size = group.size();
+
     vector<ArithQuotient> perm_weights; // where we store all weights before max
     perm_weights.reserve(factorial<size_t>(size));
     // iterate over all group permutations and calc field-weight
@@ -496,13 +452,12 @@ private:
     ArithShare comp;
     switch(ftype) {
       case BM: {
-        b_comp = dice_coefficient(client_entry.val, server_entry.val,
-          client_entry.hw, server_entry.hw, cfg.dice_prec);
+        b_comp = dice_coefficient(ileft, iright);
         comp = to_arith(b_comp);
         break;
       }
       case BIN: {
-        b_comp = equality(client_entry.val, server_entry.val);
+        b_comp = equality(ileft, iright);
         // Instead of left-shifting the bool share, it is cheaper to first do a
         // single-bit conversion into an arithmetic share and then a free
         // multiplication with a constant 2^dice_prec
@@ -516,12 +471,57 @@ private:
 
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(weight, format("weight({},{},{})", ftype, ileft, iright));
-    print_share(b_comp, format("bool comp({},{},{})", ftype, ileft, iright));
-    print_share(comp, format("arith comp({},{},{})", ftype, ileft, iright));
+    print_share(comp, format("comp({},{},{})", ftype, ileft, iright));
     print_share(field_weight, format("^^^^ field weight({},{},{}) ^^^^", ftype, ileft, iright));
 #endif
 
     return {field_weight, weight};
+  }
+
+  /**
+  * Calculates dice coefficient of given bitmasks via their hamming weights, up
+  * to the configured precision.
+  * Note that we use rounding integer division, that is (x+(y/2))/y, because x/y
+  * always rounds down, which would lead to a bias.
+  */
+  BoolShare dice_coefficient(const FieldName& ileft, const FieldName& iright) {
+    const auto& client_entry = ins[ileft].client;
+    const auto& server_entry = ins[iright].server;
+    // 1. Add single HWs
+    BoolShare hw_plus = client_entry.hw + server_entry.hw;
+
+    // 2. Calc HW of x&y and bit-shift to multiply with 2 and reach dice precision.
+    // Additionally add hw_plus/2 to have rounding integer-div
+    BoolShare hw_and = hammingweight(server_entry.val & client_entry.val);
+    BoolShare hw_and_num = hw_and << (cfg.dice_prec + 1); // *2 and dice precision
+    hw_and_num += (hw_plus >> 1); // rounding integer-div
+    // In theory, the addition could have exceeded 16 bits. But this is very
+    // unlikely because then all 10 most significant bits of hw_and would need to
+    // be set, while we deal with a rather sparse bitmask.
+    hw_and_num.set_bitlength(16);
+
+    // int-divide
+    BoolShare dice = apply_file_binary(hw_and_num, hw_plus, 16, 16, "circ/int_div_16.aby");
+
+#ifdef DEBUG_SEL_CIRCUIT
+    print_share(hw_and, format("hw_and({}|{})", ileft, iright));
+    print_share(hw_and_num, format("hw_and_num({}|{})", ileft, iright));
+    print_share(hw_plus, format("hw_plus({}|{})", ileft, iright));
+    print_share(dice, format("dice({}|{})", ileft, iright));
+#endif
+
+    return dice;
+  }
+
+  /*
+  * Binary-compares two shares
+  */
+  BoolShare equality(const FieldName& ileft, const FieldName& iright) {
+    BoolShare cmp = (ins[ileft].client.val == ins[iright].server.val);
+#ifdef DEBUG_SEL_CIRCUIT
+    print_share(cmp, format("equality({}|{})", ileft, iright));
+#endif
+    return cmp;
   }
 
 };
