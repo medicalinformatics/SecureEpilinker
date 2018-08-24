@@ -273,8 +273,10 @@ void split_select_quotient_target(
 #ifdef DEBUG_SEL_GADGETS
       cout << "remainder and stack: combining stack and cnvals++\n";
 #endif
-      selector = {vcombine({selector.num, stack_selector.num}),
-          vcombine({selector.num, stack_selector.num})};
+      selector = {
+        vcombine({selector.num, stack_selector.num}),
+        vcombine({selector.den, stack_selector.den})
+      };
       stack_selector.num.reset(); // need to reset, move doesn't work :(
       stack_selector.den.reset(); // need to reset, move doesn't work :(
       assert (stack_selector.num.is_null());
