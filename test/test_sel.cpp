@@ -212,25 +212,37 @@ EpilinkInput input_dkfz_random(size_t nvals) {
   return random_input.generate(nvals);
 }
 
+EpilinkConfig read_config_file(const fs::path& cfg_path) {
+  auto config_json = read_json_from_disk(cfg_path).at("algorithm");
+  return parse_json_epilink_config(config_json);
+}
+
+auto read_database_file(const fs::path& db_path, const EpilinkConfig& epi_cfg) {
+  auto db_json = read_json_from_disk(db_path);
+  return parse_json_fields_array(epi_cfg.fields, db_json.at("records"));
+}
+
+auto read_database_dir(const fs::path& dir_path, const EpilinkConfig& epi_cfg) {
+  map<FieldName, VFieldEntry> db;
+  for (auto& f: fs::directory_iterator(dir_path)) {
+    if (f.path().extension() == ".json") {
+      auto temp_db = read_database_file(f, epi_cfg);
+      append_to_map_of_vectors(temp_db, db);
+    }
+  }
+  return db;
+}
+
 EpilinkInput input_json(const fs::path& local_config_file_path,
     const fs::path& record_file_path,
     const fs::path& database_directory_path) {
 
-  auto config_json = read_json_from_disk(local_config_file_path).at("algorithm");
-  auto epi_cfg = parse_json_epilink_config(config_json);
+  auto epi_cfg = read_config_file(local_config_file_path);
 
   auto record_json = read_json_from_disk(record_file_path).at("fields");
-  cout << record_json.dump(2) << endl;
   auto record = parse_json_fields(epi_cfg.fields, record_json);
 
-  map<FieldName, VFieldEntry> db;
-  for (auto& f: fs::directory_iterator(database_directory_path)) {
-    if (f.path().extension() == ".json") {
-      auto db_json = read_json_from_disk(f);
-      auto temp_db = parse_json_fields_array(epi_cfg.fields, db_json.at("records"));
-      append_to_map_of_vectors(temp_db, db);
-    }
-  }
+  auto db = read_database_dir(database_directory_path, epi_cfg);
 
   EpilinkServerInput server_in{db};
   EpilinkClientInput client_in{record, server_in.nvals};
