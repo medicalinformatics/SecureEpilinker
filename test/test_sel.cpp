@@ -262,6 +262,42 @@ EpilinkInput input_test_json() {
       TestScriptsDir + "database"s);
 }
 
+void run_and_print_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
+  linker.build_circuit(in.client.nvals);
+  linker.run_setup_phase();
+
+#ifdef DEBUG_SEL_CIRCUIT
+  Result res = run(linker, in.client, in.server);
+#else
+  Result res = (role == CLIENT) ?
+    linker.run_as_client(in.client) : linker.run_as_server(in.server);
+#endif
+
+  print("Result:\n{}", res);
+}
+
+void run_and_print_local_calcs(const EpilinkInput& in) {
+  print("----- Local Calculations -----\n");
+  CircuitConfig cfg32{in.cfg, false, 32};
+  auto res_32bit = clear_epilink::calc_integer({in.client, in.server}, cfg32);
+  print("32Bit Result:\n{}", res_32bit);
+
+  cfg32.set_ideal_precision();
+  auto res_32bit_ideal = clear_epilink::calc_integer({in.client, in.server}, cfg32);
+  print("32Bit ideal Result:\n{}", res_32bit_ideal);
+
+  CircuitConfig cfg64{in.cfg, false, 64};
+  auto res_64bit = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
+  print("64bit Result:\n{}", res_64bit);
+
+  cfg64.set_ideal_precision();
+  auto res_64bit_ideal = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
+  print("64bit ideal Result:\n{}", res_64bit_ideal);
+
+  auto res_exact = clear_epilink::calc_exact({in.client, in.server}, in.cfg);
+  print("Exact Result:\n{}", res_exact);
+}
+
 } /* END namespace sel::test */
 
 using namespace sel;
@@ -281,7 +317,8 @@ int main(int argc, char *argv[])
     ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO", cxxopts::value(sharing))
     ("n,nvals", "Parallellity", cxxopts::value(nvals))
     ("r,run-both", "Use run_as_both()", cxxopts::value(run_both))
-    ("L,local-only", "Only run local calculations on clear values. Doesn't initialize the SecureEpilinker.")
+    ("L,local-only", "Only run local calculations on clear values."
+        " Doesn't initialize the SecureEpilinker.", cxxopts::value(only_local))
     ("v,verbose", "Set verbosity. May be specified multiple times to log on "
       "info/debug/trace level. Default level is warning.")
     ("h,help", "Print help");
@@ -309,41 +346,13 @@ int main(int argc, char *argv[])
 
   const auto in = input_test_json();
 
-  if(!op["local-only"].as<bool>()) {
+  if(!only_local) {
     SecureEpilinker linker{aby_cfg, in.cfg};
     linker.connect();
-    linker.build_circuit(nvals);
-    linker.run_setup_phase();
-
-#ifdef DEBUG_SEL_CIRCUIT
-    Result res = run(linker, in.client, in.server);
-#else
-    Result res = (role == CLIENT) ?
-      linker.run_as_client(in.client) : linker.run_as_server(in.server);
-#endif
-
-    print("Result:\n{}", res);
+    run_and_print_sel_calcs(linker, in);
   }
 
-  print("----- Local Calculations -----\n");
-  CircuitConfig cfg32{in.cfg, false, 32};
-  auto res_32bit = clear_epilink::calc_integer({in.client, in.server}, cfg32);
-  print("32Bit Result:\n{}", res_32bit);
-
-  cfg32.set_ideal_precision();
-  auto res_32bit_ideal = clear_epilink::calc_integer({in.client, in.server}, cfg32);
-  print("32Bit ideal Result:\n{}", res_32bit_ideal);
-
-  CircuitConfig cfg64{in.cfg, false, 64};
-  auto res_64bit = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
-  print("64bit Result:\n{}", res_64bit);
-
-  cfg64.set_ideal_precision();
-  auto res_64bit_ideal = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
-  print("64bit ideal Result:\n{}", res_64bit_ideal);
-
-  auto res_exact = clear_epilink::calc_exact({in.client, in.server}, in.cfg);
-  print("Exact Result:\n{}", res_exact);
+  run_and_print_local_calcs(in);
 
   return 0;
 }
