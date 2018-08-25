@@ -235,14 +235,16 @@ auto read_database_dir(const fs::path& dir_path, const EpilinkConfig& epi_cfg) {
 
 EpilinkInput input_json(const fs::path& local_config_file_path,
     const fs::path& record_file_path,
-    const fs::path& database_directory_path) {
+    const fs::path& database_file_or_dir_path) {
 
   auto epi_cfg = read_config_file(local_config_file_path);
 
   auto record_json = read_json_from_disk(record_file_path).at("fields");
   auto record = parse_json_fields(epi_cfg.fields, record_json);
 
-  auto db = read_database_dir(database_directory_path, epi_cfg);
+  auto db = fs::is_directory(database_file_or_dir_path) ?
+    read_database_dir(database_file_or_dir_path, epi_cfg) :
+    read_database_file(database_file_or_dir_path, epi_cfg);
 
   EpilinkServerInput server_in{db};
   EpilinkClientInput client_in{record, server_in.nvals};
