@@ -272,6 +272,7 @@ void run_and_print_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
   Result res = (role == CLIENT) ?
     linker.run_as_client(in.client) : linker.run_as_server(in.server);
 #endif
+  linker.reset();
 
   print("Result:\n{}", res);
 }
