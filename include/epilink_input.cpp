@@ -40,50 +40,50 @@ EpilinkConfig::EpilinkConfig(
   tthreshold {tthreshold},
   nfields {fields.size()},
   max_weight{sel::max_element(fields, [](auto f){return f.second.weight;})}
-  {
-    auto logger = get_default_logger();
-    logger->trace("Constructing {}", *this);
+{
+  auto logger = get_default_logger();
+  logger->trace("Constructing {}", *this);
 
-    // Sanity checks of exchange groups
-    IndexSet xgunion;
-    for (const auto& group : exchange_groups) {
-      const auto& f0 = fields.at(*group.cbegin());
-      for (const auto& fname : group) {
-        // Check that field is configured
-        if (!fields.count(fname)) throw invalid_argument(fmt::format(
-            "Exchange groups contains non-existing field '{}'!", fname));
+  // Sanity checks of exchange groups
+  IndexSet xgunion;
+  for (const auto& group : exchange_groups) {
+    const auto& f0 = fields.at(*group.cbegin());
+    for (const auto& fname : group) {
+      // Check that field is configured
+      if (!fields.count(fname)) throw invalid_argument(fmt::format(
+          "Exchange groups contains non-existing field '{}'!", fname));
 
 
-        // Check if exchange groups are disjoint
-        auto [_, is_new] = xgunion.insert(fname);
-        if (!is_new) throw invalid_argument(fmt::format(
-            "Exchange groups must be distinct! Field {} specified multiple times.", fname));
+      // Check if exchange groups are disjoint
+      auto [_, is_new] = xgunion.insert(fname);
+      if (!is_new) throw invalid_argument(fmt::format(
+          "Exchange groups must be distinct! Field {} specified multiple times.", fname));
 
-        const auto& f = fields.at(fname);
+      const auto& f = fields.at(fname);
 
-        // Check same comparators
-        if (f.comparator != f0.comparator) {
-          throw invalid_argument{fmt::format(
-              "Cannot compare field '{}' of type {} with field '{}' of type {}",
-              f.name, f.comparator, f0.name, f0.comparator)};
-        }
-
-        // Check same bitsize
-        if (f.bitsize != f0.bitsize) {
-          throw invalid_argument{fmt::format(
-              "Cannot compare field '{}' of bitsize {} with field '{}' of bitsize {}",
-              f.name, f.bitsize, f0.name, f0.bitsize)};
-        }
+      // Check same comparators
+      if (f.comparator != f0.comparator) {
+        throw invalid_argument{fmt::format(
+            "Cannot compare field '{}' of type {} with field '{}' of type {}",
+            f.name, f.comparator, f0.name, f0.comparator)};
       }
-    }
 
-    for (const auto& f : fields) {
-      auto& field = f.second;
-      if (field.type == FieldType::STRING && field.bitsize%8) {
-        logger->warn("String field '{}' has bitsize not divisible by 8.");
+      // Check same bitsize
+      if (f.bitsize != f0.bitsize) {
+        throw invalid_argument{fmt::format(
+            "Cannot compare field '{}' of bitsize {} with field '{}' of bitsize {}",
+            f.name, f.bitsize, f0.name, f0.bitsize)};
       }
     }
   }
+
+  for (const auto& f : fields) {
+    auto& field = f.second;
+    if (field.type == FieldType::STRING && field.bitsize%8) {
+      logger->warn("String field '{}' has bitsize not divisible by 8.");
+    }
+  }
+}
 
 void EpilinkServerInput::check_sizes() {
   for (const auto& row : database) {
