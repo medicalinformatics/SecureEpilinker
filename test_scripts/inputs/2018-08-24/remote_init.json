@@ -1,0 +1,10 @@
+{
+    "connectionProfile": {
+        "authentication": {
+            "authType": "apiKey",
+            "sharedKey": "mainzellisteApiKey apiKey=\"123qwerty\""
+        },
+        "url": "http://192.168.0.101:8081"
+    },
+    "matchingAllowed": true
+}
