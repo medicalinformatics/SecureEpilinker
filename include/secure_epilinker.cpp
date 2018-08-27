@@ -219,6 +219,7 @@ private:
   map<FieldName, InputShares> ins;
   // Constant shares
   BoolShare const_idx;
+  ArithShare const_dice_prec_factor;
   // Left side of inequality: T * sum(weights)
   ArithShare const_threshold, const_tthreshold;
 
@@ -244,6 +245,8 @@ private:
     const_idx = ascending_numbers_constant(bcirc, nvals);
     assert(const_idx.get_nvals() == nvals);
 
+    const_dice_prec_factor =
+      constant_simd(acirc, (1 << cfg.dice_prec), BitLen, nvals);
 
     CircUnit T = llround(cfg.epi.threshold * (1 << cfg.dice_prec));
     CircUnit Tt = llround(cfg.epi.tthreshold * (1 << cfg.dice_prec));
@@ -457,7 +460,7 @@ private:
         // single-bit conversion into an arithmetic share and then a free
         // multiplication with a constant 2^dice_prec
         comp = to_arith(b_comp);
-        comp *= constant_simd(acirc, (1 << cfg.dice_prec), BitLen, nvals);
+        comp *= const_dice_prec_factor;
         break;
       }
     }
