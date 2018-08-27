@@ -153,11 +153,10 @@ bool test_threshold(const FieldWeight<T>& q, const double thr, const size_t prec
 
 template<typename T>
 T scaled_weight(const FieldName& ileft, const FieldName& iright, const CircuitConfig& cfg) {
-  const double _weight = (cfg.epi.fields.at(ileft).weight + cfg.epi.fields.at(iright).weight)/2;
   if constexpr (is_integral_v<T>) {
-    return rescale_weight(_weight, cfg.weight_prec, cfg.epi.max_weight);
+    return cfg.rescaled_weight(ileft, iright);
   } else {
-    return _weight;
+    return (cfg.epi.fields.at(ileft).weight + cfg.epi.fields.at(iright).weight)/2;
   }
 }
 
