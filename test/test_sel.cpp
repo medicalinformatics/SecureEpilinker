@@ -296,6 +296,14 @@ auto input_multi_test_0824() {
       dir + "db.json");
 }
 
+auto input_single_test_0824() {
+  string dir = test_scripts_dir_path() + "inputs/2018-08-24/"s;
+  return input_json(
+      dir + "local_init.json",
+      dir + "request_1.json",
+      dir + "db_1.json");
+}
+
 void run_and_print_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
   print("----- Secure Epilinker -----\n");
 
@@ -381,8 +389,7 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  //const auto in = input_test_json();
-  string dirp = "../../inputs/08-24/";
+  //const auto in = input_dkfz_random(nvals);
   auto [in, client_ins] = input_multi_test_0824();
 
   SecureEpilinker linker{aby_cfg, in.cfg};
@@ -390,14 +397,13 @@ int main(int argc, char *argv[])
     linker.connect();
     //run_and_print_sel_calcs(linker, in);
   }
+  //run_and_print_local_calcs(in);
 
   for (auto& client_in : client_ins) {
     EpilinkInput _in = {in.cfg, client_in, in.server};
     if (!only_local) run_and_print_sel_calcs(linker, _in);
     run_and_print_local_calcs(_in);
   }
-
-  //run_and_print_local_calcs(in);
 
   return 0;
 }
