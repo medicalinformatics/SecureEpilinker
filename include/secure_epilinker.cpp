@@ -432,15 +432,10 @@ private:
    * - Return field weight and weight
    */
   FieldWeight field_weight(const FieldName& ileft, const FieldName& iright) {
-    const ML_Field &fleft = cfg.epi.fields.at(ileft), &fright = cfg.epi.fields.at(iright);
-    const FieldComparator ftype = fleft.comparator;
 
     // 1. Calculate weight * delta(i,j)
-    const CircUnit weight_r = rescale_weight(
-        (fleft.weight + fright.weight)/2,
-        cfg.weight_prec, cfg.epi.max_weight);
-
-    ArithShare a_weight{constant_simd(acirc, weight_r, BitLen, nvals)};
+    const CircUnit weight_r = cfg.rescaled_weight(ileft, iright);
+    ArithShare a_weight = constant_simd(acirc, weight_r, BitLen, nvals);
 
     const auto& client_entry = ins[ileft].client;
     const auto& server_entry = ins[iright].server;
@@ -448,16 +443,16 @@ private:
     ArithShare weight = a_weight * delta; // free constant multiplication
 
     // 2. Compare values (with dice precision) and multiply with weight
-    BoolShare b_comp;
     ArithShare comp;
+    const auto ftype = cfg.epi.fields.at(ileft).comparator;
     switch(ftype) {
       case BM: {
-        b_comp = dice_coefficient(ileft, iright);
+        const auto b_comp = dice_coefficient(ileft, iright);
         comp = to_arith(b_comp);
         break;
       }
       case BIN: {
-        b_comp = equality(ileft, iright);
+        const auto b_comp = equality(ileft, iright);
         // Instead of left-shifting the bool share, it is cheaper to first do a
         // single-bit conversion into an arithmetic share and then a free
         // multiplication with a constant 2^dice_prec

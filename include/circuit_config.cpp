@@ -99,6 +99,16 @@ void CircuitConfig::set_ideal_precision() {
   set_precisions(dice_prec, weight_prec);
 }
 
+/*
+ * Rescales the weights so that the maximum weight is the maximum element
+ * of given precision bits, i.e., 0xff...
+ * This should lead to the best possible precision during calculation.
+ */
+unsigned long long rescale_weight(Weight weight, size_t prec, Weight max_weight) {
+  unsigned long long max_el = (1ULL << prec) - 1ULL;
+  return llround((weight/max_weight) * max_el);
+}
+
 CircUnit CircuitConfig::rescaled_weight(const FieldName& name) const {
   return rescale_weight(epi.fields.at(name).weight, weight_prec, epi.max_weight);
 }
@@ -121,11 +131,6 @@ vector<CircUnit> rescale_weights(const vector<Weight>& weights,
       CircUnit { return rescale_weight(w, prec, max_weight); });
 
   return ret;
-}
-
-unsigned long long rescale_weight(Weight weight, size_t prec, Weight max_weight) {
-  unsigned long long max_el = (1ULL << prec) - 1ULL;
-  return llround((weight/max_weight) * max_el);
 }
 
 size_t hw_size(size_t size) {
