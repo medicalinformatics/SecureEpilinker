@@ -99,6 +99,15 @@ void CircuitConfig::set_ideal_precision() {
   set_precisions(dice_prec, weight_prec);
 }
 
+CircUnit CircuitConfig::rescaled_weight(const FieldName& name) const {
+  return rescale_weight(epi.fields.at(name).weight, weight_prec, epi.max_weight);
+}
+
+CircUnit CircuitConfig::rescaled_weight(const FieldName& name1, const FieldName& name2) const {
+  const auto weight = (epi.fields.at(name1).weight + epi.fields.at(name2).weight)/2.0;
+  return rescale_weight(weight, weight_prec, epi.max_weight);
+}
+
 // rescale all weights to an integer, max weight being b111...
 vector<CircUnit> rescale_weights(const vector<Weight>& weights,
     size_t prec, Weight max_weight) {

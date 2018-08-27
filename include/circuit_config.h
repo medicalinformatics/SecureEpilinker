@@ -56,17 +56,10 @@ struct CircuitConfig {
   * accordingly.
   */
   void set_ideal_precision();
+
+  CircUnit rescaled_weight(const FieldName&) const;
+  CircUnit rescaled_weight(const FieldName&, const FieldName&) const;
 };
-
-/*
- * Rescales the weights so that the maximum weight is the maximum element
- * of given precision bits, i.e., 0xff...
- * This should lead to the best possible precision during calculation.
- */
-std::vector<CircUnit> rescale_weights(const std::vector<Weight>& weights,
-    size_t prec, Weight max_weight = 0);
-
-unsigned long long rescale_weight(Weight weight, size_t prec, Weight max_weight);
 
 /**
  * bits required to store hammingweight of bitmask of given size
@@ -85,12 +78,16 @@ struct formatter<sel::CircuitConfig> {
 
   template <typename FormatContext>
   auto format(const sel::CircuitConfig& conf, FormatContext &ctx) {
-    return format_to(ctx.begin(),
+    auto out =  format_to(ctx.begin(),
         "CircuitConfig{{{}, mathing_mode={}, bitlen={}, "
-        "precisions{{dice={}, weight={}}}}}",
+        "precisions{{dice={}, weight={}}}, rescaled_weights={{",
         conf.epi,
         conf.matching_mode, conf.bitlen, conf.dice_prec, conf.weight_prec
     );
+    for (const auto& f : conf.epi.fields) {
+      out = format_to(out, "{}: {:x}, ", f.first, conf.rescaled_weight(f.first));
+    }
+    return format_to(out, "}}}}");
   }
 };
 
