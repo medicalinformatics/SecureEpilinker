@@ -41,7 +41,8 @@ EpilinkConfig::EpilinkConfig(
   nfields {fields.size()},
   max_weight{sel::max_element(fields, [](auto f){return f.second.weight;})}
   {
-    get_default_logger()->trace("Constructing {}", *this);
+    auto logger = get_default_logger();
+    logger->trace("Constructing {}", *this);
 
     // Sanity checks of exchange groups
     IndexSet xgunion;
@@ -73,6 +74,13 @@ EpilinkConfig::EpilinkConfig(
               "Cannot compare field '{}' of bitsize {} with field '{}' of bitsize {}",
               f.name, f.bitsize, f0.name, f0.bitsize)};
         }
+      }
+    }
+
+    for (const auto& f : fields) {
+      auto& field = f.second;
+      if (field.type == FieldType::STRING && field.bitsize%8) {
+        logger->warn("String field '{}' has bitsize not divisible by 8.");
       }
     }
   }
