@@ -15,6 +15,7 @@ git
 cmake
 c++ 17 compatible compiler (gcc >= 8)
 boost developement headers (for restbed)
+libcurl
 ```
 
 ### Installing
@@ -39,19 +40,13 @@ Restbed needs some custom built OpenSSL, which is not automated (yet).
 cd extern/restbed/dependency/openssl
 ./config && make
 ```
-Further more Restbed has some missing link libraries for it's tests in the CMake
-Configuration, which need to be patched.
-```
-cd ../..
-git apply ../../cmake/restbed.patch
-```
 Now the Secure EpiLinker is ready for build. Enter the build directory and
 invoce cmake. The project is build with the resulting Makefile.
 
 ```
-cd ../../build
+cd ../../../../build
 cmake ..
-make
+make sel
 ```
 
 For now, the path from which `test_sel` or `sel` is called needs to have a
@@ -70,19 +65,20 @@ cd secure_epilink && mkdir build
 git submodule update --init --recursive
 cd extern/restbed/dependency/openssl
 ./config && make 
-cd ../..
-git apply ../../cmake/restbed.patch
-cd ../../build
-cmake .. && make
+cd ../../../../build
+cmake .. && make sel
 ln -s ../extern/ABY/bin/circ/
 ```
 
 We hope to integrate all external builds and patches in the main build process
-soon.
+soon. Also a docker container is in the work
 
 ## Running the tests
 
-Explain how to run the automated tests for this system
+Test targets for different components exist:
+  * test_sel
+  * test_aby
+  * test_util
 
 ### Break down into end to end tests
 
@@ -116,7 +112,7 @@ Information on how to use the API
 * [nlohmann/json](https://github.com/nlohmann/json/) - The JSON library used
 * [valijson](https://github.com/tristanpenman/valijson) - JSON schema validation library
 * [cxxpts](https://github.com/jarro2783/cxxopts/) - Commandline option parser
-
+* [curlpp](https://github.com/jpbarrette/curlpp) - HTTP communication
 
 ## Contributing
 
@@ -130,6 +126,7 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 * **Tobias Kussel** - *Initial work* - Github Link?
 * **Sebastian Stammler** - *Initial work* - Github Link?
+* **Philip Schoppmann_** - _Initial docker build file_ - Github Link?
 
 See also the list of [contributors](https://git.compbiol.bio.tu-darmstadt.de/kussel/secure_epilink/graphs/dev) who participated in this project.
 
