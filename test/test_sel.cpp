@@ -262,6 +262,29 @@ EpilinkInput input_test_json() {
       TestScriptsDir + "database"s);
 }
 
+pair<EpilinkInput, vector<EpilinkClientInput>> input_json_multi_request(
+    const fs::path& local_config_file_path,
+    const fs::path& requests_file_path,
+    const fs::path& database_file_or_dir_path) {
+
+  auto epi_cfg = read_config_file(local_config_file_path);
+
+  auto db = fs::is_directory(database_file_or_dir_path) ?
+    read_database_dir(database_file_or_dir_path, epi_cfg) :
+    read_database_file(database_file_or_dir_path, epi_cfg);
+  EpilinkServerInput server_in{db};
+
+  auto requests_json = read_json_from_disk(requests_file_path).at("requests");
+  vector<EpilinkClientInput> client_ins;
+  for (auto& record_json : requests_json) {
+    auto record = parse_json_fields(epi_cfg.fields, record_json.at("fields"));
+    client_ins.push_back({record, server_in.nvals});
+  }
+
+  EpilinkInput in{epi_cfg, client_ins.front(), server_in};
+  return {in, client_ins};
+}
+
 void run_and_print_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
   linker.build_circuit(in.client.nvals);
   linker.run_setup_phase();
