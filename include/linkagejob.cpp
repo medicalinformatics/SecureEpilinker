@@ -113,6 +113,13 @@ void LinkageJob::run_linkage_job() {
     } else {
       #ifdef SEL_MATCHING_MODE
       //result = {{"match", true}, {"tmatch", true}};
+      nlohmann::json match_json;
+      nlohmann::json match_result;
+      match_result["match"] = client_share.match;
+      match_result["tentativeMatch"] = client_share.tmatch;
+      match_json["result"] = match_result;
+      logger->trace("Result to callback: {}", match_json.dump(0));
+      perform_callback(match_json.dump());
       #endif
     }
 #ifdef DEBUG_SEL_REST
@@ -190,7 +197,7 @@ bool LinkageJob::perform_callback(const string& body) const {
   const auto auth{m_local_config->get_local_authentication()};
   auto local_auth =  dynamic_cast<const APIKeyConfig*>(auth);
   list<string> headers{
-      "Authorization: "s+local_auth->get_key(),
+      "Authorization: apiKey apiKey=\""s+local_auth->get_key()+"\"",
       "Content-Type: application/json"};
   logger->debug("Sending callback to: {}\n", m_callback);
   auto response{perform_post_request(m_callback, body, headers, true)};
