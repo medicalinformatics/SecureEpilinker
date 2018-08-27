@@ -98,6 +98,21 @@ shared_ptr<const LinkageJob> ServerHandler::get_linkage_job(const JobId& j_id) c
   return m_client_jobs.at(m_job_remote_mapping.at(j_id)).at(j_id);
 }
 
+string ServerHandler::get_job_status(const JobId& j_id) const {
+  if (j_id == "list"){ // Generate job status listing
+    nlohmann::json result;
+    for(const auto& remote_queue : m_client_jobs) {
+      for(const auto& job : remote_queue.second) {
+        result[job.first] = js_enum_to_string(job.second->get_status());
+      }
+    }
+    return result.dump();
+  } else { // get specific job status
+    return js_enum_to_string(get_linkage_job(j_id)->get_status());
+  }
+
+}
+
 Port ServerHandler::get_server_port(const RemoteId& id) const {
   return m_server.at(id)->get_port();
 }
