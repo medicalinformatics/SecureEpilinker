@@ -38,6 +38,20 @@ Bitmask check_size_and_get_as_bitmask(
   return ret;
 }
 
+void check_bitsize_and_clear_extra_bits(std::vector<uint8_t>& bitmask,
+    const size_t size) {
+  if (!(bitbytes(size) == bitmask.size()))
+    throw new runtime_error("Bitmask size mismatch in check_bitsize_and_clear_extra_bits()");
+
+  const unsigned char extrabits = size % 8u;
+  auto& rear = bitmask.back();
+  if (extrabits && (rear >> extrabits)) {  // Extra bits set outside
+    rear &= (1u << extrabits) - 1u;
+    get_default_logger()->warn(
+        "Bits set after bitmask's size, setting to zero.\n");
+  }
+}
+
 FieldEntry parse_json_field(const ML_Field& field,
                                             const nlohmann::json& json) {
   auto logger{get_default_logger()};
@@ -62,14 +76,10 @@ FieldEntry parse_json_field(const ML_Field& field,
         }
       }
       case FieldType::BITMASK: {
-        const auto temp = json.get<string>();
-        if (!trim_copy(temp).empty()) {
-          auto bloom = base64_decode(temp, field.bitsize);
-          if (!check_bloom_length_and_clear_padding(bloom, field.bitsize)) {
-            logger->warn(
-                "Bits set after bloomfilter length. There might be a "
-                "problem. Setting to zero.\n");
-          }
+        const auto bloom_base64 = json.get<string>();
+        if (!trim_copy(bloom_base64).empty()) {
+          auto bloom = base64_decode(bloom_base64, field.bitsize);
+          check_bitsize_and_clear_extra_bits(bloom, field.bitsize);
           return bloom;
         } else {
           return nullopt;
