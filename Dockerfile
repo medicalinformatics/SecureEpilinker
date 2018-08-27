@@ -1,6 +1,15 @@
-FROM base/devel:latest as build
+FROM ubuntu:rolling as build
 
-RUN pacman --noconfirm -Syu git cmake boost
+#RUN pacman --noconfirm -Syu git cmake boost
+RUN apt-get update && \
+      apt-get install -y --no-install-recommends \
+      build-essential \
+      openssl \
+      git \
+      cmake \
+      libboost-dev \
+      libgmp-dev \
+      && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY cmake cmake
@@ -8,6 +17,7 @@ COPY extern extern
 COPY include include
 COPY test test
 COPY test_scripts test_scripts
+COPY linkage_server linkage_server
 COPY .git .git
 COPY .gitmodules CMakeLists.txt sepilinker.cpp /app/
 
@@ -25,7 +35,9 @@ RUN rm -rf build && mkdir -p build && \
 
 # build!
 RUN cd build && \
-  make -j $(nproc)
+  make restbed-static -j $(nproc)
+RUN cd build && \
+  make sel -j $(nproc)
 
 # copy dependencies
 RUN mkdir /deps; \
