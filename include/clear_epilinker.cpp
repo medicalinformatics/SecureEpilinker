@@ -78,6 +78,10 @@ bool operator<(const FieldWeight<T>& left, const FieldWeight<T>& right) {
         right.fw, left.w, b, (uint64_t)(bl>>64), (uint64_t)(bl));
   }
 #endif
+  // Edge case: both quotients are the same -> choose by weight
+  if (left.fw * right.w == right.fw * left.w) {
+    return left.w < right.w;
+  }
   return left.fw * right.w < right.fw * left.w;
 }
 
