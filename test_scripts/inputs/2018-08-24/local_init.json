@@ -1,0 +1,88 @@
+{
+    "algorithm": {
+        "algoType": "epilink",
+        "exchangeGroups": [
+            [
+                "vorname",
+                "nachname",
+                "geburtsname"
+            ]
+        ],
+        "fields": [
+            {
+                "bitlength": 500,
+                "comparator": "dice",
+                "errorRate": 0.03999999910593033,
+                "fieldType": "bitmask",
+                "frequency": 0.009999999776482582,
+                "name": "ort"
+            },
+            {
+                "bitlength": 500,
+                "comparator": "dice",
+                "errorRate": 0.00800000037997961,
+                "fieldType": "bitmask",
+                "frequency": 2.7100000806967728e-05,
+                "name": "geburtsname"
+            },
+            {
+                "bitlength": 5,
+                "comparator": "binary",
+                "errorRate": 0.004999999888241291,
+                "fieldType": "integer",
+                "frequency": 0.0333000011742115,
+                "name": "geburtstag"
+            },
+            {
+                "bitlength": 500,
+                "comparator": "dice",
+                "errorRate": 0.009999999776482582,
+                "fieldType": "bitmask",
+                "frequency": 0.00023499999952036887,
+                "name": "vorname"
+            },
+            {
+                "bitlength": 500,
+                "comparator": "dice",
+                "errorRate": 0.00800000037997961,
+                "fieldType": "bitmask",
+                "frequency": 2.7100000806967728e-05,
+                "name": "nachname"
+            },
+            {
+                "bitlength": 12,
+                "comparator": "binary",
+                "errorRate": 0.004000000189989805,
+                "fieldType": "integer",
+                "frequency": 0.028599999845027924,
+                "name": "geburtsjahr"
+            },
+            {
+                "bitlength": 4,
+                "comparator": "binary",
+                "errorRate": 0.0020000000949949026,
+                "fieldType": "integer",
+                "frequency": 0.08330000191926956,
+                "name": "geburtsmonat"
+            },
+            {
+                "bitlength": 80,
+                "comparator": "binary",
+                "errorRate": 0.03999999910593033,
+                "fieldType": "string",
+                "frequency": 0.009999999776482582,
+                "name": "plz"
+            }
+        ],
+        "threshold_match": 0.95,
+        "threshold_non_match": 0.6
+    },
+    "dataService": {
+        "url": "http://192.168.0.103:8066/mainzelliste/Communicator/getAllRecords"
+    },
+    "localAuthentication": {
+        "authType": "apiKey",
+        "sharedKey": "123abc"
+    },
+    "localId": "tud"
+}

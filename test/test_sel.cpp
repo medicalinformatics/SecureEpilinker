@@ -251,15 +251,18 @@ EpilinkInput input_json(const fs::path& local_config_file_path,
   return {epi_cfg, client_in, server_in};
 }
 
+string test_scripts_dir_path() {
+  auto dirp = getenv("SEL_test_scripts");
+  return dirp ? dirp : "../test_scripts/";
+}
+
 EpilinkInput input_test_json() {
-  string TestScriptsDir = "../test_scripts/";
-  auto dirp = getenv("SEL_TEST_DIR");
-  if (dirp) TestScriptsDir = dirp;
+  string dir = test_scripts_dir_path();
 
   return input_json(
-      TestScriptsDir + "configurations/local_init_tuda1.json"s,
-      TestScriptsDir + "configurations/validlink.json"s,
-      TestScriptsDir + "database"s);
+      dir + "configurations/local_init_tuda1.json"s,
+      dir + "configurations/validlink.json"s,
+      dir + "database"s);
 }
 
 pair<EpilinkInput, vector<EpilinkClientInput>> input_json_multi_request(
@@ -285,7 +288,17 @@ pair<EpilinkInput, vector<EpilinkClientInput>> input_json_multi_request(
   return {in, client_ins};
 }
 
+auto input_multi_test_0824() {
+  string dir = test_scripts_dir_path() + "inputs/2018-08-24/"s;
+  return input_json_multi_request(
+      dir + "local_init.json",
+      dir + "requests.json",
+      dir + "db.json");
+}
+
 void run_and_print_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
+  print("----- Secure Epilinker -----\n");
+
   linker.build_circuit(in.client.nvals);
   linker.run_setup_phase();
 
@@ -368,15 +381,23 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  const auto in = input_test_json();
+  //const auto in = input_test_json();
+  string dirp = "../../inputs/08-24/";
+  auto [in, client_ins] = input_multi_test_0824();
 
+  SecureEpilinker linker{aby_cfg, in.cfg};
   if(!only_local) {
-    SecureEpilinker linker{aby_cfg, in.cfg};
     linker.connect();
-    run_and_print_sel_calcs(linker, in);
+    //run_and_print_sel_calcs(linker, in);
   }
 
-  run_and_print_local_calcs(in);
+  for (auto& client_in : client_ins) {
+    EpilinkInput _in = {in.cfg, client_in, in.server};
+    if (!only_local) run_and_print_sel_calcs(linker, _in);
+    run_and_print_local_calcs(_in);
+  }
+
+  //run_and_print_local_calcs(in);
 
   return 0;
 }
