@@ -1,0 +1,15 @@
+{
+    "callback": {
+        "url": "http://192.168.0.102:8066/Communicator/matchCallback/tud"
+    },
+    "fields": {
+        "geburtsjahr": 1970,
+        "geburtsmonat": 1,
+        "geburtsname": null,
+        "geburtstag": 1,
+        "nachname": "RVZABQYB8ECHNGjQQBEIQVQALXJCwYGZAmBAMEQVREEIDBRgQwIlOoBAFEgAcGEVFFQJQlCEAkFDAYCRWkAE",
+        "ort": "BJgRAMGwCAVJGhCCCIAocSeEwCkQAgoDkUghZDARCQkRJg3CgrPiEsMqc0YeBwsSFiJiRWGBBAEDGBY0oAQ=",
+        "plz": "AEDMEEIAMECQAIgUQCAghDGEmcIIcYQQQoAYIQQAABQAgggBEAAAACWUIAAQBAggAIgFAAghQIQAygAwBIA=",
+        "vorname": "AASgBAAACAAFEABQEgAAACAAKAAISQEAABAAAECFJAAAABBAAABAKoAAAAAgAAAhAVABAAAAgACQAAAQCw=="
+    }
+}
