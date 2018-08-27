@@ -173,7 +173,7 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
   // TODO(TK): get inter SEL Authorization stuff done
   string data{"{}"};
   list<string> headers{
-      "Authorization: ",
+      "Authorization: apiKey apiKey=\""s+"\"",
       "SEL-Identifier: "s + m_local_config->get_local_id(),
       "Content-Type: application/json"};
   string url{assemble_remote_url(m_remote_config) + "/initMPC/"+m_local_config->get_local_id()};
