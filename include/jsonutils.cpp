@@ -27,14 +27,33 @@ using namespace std;
 namespace sel {
 
 Bitmask check_size_and_get_as_bitmask(
-    const void* source, const size_t source_bytes, const size_t bytes_to_copy) {
-  if (bytes_to_copy > source_bytes) {
-    throw runtime_error("Field bitlength larger than field type, "
-        "cannot copy that many bytes!");
+    const void* source, const size_t source_bytes, const size_t size_bitmask) {
+  auto bytes_to_copy = size_bitmask;
+  if (source_bytes < size_bitmask) {
+    get_default_logger()->warn(
+        "Source smaller than field bitlength, padding with zeros.");
+    bytes_to_copy = source_bytes;
   }
-  Bitmask ret(bytes_to_copy);
-  ::memcpy(ret.data(), source, bytes_to_copy);
+  // We don't log if source is larger because that's mostly the case
 
+  Bitmask ret(size_bitmask);
+  ::memcpy(ret.data(), source, bytes_to_copy);
+  return ret;
+}
+
+Bitmask check_size_and_get_as_bitmask(const string& source, const size_t size_bitmask) {
+  auto logger = get_default_logger();
+  auto bytes_to_copy = source.size();
+  if (bytes_to_copy > size_bitmask) {
+    logger->warn("String larger than field bitlength, truncating.");
+    bytes_to_copy = size_bitmask;
+  } else if (bytes_to_copy < size_bitmask) {
+    // This is expected to happen, so only debug-log
+    logger->debug("String smaller than field bitlength, padding with zeros.");
+  }
+
+  Bitmask ret(size_bitmask);
+  ::memcpy(ret.data(), source.c_str(), bytes_to_copy);
   return ret;
 }
 
@@ -71,8 +90,7 @@ FieldEntry parse_json_field(const ML_Field& field,
         if (trim_copy(content).empty()) {
           return nullopt;
         } else {
-          return check_size_and_get_as_bitmask(content.c_str(), content.size(),
-              field_bytes);
+          return check_size_and_get_as_bitmask(content, field_bytes);
         }
       }
       case FieldType::BITMASK: {
