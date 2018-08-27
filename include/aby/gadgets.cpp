@@ -358,6 +358,56 @@ void split_select_quotient_target(
   }
 }
 
+ArithQuotientSelector make_tie_selector(const A2BConverter& to_bool,
+    const BinaryOp_BoolShare& op_select, const size_t den_bits = 0) {
+  return [&to_bool, op_select, den_bits] (auto a, auto b) {
+      auto ax = to_bool(a.num * b.den);
+      auto bx = to_bool(b.num * a.den);
+      auto quotients_equal = ax == bx;
+      auto quotient_select = op_select(ax, bx);
+
+      auto a_den = to_bool(a.den);
+      auto b_den = to_bool(b.den);
+      if (den_bits) {
+        a_den.set_bitlength(den_bits);
+        b_den.set_bitlength(den_bits);
+      }
+      auto scale_select = op_select(a_den, b_den);
+
+      // If quotients are equal, select by scale.
+      auto selection = (quotients_equal & scale_select)
+        | (~quotients_equal & quotient_select);
+
+#ifdef DEBUG_SEL_GADGETS
+      static unsigned i = 0;
+      string i_str = '[' + to_string(i++) + "] ";
+      print_share(a, i_str+"selector a");
+      print_share(b, i_str+"selector b");
+      print_share(a_den, i_str+"a_den");
+      print_share(b_den, i_str+"b_den");
+      print_share(quotients_equal, i_str+"quotients_equal");
+      print_share(quotient_select, i_str+"quotient_select");
+      print_share(scale_select, i_str+"scale_select");
+      print_share(selection, i_str+"selection");
+#endif
+
+      return selection;
+  };
+}
+
+ArithQuotientSelector make_max_tie_selector(const A2BConverter& to_bool,
+    const size_t den_bits) {
+  BinaryOp_BoolShare op_select = [](auto a, auto b) { return a > b; };
+  return make_tie_selector(to_bool, op_select, den_bits);
+}
+
+void max_tie_index(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const A2BConverter& to_bool, const B2AConverter& to_arith,
+    const size_t den_bits) {
+  auto op_select = make_max_tie_selector(to_bool, den_bits);
+  return split_select_quotient_target(selector, targets, op_select, to_arith);
+}
 
 ArithQuotientSelector make_max_selector(const A2BConverter& to_bool) {
   return [&to_bool] (auto a, auto b) {
@@ -375,7 +425,6 @@ ArithQuotientSelector make_min_selector(const A2BConverter& to_bool) {
   };
 }
 
-
 void max_index(
     ArithQuotient& selector, std::vector<BoolShare>& targets,
     const A2BConverter& to_bool, const B2AConverter& to_arith) {
@@ -391,8 +440,8 @@ void min_index(
 }
 
 // TODO#13 If we can mux with ArithShares, use it here.
-ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
-    const A2BConverter& to_bool, const B2AConverter& to_arith) {
+ArithQuotient select_quotient(const ArithQuotient& a, const ArithQuotient& b,
+    const ArithQuotientSelector& op_select, const B2AConverter& to_arith) {
   /* Old implementation uses bool muxing
   BoolQuotient q = max(a, b, to_bool);
   return {to_arith(q.num), to_arith(q.den)};
@@ -401,24 +450,42 @@ ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
   assert(a.den.get_nvals() == nvals);
   assert(b.num.get_nvals() == nvals);
   assert(b.den.get_nvals() == nvals);
-  ArithShare ax = a.num * b.den;
-  ArithShare bx = b.num * a.den;
-  // convert to bool
-  BoolShare b_ax = to_bool(ax), b_bx = to_bool(bx);
-  BoolShare cmp = (b_ax > b_bx);
+  const auto cmp = op_select(a, b);
   ArithShare acmp = to_arith(cmp);
   ArithmeticCircuit* acirc = acmp.get_circuit();
   ArithShare one = constant_simd(acirc, 1u, acirc->GetShareBitLen(), nvals);
   ArithShare notcmp = one - acmp;
 #ifdef DEBUG_SEL_GADGETS
-  print_share(cmp, "max cmp");
-  print_share(acmp, "max acmp");
-  print_share(notcmp, "max notcmp");
+  print_share(cmp, "select_quotient cmp");
+  print_share(acmp, "select_quotient acmp");
+  print_share(notcmp, "select_quotient notcmp");
 #endif
 
   ArithShare num = acmp * a.num + notcmp * b.num;
   ArithShare den = acmp * a.den + notcmp * b.den;
   return {num, den};
+}
+
+ArithQuotient max_tie(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool, const B2AConverter& to_arith,
+    const size_t den_bits) {
+  auto op_select = make_max_tie_selector(to_bool, den_bits);
+  return select_quotient(a, b, op_select, to_arith);
+}
+
+ArithQuotient max_tie(const vector<ArithQuotient>& qs,
+    const A2BConverter& to_bool, const B2AConverter& to_arith,
+    const size_t den_bits) {
+  return binary_accumulate(qs, (BinaryOp_ArithQuotient)
+      [&to_bool, &to_arith, den_bits](auto a, auto b) {
+      return max_tie(a, b, to_bool, to_arith, den_bits);
+      });
+}
+
+ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool, const B2AConverter& to_arith) {
+  auto op_select = make_max_selector(to_bool);
+  return select_quotient(a, b, op_select, to_arith);
 }
 
 ArithQuotient max(const vector<ArithQuotient>& qs,

@@ -82,6 +82,14 @@ void split_select_quotient_target(
 ArithQuotientSelector make_max_selector(const A2BConverter& to_bool);
 ArithQuotientSelector make_min_selector(const A2BConverter& to_bool);
 
+ArithQuotientSelector make_max_tie_selector(const A2BConverter& to_bool,
+    const size_t den_bits = 0);
+
+void max_tie_index(
+    ArithQuotient& selector, std::vector<BoolShare>& targets,
+    const A2BConverter& to_bool, const B2AConverter& to_arith,
+    const size_t den_bits = 0);
+
 void max_index(
     ArithQuotient& selector, std::vector<BoolShare>& targets,
     const A2BConverter& to_bool, const B2AConverter& to_arith);
@@ -93,6 +101,13 @@ void min_index(
 BoolShare max(const std::vector<BoolShare>&);
 BoolShare sum(const std::vector<BoolShare>&);
 ArithShare sum(const std::vector<ArithShare>&);
+
+ArithQuotient max_tie(const ArithQuotient& a, const ArithQuotient& b,
+    const A2BConverter& to_bool, const B2AConverter& to_arith,
+    const size_t den_bits = 0);
+ArithQuotient max_tie(const std::vector<ArithQuotient>& qs,
+    const A2BConverter& to_bool, const B2AConverter& to_arith,
+    const size_t den_bits = 0);
 
 BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
     const A2BConverter& to_bool);
