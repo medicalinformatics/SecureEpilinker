@@ -44,6 +44,7 @@ class ServerHandler {
     void insert_server(RemoteId, RemoteAddress);
     void add_linkage_job(const RemoteId&, std::shared_ptr<LinkageJob>&&);
     std::shared_ptr<const LinkageJob> get_linkage_job(const JobId&) const;
+    std::string get_job_status(const JobId&) const;
     std::shared_ptr<LocalServer> get_local_server(const RemoteId&) const;
     Port get_server_port(const RemoteId&) const;
     std::shared_ptr<SecureEpilinker> get_epilink_client(const RemoteId&);

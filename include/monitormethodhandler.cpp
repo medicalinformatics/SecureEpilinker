@@ -43,8 +43,12 @@ void MonitorMethodHandler::handle_method(
     shared_ptr<restbed::Session> session) const {
   auto request{session->get_request()};
   auto headers{request->get_headers()};
-  JobId job_id{request->get_path_parameter("job_id", "0")};
-  m_logger->info("Requested status of Job ID: {}\n", job_id);
+  JobId job_id{request->get_path_parameter("job_id", "list")};
+  if(job_id == "list") {
+    m_logger->info("Requested status of all jobs");
+  } else {
+    m_logger->info("Requested status of Job ID: {}\n", job_id);
+  }
   string header_string;
   for (const auto& h : headers) {
     header_string += h.first +" -- " + h.second +"\n";
@@ -52,8 +56,7 @@ void MonitorMethodHandler::handle_method(
   m_logger->trace("Recieved headers:\n{}", header_string);
   SessionResponse response;
   try {
-    const auto job{ServerHandler::cget().get_linkage_job(job_id)};
-    const auto status{js_enum_to_string(job->get_status())};
+    const auto status{ServerHandler::cget().get_job_status(job_id)};
     response.return_code = restbed::OK;
     response.body = status;
   } catch (const exception& e) {
