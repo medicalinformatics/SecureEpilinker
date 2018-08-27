@@ -140,17 +140,18 @@ public:
     }
 
     // 2. Sum up all field weights.
-    ArithQuotient sum_field_weights{sum(field_weights)};
+    ArithQuotient sum_field_weights = sum(field_weights);
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(sum_field_weights, "sum_field_weights");
 #endif
 
     // 3. Determine index of max score of all nvals calculations
-    // Create targets vector with const_idx copy to pass to
-    // split_select_quotient_target().
     vector<BoolShare> max_idx = {const_idx};
-    split_select_quotient_target(sum_field_weights, max_idx,
-        make_max_selector(to_bool_closure), to_arith_closure);
+    // we summed up `nfields` many weights of size `weight_prec`
+    const size_t weight_sum_bits = cfg.weight_prec + ceil_log2(cfg.epi.nfields);
+    max_tie_index(sum_field_weights, max_idx,
+        to_bool_closure, to_arith_closure,
+        weight_sum_bits);
 
     // 4. Left side: sum up all weights and multiply with threshold
     //  Since weights and threshold are public inputs, this can be computed
@@ -413,9 +414,12 @@ private:
 #endif
       // collect for later max
       perm_weights.emplace_back(sum_perm_weight);
-    } while(next_permutation(groupPerm.begin(), groupPerm.end()));
-    // return max of all perm_weights
-    ArithQuotient max_perm_weight{max(perm_weights, to_bool_closure, to_arith_closure)};
+    } while (next_permutation(groupPerm.begin(), groupPerm.end()));
+
+    // we summed up `size` many weights of size `weight_prec`
+    const size_t weight_sum_bits = cfg.weight_prec + ceil_log2(size);
+    ArithQuotient max_perm_weight = max_tie(
+        perm_weights, to_bool_closure, to_arith_closure, weight_sum_bits);
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(max_perm_weight,
         format("max_perm_weight ({})", group));
