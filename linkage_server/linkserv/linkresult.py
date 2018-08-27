@@ -62,10 +62,10 @@ class LinkageResult:
             print(self.server.validate_id(bestId,base64=False))
             client_linkage_id = self.client.encrypt(bytes(tmatch)+self.server.decrypt(bestId,False))
             self.clear()
-            return json.dumps({'linkageId': client_linkage_id})
+            return json.dumps({'result':{'linkageId': client_linkage_id}})
         else:
             self.clear()
-            return json.dumps({'linkageId': self.client.generate_id()})
+            return json.dumps({'result':{'linkageId': self.client.generate_id()}})
 
     def is_ready(self):
         return self.server_data and self.client_data
