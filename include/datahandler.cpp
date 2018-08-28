@@ -2,6 +2,7 @@
 #include "configurationhandler.h"
 #include "databasefetcher.h"
 #include "localconfiguration.h"
+#include "remoteconfiguration.h"
 #include <memory>
 #include <mutex>
 #include "clear_epilinker.h"
@@ -46,7 +47,7 @@ size_t DataHandler::poll_database(const RemoteId& remote_id) {
       local_configuration->get_data_service()+"/"+remote_id,
       local_configuration->get_local_authentication(),
       config_handler.get_server_config().default_page_size};
-  auto data{database_fetcher.fetch_data()};
+  auto data{database_fetcher.fetch_data(config_handler.get_remote_config(remote_id)->get_matching_mode())};
   lock_guard<mutex> lock(m_db_mutex);
   m_database = make_shared<const ServerData>(ServerData{
       move(data.data), move(data.ids), data.todate, move(data.local_id), move(data.remote_id)});
