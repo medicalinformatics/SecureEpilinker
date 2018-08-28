@@ -61,13 +61,20 @@ SessionResponse perform_get_request(string url, list<string> headers, bool get_h
   auto stream = response_stream.get();
   return {static_cast<int>(responsecode), stream.str(),{}};
 }
-SessionResponse send_result_to_linkageservice(const SecureEpilinker::Result& share, const string& role, const shared_ptr<const LocalConfiguration>& local_config,const shared_ptr<const RemoteConfiguration>& remote_config){
+SessionResponse send_result_to_linkageservice(const SecureEpilinker::Result& share, optional<vector<string>> ids, const string& role, const shared_ptr<const LocalConfiguration>& local_config,const shared_ptr<const RemoteConfiguration>& remote_config){
   auto logger{get_default_logger()};
   nlohmann::json json_data;
   json_data["role"] = role;
   json_data["result"] = {{"match", share.match},
                           {"tentative_match", share.tmatch},
-                          {"bestId", "QWxsZSBtZWluZSBFbnRjaGVuLi4u"}};
+                          {"bestIndex", share.index}};
+  if (role=="server") {
+    if(ids) {
+      json_data["ids"] = ids.value();
+    } else {
+      throw runtime_error("Missing IDS from server result");
+    }
+  }
   auto data{json_data.dump()};
   logger->trace("Data for linkage Service: {}",data);
   list<string> headers{"Content-Type: application/json","Authorization: "s+dynamic_cast<APIKeyConfig*>(remote_config->get_linkage_service()->authentication.get())->get_key()};

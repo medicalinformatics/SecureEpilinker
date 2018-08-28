@@ -29,6 +29,7 @@
 #include "seltypes.h"
 #include "resttypes.h"
 #include <tuple>
+#include "optional"
 #include "logger.h"
 
 using namespace std;
@@ -134,18 +135,18 @@ void ServerHandler::run_server(RemoteId remote_id,
     const auto result{
         get_local_server(remote_id)->launch_comparison(move(data))};
     m_logger->info("Server Result\n{}", result);
-    const auto ids{get_local_server(remote_id)->get_ids()};
-    string id_string;
-    for (size_t i = 0; i != ids.size(); ++i) {
-      id_string += "Index: " + to_string(i) + " ID: " + ids.at(i) + '\n';
-    }
-    m_logger->info("IDs:\n{}", id_string);
-    if (!remote_config->get_matching_mode()) {
+    if(!remote_config->get_matching_mode()){
+      const auto ids{get_local_server(remote_id)->get_ids()};
+      string id_string;
+      for (size_t i = 0; i != ids.size(); ++i) {
+        id_string += "Index: " + to_string(i) + " ID: " + ids.at(i) + '\n';
+      }
+      m_logger->info("IDs:\n{}", id_string);
       auto linkage_service{remote_config->get_linkage_service()};
       string url{linkage_service->url + "/linkageResult/" +
                  local_config->get_local_id() + '/' + remote_id};
       m_logger->debug("Sending server result to Linkage Service URL {}", url);
-      auto response{send_result_to_linkageservice(result, "server",
+      auto response{send_result_to_linkageservice(result, make_optional(ids), "server",
                                                   local_config, remote_config)};
       m_logger->trace("Linkage Server responded with {} - {}",
                       response.return_code, response.body);

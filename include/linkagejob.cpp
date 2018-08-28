@@ -35,6 +35,7 @@ later version. This program is distributed in the hope that it will be useful,
 #include "secure_epilinker.h"
 #include "util.h"
 #include "logger.h"
+#include <optional>
 
 #include <future>
 
@@ -106,7 +107,7 @@ void LinkageJob::run_linkage_job() {
 #endif
     logger->info("Client Result: {}", client_share);
     if(!m_remote_config->get_matching_mode()){
-      auto response{send_result_to_linkageservice(client_share, "client", m_local_config, m_remote_config)};
+      auto response{send_result_to_linkageservice(client_share, nullopt , "client", m_local_config, m_remote_config)};
       if (response.return_code == 200) {
         perform_callback(response.body);
       }
