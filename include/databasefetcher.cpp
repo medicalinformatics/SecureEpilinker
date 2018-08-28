@@ -64,7 +64,7 @@ DatabaseFetcher::DatabaseFetcher(
       m_page_size(page_size),
       m_logger{get_default_logger()} {}
 
-ServerData DatabaseFetcher::fetch_data() {
+ServerData DatabaseFetcher::fetch_data(bool matching_mode) {
   m_logger->debug("Requesting Database from {}?pageSize={}\n", m_url,
                   m_page_size);
   m_logger->info("Requesting Database");
@@ -88,12 +88,12 @@ ServerData DatabaseFetcher::fetch_data() {
   m_local_id = page["localId"].get<RemoteId>();
 
   for (; m_page != m_last_page; ++m_page) {
-    save_page_data(page);
+    save_page_data(page, matching_mode);
     m_next_page = page.at("_links").at("next").at("href").get<string>();
     page = get_next_page();
   }
   // Process Data from last page
-  save_page_data(page);
+  save_page_data(page, matching_mode);
 
 #ifdef DEBUG_SEL_REST
   string input_string;
@@ -111,20 +111,24 @@ ServerData DatabaseFetcher::fetch_data() {
       input_string += "\n";
     }
   }
-#ifndef SEL_MATCHING_MODE
-  // TODO (TK) also with mathing mode compiled, but inactive.
+if(!matching_mode){
   input_string +=
       "------------------------------\nIDs\n-----------------------------\n";
   for (const auto& m : m_ids) {
       input_string += "ID: " + m + '\n';
   }
-#endif
+}
   m_logger->trace("Recieved Inputs:\n{}", input_string);
 #endif
+
+if(matching_mode) {
+  return {move(m_data), {}, move(m_todate), move(m_local_id), move(m_remote_id)};
+} else {
   return {move(m_data), move(m_ids), move(m_todate), move(m_local_id), move(m_remote_id)};
 }
+}
 
-void DatabaseFetcher::save_page_data(const nlohmann::json& page_data) {
+void DatabaseFetcher::save_page_data(const nlohmann::json& page_data, bool matching_mode) {
   if (!page_data.count("_links")) {
     throw runtime_error("Invalid JSON Data: missing _links section");
   }
@@ -136,11 +140,10 @@ void DatabaseFetcher::save_page_data(const nlohmann::json& page_data) {
   const auto& fields = m_local_config->get_fields();
   auto temp_data = parse_json_fields_array(fields, records_json);
   append_to_map_of_vectors(temp_data, m_data);
-#ifndef SEL_MATCHING_MODE
-  // TODO (TK) also with matching mode compiled, but inactive.
-  auto temp_ids = parse_json_id_array(records_json);
-  m_ids.insert(m_ids.end(), temp_ids.begin(), temp_ids.end());
-#endif
+  if(!matching_mode) {
+    auto temp_ids = parse_json_id_array(records_json);
+    m_ids.insert(m_ids.end(), temp_ids.begin(), temp_ids.end());
+  }
 }
 
 nlohmann::json DatabaseFetcher::get_next_page() const {

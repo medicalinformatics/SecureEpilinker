@@ -112,7 +112,6 @@ void LinkageJob::run_linkage_job() {
       }
     } else {
       #ifdef SEL_MATCHING_MODE
-      //result = {{"match", true}, {"tmatch", true}};
       nlohmann::json match_json;
       nlohmann::json match_result;
       match_result["match"] = client_share.match;
