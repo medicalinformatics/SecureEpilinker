@@ -50,6 +50,7 @@ class LinkageJob {
    void add_data_field(const FieldName& fieldname, FieldEntry field);
    void add_data(std::map<FieldName, FieldEntry>);
    JobStatus get_status() const;
+   void set_status(JobStatus);
    JobId get_id() const;
    void run_linkage_job();
    void run_matching_job();

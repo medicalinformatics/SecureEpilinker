@@ -31,11 +31,20 @@
 #include <tuple>
 #include "optional"
 #include "logger.h"
+#include <mutex>
+#include <iterator>
 
 using namespace std;
 namespace sel {
+  ServerHandler::ServerHandler(size_t worker_threads) {
+  while (worker_threads-->0){
+    m_worker_threads.emplace_back([this](){execute_job_queue();});
+  }
+  }
+
+
   ServerHandler& ServerHandler::get() {
-    static ServerHandler singleton;
+    static ServerHandler singleton{2}; //FIXME(TK) Magic Number
     return singleton;
   }
 
@@ -83,15 +92,52 @@ void ServerHandler::add_linkage_job(const RemoteId& remote_id, std::shared_ptr<L
   if(config_handler.get_remote_config(remote_id)->get_mutual_initialization_status()) {
   m_job_remote_mapping.emplace(job->get_id(), remote_id);
   m_client_jobs[remote_id].emplace(job->get_id(),move(job));
-    if(!config_handler.get_remote_config(remote_id)->get_matching_mode()){
-      m_client_jobs.at(remote_id).at(job_id)->run_linkage_job();
-    } else {
-#ifdef SEL_MATCHING_MODE
-      m_client_jobs.at(remote_id).at(job_id)->run_matching_job();
-#endif
-    }
   } else {
     m_logger->error("Can not create linkage job {}: Connection to remote Secure EpiLinker is not properly initialized", job_id);
+  }
+}
+
+void ServerHandler::run_job(const RemoteId& remote_id, shared_ptr<LinkageJob>& job){
+  const auto& config_handler{ConfigurationHandler::cget()};
+  const auto& job_id{job->get_id()};
+  if(!config_handler.get_remote_config(remote_id)->get_matching_mode()){
+    m_client_jobs.at(remote_id).at(job_id)->run_linkage_job();
+  } else {
+#ifdef SEL_MATCHING_MODE
+    m_client_jobs.at(remote_id).at(job_id)->run_matching_job();
+#endif
+  }
+}
+
+void ServerHandler::execute_job_queue() {
+  // Loops forever. Watches queue of jobs. If a job of one remote is found (and
+  // not already finished, running or faulty it starts that job. After that the
+  // next remote host is chosen. This should guarantee a fair distribution of
+  // jobs, i.e. round robbin w.r.t. remote hosts.
+  for(;;){
+    size_t counter{0};
+    while (counter < m_client_jobs.size()){
+      lock_guard<mutex> lock{m_job_queue_mutex};
+      RemoteId remote_id{};
+      shared_ptr<LinkageJob> job{nullptr};
+      bool matching_mode{false};
+      for (auto& jobp : std::next(m_client_jobs.begin(),counter)->second){
+        if(jobp.second->get_status() == JobStatus::QUEUED) {
+          remote_id = std::next(m_client_jobs.begin(),counter)->first;
+          job = jobp.second;
+          jobp.second->set_status(JobStatus::RUNNING);
+          matching_mode = ConfigurationHandler::cget().get_remote_config(remote_id)->get_matching_mode();
+          break;
+        }
+      }
+      ++counter;
+      if(job){
+        if(!matching_mode)
+          job->run_linkage_job();
+        else
+          job->run_matching_job();
+      }
+    }
   }
 }
 

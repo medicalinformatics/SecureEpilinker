@@ -67,6 +67,10 @@ JobStatus LinkageJob::get_status() const {
   return m_status;
 }
 
+void LinkageJob::set_status(JobStatus status){
+  m_status = status;
+}
+
 JobId LinkageJob::get_id() const {
   return m_id;
 }
