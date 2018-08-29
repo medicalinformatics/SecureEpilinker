@@ -36,7 +36,7 @@ class DataHandler;
 
 class ServerHandler {
   protected:
-    ServerHandler() = default;
+    ServerHandler(size_t);
   public:
     static ServerHandler& get();
     static ServerHandler const& cget();
@@ -51,11 +51,15 @@ class ServerHandler {
     void run_server(RemoteId, std::shared_ptr<const ServerData>);
     void connect_client(const RemoteId&);
   private:
+    void run_job(const RemoteId&, std::shared_ptr<LinkageJob>&);
+    void execute_job_queue();
     std::map<JobId, RemoteId> m_job_remote_mapping;
     std::map<RemoteId, std::shared_ptr<SecureEpilinker>> m_aby_clients;
     std::map<RemoteId, std::map<JobId, std::shared_ptr<LinkageJob>> > m_client_jobs;
     std::map<RemoteId, std::shared_ptr<LocalServer>> m_server;
     std::shared_ptr<spdlog::logger> m_logger{get_default_logger()};
+    std::mutex m_job_queue_mutex;
+    std::vector<std::thread> m_worker_threads;
 };
 
 } // namespace sel
