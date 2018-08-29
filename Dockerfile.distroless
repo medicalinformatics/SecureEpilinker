@@ -1,0 +1,72 @@
+FROM gcc:latest as build
+
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+  libboost-dev \
+  libgmp-dev \
+  libcurl4-openssl-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+
+# debian:stretch only has cmake-3.7...
+RUN wget -qO- "https://cmake.org/files/v3.12/cmake-3.12.1-Linux-x86_64.tar.gz" | \
+  tar --strip-components=1 -xz -C /usr/local
+
+WORKDIR /app
+COPY extern extern
+COPY cmake cmake
+COPY include include
+COPY test test
+COPY CMakeLists.txt sepilinker.cpp /app/
+
+# build!
+WORKDIR /app/build
+RUN cmake \
+  -DCMAKE_FLAGS_EXTRA=-w \
+  -DCMAKE_EXE_LINKER_FLAGS_EXTRA=-static-libstdc++ \
+  .. \
+  && make sel -j $(nproc)
+
+# copy dependencies
+RUN mkdir /deps; \
+  echo sel | while read bin; do \
+    ldd $bin | cut -d' ' -f 3 | grep /usr/lib/ | while read lib; do \
+      cp $lib /deps; \
+    done; \
+  done
+
+WORKDIR /lib/x86_64-linux-gnu
+RUN cp -L libz.so.1 /deps/ \
+  && cp -L libcom_err.so.2 /deps/ \
+  && cp -L libkeyutils.so.1 /deps/ \
+  && cp -L libgcrypt.so.20 /deps/ \
+  && cp -L libidn.so.11 /deps/ \
+  && cp -L libgpg-error.so.0 /deps/ \
+  && cp -L /usr/bin/ldd /deps/
+
+# generating keys
+WORKDIR /app/data
+RUN openssl req -new -newkey rsa:1024 -days 3650 -nodes -x509 \
+    -subj "/C=DE/ST=Hess/L=Darmstadt/O=TUDA/CN=sel.local" \
+    -keyout server.key  -out server.crt \
+  && openssl dhparam -out dh768.pem 768
+
+# copy everything into minimal image
+FROM gcr.io/distroless/cc:debug
+
+WORKDIR /app
+COPY --from=build /app/build/sel /app/sel
+COPY --from=build /deps /deps
+# openssl keys
+COPY --from=build /app/data /data
+# json schemes and default config
+COPY data/*.json /data/
+
+# copy config and circuit files
+COPY extern/ABY/bin/circ/int_div_16.aby /app/circ/
+
+# let the minimal image find libraries in the correct order
+ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/:/deps/
+EXPOSE 8161
+
+ENTRYPOINT ["/app/sel"]

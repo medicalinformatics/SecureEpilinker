@@ -1,1 +1,10 @@
 /build
+/test_scripts
+/docs
+LICENSE
+README.md
+CONTRIBUTING.md
+compiler_commands.json
+.git
+.gitmodules
+.gitignore
