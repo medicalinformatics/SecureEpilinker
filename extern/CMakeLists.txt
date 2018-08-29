@@ -14,10 +14,4 @@ add_custom_command(OUTPUT valijson_patched COMMAND
   "${PROJECT_SOURCE_DIR}/extern/valijson")
 add_custom_target(valijson_patch ALL DEPENDS valijson_patched)
 
-message(STATUS "patching restbed")
-add_custom_command(OUTPUT restbed_patched 
-  COMMAND "git apply ${PROJECT_SOURCE_DIR}/cmake/restbed.patch"
-  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/extern/restbed")
-add_custom_target(restbed_patch ALL DEPENDS restbed_patch)
-
 add_subdirectory(curlpp)
