@@ -1,6 +1,6 @@
 {
 "connectionProfile": {
-  "url": "https://127.0.0.1:8080",
+  "url": "https://127.0.0.1:8161",
   "authentication": {
     "authType": "apiKey",
     "sharedKey": "xkcd123"
