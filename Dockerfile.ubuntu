@@ -1,0 +1,84 @@
+FROM ubuntu:rolling as build
+
+# Backup libs so we know what to copy later to runtime image
+RUN find /lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/ -name '*.so*' > /shared-libs.list
+
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+  dpkg-dev \
+  g++-8 \
+  libc6-dev \
+  libssl-dev \
+  openssl \
+  cmake \
+  libboost-dev \
+  libgmp-dev \
+  libcurl4-openssl-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+# We only installed gcc-8 -> make default
+RUN ln -s /usr/bin/gcc-8 /usr/bin/gcc \
+  && ln -s /usr/bin/g++-8 /usr/bin/g++ \
+  && ln -s /usr/bin/gcov-8 /usr/bin/gcov
+
+WORKDIR /app
+COPY extern extern
+COPY cmake cmake
+COPY include include
+COPY test test
+COPY CMakeLists.txt sepilinker.cpp /app/
+
+# build!
+WORKDIR /app/build
+RUN cmake \
+  -DCMAKE_FLAGS_EXTRA=-w \
+  .. \
+  && make sel -j $(nproc)
+
+# copy dependencies
+RUN mkdir /deps; \
+  echo sel | while read bin; do \
+    ldd $bin | cut -d' ' -f 3 | grep -F .so | while read lib; do \
+      if ! grep -Fq $lib /shared-libs.list; then \
+        echo copy dependency $lib; \
+        cp -L $lib /deps; \
+      fi; \
+    done; \
+  done
+
+#WORKDIR /lib/x86_64-linux-gnu
+#RUN cp -L libz.so.1 /deps/ \
+  #&& cp -L libcom_err.so.2 /deps/ \
+  #&& cp -L libkeyutils.so.1 /deps/ \
+  #&& cp -L libgcrypt.so.20 /deps/ \
+  #&& cp -L libidn.so.11 /deps/ \
+  #&& cp -L libgpg-error.so.0 /deps/ \
+  #&& cp -L /usr/bin/ldd /deps/
+
+# generating keys
+WORKDIR /app/data
+RUN openssl req -new -newkey rsa:1024 -days 3650 -nodes -x509 \
+    -subj "/C=DE/ST=Hess/L=Darmstadt/O=TUDA/CN=sel.local" \
+    -keyout server.key  -out server.crt \
+  && openssl dhparam -out dh768.pem 768
+
+# copy everything into minimal image
+FROM ubuntu:rolling
+
+WORKDIR /app
+COPY --from=build /app/build/sel /app/sel
+COPY --from=build /deps /deps
+# openssl keys
+COPY --from=build /app/data /data
+# json schemes and default config
+COPY data/*.json /data/
+
+# copy config and circuit files
+COPY extern/ABY/bin/circ/int_div_16.aby /app/circ/
+
+# let the minimal image find libraries in the correct order
+ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/:/deps/
+EXPOSE 8161
+EXPOSE 1337-1344
+
+ENTRYPOINT ["/app/sel"]
