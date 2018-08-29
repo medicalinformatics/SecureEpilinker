@@ -1,6 +1,6 @@
 [submodule "extern/ABY"]
 	path = extern/ABY
-	url = https://git.compbiol.bio.tu-darmstadt.de/crisp/ABY.git
+	url = git@git.compbiol.bio.tu-darmstadt.de:crisp/ABY.git
 	fetchRecurseSubmodules = true
 	branch = dev
 [submodule "extern/json"]
