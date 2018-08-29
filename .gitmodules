@@ -1,26 +1,34 @@
 [submodule "extern/ABY"]
 	path = extern/ABY
 	url = https://git.compbiol.bio.tu-darmstadt.de/crisp/ABY.git
+	fetchRecurseSubmodules = true
+	branch = dev
 [submodule "extern/json"]
 	path = extern/json
 	url = https://github.com/nlohmann/json
+	shallow = true
 [submodule "extern/fmt"]
 	path = extern/fmt
 	url = https://github.com/fmtlib/fmt
+	shallow = true
 [submodule "extern/valijson"]
 	path = extern/valijson
 	url = https://github.com/tristanpenman/valijson.git
 	ignore = dirty
+	shallow = true
 [submodule "extern/restbed"]
 	path = extern/restbed
 	url = https://github.com/Corvusoft/restbed
-	ignore = dirty
+	shallow = true
 [submodule "extern/cxxopts"]
 	path = extern/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
+	shallow = true
 [submodule "extern/curlpp"]
 	path = extern/curlpp
 	url = https://github.com/jpbarrette/curlpp
+	shallow = true
 [submodule "extern/spdlog"]
 	path = extern/spdlog
 	url = https://github.com/gabime/spdlog.git
+	shallow = true
