@@ -16,3 +16,4 @@ CTestTestfile.cmake
 *.key
 tags
 /.gdb_history
+/log
