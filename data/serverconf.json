@@ -1,17 +1,17 @@
 {
-"port": 8080,
+"port": 8161,
 "serverKeyPath": "../data/server.key",
 "serverCertificatePath": "../data/server.crt",
 "serverDHPath": "../data/dh768.pem",
 "localInitSchemaPath": "../data/local-init-schema.json",
 "remoteInitSchemaPath": "../data/remote-init-schema.json",
 "linkRecordSchemaPath": "../data/linkrecord-schema.json",
-"useSSL": true,
+"useSSL": false,
 "bindAddress": "0.0.0.0",
 "restWorkerThreads": 2,
 "defaultPageSize": 25,
 "abyThreads": 1,
-"booleanSharing": "yao",
+"booleanSharing": "gmw",
 "logFilePath": "./secure_epilinker.log",
 "abyPorts": [1337,1338,1339,1340,1341,1342,1343,1344]
 }
