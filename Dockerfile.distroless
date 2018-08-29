@@ -1,4 +1,16 @@
+# Backup libs so we know what to copy later to runtime image
+# Note: Only debug flavor has `find`
+FROM gcr.io/distroless/cc:debug as runtime
+# distroless debug uses busybox
+SHELL ["/busybox/sh", "-c"]
+RUN find /lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/ -name '*.so*' > /shared-libs.list
+
 FROM gcc:latest as build
+
+# Reset to default
+SHELL ["/bin/sh", "-c"]
+
+COPY --from=runtime /shared-libs.list /shared-libs.list
 
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
@@ -17,7 +29,8 @@ COPY extern extern
 COPY cmake cmake
 COPY include include
 COPY test test
-COPY CMakeLists.txt sepilinker.cpp /app/
+COPY scripts scripts
+COPY CMakeLists.txt sepilinker.cpp ./
 
 # build!
 WORKDIR /app/build
@@ -27,31 +40,22 @@ RUN cmake \
   .. \
   && make sel -j $(nproc)
 
-# copy dependencies
 RUN mkdir /deps; \
   echo sel | while read bin; do \
-    ldd $bin | cut -d' ' -f 3 | grep /usr/lib/ | while read lib; do \
-      cp $lib /deps; \
+    ldd $bin | cut -d' ' -f 3 | grep -F .so | while read lib; do \
+      if ! grep -Fq $lib /shared-libs.list; then \
+        echo copy dependency $lib; \
+        cp -L $lib /deps; \
+      fi; \
     done; \
   done
 
-WORKDIR /lib/x86_64-linux-gnu
-RUN cp -L libz.so.1 /deps/ \
-  && cp -L libcom_err.so.2 /deps/ \
-  && cp -L libkeyutils.so.1 /deps/ \
-  && cp -L libgcrypt.so.20 /deps/ \
-  && cp -L libidn.so.11 /deps/ \
-  && cp -L libgpg-error.so.0 /deps/ \
-  && cp -L /usr/bin/ldd /deps/
-
 # generating keys
 WORKDIR /app/data
-RUN openssl req -new -newkey rsa:1024 -days 3650 -nodes -x509 \
-    -subj "/C=DE/ST=Hess/L=Darmstadt/O=TUDA/CN=sel.local" \
-    -keyout server.key  -out server.crt \
-  && openssl dhparam -out dh768.pem 768
+RUN ../scripts/genkeys.sh .
 
 # copy everything into minimal image
+#FROM runtime
 FROM gcr.io/distroless/cc:debug
 
 WORKDIR /app
@@ -61,12 +65,14 @@ COPY --from=build /deps /deps
 COPY --from=build /app/data /data
 # json schemes and default config
 COPY data/*.json /data/
-
 # copy config and circuit files
 COPY extern/ABY/bin/circ/int_div_16.aby /app/circ/
+RUN mkdir /log && chown sel:sel /log
 
-# let the minimal image find libraries in the correct order
+# find libraries in the correct order
 ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/:/deps/
+
 EXPOSE 8161
+EXPOSE 1337-1344
 
 ENTRYPOINT ["/app/sel"]
