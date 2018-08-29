@@ -5,7 +5,7 @@
   "sharedKey": "123abc"
 },
 "dataService": {
-  "url": "http://127.0.0.1:8800/Communicator/getAllRecords"
+  "url": "http://localhost:8800/Communicator/getAllRecords"
 },
 "algorithm": {
   "algoType": "epilink",
