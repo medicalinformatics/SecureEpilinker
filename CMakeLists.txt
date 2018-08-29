@@ -5,6 +5,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 option(BUILD_SHARED_LIBS "Build libraries as SHARED" OFF)
 option(BUILD_ABY_EXE "Build executable tests for ABY" OFF)
+add_compile_options(${CMAKE_FLAGS_EXTRA})
 
 set(SecureEpiLinker_INSTALL_PREFIX "${SecureEpiLinker_BINARY_DIR}/prefix")
 set(SecureEpiLinker_DEFAULT_ARGS
@@ -113,9 +114,6 @@ set(SELHEADER ${SELABYHEADER}
 
 add_executable (sel sepilinker.cpp ${EPIRESTSRC} ${EPIRESTHEAD} ${SELSOURCES} ${SELHEADER})
 add_dependencies(sel valijson_patch)
-# FIXME(TK): restbed patch not working. Needs to be applied manually
-message(WARNING "Restbed Patch needs to be applied manually at the moment")
-add_dependencies(sel restbed_patch)
 
 find_package(OpenSSL)
 find_package(Threads)
@@ -127,8 +125,9 @@ target_include_directories(sel PRIVATE extern/valijson/include)
 target_include_directories(sel PRIVATE extern/curlpp/include)
 target_include_directories(sel PRIVATE extern/spdlog/include)
 # Debug Version (sanitizers linked)
+set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_EXTRA})
 target_link_libraries(sel PRIVATE ABY::aby OpenSSL::SSL Threads::Threads 
-  stdc++fs curl curlpp ${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
+  stdc++fs curl curlpp_static restbed-static)
 # Release Version
 #target_link_libraries(sel PRIVATE ABY::aby OpenSSL::SSL Threads::Threads 
   #stdc++fs ${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
@@ -138,7 +137,7 @@ set_property(TARGET sel PROPERTY CXX_STANDARD 17)
 target_compile_options(sel PRIVATE "-Wall" "-Wpedantic" "-Wextra" "-fexceptions")
 #Debug Version
 target_compile_options(sel PRIVATE "-O0" "-ggdb" "-g3"
-  "-DDEBUG_SEL_CLEAR"
+  "-DSEL_MATCHING_MODE"
   "-DDEBUG_SEL_RESULT"
   "-DDEBUG_SEL_REST")
 #target_compile_options(sel PRIVATE "-O2" "-s" "-DNDEBUG"
