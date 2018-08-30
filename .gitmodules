@@ -1,33 +1,28 @@
 [submodule "extern/ABY"]
 	path = extern/ABY
 	url = git@git.compbiol.bio.tu-darmstadt.de:crisp/ABY.git
-	fetchRecurseSubmodules = true
 	branch = dev
 [submodule "extern/json"]
 	path = extern/json
-	url = https://github.com/nlohmann/json
+	url = https://github.com/nlohmann/json.git
 	shallow = true
 [submodule "extern/fmt"]
 	path = extern/fmt
-	url = https://github.com/fmtlib/fmt
+	url = https://github.com/fmtlib/fmt.git
 	shallow = true
 [submodule "extern/valijson"]
 	path = extern/valijson
 	url = https://github.com/tristanpenman/valijson.git
 	ignore = dirty
-	shallow = true
 [submodule "extern/restbed"]
 	path = extern/restbed
-	url = https://github.com/Corvusoft/restbed
-	shallow = true
+	url = https://github.com/Corvusoft/restbed.git
 [submodule "extern/cxxopts"]
 	path = extern/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
-	shallow = true
 [submodule "extern/curlpp"]
 	path = extern/curlpp
-	url = https://github.com/jpbarrette/curlpp
-	shallow = true
+	url = https://github.com/jpbarrette/curlpp.git
 [submodule "extern/spdlog"]
 	path = extern/spdlog
 	url = https://github.com/gabime/spdlog.git
