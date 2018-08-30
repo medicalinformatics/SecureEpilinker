@@ -8,74 +8,96 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
+What you need to build and install.
 
 ```
 git
-cmake
-c++ 17 compatible compiler (gcc >= 8)
-boost developement headers (for restbed)
-libcurl
+cmake (>= 3.10)
+c++ 17 compatible compiler (gcc >= 8, Ubuntu: g++-8)
+boost development headers (for restbed) (Ubuntu: libboost-dev)
+libcurl (Ubuntu: libcurl4-openssl-dev)
+openssl (Ubuntu: libssl-dev)
+gmp (Ubuntu: libgmp-dev)
 ```
 
-### Installing
+Note that on Arch Linux based systems, openssl is not shipped with static
+libraries, so unfortunately the restbed included openssl version needs to
+be cloned and built or another custom openssl with static libraries.
 
-The buildprocess is not fully automated yet. First you need to clone this
-repository (because the usage of submodules *do not* download zip)
+### Clone
 
-```
-git@git.compbiol.bio.tu-darmstadt.de:kussel/secure_epilink.git
-```
-
-Checkout the Secure EpiLinker branch and initialize the submodules. Depending on
-your internet connection this may take some time. After that prepare the build directory for an out-of-code build:
+To clone this repository and the necessary submodules, run
 
 ```
+git clone git@git.compbiol.bio.tu-darmstadt.de:kussel/secure_epilink.git
 cd secure_epilink
-git submodule update --init --recursive
-mkdir build
+scripts/init_submodules.sh
 ```
-Restbed needs some custom built OpenSSL, which is not automated (yet).
+
+Depending on your internet connection this may take some time. Note that the
+minimal amount of submodules is cloned and shallow cloning is applied where
+possible. You may also clone with `--recurse-submodules` but this will clone
+more submodules than necessary.
+
+### Build
+
+#### OpenSSL (only on Arch)
+
+As mentioned above, on Arch you may need to manually compile (static) openssl
+libs:
 ```
-cd extern/restbed/dependency/openssl
+cd extern/restbed/dependency/
+git submodule update --init openssl
+cd openssl
 ./config && make
 ```
-Now the Secure EpiLinker is ready for build. Enter the build directory and
-invoce cmake. The project is build with the resulting Makefile.
 
+#### Secure Epilinker
+
+Build it via cmake from the repo top-level directory with
 ```
-cd ../../../../build
+mkdir build
+cd build
 cmake ..
-make sel
+make -j$(nproc) sel
 ```
+
+Omit or customize `-j` if you don't want to build in parallel with the maximum
+amount of threads available on your system.
 
 For now, the path from which `test_sel` or `sel` is called needs to have a
-symlink to the `ABY/bin/circ` folder, where it can find the `int_div_16`
+symlink to the `ABY/bin/circ` folder, where it can find the `int_div_16.aby`
 circuit description. E.g. for running from `build/`:
 
 ```
 ln -s ../extern/ABY/bin/circ/
 ```
 
-To conclude all steps in one codeblock for convenience:
+To conclude all steps in one code block for convenience:
 
 ```
-git@git.compbiol.bio.tu-darmstadt.de:kussel/secure_epilink.git
-cd secure_epilink && mkdir build
-git submodule update --init --recursive
+git clone git@git.compbiol.bio.tu-darmstadt.de:kussel/secure_epilink.git
+cd secure_epilink
+scripts/init_submodules.sh
+# START optional on Arch or where static openssl is not available
 cd extern/restbed/dependency/openssl
-./config && make 
-cd ../../../../build
-cmake .. && make sel
+./config && make
+cd ../../../..
+# END
+mkdir build; cd build
+cmake .. && make -j $(nproc) sel
 ln -s ../extern/ABY/bin/circ/
 ```
 
-We hope to integrate all external builds and patches in the main build process
-soon. Also a docker container is in the work
+### Keys and Certificates
+
+To run the service in https mode with self-created keys and self-signed
+certificates, generate those with `scripts/genkeys.sh`.
 
 ## Running the tests
 
 Test targets for different components exist:
+
   * test_sel
   * test_aby
   * test_util
@@ -98,7 +120,44 @@ Give an example
 
 ## Deployment
 
-Add additional notes about how to deploy this on a live system
+### :whale: Docker
+The easiest way to build and deploy the Secure Epilinker is via Docker.
+There are two flavors, both being multi-stage Docker builds:
+
+* `Dockerfile.ubuntu`: Build and runtime image are the latest rolling Ubuntu
+  release. This is good for debugging the runtime image as you have access to
+  the basic tools included in `ubuntu:rolling`
+
+* `Dockerfile.distroless`: uses gcr.io/distroless/cc as the base image for
+  minimal size and exposure to security threats. It doesn't contain any binaries
+  besides `sel`, so in particular not even `/bin/sh`. Note that currently the
+  `cc:debug` flavor is used as the runtime image for debugging purposes. Remove
+  the `:debug` tag in the Dockerfile if building for production.
+
+To build the Docker container, clone the repo and its submodules as described
+above and run the Docker build:
+
+```
+git clone git@git.compbiol.bio.tu-darmstadt.de:kussel/secure_epilink.git
+cd secure_epilink
+scripts/init_submodules.sh
+docker build -t sel:ubuntu -f Dockerfile.ubuntu .
+```
+
+When running the image, you need to forward the appropriate ports and configure
+the network to allow the image communication access to the local Mainzelliste
+and remote Secure Epilinker. Ignoring the network setup, run something similar
+to:
+
+```
+docker run -p 8161:8161 -p 1337-1344:1337-1344 sel:ubuntu -vv -s
+```
+
+This would expose `sel` on its default port on the Docker host and enable
+debug output logging and https.
+
+Logs will be printed to standard output as well as be written to the `/log`
+directory inside the Docker container.
 
 ## REST interface
 
