@@ -32,7 +32,6 @@ later version. This program is distributed in the hope that it will be useful,
 #include "apikeyconfig.hpp"
 #include "authenticationconfig.hpp"
 #include "remoteconfiguration.h"
-#include "secure_epilinker.h"
 #include "util.h"
 #include "logger.h"
 #include <optional>

@@ -3,9 +3,9 @@
 #include "databasefetcher.h"
 #include "localconfiguration.h"
 #include "remoteconfiguration.h"
+#include "clear_epilinker.h"
 #include <memory>
 #include <mutex>
-#include "clear_epilinker.h"
 
 using namespace std;
 namespace sel {

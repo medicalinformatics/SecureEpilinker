@@ -103,6 +103,7 @@ set(SELABYHEADER
 
 set(SELHEADER ${SELABYHEADER}
   "include/epilink_input.h"
+  "include/epilink_result.hpp"
   "include/circuit_config.h"
   "include/secure_epilinker.h"
   "include/clear_epilinker.h"

@@ -56,7 +56,7 @@ RemoteId LocalServer::get_id() const {
   return m_remote_id;
 }
 
-SecureEpilinker::Result LocalServer::run_server() {
+Result<CircUnit> LocalServer::run_server() {
   auto logger{get_default_logger()};
   logger->info("The Server is running and performing it's computations");
   const size_t nvals{m_data->data.begin()->second.size()};
@@ -73,7 +73,7 @@ SecureEpilinker::Result LocalServer::run_server() {
   return server_result;
   }
 
-SecureEpilinker::Result LocalServer::launch_comparison(
+Result<CircUnit> LocalServer::launch_comparison(
     shared_ptr<const ServerData> data) {
   m_data = move(data);
   return run_server();

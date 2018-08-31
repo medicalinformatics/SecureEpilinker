@@ -21,6 +21,7 @@
 
 #include "resttypes.h"
 #include "linkagejob.h"
+#include "circuit_config.h"
 #include <memory>
 #include <mutex>
 

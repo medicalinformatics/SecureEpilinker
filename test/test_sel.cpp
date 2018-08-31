@@ -19,8 +19,6 @@ namespace fs = std::filesystem;
 
 namespace sel::test {
 
-using Result = SecureEpilinker::Result;
-
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
 constexpr double Threshold = 0.9;
@@ -84,7 +82,7 @@ bool run_both{false};
 e_role role;
 
 #ifdef DEBUG_SEL_CIRCUIT
-Result run(SecureEpilinker& linker,
+auto run(SecureEpilinker& linker,
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
   print("Calling run_as_{}()\n", run_both ? "both" : ((role==CLIENT) ? "client" : "server"));
   if (!run_both) {
@@ -311,9 +309,9 @@ void run_and_print_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
   linker.run_setup_phase();
 
 #ifdef DEBUG_SEL_CIRCUIT
-  Result res = run(linker, in.client, in.server);
+  const auto res = run(linker, in.client, in.server);
 #else
-  Result res = (role == CLIENT) ?
+  const auto res = (role == CLIENT) ?
     linker.run_as_client(in.client) : linker.run_as_server(in.server);
 #endif
   linker.reset();

@@ -42,8 +42,8 @@ class LocalServer {
               SecureEpilinker::ABYConfig,
               CircuitConfig);
   RemoteId get_id() const;
-  SecureEpilinker::Result run_server();
-  SecureEpilinker::Result launch_comparison(std::shared_ptr<const ServerData>);
+  Result<CircUnit> run_server();
+  Result<CircUnit> launch_comparison(std::shared_ptr<const ServerData>);
   Port get_port() const;
   std::string get_ip() const;
   SecureEpilinker& get_epilinker();
