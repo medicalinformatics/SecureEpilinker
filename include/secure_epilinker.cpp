@@ -36,6 +36,7 @@ namespace sel {
 
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
+using FieldNamePair = pair<FieldName, FieldName>;
 
 // hammingweight over vectors
 vector<CircUnit> hw(const vector<Bitmask>& v_bm) {
@@ -118,6 +119,10 @@ public:
   * client and server have been created.
   */
   ResultShares build_circuit() {
+    if (!is_input_set) {
+      throw new runtime_error("Set the input first before building and running the ciruit!");
+    }
+
     // Where we store all group and individual comparison weights as ariths
     vector<FieldWeight> field_weights;
 
@@ -192,6 +197,12 @@ public:
     return {out_shared(max_idx[0]), out_shared(match), out_shared(tmatch)};
 #endif // SEL_MATCHING_MODE
 #endif // DEBUG_SEL_RESULT
+  }
+
+  void reset() {
+    ins.clear();
+    is_input_set = false;
+    field_weight_cache.clear();
   }
 
 private:
@@ -429,6 +440,12 @@ private:
   }
 
   /**
+   * Cache to store calls to field_weight()
+   * Can save half the circuit in permutation groups this way.
+   */
+  map<FieldNamePair, FieldWeight> field_weight_cache;
+
+  /**
    * Calculates the field weight and addend to the total weight.
    * - Set rescaled weight as arithmetic constant
    * - Set weight to 0 if any field on either side is empty
@@ -438,7 +455,14 @@ private:
    * - Multiply result of comparison with weight -> field weight
    * - Return field weight and weight
    */
-  FieldWeight field_weight(const FieldName& ileft, const FieldName& iright) {
+  const FieldWeight& field_weight(const FieldName& ileft, const FieldName& iright) {
+    // Probe cache
+    const FieldNamePair ipair = {ileft, iright};
+    const auto& cache_hit = field_weight_cache.find(ipair);
+    if (cache_hit != field_weight_cache.cend()) {
+      get_default_logger()->debug("field_weight cache hit for <{},{}>", ileft, iright);
+      return cache_hit->second;
+    }
 
     // 1. Calculate weight * delta(i,j)
     const CircUnit weight_r = cfg.rescaled_weight(ileft, iright);
@@ -477,7 +501,8 @@ private:
     print_share(field_weight, format("^^^^ field weight({},{},{}) ^^^^", ftype, ileft, iright));
 #endif
 
-    return {field_weight, weight};
+    FieldWeight ret = {field_weight, weight};
+    return field_weight_cache[move(ipair)] = move(ret);
   }
 
   /**
@@ -621,6 +646,7 @@ Result<CircUnit> SecureEpilinker::run_circuit() {
 }
 
 void SecureEpilinker::reset() {
+  selc->reset();
   party.Reset();
   is_setup = false;
 }
