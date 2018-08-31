@@ -54,10 +54,10 @@ RUN mkdir /deps; \
 WORKDIR /app/data
 RUN ../scripts/genkeys.sh .
 
-# copy everything into minimal image
 #FROM runtime
 FROM gcr.io/distroless/cc:debug
 
+WORKDIR /log
 WORKDIR /app
 COPY --from=build /app/build/sel /app/sel
 COPY --from=build /deps /deps
@@ -67,7 +67,6 @@ COPY --from=build /app/data /data
 COPY data/*.json /data/
 # copy config and circuit files
 COPY extern/ABY/bin/circ/int_div_16.aby /app/circ/
-RUN mkdir /log && chown sel:sel /log
 
 # find libraries in the correct order
 ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/:/deps/
