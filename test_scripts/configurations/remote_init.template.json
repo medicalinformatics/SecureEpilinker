@@ -1,6 +1,6 @@
 {
 "connectionProfile": {
-  "url": "https://localhost:8161",
+  "url": "https://{{host}}:{{port}}",
   "authentication": {
     "authType": "apiKey",
     "sharedKey": "xkcd123"
