@@ -39,7 +39,8 @@ LocalServer::LocalServer(RemoteId remote_id,
       m_client_ip(move(client_ip)),
       m_client_port(client_port),
       m_aby_server(
-          {SERVER, ConfigurationHandler::cget().get_server_config().boolean_sharing,
+          {SERVER,
+           static_cast<e_sharing>(ConfigurationHandler::cget().get_server_config().boolean_sharing),
            m_client_ip, m_client_port,
            ConfigurationHandler::cget().get_server_config().aby_threads},
           make_circuit_config(ConfigurationHandler::cget().get_local_config(), ConfigurationHandler::cget().get_remote_config(remote_id))) {}

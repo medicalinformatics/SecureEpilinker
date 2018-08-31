@@ -24,10 +24,11 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <set>
 
 #include <filesystem>
-#include "secure_epilinker.h"
-namespace sel{
+
+namespace sel {
 
 // Forward Declarations
 class AuthenticationConfig;
@@ -40,6 +41,7 @@ using Port = uint16_t;
 enum class AlgorithmType { EPILINK };
 enum class AuthenticationType { NONE, API_KEY };
 enum class JobStatus { QUEUED, RUNNING, HOLD, FAULT, DONE };
+enum class BooleanSharing { GMW = 0, YAO = 1 }; // mirror ABY's e_sharing
 
 AlgorithmType str_to_atype(const std::string& str);
 AuthenticationType str_to_authtype(const std::string& str);
@@ -70,9 +72,10 @@ struct ServerConfig {
   size_t rest_worker;
   size_t default_page_size;
   uint32_t aby_threads;
-  e_sharing boolean_sharing;
+  BooleanSharing boolean_sharing;
   std::set<Port> avaliable_aby_ports;
 };
 
 } // namespace sel
+
 #endif /* end of include guard: SEL_RESTTYPES_HPP */
