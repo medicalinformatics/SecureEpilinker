@@ -20,8 +20,8 @@
 #define SEL_CLEAR_EPILINKER_H
 #pragma once
 
-#include "fmt/format.h"
 #include "circuit_config.h"
+#include "epilink_result.hpp"
 
 namespace sel::clear_epilink {
 
@@ -38,17 +38,6 @@ struct Input {
   Input(const std::map<FieldName, FieldEntry>& record,
       const std::map<FieldName, VFieldEntry>& database);
 };
-
-// Result type
-template<typename T>
-struct Result {
-  T index;
-  bool match;
-  bool tmatch;
-  T sum_field_weights;
-  T sum_weights;
-};
-
 
 /**
  * Implementation of the EpiLink algorithm on clear values
@@ -71,30 +60,6 @@ Result<double> calc_exact(const Input& input, const CircuitConfig& cfg);
 template<typename T> Result<T> calc(const Input& input, const CircuitConfig& cfg);
 
 } /* end of namespace sel::clear_epilink */
-
-// Custom fmt formatters
-namespace fmt {
-template <typename T>
-struct formatter<sel::clear_epilink::Result<T>> {
-  template <typename ParseContext>
-  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
-
-  template <typename FormatContext>
-  auto format(const sel::clear_epilink::Result<T>& r, FormatContext &ctx) {
-    std::string type_spec;
-    if constexpr (std::is_integral_v<T>) type_spec = ":x";
-    return format_to(ctx.begin(),
-        "best index: {}; match(/tent.)? {}/{}\n"
-        "sum(field-weights): {" + type_spec + "}; "
-        "sum(weights): {" + type_spec + "}; score: {}\n"
-        , (uint64_t)r.index, r.match, r.tmatch
-        , r.sum_field_weights, r.sum_weights,
-        (((double)r.sum_field_weights)/r.sum_weights)
-        );
-  }
-};
-
-} // namespace fmt
 
 #endif /* end of include guard: SEL_CLEAR_EPILINKER_H */
 

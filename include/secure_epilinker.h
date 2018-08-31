@@ -22,11 +22,13 @@
 
 #include "fmt/format.h"
 #include "epilink_input.h"
+#include "epilink_result.hpp"
 #include "circuit_config.h"
 #include "abycore/aby/abyparty.h"
 
 class BooleanCircuit;
 class ArithmeticCircuit;
+
 
 namespace sel {
 
@@ -38,22 +40,6 @@ public:
     std::string remote_host;
     uint16_t port;
     uint32_t nthreads;
-  };
-
-  /**
-   * Result of the secure epilink protocol as returend by run_as_*()
-   * Fields hold XOR shares to be assembled by the LinkageService
-   *
-   * If DEBUG_SEL_RESULT is set, fields hold plain text values and the numerator
-   * and denominator of the score.
-   */
-  struct Result {
-    CircUnit index; // XOR share of matching index
-    bool match; // XOR share of match bit
-    bool tmatch; // XOR share of tentative match bit
-#ifdef DEBUG_SEL_RESULT
-    CircUnit sum_field_weights, sum_weights;
-#endif
   };
 
   SecureEpilinker(ABYConfig aby_config, CircuitConfig circuit_config);
@@ -84,18 +70,18 @@ public:
    * database size must match on both sides and be smaller than used nvals
    * during build_circuit()
    */
-  Result run_as_client(const EpilinkClientInput& input);
-  Result run_as_server(const EpilinkServerInput& input);
+  Result<CircUnit> run_as_client(const EpilinkClientInput& input);
+  Result<CircUnit> run_as_server(const EpilinkServerInput& input);
 #ifdef DEBUG_SEL_CIRCUIT
-  Result run_as_both(const EpilinkClientInput& in_client,
+  Result<CircUnit> run_as_both(const EpilinkClientInput& in_client,
       const EpilinkServerInput& in_server);
 #endif
 
   /**
    * Shortcut for run_as_*() depending on input
    */
-  Result run(const EpilinkClientInput& input) { return run_as_client(input); }
-  Result run(const EpilinkServerInput& input) { return run_as_server(input); }
+  Result<CircUnit> run(const EpilinkClientInput& input) { return run_as_client(input); }
+  Result<CircUnit> run(const EpilinkServerInput& input) { return run_as_server(input); }
 
   /**
    * Resets the ABY Party and states.
@@ -116,33 +102,12 @@ private:
   bool is_setup{false};
 
   // called by run_as_*() after inputs are set
-  Result run_circuit();
+  Result<CircUnit> run_circuit();
 };
 
 } // namespace sel
 
-// Custom fmt formatters for our types
 namespace fmt {
-template <>
-struct formatter<sel::SecureEpilinker::Result> {
-  template <typename ParseContext>
-  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
-
-  template <typename FormatContext>
-  auto format(const sel::SecureEpilinker::Result& r, FormatContext &ctx) {
-    return format_to(ctx.begin(),
-        "best index: {}; match(/tent.)? {}/{}\n"
-#ifdef DEBUG_SEL_RESULT
-        "sum(field-weights): {:x}; sum(weights): {:x}; score: {}\n"
-#endif
-        , r.index, r.match, r.tmatch
-#ifdef DEBUG_SEL_RESULT
-        , r.sum_field_weights, r.sum_weights,
-        (((double)r.sum_field_weights)/r.sum_weights)
-#endif
-        );
-  }
-};
 
 template <>
 struct formatter<sel::SecureEpilinker::ABYConfig> {
@@ -160,4 +125,5 @@ struct formatter<sel::SecureEpilinker::ABYConfig> {
 };
 
 } // namespace fmt
+
 #endif /* end of include guard: SEL_SECURE_EPILINKER_H */

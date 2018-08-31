@@ -1,6 +1,7 @@
 #include "restutils.h"
 #include "apikeyconfig.hpp"
 #include "epilink_input.h"
+#include "epilink_result.hpp"
 #include "seltypes.h"
 #include "util.h"
 #include "logger.h"
@@ -95,7 +96,11 @@ SessionResponse perform_get_request(string url, list<string> headers, bool get_h
   auto stream = response_stream.get();
   return {static_cast<int>(responsecode), stream.str(),{}};
 }
-SessionResponse send_result_to_linkageservice(const SecureEpilinker::Result& share, optional<vector<string>> ids, const string& role, const shared_ptr<const LocalConfiguration>& local_config,const shared_ptr<const RemoteConfiguration>& remote_config){
+
+SessionResponse send_result_to_linkageservice(const Result<CircUnit>& share,
+    optional<vector<string>> ids, const string& role,
+    const shared_ptr<const LocalConfiguration>& local_config,
+    const shared_ptr<const RemoteConfiguration>& remote_config) {
   auto logger{get_default_logger()};
   nlohmann::json json_data;
   json_data["role"] = role;

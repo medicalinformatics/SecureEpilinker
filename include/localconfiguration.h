@@ -24,14 +24,12 @@
 #include "seltypes.h"
 #include "resttypes.h"
 #include <chrono>
-#include "localserver.h"
 #include <map>
 #include <memory>
 #include <string>
 
 #include "authenticationconfig.hpp"
 #include "epilink_input.h"
-#include "secure_epilinker.h"
 #include "nlohmann/json.hpp"
 
 namespace sel {

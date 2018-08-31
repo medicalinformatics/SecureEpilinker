@@ -561,7 +561,7 @@ void SecureEpilinker::run_setup_phase() {
   is_setup = true;
 }
 
-SecureEpilinker::Result SecureEpilinker::run_as_client(
+Result<CircUnit> SecureEpilinker::run_as_client(
     const EpilinkClientInput& input) {
   if (!is_setup) {
     get_default_logger()->warn(
@@ -572,7 +572,7 @@ SecureEpilinker::Result SecureEpilinker::run_as_client(
   return run_circuit();
 }
 
-SecureEpilinker::Result SecureEpilinker::run_as_server(
+Result<CircUnit> SecureEpilinker::run_as_server(
     const EpilinkServerInput& input) {
   if (!is_setup) {
     get_default_logger()->warn(
@@ -584,7 +584,7 @@ SecureEpilinker::Result SecureEpilinker::run_as_server(
 }
 
 #ifdef DEBUG_SEL_CIRCUIT
-SecureEpilinker::Result SecureEpilinker::run_as_both(
+Result<CircUnit> SecureEpilinker::run_as_both(
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
   if (!is_setup) {
     get_default_logger()->warn(
@@ -596,22 +596,27 @@ SecureEpilinker::Result SecureEpilinker::run_as_both(
 }
 #endif
 
-SecureEpilinker::Result SecureEpilinker::run_circuit() {
+Result<CircUnit> SecureEpilinker::run_circuit() {
   SELCircuit::ResultShares res = selc->build_circuit();
   party.ExecCircuit();
 
   is_setup = false; // need to run new setup phase
 
+#ifdef DEBUG_SEL_RESULT
+    const auto sum_field_weights = res.score_numerator.get_clear_value<CircUnit>();
+    // shift by dice-precision to account for precision of threshold, i.e.,
+    // get denominator and numerator to same scale
+    const auto sum_weights = res.score_denominator.get_clear_value<CircUnit>() << cfg.dice_prec;
+#else
+    const CircUnit sum_field_weights = 0;
+    const CircUnit sum_weights = 0;
+#endif
+
   return {
     res.index.get_clear_value<CircUnit>(),
     res.match.get_clear_value<bool>(),
-    res.tmatch.get_clear_value<bool>()
-#ifdef DEBUG_SEL_RESULT
-    ,res.score_numerator.get_clear_value<CircUnit>()
-    // shift by dice-precision to account for precision of threshold, i.e.,
-    // get denominator and numerator to same scale
-    ,(res.score_denominator.get_clear_value<CircUnit>() << cfg.dice_prec)
-#endif
+    res.tmatch.get_clear_value<bool>(),
+    sum_field_weights, sum_weights
   };
 }
 

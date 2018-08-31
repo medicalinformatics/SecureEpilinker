@@ -26,10 +26,15 @@
 #include <mutex>
 #include <string>
 #include <vector>
-#include "secure_epilinker.h"
-#include "clear_epilinker.h"
+
+#ifdef DEBUG_SEL_REST
+#include "epilink_input.h"
+#include "epilink_result.hpp"
+#include "circuit_config.h"
+#endif
 
 namespace sel {
+
 class ConfigurationHandler;
 class DatabaseFetcher;
 
@@ -40,13 +45,14 @@ struct ServerData {
   RemoteId local_id;
   RemoteId remote_id;
 };
+
 #ifdef DEBUG_SEL_REST
 struct Debugger{
   std::shared_ptr<sel::EpilinkClientInput> client_input;
   std::shared_ptr<sel::EpilinkServerInput> server_input;
   std::shared_ptr<sel::CircuitConfig> circuit_config;
-  clear_epilink::Result<CircUnit> int_result;
-  clear_epilink::Result<double> double_result;
+  Result<CircUnit> int_result;
+  Result<double> double_result;
   bool run{false};
   bool all_values_set() const;
   void compute_int();
@@ -54,6 +60,7 @@ struct Debugger{
   void reset();
 };
 #endif
+
 class DataHandler {
   DataHandler() = default;
  public:
