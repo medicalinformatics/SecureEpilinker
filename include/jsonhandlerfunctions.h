@@ -21,17 +21,11 @@
 #pragma once
 
 #include <memory>
-#include "authenticationconfig.hpp"
-#include "connectionhandler.h"
 #include "nlohmann/json.hpp"
-#include "seltypes.h"
 #include "resttypes.h"
 #include "valijson/validation_results.hpp"
 
 namespace sel {
-ServerConfig make_server_config_from_json(nlohmann::json);
-
-std::unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json&);
 
 SessionResponse valid_test_config_json_handler(
     const nlohmann::json& j,

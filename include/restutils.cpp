@@ -1,6 +1,4 @@
 #include "restutils.h"
-#include <tuple>
-#include <map>
 #include "apikeyconfig.hpp"
 #include "epilink_input.h"
 #include "seltypes.h"
@@ -12,12 +10,48 @@
 #include <curlpp/Infos.hpp>
 #include <curlpp/Options.hpp>
 #include <curlpp/cURLpp.hpp>
+#include <tuple>
+#include <map>
 #include <iostream>
 #include <sstream>
 #include <future>
 
 using namespace std;
 namespace sel {
+
+ServerConfig parse_json_server_config(const nlohmann::json& json) {
+  BooleanSharing boolean_sharing;
+  (json.at("booleanSharing").get<string>() == "yao") ? boolean_sharing = BooleanSharing::YAO
+                                                     : boolean_sharing = BooleanSharing::GMW;
+  std::set<Port> aby_ports;
+  for (auto p : json.at("abyPorts")) {
+    aby_ports.emplace(p.get<Port>());
+  }
+  return {json.at("localInitSchemaPath").get<std::string>(),
+          json.at("remoteInitSchemaPath").get<std::string>(),
+          json.at("linkRecordSchemaPath").get<std::string>(),
+          json.at("serverKeyPath").get<std::string>(),
+          json.at("serverCertificatePath").get<std::string>(),
+          json.at("serverDHPath").get<std::string>(),
+          json.at("logFilePath").get<std::string>(),
+          json.at("useSSL").get<bool>(),
+          json.at("port").get<Port>(),
+          json.at("bindAddress").get<string>(),
+          json.at("restWorkerThreads").get<size_t>(),
+          json.at("defaultPageSize").get<size_t>(),
+          json.at("abyThreads").get<uint32_t>(),
+          boolean_sharing,
+          aby_ports};
+}
+
+unique_ptr<AuthenticationConfig> parse_json_auth_config(const nlohmann::json& j) {
+  auto l_auth_type{str_to_authtype(j["authType"].get<string>())};
+  if (l_auth_type == AuthenticationType::API_KEY) {
+    return AuthenticationConfig::create_authentication<APIKeyConfig>(
+        l_auth_type, j["sharedKey"].get<string>());
+  }
+  return make_unique<AuthenticationConfig>(AuthenticationType::NONE);
+}
 
 SessionResponse perform_post_request(string url, string data, list<string> headers, bool get_headers){
   auto logger{get_default_logger()};
@@ -110,4 +144,12 @@ string assemble_remote_url(RemoteConfiguration const *remote_config) {
 string assemble_remote_url(const shared_ptr<const RemoteConfiguration>& remote_config) {
   return assemble_remote_url(remote_config.get());
 }
+
+void send_curl(curlpp::Easy& request, std::promise<std::stringstream> barrier){
+  std::stringstream response;
+  request.setOpt(new curlpp::Options::WriteStream(&response));
+  request.perform();
+  barrier.set_value(move(response));
+}
+
 }  // namespace sel

@@ -85,10 +85,4 @@ void from_json(const nlohmann::json& j, AlgorithmConfig& c) {
   c.threshold_non_match = j.at("threshold_non_match").get<double>();
 }
 
-void send_curl(curlpp::Easy& request, std::promise<std::stringstream> barrier){
-  std::stringstream response;
-  request.setOpt(new curlpp::Options::WriteStream(&response));
-  request.perform();
-  barrier.set_value(move(response));
-}
 } //namespace sel
