@@ -16,26 +16,25 @@ later version. This program is distributed in the hope that it will be useful,
 */
 
 #include "linkagejob.h"
+#include "util.h"
+#include "logger.h"
+#include "seltypes.h"
+#include "resttypes.h"
+#include "restutils.h"
+#include "localconfiguration.h"
+#include "serverhandler.h"
+#include "epilink_input.h"
+#include "secure_epilinker.h"
+#include "apikeyconfig.hpp"
+#include "authenticationconfig.hpp"
+#include "remoteconfiguration.h"
+#include "fmt/format.h"
 #include <exception>
 #include <map>
 #include <string>
 #include <variant>
 #include <vector>
-#include "fmt/format.h"
-#include "localconfiguration.h"
-#include "seltypes.h"
-#include "resttypes.h"
-#include "restutils.h"
-#include "serverhandler.h"
-
-#include "epilink_input.h"
-#include "apikeyconfig.hpp"
-#include "authenticationconfig.hpp"
-#include "remoteconfiguration.h"
-#include "util.h"
-#include "logger.h"
 #include <optional>
-
 #include <future>
 
 using namespace std;
