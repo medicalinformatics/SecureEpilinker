@@ -25,8 +25,6 @@
 #include <memory>
 #include <string>
 
-#include <nlohmann/json.hpp>
-
 #include <filesystem>
 #include "secure_epilinker.h"
 namespace sel{
@@ -52,12 +50,6 @@ struct ConnectionConfig {
   std::unique_ptr<AuthenticationConfig> authentication;
 };
 
-struct AlgorithmConfig {
-  AlgorithmType type;
-  double threshold_match;
-  double threshold_non_match;
-};
-
 struct SessionResponse {
   int return_code;
   std::string body;
@@ -81,9 +73,6 @@ struct ServerConfig {
   e_sharing boolean_sharing;
   std::set<Port> avaliable_aby_ports;
 };
-
-void to_json(nlohmann::json& j, const AlgorithmConfig& c);
-void from_json(const nlohmann::json& j, AlgorithmConfig& c);
 
 } // namespace sel
 #endif /* end of include guard: SEL_RESTTYPES_HPP */
