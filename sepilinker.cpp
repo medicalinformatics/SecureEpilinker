@@ -119,8 +119,8 @@ int main(int argc, char* argv[]) {
   auto& connections = sel::ConnectionHandler::get();
   connections.set_service(&service);
   auto& configurations = sel::ConfigurationHandler::get();
-  auto& data = sel::DataHandler::get();
-  auto& servers = sel::ServerHandler::get();
+  sel::DataHandler::get(); // instantiate singletons
+  sel::ServerHandler::get(); // instantiate singletons
 
   configurations.set_server_config(parse_json_server_config(server_config));
   connections.populate_aby_ports();
