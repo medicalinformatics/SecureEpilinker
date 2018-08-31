@@ -25,9 +25,6 @@
 #include <memory>
 #include <string>
 
-#include <future>
-#include <sstream>
-#include <curlpp/Easy.hpp>
 #include <nlohmann/json.hpp>
 
 #include <filesystem>
@@ -87,8 +84,6 @@ struct ServerConfig {
 
 void to_json(nlohmann::json& j, const AlgorithmConfig& c);
 void from_json(const nlohmann::json& j, AlgorithmConfig& c);
-
-void send_curl(curlpp::Easy& request, std::promise<std::stringstream> barrier);
 
 } // namespace sel
 #endif /* end of include guard: SEL_RESTTYPES_HPP */

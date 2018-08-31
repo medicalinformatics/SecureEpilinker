@@ -19,13 +19,24 @@
 #ifndef SEL_RESTUTILS_H
 #define SEL_RESTUTILS_H
 
-#include "localconfiguration.h"
-#include "remoteconfiguration.h"
+#include "resttypes.h"
 #include <memory>
 #include <optional>
 
+#include <future>
+#include <sstream>
 
-namespace sel{
+#include <nlohmann/json.hpp>
+#include <curlpp/Easy.hpp>
+
+namespace sel {
+
+class RemoteConfiguration;
+class LocalConfiguration;
+
+ServerConfig parse_json_server_config(const nlohmann::json&);
+std::unique_ptr<AuthenticationConfig> parse_json_auth_config(const nlohmann::json&);
+
 std::string assemble_remote_url(const std::shared_ptr<const RemoteConfiguration>&);
 std::string assemble_remote_url(RemoteConfiguration const * );
 SessionResponse perform_post_request(std::string, std::string, std::list<std::string>, bool);
@@ -33,5 +44,8 @@ SessionResponse perform_get_request(std::string, std::list<std::string>, bool);
 SessionResponse send_result_to_linkageservice(const SecureEpilinker::Result&, std::optional<std::vector<std::string> >,const std::string&,const std::shared_ptr<const LocalConfiguration>&,const std::shared_ptr<const RemoteConfiguration>&);
 std::vector<std::string> get_headers(std::istream& is,const std::string& header);
 std::vector<std::string> get_headers(const std::string&,const std::string& header);
+
+void send_curl(curlpp::Easy& request, std::promise<std::stringstream> barrier);
+
 } // namespace sel
 #endif /* end of include guard: SEL_RESTUTILS_H */

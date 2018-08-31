@@ -34,6 +34,7 @@
 #include "configurationhandler.h"
 #include "restbed"
 #include "resttypes.h"
+#include "restutils.h"
 #include "jsonutils.h"
 #include "restresponses.hpp"
 #include "serverhandler.h"
@@ -42,40 +43,6 @@
 
 using namespace std;
 namespace sel {
-ServerConfig make_server_config_from_json(nlohmann::json json) {
-  e_sharing boolean_sharing;
-  (json.at("booleanSharing").get<string>() == "yao") ? boolean_sharing = S_YAO
-                                                     : boolean_sharing = S_BOOL;
-  std::set<Port> aby_ports;
-  for (auto p : json.at("abyPorts")) {
-    aby_ports.emplace(p.get<Port>());
-  }
-  return {json.at("localInitSchemaPath").get<std::string>(),
-          json.at("remoteInitSchemaPath").get<std::string>(),
-          json.at("linkRecordSchemaPath").get<std::string>(),
-          json.at("serverKeyPath").get<std::string>(),
-          json.at("serverCertificatePath").get<std::string>(),
-          json.at("serverDHPath").get<std::string>(),
-          json.at("logFilePath").get<std::string>(),
-          json.at("useSSL").get<bool>(),
-          json.at("port").get<Port>(),
-          json.at("bindAddress").get<string>(),
-          json.at("restWorkerThreads").get<size_t>(),
-          json.at("defaultPageSize").get<size_t>(),
-          json.at("abyThreads").get<uint32_t>(),
-          boolean_sharing,
-          aby_ports};
-}
-
-
-unique_ptr<AuthenticationConfig> get_auth_object(const nlohmann::json& j) {
-  auto l_auth_type{str_to_authtype(j["authType"].get<string>())};
-  if (l_auth_type == AuthenticationType::API_KEY) {
-    return AuthenticationConfig::create_authentication<APIKeyConfig>(
-        l_auth_type, j["sharedKey"].get<string>());
-  }
-  return make_unique<AuthenticationConfig>(AuthenticationType::NONE);
-}
 
 SessionResponse valid_test_config_json_handler(
     const nlohmann::json& client_config,
@@ -171,7 +138,7 @@ SessionResponse valid_init_remote_json_handler(
     // Get Connection Profile
     con.url = j.at("connectionProfile").at("url").get<string>();
     con.authentication =
-        get_auth_object(j.at("connectionProfile").at("authentication"));
+        parse_json_auth_config(j.at("connectionProfile").at("authentication"));
     remote_config->set_connection_profile(move(con));
     bool matching_mode;
     if (!j.count("matchingAllowed")) {
@@ -193,7 +160,7 @@ SessionResponse valid_init_remote_json_handler(
     if (!matching_mode) {
       linkage_service.url = j.at("linkageService").at("url").get<string>();
       linkage_service.authentication =
-          get_auth_object(j.at("linkageService").at("authentication"));
+          parse_json_auth_config(j.at("linkageService").at("authentication"));
       remote_config->set_linkage_service(move(linkage_service));
     }
   } catch (const exception& e) {
@@ -218,7 +185,7 @@ SessionResponse valid_init_local_json_handler(
   logger->info("Creating local configuration\n");
   try {
     local_config->set_local_id(j.at("localId"));
-    auto l_auth = get_auth_object(j.at("localAuthentication"));
+    auto l_auth = parse_json_auth_config(j.at("localAuthentication"));
     local_config->set_local_auth(move(l_auth));
     auto url = j.at("dataService").at("url").get<string>();
     local_config->set_data_service(move(url));

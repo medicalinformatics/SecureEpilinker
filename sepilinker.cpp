@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
   auto& data = sel::DataHandler::get();
   auto& servers = sel::ServerHandler::get();
 
-  configurations.set_server_config(make_server_config_from_json(server_config));
+  configurations.set_server_config(parse_json_server_config(server_config));
   connections.populate_aby_ports();
 
   // Create JSON Validator
