@@ -22,15 +22,15 @@
 #include "configurationhandler.h"
 #include "localconfiguration.h"
 #include "remoteconfiguration.h"
+#include "localserver.h"
 #include "restutils.h"
 #include "secure_epilinker.h"
 #include "connectionhandler.h"
 #include "epilink_input.h"
 #include "seltypes.h"
 #include "resttypes.h"
-#include <tuple>
-#include "optional"
 #include "logger.h"
+#include <tuple>
 #include <mutex>
 #include <iterator>
 
@@ -62,7 +62,8 @@ void ServerHandler::insert_client(RemoteId id) {
   }
   auto aby_info{config_handler.get_server_config()};
   SecureEpilinker::ABYConfig aby_config{
-      CLIENT, aby_info.boolean_sharing, remote_config->get_remote_host(),
+      CLIENT, static_cast<e_sharing>(aby_info.boolean_sharing),
+      remote_config->get_remote_host(),
       remote_config->get_aby_port(), aby_info.aby_threads};
   m_logger->debug("Creating client on port {}, Remote host: {}", aby_config.port, aby_config.remote_host);
   m_aby_clients.emplace(id, make_shared<SecureEpilinker>(aby_config,circuit_config));
@@ -79,7 +80,8 @@ void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
   }
   auto aby_info{config_handler.get_server_config()};
   SecureEpilinker::ABYConfig aby_config{
-      SERVER, aby_info.boolean_sharing, move(remote_address.ip),
+      SERVER, static_cast<e_sharing>(aby_info.boolean_sharing),
+      move(remote_address.ip),
       remote_address.port, aby_info.aby_threads};
   m_logger->debug("Creating server on port {}, Remote host: {}\n", aby_config.port, aby_config.remote_host);
   m_server.emplace(id, make_shared<LocalServer>(id, aby_config, circuit_config));

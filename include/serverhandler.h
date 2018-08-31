@@ -22,17 +22,18 @@
 
 #include "seltypes.h"
 #include "resttypes.h"
-#include "secure_epilinker.h"
 #include "connectionhandler.h"
 #include <map>
 #include <memory>
 #include "logger.h"
 
 namespace sel {
+
 class LinkageJob;
 class LocalServer;
 class ConfigurationHandler;
 class DataHandler;
+class SecureEpilinker;
 
 class ServerHandler {
   protected:

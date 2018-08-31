@@ -32,12 +32,14 @@ using std::string;
 using std::runtime_error;
 
 namespace sel {
+
 AlgorithmType str_to_atype(const string& str) {
   if (str == "epilink")
     return AlgorithmType::EPILINK;
   assert(!"This should never be reached!");
   throw runtime_error("Invalid Algorithm Type");
 }
+
 AuthenticationType str_to_authtype(const string& str) {
   if (str == "apiKey")
     return AuthenticationType::API_KEY;
