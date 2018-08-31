@@ -1,11 +1,11 @@
 {
-"localId": "TUDA2",
+"localId": "{{id}}",
 "localAuthentication": {
   "authType": "apiKey",
   "sharedKey": "123abc"
 },
 "dataService": {
-  "url": "http://127.0.0.1:8800/Communicator/getAllRecords"
+  "url": "http://{{host}}:{{port}}/Communicator/getAllRecords"
 },
 "algorithm": {
   "algoType": "epilink",
@@ -68,6 +68,7 @@
     "comparator": "binary",
     "fieldType": "string",
     "bitlength": 40
+
     },
     {
     "name": "ort",
