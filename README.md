@@ -73,6 +73,18 @@ circuit description. E.g. for running from `build/`:
 ln -s ../extern/ABY/bin/circ/
 ```
 
+### Running
+
+The default server configuration logs to `../log`, so create that directory in the
+repository's top level folder if running from build. To start the Secure
+Epilinker with https enabled and debug log level, run
+
+```
+# current directory is build/
+mkdir ../log
+./sel -s -vv
+```
+
 To conclude all steps in one code block for convenience:
 
 ```
@@ -84,9 +96,10 @@ cd extern/restbed/dependency/openssl
 ./config && make
 cd ../../../..
 # END
-mkdir build; cd build
+mkdir {build,log}; cd build
 cmake .. && make -j $(nproc) sel
 ln -s ../extern/ABY/bin/circ/
+./sel -s -vv
 ```
 
 ### Keys and Certificates
