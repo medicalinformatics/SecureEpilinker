@@ -40,7 +40,7 @@ class Share {
   Share(Circuit* c, share* s) : circ{c}, sh{s} {};
   Share(Circuit* c, const share_p& sp) : circ{c}, sh{sp} {};
   Share(Circuit* c, const std::vector<uint32_t>& gates) :
-    Share{c, new boolshare(gates, static_cast<Circuit*>(c))} {};
+    Share{c, new boolshare(gates, c)} {};
   ~Share() = default;
   /*
    * Constructor to create new INGate from plain-text value
