@@ -21,6 +21,7 @@
 #pragma once
 
 #include "resttypes.h"
+#include "epilink_input.h"
 #include <map>
 #include <memory>
 #include <mutex>
@@ -28,7 +29,6 @@
 #include <vector>
 
 #ifdef DEBUG_SEL_REST
-#include "epilink_input.h"
 #include "epilink_result.hpp"
 #include "circuit_config.h"
 #endif

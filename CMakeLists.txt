@@ -22,7 +22,7 @@ set(${P}_EXTRA_WARNING_FLAGS
 add_compile_options("-fexceptions"
   "$<$<CONFIG:DEBUG>:-O0;-g3;-ggdb>"
   ${CMAKE_FLAGS_EXTRA})
-string(APPEND CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_EXTRA})
+list(APPEND CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_EXTRA})
 
 set(${P}_INSTALL_PREFIX "${${P}_BINARY_DIR}/prefix")
 set(${P}_DEFAULT_ARGS
@@ -91,8 +91,8 @@ set(${P}_MAIN_SOURCES
 
 # main target
 add_executable(sel sepilinker.cpp ${${P}_MAIN_SOURCES})
-add_dependencies(sel valijson_patch)
-target_link_libraries(sel OpenSSL::SSL Threads::Threads stdc++fs restbed-static dl)
+target_link_libraries(sel Threads::Threads stdc++fs restbed-static
+  OpenSSL::SSL OpenSSL::Crypto) # OpenSSL to fix broken restbed
 target_link_libraries_system(sel
   ABY::aby curlpp_static spdlog::spdlog
   fmt::fmt-header-only nlohmann_json cxxopts)
