@@ -525,8 +525,9 @@ BoolShare ascending_numbers_constant(BooleanCircuit* bcirc,
   // AND with constant
   vector<BoolShare> numbers;
   numbers.reserve(nvals);
-  for (size_t i = 0; i != nvals; ++i) {
-    numbers.emplace_back(constant(bcirc, i, ceil_log2_min1(nvals)));
+  size_t end = nvals + start;
+  for (size_t i = start; i != end; ++i) {
+    numbers.emplace_back(constant(bcirc, i, ceil_log2_min1(end)));
   }
   return vcombine_bool(numbers);
 }
