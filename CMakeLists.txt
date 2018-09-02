@@ -1,88 +1,55 @@
 cmake_minimum_required(VERSION 3.0)
 project(SecureEpiLinker)
+set(P ${PROJECT_NAME})
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 option(BUILD_SHARED_LIBS "Build libraries as SHARED" OFF)
-option(BUILD_ABY_EXE "Build executable tests for ABY" OFF)
-add_compile_options(${CMAKE_FLAGS_EXTRA})
-
-set(SecureEpiLinker_INSTALL_PREFIX "${SecureEpiLinker_BINARY_DIR}/prefix")
-set(SecureEpiLinker_DEFAULT_ARGS
-    "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
-    "-DCMAKE_PREFIX_PATH:PATH=${SecureEpiLinker_INSTALL_PREFIX};${CMAKE_PREFIX_PATH}"
-    "-DCMAKE_INSTALL_PREFIX:PATH=${SecureEpiLinker_INSTALL_PREFIX}"
+option(${P}_MATCHING_MODE "Build matching mode capable Secure Epilinker" ON)
+# inspired by https://kristerw.blogspot.com/2017/09/useful-gcc-warning-options-not-enabled.html
+set(${P}_EXTRA_WARNING_FLAGS
+  "-Wall" "-Wpedantic" "-Wextra"
+  "-Wduplicated-cond" "-Wduplicated-branches"
+  "-Wlogical-op" "-Wrestrict"
+  "-Wnull-dereference"
+  #"-Wold-style-cast"
+  "-Wuseless-cast"
+  "-Wdouble-promotion"
+  #"-Wshadow"
 )
-file(MAKE_DIRECTORY ${SecureEpiLinker_INSTALL_PREFIX})
 
-# build external dependencies
+# Custom compiler and linker flags
+add_compile_options("-fexceptions"
+  "$<$<CONFIG:DEBUG>:-O0;-g3;-ggdb>"
+  ${CMAKE_FLAGS_EXTRA})
+string(APPEND CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_EXTRA})
 
+set(${P}_INSTALL_PREFIX "${${P}_BINARY_DIR}/prefix")
+set(${P}_DEFAULT_ARGS
+  "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
+  "-DCMAKE_PREFIX_PATH:PATH=${${P}_INSTALL_PREFIX};${CMAKE_PREFIX_PATH}"
+  "-DCMAKE_INSTALL_PREFIX:PATH=${${P}_INSTALL_PREFIX}"
+)
+file(MAKE_DIRECTORY ${${P}_INSTALL_PREFIX})
+
+find_package(OpenSSL)
+find_package(Threads)
+
+# add and configure external dependencies
 add_subdirectory(extern)
 
-# build main application
-set(EPIRESTSRC
-      include/resourcehandler.cpp
-      include/validator.cpp
-      include/jsonmethodhandler.cpp
-      include/remoteconfiguration.cpp
-      include/localconfiguration.cpp
-      include/connectionhandler.cpp
-      include/configurationhandler.cpp
-      include/databasefetcher.cpp
-      include/datahandler.cpp
-      include/headermethodhandler.cpp
-      include/headerhandlerfunctions.cpp
-      include/jsonhandlerfunctions.cpp
-      include/resttypes.cpp
-      include/restutils.cpp
-      include/jsonutils.cpp
-      include/seltypes.cpp
-      include/serverhandler.cpp
-      include/linkagejob.cpp
-      include/localserver.cpp
-      include/logger.cpp
-      include/base64.cpp
-      include/monitormethodhandler.cpp
-    )
+include(target_link_libraries_system)
 
-set(EPIRESTHEAD
-      include/resourcehandler.h
-      include/validator.h
-      include/methodhandler.hpp
-      include/jsonmethodhandler.h
-      include/remoteconfiguration.h
-      include/localconfiguration.h
-      include/authenticationconfig.hpp
-      include/apikeyconfig.hpp
-      include/connectionhandler.h
-      include/configurationhandler.h
-      include/databasefetcher.h
-      include/datahandler.h
-      include/headermethodhandler.h
-      include/headerhandlerfunctions.h
-      include/jsonhandlerfunctions.h
-      include/resttypes.h
-      include/restresponses.hpp
-      include/restutils.h
-      include/jsonutils.h
-      include/seltypes.h
-      include/serverhandler.h
-      include/linkagejob.h
-      include/localserver.h
-      include/logger.h
-      include/base64.h
-      include/monitormethodhandler.h
-    )
-
-set(SELABYSOURCES
+set(${P}_ABY_SOURCES
   "include/math.cpp"
   "include/util.cpp"
   "include/aby/Share.cpp"
   "include/aby/gadgets.cpp"
   "include/aby/util.cpp"
-  )
+)
 
-set(SELSOURCES ${SELABYSOURCES}
+set(${P}_CIRCUIT_SOURCES
+  ${${P}_ABY_SOURCES}
   "include/epilink_input.cpp"
   "include/circuit_config.cpp"
   "include/secure_epilinker.cpp"
@@ -91,90 +58,88 @@ set(SELSOURCES ${SELABYSOURCES}
   "include/logger.cpp"
   "include/jsonutils.cpp"
   "include/base64.cpp"
-  )
+)
 
-set(SELABYHEADER
-  "include/math.h"
-  "include/util.h"
-  "include/aby/Share.h"
-  "include/aby/gadgets.h"
-  "include/aby/util.h"
-  )
+set(${P}_MAIN_SOURCES
+  ${${P}_CIRCUIT_SOURCES}
+  "include/resourcehandler.cpp"
+  "include/validator.cpp"
+  "include/jsonmethodhandler.cpp"
+  "include/remoteconfiguration.cpp"
+  "include/localconfiguration.cpp"
+  "include/connectionhandler.cpp"
+  "include/configurationhandler.cpp"
+  "include/databasefetcher.cpp"
+  "include/datahandler.cpp"
+  "include/headermethodhandler.cpp"
+  "include/headerhandlerfunctions.cpp"
+  "include/jsonhandlerfunctions.cpp"
+  "include/resttypes.cpp"
+  "include/restutils.cpp"
+  "include/jsonutils.cpp"
+  "include/seltypes.cpp"
+  "include/serverhandler.cpp"
+  "include/linkagejob.cpp"
+  "include/localserver.cpp"
+  "include/logger.cpp"
+  "include/base64.cpp"
+  "include/monitormethodhandler.cpp"
+ )
 
-set(SELHEADER ${SELABYHEADER}
-  "include/epilink_input.h"
-  "include/epilink_result.hpp"
-  "include/circuit_config.h"
-  "include/secure_epilinker.h"
-  "include/clear_epilinker.h"
-  "include/seltypes.h"
-  "include/logger.h"
-  "include/jsonutils.h"
-  "include/base64.h"
-  )
+# include externals as system libs to suppress warnings
+#include_directories(SYSTEM "${${P}_INSTALL_PREFIX}/include")
 
-add_executable (sel sepilinker.cpp ${EPIRESTSRC} ${EPIRESTHEAD} ${SELSOURCES} ${SELHEADER})
+# main target
+add_executable(sel sepilinker.cpp ${${P}_MAIN_SOURCES})
 add_dependencies(sel valijson_patch)
-
-find_package(OpenSSL)
-find_package(Threads)
-
-#include externals as system libs to suppress warnings
-include_directories(SYSTEM ${SecureEpiLinker_INSTALL_PREFIX}/include
+target_link_libraries(sel OpenSSL::SSL Threads::Threads stdc++fs restbed-static dl)
+target_link_libraries_system(sel
+  ABY::aby curlpp_static spdlog::spdlog
+  fmt::fmt-header-only nlohmann_json cxxopts)
+target_include_directories(sel SYSTEM PRIVATE
+  "extern/valijson/include"
   "extern/restbed/source")
-target_include_directories(sel PRIVATE extern/valijson/include)
-target_include_directories(sel PRIVATE extern/curlpp/include)
-target_include_directories(sel PRIVATE extern/spdlog/include)
-# Debug Version (sanitizers linked)
-set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_EXTRA})
-target_link_libraries(sel PRIVATE ABY::aby OpenSSL::SSL Threads::Threads 
-  stdc++fs curl curlpp_static restbed-static)
-# Release Version
-#target_link_libraries(sel PRIVATE ABY::aby OpenSSL::SSL Threads::Threads 
-  #stdc++fs ${PROJECT_BINARY_DIR}/extern/restbed/librestbed.a)
-target_link_libraries(sel PRIVATE fmt::fmt-header-only nlohmann_json
-  cxxopts)
-set_property(TARGET sel PROPERTY CXX_STANDARD 17)
-target_compile_options(sel PRIVATE "-Wall" "-Wpedantic" "-Wextra" "-fexceptions")
-#Debug Version
-target_compile_options(sel PRIVATE "-O0" "-ggdb" "-g3"
-  "-DSEL_MATCHING_MODE"
-  "-DDEBUG_SEL_RESULT"
-  "-DDEBUG_SEL_REST")
-#target_compile_options(sel PRIVATE "-O2" "-s" "-DNDEBUG"
-  #"-fsanitize-address-use-after-scope" "-fsanitize=undefined")
+target_compile_features(sel PUBLIC cxx_std_17)
+target_compile_options(sel PRIVATE ${${P}_EXTRA_WARNING_FLAGS})
+target_compile_definitions(sel PRIVATE
+  "$<$<BOOL:${P}_MATCHING_MODE>:SEL_MATCHING_MODE>"
+  "$<$<CONFIG:Debug>:DEBUG_SEL_RESULT>"
+  "$<$<CONFIG:Debug>:DEBUG_SEL_REST>"
+)
 
 # Test-Targets
-# Test ABY Stuff
-add_executable(test_aby test/test_aby.cpp ${SELABYSOURCES} ${SELABYHEADER})
-target_link_libraries(test_aby PRIVATE ABY::aby)
-target_link_libraries(test_aby PRIVATE fmt::fmt-header-only cxxopts)
-set_property(TARGET test_aby PROPERTY CXX_STANDARD 17)
-target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3"
-  "-DDEBUG_SEL_GADGETS")
-
 # Test Secure Epilinker
 add_executable(test_sel
   test/test_sel.cpp
-  test/random_input_generator.cpp test/random_input_generator.h
-  ${SELSOURCES} ${SELHEADER})
-target_include_directories(test_sel PRIVATE extern/spdlog/include)
-target_link_libraries(test_sel PRIVATE ABY::aby stdc++fs)
-target_link_libraries(test_sel PRIVATE fmt::fmt-header-only cxxopts nlohmann_json)
-set_property(TARGET test_sel PROPERTY CXX_STANDARD 17)
-target_compile_options(test_sel PRIVATE "-O0" "-ggdb" "-g3"
-  "-DDEBUG_SEL_INPUT"
-  #"-DDEBUG_SEL_CIRCUIT"
-  "-DDEBUG_SEL_RESULT"
-  #"-DDEBUG_SEL_CLEAR" # For intermediary value output in clear epilinker
-  #"-DDEBUG_SEL_GADGETS"
-  #"-DSEL_MATCHING_MODE" # Compile matching mode logic
-  )
+  test/random_input_generator.cpp
+  ${${P}_CIRCUIT_SOURCES})
+target_link_libraries(test_sel stdc++fs)
+target_link_libraries_system(test_sel ABY::aby
+  fmt::fmt-header-only cxxopts nlohmann_json spdlog::spdlog)
+target_compile_features(test_sel PUBLIC cxx_std_17)
+target_compile_options(test_sel PRIVATE ${${P}_EXTRA_WARNING_FLAGS})
+target_compile_definitions(test_sel PRIVATE
+  "$<$<BOOL:${P}_MATCHING_MODE>:SEL_MATCHING_MODE>"
+  "$<$<CONFIG:Debug>:DEBUG_SEL_INPUT>"
+  #"DEBUG_SEL_CIRCUIT"
+  "$<$<CONFIG:Debug>:DEBUG_SEL_RESULT>"
+  #"DEBUG_SEL_CLEAR" # For intermediary value output in clear epilinker
+  #"DEBUG_SEL_GADGETS"
+)
+
+# Test ABY Stuff
+add_executable(test_aby test/test_aby.cpp ${${P}_ABY_SOURCES})
+target_link_libraries_system(test_aby ABY::aby fmt::fmt-header-only cxxopts)
+target_compile_features(test_aby PUBLIC cxx_std_17)
+target_compile_options(test_aby PRIVATE ${${P}_EXTRA_WARNING_FLAGS})
+target_compile_definitions(test_aby PRIVATE
+  "$<$<CONFIG:Debug>:DEBUG_SEL_GADGETS>"
+)
 
 # Test utils
 add_executable(test_util test/test_util.cpp include/util.cpp include/util.h)
-target_link_libraries(test_util PRIVATE fmt::fmt-header-only)
-set_property(TARGET test_util PROPERTY CXX_STANDARD 17)
-target_compile_options(test_aby PRIVATE "-O0" "-ggdb" "-g3")
+target_link_libraries_system(test_util fmt::fmt-header-only)
+target_compile_features(test_util PUBLIC cxx_std_17)
+target_compile_options(test_util PRIVATE ${${P}_EXTRA_WARNING_FLAGS})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
