@@ -175,7 +175,7 @@ EpilinkInput input_exchange_grp(uint32_t nvals) {
   return {epi_cfg, in_client, in_server};
 }
 
-EpilinkInput input_empty(uint32_t nvals) {
+EpilinkInput input_empty() {
   // First test: only one bin field, single byte bitmask
   EpilinkConfig epi_cfg {
     {

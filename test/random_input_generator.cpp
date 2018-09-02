@@ -86,7 +86,7 @@ EpilinkInput RandomInputGenerator::generate(const size_t nvals) {
       -> VFieldEntry {
         VFieldEntry ve;
         ve.reserve(nvals);
-        for (auto i = 0; i < nvals; ++i) {
+        for (size_t i = 0; i < nvals; ++i) {
           if (random_empty(gen)) {
             ve.emplace_back(nullopt);
           } else if (f.comparator == FieldComparator::DICE) {

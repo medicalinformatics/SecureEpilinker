@@ -251,14 +251,17 @@ void split_select_target(BoolShare& selector, BoolShare& target,
 void split_select_quotient_target(
     ArithQuotient& selector, std::vector<BoolShare>& targets,
     const ArithQuotientSelector& op_select, const B2AConverter& to_arith) {
-  size_t nvals0 = selector.den.get_nvals(), ntargets = targets.size();
+  size_t ntargets = targets.size();
   ArithmeticCircuit* ac = selector.num.get_circuit();
   uint32_t bitlen = ac->GetShareBitLen();
+#ifndef NDEBUG
+  size_t nvals0 = selector.den.get_nvals();
   assert (selector.num.get_nvals() == nvals0);
   for (const auto& t : targets) assert(t.get_nvals() == nvals0);
 #ifdef DEBUG_SEL_GADGETS
   cout << "==== split-select-quotient-target shares of nvals: " << nvals0 << " ====\n";
   cout << "#targets:" << ntargets << "; bitlen: " << bitlen << "\n";
+#endif
 #endif
   ArithQuotient stack_selector;
   vector<BoolShare> stack_targets(targets.size());
@@ -304,7 +307,9 @@ void split_select_quotient_target(
       cout << "storing remainder stack\n";
 #endif
       assert (splits_num.size() == 3);
+#ifndef NDEBUG
       for (const auto& ts : tsplits) assert(ts.size() == 3);
+#endif
       assert (rem == 1);
       stack_selector.num = move(splits_num.back());
       stack_selector.den = move(splits_den.back());
@@ -499,6 +504,7 @@ ArithQuotient max(const vector<ArithQuotient>& qs,
 BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
     const A2BConverter& to_bool) {
   uint32_t nvals  = a.num.get_nvals();
+  __ignore(nvals);
   assert(a.den.get_nvals() == nvals);
   assert(b.num.get_nvals() == nvals);
   assert(b.den.get_nvals() == nvals);

@@ -111,6 +111,7 @@ Input::Input(const EpilinkClientInput& in_client,
 
 template<typename T> constexpr
 T scale(T val, size_t prec) {
+  __ignore(prec);
   if constexpr (is_integral_v<T>) val <<= prec;
   return val;
 }

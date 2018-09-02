@@ -135,7 +135,7 @@ std::vector<uint8_t> base64_decode(std::string const& encoded_string, unsigned i
       ret.emplace_back(char_array_3[j]);
   }
   auto bytediff = sel::bitbytes(buff_length) - ret.size();
-  for (unsigned i = 0; i != bytediff; ++i){
+  for (unsigned k = 0; k != bytediff; ++k){
     ret.emplace_back(0x00);
   }
 

@@ -36,6 +36,12 @@ using Bitmask = std::vector<uint8_t>;
 
 namespace sel {
 
+/**
+ * Can be used on any variable to silence compiler warnings about the variable
+ * not being used. Useful if variable is only used in asserts.
+ */
+template<class T> inline void __ignore( const T& ) { }
+
 constexpr size_t bitbytes(size_t b) { return (b + 7)/8; }
 
 /**
