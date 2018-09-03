@@ -20,7 +20,6 @@ set(${P}_EXTRA_WARNING_FLAGS
 
 # Custom compiler and linker flags
 add_compile_options("-fexceptions"
-  "$<$<CONFIG:RELEASE>:-fno-tree-pre>"
   "$<$<CONFIG:DEBUG>:-O0;-g3;-ggdb>"
   ${CMAKE_FLAGS_EXTRA})
 list(APPEND CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_EXTRA})
@@ -101,7 +100,10 @@ target_include_directories(sel SYSTEM PRIVATE
   "extern/valijson/include"
   "extern/restbed/source")
 target_compile_features(sel PUBLIC cxx_std_17)
-target_compile_options(sel PRIVATE ${${P}_EXTRA_WARNING_FLAGS})
+target_compile_options(sel PRIVATE
+  ${${P}_EXTRA_WARNING_FLAGS}
+  "-fno-tree-pre"
+)
 target_compile_definitions(sel PRIVATE
   "$<$<BOOL:${P}_MATCHING_MODE>:SEL_MATCHING_MODE>"
   "$<$<CONFIG:Debug>:DEBUG_SEL_RESULT>"
