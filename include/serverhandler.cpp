@@ -194,10 +194,14 @@ void ServerHandler::run_server(RemoteId remote_id,
       string url{linkage_service->url + "/linkageResult/" +
                  local_config->get_local_id() + '/' + remote_id};
       m_logger->debug("Sending server result to Linkage Service URL {}", url);
+      try {
       auto response{send_result_to_linkageservice(result, make_optional(ids), "server",
                                                   local_config, remote_config)};
       m_logger->trace("Linkage Server responded with {} - {}",
                       response.return_code, response.body);
+      } catch (const exception& e) {
+        m_logger->error("Can not connect to linkage service: {}", e.what());
+      }
     }
   } else {
     m_logger->error(
