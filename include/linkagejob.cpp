@@ -109,9 +109,13 @@ void LinkageJob::run_linkage_job() {
 #endif
     logger->info("Client Result: {}", client_share);
     if(!m_remote_config->get_matching_mode()){
+      try{
       auto response{send_result_to_linkageservice(client_share, nullopt , "client", m_local_config, m_remote_config)};
       if (response.return_code == 200) {
         perform_callback(response.body);
+      }
+      } catch (const exception& e) {
+        logger->error("Can not connect to linkage service or callback: {}", e.what());
       }
     } else {
 #ifdef SEL_MATCHING_MODE
