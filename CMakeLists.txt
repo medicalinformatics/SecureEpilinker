@@ -20,6 +20,7 @@ set(${P}_EXTRA_WARNING_FLAGS
 
 # Custom compiler and linker flags
 add_compile_options("-fexceptions"
+  "$<$<CONFIG:RELEASE>:-fno-tree-pre>"
   "$<$<CONFIG:DEBUG>:-O0;-g3;-ggdb>"
   ${CMAKE_FLAGS_EXTRA})
 list(APPEND CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_EXTRA})
