@@ -36,6 +36,25 @@ class RemoteConfiguration;
 class LocalConfiguration;
 template<typename T> struct Result;
 
+template <typename T> bool check_json_type(const nlohmann::json& j);
+template <> bool check_json_type<bool>(const nlohmann::json& j);
+template <> bool check_json_type<std::string>(const nlohmann::json& j);
+template <> bool check_json_type<size_t>(const nlohmann::json& j);
+template <> bool check_json_type<uint32_t>(const nlohmann::json& j);
+template <> bool check_json_type<uint16_t>(const nlohmann::json& j);
+
+template <typename T>
+T get_checked_result(const nlohmann::json& j, const std::string& field_name){
+  if(check_json_type<T>(j.at(field_name))){
+    return j.at(field_name).get<T>();
+  } else
+    throw std::runtime_error("Wrong type in config");
+}
+
+template <> std::set<Port> get_checked_result<std::set<Port>>(const nlohmann::json& j, const std::string& field_name);
+
+void throw_if_nonexisting_file(const std::filesystem::path&);
+void test_server_config_paths(const ServerConfig&);
 
 ServerConfig parse_json_server_config(const nlohmann::json&);
 std::unique_ptr<AuthenticationConfig> parse_json_auth_config(const nlohmann::json&);
