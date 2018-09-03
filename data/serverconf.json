@@ -13,5 +13,6 @@
 "abyThreads": 1,
 "booleanSharing": "gmw",
 "logFilePath": "../log/secure_epilinker.log",
+"circuitDirectory": "./circdsa",
 "abyPorts": [1337,1338,1339,1340,1341,1342,1343,1344]
 }
