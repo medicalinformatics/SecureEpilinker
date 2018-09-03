@@ -103,7 +103,11 @@ int main(int argc, char* argv[]) {
     server_config["useSSL"] = true;
   }
 
-  create_file_logger(server_config.at("logFilePath").get<std::string>());
+  // Create path to logfile, if it does not exist.
+  std::filesystem::path logfile{sel::get_checked_result<std::string>(server_config,"logFilePath")};
+  std::filesystem::create_directory(logfile.parent_path());
+  create_file_logger(logfile);
+
   switch(cmdoptions.count("verbose")){
     case 0: spdlog::set_level(spdlog::level::warn); break;
     case 1: spdlog::set_level(spdlog::level::info); break;
