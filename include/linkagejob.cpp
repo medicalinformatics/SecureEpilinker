@@ -101,7 +101,7 @@ void LinkageJob::run_linkage_job() {
     epilinker->run_setup_phase();
     EpilinkClientInput client_input{m_data, nvals_value};
     // run mpc
-      const auto client_share{epilinker->run_as_client(client_input)};
+    const auto client_share{epilinker->run_as_client(client_input)};
     // reset epilinker for the next linkage
     epilinker->reset();
 #ifdef DEBUG_SEL_REST
