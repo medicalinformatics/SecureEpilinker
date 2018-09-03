@@ -73,7 +73,6 @@ void test_server_config_paths(const ServerConfig& config) {
 
 ServerConfig parse_json_server_config(const nlohmann::json& json) {
   BooleanSharing boolean_sharing;
-  try {
   string sharing_type{get_checked_result<string>(json,"booleanSharing")};
   // Convert sharing type to uppercase to allow both lower and uppercase in
   // config file
@@ -98,10 +97,6 @@ ServerConfig parse_json_server_config(const nlohmann::json& json) {
           aby_ports};
   test_server_config_paths(result);
   return result;
-  } catch (const exception& e) {
-    fmt::print("Critical Error: Can not initialize config\n{}\nTerminating!", e.what());
-    exit(1);
-  }
 }
 
 unique_ptr<AuthenticationConfig> parse_json_auth_config(const nlohmann::json& j) {
