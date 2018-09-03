@@ -58,7 +58,7 @@ template <> std::set<Port> get_checked_result<std::set<Port>>(const nlohmann::js
 
 void throw_if_nonexisting_file(const filesystem::path& file) {
   if(!filesystem::exists(file))
-    throw std::runtime_error("File does not exist!");
+    throw std::runtime_error("File or folder does not exist!");
 }
 
 void test_server_config_paths(const ServerConfig& config) {
@@ -69,6 +69,7 @@ void test_server_config_paths(const ServerConfig& config) {
   throw_if_nonexisting_file(config.ssl_cert_file);
   throw_if_nonexisting_file(config.ssl_dh_file);
   throw_if_nonexisting_file(config.log_file);
+  throw_if_nonexisting_file(config.circuit_directory);
 }
 
 ServerConfig parse_json_server_config(const nlohmann::json& json) {
@@ -87,6 +88,7 @@ ServerConfig parse_json_server_config(const nlohmann::json& json) {
           get_checked_result<string>(json,"serverCertificatePath"),
           get_checked_result<string>(json,"serverDHPath"),
           get_checked_result<string>(json,"logFilePath"),
+          get_checked_result<string>(json,"circuitDirectory"),
           get_checked_result<bool>(json,"useSSL"),
           get_checked_result<Port>(json,"port"),
           get_checked_result<string>(json,"bindAddress"),

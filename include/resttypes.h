@@ -66,6 +66,7 @@ struct ServerConfig {
   std::filesystem::path ssl_cert_file;
   std::filesystem::path ssl_dh_file;
   std::filesystem::path log_file;
+  std::filesystem::path circuit_directory;
   bool use_ssl;
   Port server_port;
   std::string bind_address;
