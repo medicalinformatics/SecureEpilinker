@@ -52,8 +52,9 @@ class ServerHandler {
     void run_server(RemoteId, std::shared_ptr<const ServerData>);
     void connect_client(const RemoteId&);
   private:
-    void run_job(const RemoteId&, std::shared_ptr<LinkageJob>&);
-    void execute_job_queue();
+    void run_job(std::shared_ptr<LinkageJob>&);
+    std::shared_ptr<LinkageJob> retrieve_next_queued_job(size_t remote_counter);
+    void execute_job_queue(size_t id);
     std::map<JobId, RemoteId> m_job_remote_mapping;
     std::map<RemoteId, std::shared_ptr<SecureEpilinker>> m_aby_clients;
     std::map<RemoteId, std::map<JobId, std::shared_ptr<LinkageJob>> > m_client_jobs;

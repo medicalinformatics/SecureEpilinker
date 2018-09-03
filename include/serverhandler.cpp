@@ -35,22 +35,25 @@
 #include <iterator>
 
 using namespace std;
+
 namespace sel {
-  ServerHandler::ServerHandler(size_t worker_threads) {
-  while (worker_threads-->0){
-    m_worker_threads.emplace_back([this](){execute_job_queue();});
-  }
-  }
 
-
-  ServerHandler& ServerHandler::get() {
-    static ServerHandler singleton{2}; //FIXME(TK) Magic Number
-    return singleton;
+ServerHandler::ServerHandler(size_t worker_threads) {
+  while (worker_threads-->0) {
+    get_default_logger()->debug("Adding worker thread #{}", worker_threads);
+    std::thread job_queue_runner{&ServerHandler::execute_job_queue, this, worker_threads};
+    m_worker_threads.emplace_back(move(job_queue_runner));
   }
+}
 
-  ServerHandler const& ServerHandler::cget(){
-    return cref(get());
-  }
+ServerHandler& ServerHandler::get() {
+  static ServerHandler singleton{2}; //FIXME(TK) Magic Number
+  return singleton;
+}
+
+ServerHandler const& ServerHandler::cget(){
+  return cref(get());
+}
 
 void ServerHandler::insert_client(RemoteId id) {
   const auto& config_handler{ConfigurationHandler::cget()};
@@ -99,46 +102,44 @@ void ServerHandler::add_linkage_job(const RemoteId& remote_id, std::shared_ptr<L
   }
 }
 
-void ServerHandler::run_job(const RemoteId& remote_id, shared_ptr<LinkageJob>& job){
-  const auto& config_handler{ConfigurationHandler::cget()};
-  const auto& job_id{job->get_id()};
-  if(!config_handler.get_remote_config(remote_id)->get_matching_mode()){
-    m_client_jobs.at(remote_id).at(job_id)->run_linkage_job();
+void ServerHandler::run_job(shared_ptr<LinkageJob>& job) {
+  const auto& remote_id = m_job_remote_mapping.at(job->get_id());
+  bool matching_mode = ConfigurationHandler::cget()
+      .get_remote_config(remote_id)->get_matching_mode();
+  if (matching_mode) {
+    job->run_linkage_job();
   } else {
 #ifdef SEL_MATCHING_MODE
-    m_client_jobs.at(remote_id).at(job_id)->run_matching_job();
+    job->run_matching_job();
+#else
+    throw runtime_error("Attempt to run matching job but matching mode not compiled!");
 #endif
   }
 }
 
-void ServerHandler::execute_job_queue() {
+shared_ptr<LinkageJob> ServerHandler::retrieve_next_queued_job(size_t remote_index) {
+  auto& [remote_id, jobid_jobs] = *std::next(m_client_jobs.begin(), remote_index);
+  lock_guard<mutex> __lock{m_job_queue_mutex};
+  for (auto& jobp : jobid_jobs) {
+    auto job = jobp.second;
+    if (job->get_status() == JobStatus::QUEUED) {
+      job->set_status(JobStatus::RUNNING);
+      return job;
+    }
+  }
+  return nullptr;
+}
+
+void ServerHandler::execute_job_queue(size_t id) {
+  get_default_logger()->debug("Job queue runner #{} started.", id);
   // Loops forever. Watches queue of jobs. If a job of one remote is found (and
   // not already finished, running or faulty it starts that job. After that the
   // next remote host is chosen. This should guarantee a fair distribution of
   // jobs, i.e. round robbin w.r.t. remote hosts.
-  for(;;){
-    size_t counter{0};
-    while (counter < m_client_jobs.size()){
-      lock_guard<mutex> lock{m_job_queue_mutex};
-      RemoteId remote_id{};
-      shared_ptr<LinkageJob> job{nullptr};
-      bool matching_mode{false};
-      for (auto& jobp : std::next(m_client_jobs.begin(),counter)->second){
-        if(jobp.second->get_status() == JobStatus::QUEUED) {
-          remote_id = std::next(m_client_jobs.begin(),counter)->first;
-          job = jobp.second;
-          jobp.second->set_status(JobStatus::RUNNING);
-          matching_mode = ConfigurationHandler::cget().get_remote_config(remote_id)->get_matching_mode();
-          break;
-        }
-      }
-      ++counter;
-      if(job){
-        if(!matching_mode)
-          job->run_linkage_job();
-        else
-          job->run_matching_job();
-      }
+  for (;;) {
+    for (size_t i = 0; i < m_client_jobs.size(); ++i) {
+      auto job = retrieve_next_queued_job(i);
+      if (job) run_job(job);
     }
   }
 }
