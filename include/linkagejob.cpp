@@ -114,7 +114,7 @@ void LinkageJob::run_linkage_job() {
         perform_callback(response.body);
       }
     } else {
-      #ifdef SEL_MATCHING_MODE
+#ifdef SEL_MATCHING_MODE
       nlohmann::json match_json;
       nlohmann::json match_result;
       match_result["match"] = client_share.match;
@@ -122,7 +122,7 @@ void LinkageJob::run_linkage_job() {
       match_json["result"] = match_result;
       logger->trace("Result to callback: {}", match_json.dump(0));
       perform_callback(match_json.dump());
-      #endif
+#endif
     }
 #ifdef DEBUG_SEL_REST
     debugger->client_input = make_shared<EpilinkClientInput>(client_input);
