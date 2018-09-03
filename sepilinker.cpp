@@ -123,6 +123,12 @@ int main(int argc, char* argv[]) {
   sel::ServerHandler::get(); // instantiate singletons
 
   configurations.set_server_config(parse_json_server_config(server_config));
+  try{
+  test_server_config_paths(configurations.get_server_config());
+  } catch (const std::exception& e) {
+    logger->critical("Can not create server configuration: {}", e.what());
+    exit(1);
+  }
   connections.populate_aby_ports();
 
   // Create JSON Validator

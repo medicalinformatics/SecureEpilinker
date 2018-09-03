@@ -16,33 +16,92 @@
 #include <iostream>
 #include <sstream>
 #include <future>
+#include <algorithm>
 
 using namespace std;
 namespace sel {
 
+template <> bool check_json_type<bool>(const nlohmann::json& j) {
+  return j.is_boolean();
+}
+template <> bool check_json_type<std::string>(const nlohmann::json& j) {
+  return j.is_string();
+}
+
+template <> bool check_json_type<size_t>(const nlohmann::json& j) {
+  return j.is_number_unsigned();
+}
+
+template <> bool check_json_type<uint32_t>(const nlohmann::json& j) {
+  return check_json_type<size_t>(j);
+}
+
+template <> bool check_json_type<uint16_t>(const nlohmann::json& j) {
+  return check_json_type<size_t>(j);
+}
+
+template <> std::set<Port> get_checked_result<std::set<Port>>(const nlohmann::json& j, const std::string& field_name){
+  std::set<Port> result;
+  if(j.at(field_name).is_array()){
+    for(const auto& p : j.at(field_name)){
+      if(check_json_type<Port>(p)){
+        result.emplace(p.get<Port>());
+      } else {
+        throw std::runtime_error("Field is not a valid port");
+      }
+    }
+  } else {
+    throw std::runtime_error("Field is not an array");
+  }
+  return result;
+}
+
+void throw_if_nonexisting_file(const filesystem::path& file) {
+  if(!filesystem::exists(file))
+    throw std::runtime_error("File does not exist!");
+}
+
+void test_server_config_paths(const ServerConfig& config) {
+  throw_if_nonexisting_file(config.local_init_schema_file);
+  throw_if_nonexisting_file(config.remote_init_schema_file);
+  throw_if_nonexisting_file(config.link_record_schema_file);
+  throw_if_nonexisting_file(config.ssl_key_file);
+  throw_if_nonexisting_file(config.ssl_cert_file);
+  throw_if_nonexisting_file(config.ssl_dh_file);
+  throw_if_nonexisting_file(config.log_file);
+}
+
 ServerConfig parse_json_server_config(const nlohmann::json& json) {
   BooleanSharing boolean_sharing;
-  (json.at("booleanSharing").get<string>() == "yao") ? boolean_sharing = BooleanSharing::YAO
+  try {
+  string sharing_type{get_checked_result<string>(json,"booleanSharing")};
+  // Convert sharing type to uppercase to allow both lower and uppercase in
+  // config file
+  transform(sharing_type.begin(), sharing_type.end(), sharing_type.begin(), ::toupper);
+  (sharing_type == "YAO") ? boolean_sharing = BooleanSharing::YAO
                                                      : boolean_sharing = BooleanSharing::GMW;
-  std::set<Port> aby_ports;
-  for (auto p : json.at("abyPorts")) {
-    aby_ports.emplace(p.get<Port>());
-  }
-  return {json.at("localInitSchemaPath").get<std::string>(),
-          json.at("remoteInitSchemaPath").get<std::string>(),
-          json.at("linkRecordSchemaPath").get<std::string>(),
-          json.at("serverKeyPath").get<std::string>(),
-          json.at("serverCertificatePath").get<std::string>(),
-          json.at("serverDHPath").get<std::string>(),
-          json.at("logFilePath").get<std::string>(),
-          json.at("useSSL").get<bool>(),
-          json.at("port").get<Port>(),
-          json.at("bindAddress").get<string>(),
-          json.at("restWorkerThreads").get<size_t>(),
-          json.at("defaultPageSize").get<size_t>(),
-          json.at("abyThreads").get<uint32_t>(),
+  auto aby_ports{get_checked_result<set<Port>>(json,"abyPorts")};
+  ServerConfig result{get_checked_result<string>(json,"localInitSchemaPath"),
+          get_checked_result<string>(json,"remoteInitSchemaPath"),
+          get_checked_result<string>(json,"linkRecordSchemaPath"),
+          get_checked_result<string>(json,"serverKeyPath"),
+          get_checked_result<string>(json,"serverCertificatePath"),
+          get_checked_result<string>(json,"serverDHPath"),
+          get_checked_result<string>(json,"logFilePath"),
+          get_checked_result<bool>(json,"useSSL"),
+          get_checked_result<Port>(json,"port"),
+          get_checked_result<string>(json,"bindAddress"),
+          get_checked_result<size_t>(json,"restWorkerThreads"),
+          get_checked_result<size_t>(json,"defaultPageSize"),
+          get_checked_result<uint32_t>(json,"abyThreads"),
           boolean_sharing,
           aby_ports};
+  test_server_config_paths(result);
+  return result;
+  } catch (const exception& e) {
+    fmt::print("Critical Error: Can not initialize config\n{}\nTerminating!", e.what());
+    exit(1);
+  }
 }
 
 unique_ptr<AuthenticationConfig> parse_json_auth_config(const nlohmann::json& j) {
