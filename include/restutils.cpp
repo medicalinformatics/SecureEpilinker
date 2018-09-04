@@ -58,7 +58,7 @@ template <> std::set<Port> get_checked_result<std::set<Port>>(const nlohmann::js
 
 void throw_if_nonexisting_file(const filesystem::path& file) {
   if(!filesystem::exists(file))
-    throw std::runtime_error("File or folder does not exist!");
+    throw runtime_error(file.string() + ": file or folder does not exist!"s);
 }
 
 void test_server_config_paths(const ServerConfig& config) {
