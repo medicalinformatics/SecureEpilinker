@@ -78,8 +78,7 @@ ServerConfig parse_json_server_config(const nlohmann::json& json) {
   // Convert sharing type to uppercase to allow both lower and uppercase in
   // config file
   transform(sharing_type.begin(), sharing_type.end(), sharing_type.begin(), ::toupper);
-  (sharing_type == "YAO") ? boolean_sharing = BooleanSharing::YAO
-                                                     : boolean_sharing = BooleanSharing::GMW;
+  boolean_sharing = (sharing_type == "YAO") ? BooleanSharing::YAO : BooleanSharing::GMW;
   auto aby_ports{get_checked_result<set<Port>>(json,"abyPorts")};
   ServerConfig result{get_checked_result<string>(json,"localInitSchemaPath"),
           get_checked_result<string>(json,"remoteInitSchemaPath"),
