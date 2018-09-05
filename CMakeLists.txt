@@ -4,8 +4,10 @@ set(P ${PROJECT_NAME})
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-option(BUILD_SHARED_LIBS "Build libraries as SHARED" OFF)
+option(BUILD_SHARED_LIBS "Build shared libraries (global)" OFF)
+option(BUILD_TESTING "Build testing (global)" OFF)
 option(${P}_MATCHING_MODE "Build matching mode capable Secure Epilinker" ON)
+
 # inspired by https://kristerw.blogspot.com/2017/09/useful-gcc-warning-options-not-enabled.html
 set(${P}_EXTRA_WARNING_FLAGS
   "-Wall" "-Wpedantic" "-Wextra"

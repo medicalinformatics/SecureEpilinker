@@ -23,6 +23,6 @@ add_subdirectory(curlpp EXCLUDE_FROM_ALL)
 add_subdirectory(spdlog EXCLUDE_FROM_ALL)
 
 target_compile_options(aby PRIVATE "-w")
-#target_compile_options(ENCRYPTO_utils PRIVATE "-w")
-#target_compile_options(OTExtension PRIVATE "-w")
+target_compile_options(encrypto_utils PRIVATE "-w")
+target_compile_options(otextension PRIVATE "-w")
 target_compile_options(restbed-static PRIVATE "-w")
