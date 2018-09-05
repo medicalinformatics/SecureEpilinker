@@ -46,6 +46,12 @@ ServerHandler::ServerHandler(size_t worker_threads) {
   }
 }
 
+ServerHandler::~ServerHandler() {
+  for (auto& worker_thread : m_worker_threads) {
+    worker_thread.join();
+  }
+}
+
 ServerHandler& ServerHandler::get() {
   static ServerHandler singleton{2}; //FIXME(TK) Magic Number
   return singleton;

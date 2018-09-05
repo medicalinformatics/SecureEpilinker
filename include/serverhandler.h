@@ -52,6 +52,7 @@ class ServerHandler {
     void run_server(RemoteId, std::shared_ptr<const ServerData>);
     void connect_client(const RemoteId&);
   private:
+    ~ServerHandler();
     void run_job(std::shared_ptr<LinkageJob>&);
     std::shared_ptr<LinkageJob> retrieve_next_queued_job(size_t remote_counter);
     void execute_job_queue(size_t id);
