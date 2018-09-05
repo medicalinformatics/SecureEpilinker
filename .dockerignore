@@ -1,10 +1,14 @@
+.dockerignore
+Dockerfile*
 /build
 /test_scripts
 /docs
+/log
 LICENSE
 README.md
 CONTRIBUTING.md
 compiler_commands.json
+tags
 .git
 .gitmodules
 .gitignore
