@@ -17,12 +17,26 @@
 */
 
 #include "seltypes.h"
+#include "logger.h"
 #include <cassert>
 #include <stdexcept>
 #include <string>
 
 using namespace std;
+
 namespace sel {
+
+
+ML_Field::ML_Field(const std::string& name, const double weight,
+      const FieldComparator comp, const FieldType type,
+      const size_t bitsize) :
+    name{name}, weight{weight},
+    comparator{comp}, type{type},
+    bitsize{bitsize}
+{
+  get_default_logger()->trace("ML_Field created: {}", *this);
+}
+
 FieldType str_to_ftype(const string& str) {
   if (str == "bitmask")
     return FieldType::BITMASK;

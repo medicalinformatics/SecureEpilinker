@@ -47,30 +47,23 @@ std::string ftype_to_str(const FieldType&);
 
 struct ML_Field {
   ML_Field() = default;
+
   /**
    * Constructor from json
    */
-  ML_Field(const std::string& n,
-           double f,
-           double e,
-           const std::string& c,
-           const std::string& t,
-           const size_t b)
-      : name{n},
-        weight{std::log2((1-e)/f)},
-        comparator{str_to_fcomp(c)},
-        type{str_to_ftype(t)},
-        bitsize{b}
-        {};
+  ML_Field(const std::string& name, double frequency, double error,
+      const std::string& comparator, const std::string& type,
+      const size_t bitsize) :
+    ML_Field(name, std::log2((1-error)/frequency), str_to_fcomp(comparator),
+        str_to_ftype(type), bitsize)
+  {};
+
   /**
    * Internal constructor for testing
    */
   ML_Field(const std::string& name, const double weight,
       const FieldComparator comp, const FieldType type,
-      const size_t bitsize) :
-    name{name}, weight{weight},
-    comparator{comp}, type{type},
-    bitsize{bitsize} {};
+      const size_t bitsize);
 
   std::string name;
   Weight weight;
@@ -78,10 +71,12 @@ struct ML_Field {
   FieldType type;
   size_t bitsize;
 };
+
 } // namespace sel
 
 // Custom fmt formatters for our types
 namespace fmt {
+
 template <>
 struct formatter<sel::FieldComparator> {
   template <typename ParseContext>
@@ -97,5 +92,20 @@ struct formatter<sel::FieldComparator> {
     return format_to(ctx.begin(), s);
   }
 };
+
+template <>
+struct formatter<sel::ML_Field> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::ML_Field& field, FormatContext &ctx) {
+    return format_to(ctx.begin(),
+        "ML_Field{{name={}, weight={}, comp={}, type={}, bitsize={}}}",
+        field.name, field.weight, field.comparator, ftype_to_str(field.type), field.bitsize
+        );
+  }
+};
+
 } // namespace fmt
 #endif // SEL_SELTYPES_H
