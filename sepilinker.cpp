@@ -36,6 +36,7 @@
 #include "fmt/format.h"
 #include "nlohmann/json.hpp"
 #include "cxxopts.hpp"
+#include <cstdlib>
 #include "restbed"
 
 #include <functional>
@@ -50,6 +51,39 @@
 
 using json = nlohmann::json;
 using namespace sel;
+
+template<typename T> void config_env_override(nlohmann::json&, const char*,const std::string&);
+template<>
+void config_env_override<std::string>(nlohmann::json& config, const char* env_name,const std::string& config_name) {
+  if(const char* env_p = std::getenv(env_name)){
+    config[config_name] = env_p;
+  }
+}
+template<>
+void config_env_override<uint16_t>(nlohmann::json& config, const char* env_name,const std::string& config_name) {
+  if(const char* env_p = std::getenv(env_name)){
+    config[config_name] = static_cast<uint16_t>(std::stoul(env_p));
+  }
+}
+template<typename T> void config_arg_override(nlohmann::json&,const cxxopts::ParseResult&,const std::string&, const std::string&);
+template<>
+void config_arg_override<std::string>(nlohmann::json& config, const cxxopts::ParseResult& cmdoptions,const std::string& option_name, const std::string& config_name) {
+  if(cmdoptions.count(option_name)){
+    config[config_name] = cmdoptions[option_name].as<std::string>();
+  }
+}
+template<>
+void config_arg_override<uint16_t>(nlohmann::json& config, const cxxopts::ParseResult& cmdoptions,const std::string& option_name, const std::string& config_name) {
+  if(cmdoptions.count(option_name)){
+    config[config_name] = cmdoptions[option_name].as<uint16_t>();
+  }
+}
+
+template<typename T>
+void config_override(nlohmann::json& config, const cxxopts::ParseResult& cmdoptions,const std::string& option_name, const char* env_name, const std::string& config_name){
+  config_env_override<T>(config, env_name, config_name);
+  config_arg_override<T>(config, cmdoptions, option_name, config_name);
+}
 
 int main(int argc, char* argv[]) {
   // Commandline Parser
@@ -75,30 +109,15 @@ int main(int argc, char* argv[]) {
   auto server_config = read_json_from_disk(cmdoptions["config"].as<std::string>());
 
   // Override config file
-  if(cmdoptions.count("localschema")){
-    server_config["localInitSchemaPath"] = cmdoptions["localschema"].as<std::string>();
-  }
-  if(cmdoptions.count("remoteschema")){
-    server_config["remoteInitSchemaPath"] = cmdoptions["remoteschema"].as<std::string>();
-  }
-  if(cmdoptions.count("linkschema")){
-    server_config["linkRecordSchemaPath"] = cmdoptions["linkschema"].as<std::string>();
-  }
-  if(cmdoptions.count("key")){
-    server_config["serverKeyPath"] = cmdoptions["key"].as<std::string>();
-  }
-  if(cmdoptions.count("dh")){
-    server_config["serverDHPath"] = cmdoptions["dh"].as<std::string>();
-  }
-  if(cmdoptions.count("cert")){
-    server_config["serverCertificatePath"] = cmdoptions["cert"].as<std::string>();
-  }
-  if(cmdoptions.count("port")){
-    server_config["port"] = cmdoptions["port"].as<unsigned>();
-  }
-  if(cmdoptions.count("logfile")){
-    server_config["logFilePath"] = cmdoptions["logfile"].as<std::string>();
-  }
+
+  config_override<std::string>(server_config, cmdoptions, "localschema", "LOCALSCHEMA", "localInitSchemaPath");
+  config_override<std::string>(server_config, cmdoptions, "remoteschema", "REMOTESCHEMA", "remoteInitSchemaPath");
+  config_override<std::string>(server_config, cmdoptions, "linkschema", "LINKSCHEMA", "linkRecordSchemaPath");
+  config_override<std::string>(server_config, cmdoptions, "key", "SELKEY", "serverKeyPath");
+  config_override<std::string>(server_config, cmdoptions, "dh", "SELDHPARAM", "serverDHPath");
+  config_override<std::string>(server_config, cmdoptions, "cert", "SELCERT", "serverCertificatePath");
+  config_override<uint16_t>(server_config, cmdoptions, "port", "SELPORT", "port");
+  config_override<std::string>(server_config, cmdoptions, "logfile", "SELLOGFILE", "logFilePath");
   if(cmdoptions.count("ssl")){
     server_config["useSSL"] = true;
   }
@@ -127,8 +146,8 @@ int main(int argc, char* argv[]) {
   sel::ServerHandler::get(); // instantiate singletons
 
   try{
-  configurations.set_server_config(parse_json_server_config(server_config));
-  test_server_config_paths(configurations.get_server_config());
+    configurations.set_server_config(parse_json_server_config(server_config));
+    test_server_config_paths(configurations.get_server_config());
   } catch (const std::exception& e) {
     logger->critical("Can not create server configuration: {}", e.what());
     return EXIT_FAILURE;
