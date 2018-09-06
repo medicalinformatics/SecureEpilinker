@@ -24,33 +24,34 @@ constexpr auto BM = FieldComparator::DICE;
 constexpr double Threshold = 0.9;
 constexpr double TThreshold = 0.7;
 
-ML_Field f_int1 (
-  //name, f, e, comparator, type, bitsize
-  "int_1", 1.0,
-  FieldComparator::BINARY, FieldType::INTEGER, 29
-);
+struct FieldData { ML_Field field; Bitmask data; };
 
-Bitmask data_int_1 = {0xde, 0xad, 0xbe, 0xef};
+map<string, FieldData> make_test_data() {
+  vector<FieldData> field_data = {
+    {
+      { "int_1", 1.0, FieldComparator::BINARY, FieldType::INTEGER, 29 },
+      {0xde, 0xad, 0xbe, 0xef}
+    },
+    {
+      { "int_2", 3.0, FieldComparator::BINARY, FieldType::INTEGER, 32 },
+      {0xde, 0xce, 0xa5, 0xed}
+    },
+    {
+      { "bm_1", 2.0, FieldComparator::DICE, FieldType::BITMASK, 8 },
+      {1}
+    },
+    {
+      { "bm_2", 4.0, FieldComparator::DICE, FieldType::BITMASK, 8 },
+      {1}
+    }
+  };
 
-ML_Field f_int2 (
-  //name, f, e, comparator, type, bitsize
-  "int_2", 3.0,
-  FieldComparator::BINARY, FieldType::INTEGER, 32
-);
-
-Bitmask data_int_2 = {0xde, 0xce, 0xa5, 0xed};
-
-ML_Field f_bm1 (
-  //name, f, e, comparator, type, bitsize
-  "bm_1", 2.0,
-  FieldComparator::DICE, FieldType::BITMASK, 8
-);
-
-ML_Field f_bm2 (
-  //name, f, e, comparator, type, bitsize
-  "bm_2", 4.0,
-  FieldComparator::DICE, FieldType::BITMASK, 8
-);
+  map<string, FieldData> ret;
+  for (auto& fd : field_data) {
+    ret.emplace(fd.field.name, move(fd));
+  }
+  return ret;
+}
 
 EpilinkConfig make_dkfz_cfg() {
   return {
@@ -95,6 +96,9 @@ auto run(SecureEpilinker& linker,
 #endif
 
 EpilinkInput input_simple(uint32_t nvals) {
+  auto td = make_test_data();
+  auto& data_int_1 = td["int_1"].data;
+  auto& f_int1 = td["int_1"].field;
   print("data_int_1: {}\n", data_int_1);
 
   // First test: only one bin field, single byte integer
@@ -119,9 +123,10 @@ EpilinkInput input_simple(uint32_t nvals) {
 }
 
 EpilinkInput input_simple_bm(uint32_t nvals) {
+  auto td = make_test_data();
   // Only one bm field, single byte integer
   EpilinkConfig epi_cfg {
-    { {"bm_1", f_bm1}, }, // fields
+    { {"bm_1", td["bm_1"].field}, }, // fields
     {}, // exchange groups
     Threshold, TThreshold // size_bitmask, (tent.) thresholds
   };
@@ -141,6 +146,14 @@ EpilinkInput input_simple_bm(uint32_t nvals) {
 }
 
 EpilinkInput input_exchange_grp(uint32_t nvals) {
+  auto td = make_test_data();
+  auto& data_int_1 = td["int_1"].data;
+  auto& data_int_2 = td["int_2"].data;
+  auto& f_int1 = td["int_1"].field;
+  auto& f_int2 = td["int_2"].field;
+  auto& f_bm1 = td["bm_1"].field;
+  auto& f_bm2 = td["bm_2"].field;
+
   // First test: only one bin field, single byte bitmask
   EpilinkConfig epi_cfg {
     {
@@ -176,6 +189,10 @@ EpilinkInput input_exchange_grp(uint32_t nvals) {
 }
 
 EpilinkInput input_empty() {
+  auto td = make_test_data();
+  auto& f_bm1 = td["bm_1"].field;
+  auto& f_bm2 = td["bm_2"].field;
+
   // First test: only one bin field, single byte bitmask
   EpilinkConfig epi_cfg {
     {
@@ -387,21 +404,23 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
   };
 
-  //const auto in = input_dkfz_random(nvals);
-  auto [in, client_ins] = input_multi_test_0824();
+  const auto in = input_dkfz_random(nvals);
+  //auto [in, client_ins] = input_multi_test_0824();
 
   SecureEpilinker linker{aby_cfg, in.cfg};
   if(!only_local) {
     linker.connect();
-    //run_and_print_sel_calcs(linker, in);
+    run_and_print_sel_calcs(linker, in);
   }
-  //run_and_print_local_calcs(in);
+  run_and_print_local_calcs(in);
 
+  /*
   for (auto& client_in : client_ins) {
     EpilinkInput _in = {in.cfg, client_in, in.server};
     if (!only_local) run_and_print_sel_calcs(linker, _in);
     run_and_print_local_calcs(_in);
   }
+  */
 
   return 0;
 }
