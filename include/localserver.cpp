@@ -58,11 +58,11 @@ RemoteId LocalServer::get_id() const {
 
 Result<CircUnit> LocalServer::run_server() {
   auto logger{get_default_logger()};
-  logger->info("The Server is running and performing it's computations");
+  logger->info("The server is running and performing its computations");
   const size_t nvals{m_data->data.begin()->second.size()};
   m_aby_server.build_circuit(nvals);
   m_aby_server.run_setup_phase();
-  logger->debug("Starting Server Computation");
+  logger->debug("Starting server computation");
   EpilinkServerInput data{{m_data->data}};
   auto server_result{m_aby_server.run_as_server({m_data->data})};
   m_aby_server.reset();
@@ -71,7 +71,7 @@ Result<CircUnit> LocalServer::run_server() {
   debugger->server_input = std::make_shared<EpilinkServerInput>(data);
 #endif
   return server_result;
-  }
+}
 
 Result<CircUnit> LocalServer::launch_comparison(
     shared_ptr<const ServerData> data) {
