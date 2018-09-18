@@ -188,9 +188,9 @@ void ServerHandler::run_server(RemoteId remote_id,
   auto local_config{config_handler.get_local_config()};
   if (remote_config->get_mutual_initialization_status()) {
     const auto result{
-        get_local_server(remote_id)->launch_comparison(move(data))};
+        get_local_server(remote_id)->run(move(data))};
     m_logger->info("Server Result\n{}", result);
-    if(!remote_config->get_matching_mode()){
+    if (!remote_config->get_matching_mode()) {
       const auto ids{get_local_server(remote_id)->get_ids()};
       string id_string;
       for (size_t i = 0; i != ids.size(); ++i) {

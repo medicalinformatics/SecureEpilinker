@@ -34,7 +34,7 @@ using namespace std;
 namespace sel {
 
 RemoteConfiguration::RemoteConfiguration(RemoteId c_id)
-    : m_connection_id(move(c_id)) {}
+    : m_remote_id(move(c_id)) {}
 
 
 Port RemoteConfiguration::get_remote_signaling_port() const {
@@ -60,7 +60,7 @@ void RemoteConfiguration::set_linkage_service(ConnectionConfig cconfig) {
 }
 
 RemoteId RemoteConfiguration::get_id() const {
-  return m_connection_id;
+  return m_remote_id;
 }
 
 Port RemoteConfiguration::get_aby_port() const {
@@ -120,7 +120,7 @@ void RemoteConfiguration::test_configuration(
           "Can not mark port as used. If server and client are the same "
           "process, that is ok.");
     }
-    std::thread client_creator([this](){ServerHandler::get().insert_client(m_connection_id);});
+    std::thread client_creator([this](){ServerHandler::get().insert_client(m_remote_id);});
     client_creator.detach();
   }
 }

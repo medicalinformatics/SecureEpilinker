@@ -67,7 +67,7 @@ class RemoteConfiguration {
   void mark_mutually_initialized() const; // changes mutable flag
  protected:
  private:
-  RemoteId m_connection_id;
+  RemoteId m_remote_id;
   ConnectionConfig m_connection_profile;
   ConnectionConfig m_linkage_service;
   Port m_aby_port;

@@ -43,40 +43,41 @@ LocalServer::LocalServer(RemoteId remote_id,
            static_cast<e_sharing>(ConfigurationHandler::cget().get_server_config().boolean_sharing),
            m_client_ip, m_client_port,
            ConfigurationHandler::cget().get_server_config().aby_threads},
-          make_circuit_config(ConfigurationHandler::cget().get_local_config(), ConfigurationHandler::cget().get_remote_config(remote_id))) {}
+          make_circuit_config(ConfigurationHandler::cget().get_local_config(),
+            ConfigurationHandler::cget().get_remote_config(remote_id))) {}
+
 LocalServer::LocalServer(RemoteId remote_id,
                          SecureEpilinker::ABYConfig aby_config,
                          CircuitConfig circuit_config)
     : m_remote_id(move(remote_id)),
       m_client_ip(aby_config.host),
       m_client_port(aby_config.port),
-      m_aby_server( aby_config, circuit_config) {}
+      m_aby_server(aby_config, circuit_config) {}
 
 RemoteId LocalServer::get_id() const {
   return m_remote_id;
 }
 
-Result<CircUnit> LocalServer::run_server() {
+Result<CircUnit> LocalServer::run(shared_ptr<const ServerData> data) {
+  m_data = move(data);
+
   auto logger{get_default_logger()};
   logger->info("The server is running and performing its computations");
+
   const size_t nvals{m_data->data.begin()->second.size()};
   m_aby_server.build_circuit(nvals);
   m_aby_server.run_setup_phase();
   logger->debug("Starting server computation");
-  EpilinkServerInput data{{m_data->data}};
-  auto server_result{m_aby_server.run_as_server({m_data->data})};
+  auto server_input = std::make_shared<EpilinkServerInput>(m_data->data);
+  auto server_result = m_aby_server.run_as_server(*server_input);
   m_aby_server.reset();
+
 #ifdef DEBUG_SEL_REST
   auto debugger{DataHandler::get().get_epilink_debug()};
-  debugger->server_input = std::make_shared<EpilinkServerInput>(data);
+  debugger->server_input = server_input;
 #endif
-  return server_result;
-}
 
-Result<CircUnit> LocalServer::launch_comparison(
-    shared_ptr<const ServerData> data) {
-  m_data = move(data);
-  return run_server();
+  return server_result;
 }
 
 Port LocalServer::get_port() const {
