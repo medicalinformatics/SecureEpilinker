@@ -116,9 +116,10 @@ struct formatter<sel::SecureEpilinker::ABYConfig> {
   template <typename FormatContext>
   auto format(const sel::SecureEpilinker::ABYConfig& conf, FormatContext &ctx) {
     return format_to(ctx.begin(),
-        "Role: {}\nSharing: {}\nRemote: {}:{}\nThreads: {}\n",
+        "ABYConfig{{role={}, sharing={}, {}={}:{}, threads={}}}",
         ((conf.role == SERVER) ? "Server" : "Client"),
         ((conf.bool_sharing == S_YAO) ? "Yao" : "GMW"),
+        ((conf.role == SERVER) ? "binding to" : "remote host"),
         conf.host, conf.port, conf.nthreads);
   }
 };

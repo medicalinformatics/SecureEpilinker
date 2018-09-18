@@ -74,7 +74,7 @@ void ServerHandler::insert_client(RemoteId id) {
       CLIENT, static_cast<e_sharing>(aby_info.boolean_sharing),
       remote_config->get_remote_host(),
       remote_config->get_aby_port(), aby_info.aby_threads};
-  m_logger->debug("Creating client on port {}, Remote host: {}", aby_config.port, aby_config.host);
+  m_logger->debug("Creating client on port {}, remote host: {}", aby_config.port, aby_config.host);
   m_aby_clients.emplace(id, make_shared<SecureEpilinker>(aby_config,circuit_config));
   connect_client(id);
 }
@@ -92,7 +92,7 @@ void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
       SERVER, static_cast<e_sharing>(aby_info.boolean_sharing),
       ConfigurationHandler::cget().get_server_config().bind_address,
       remote_address.port, aby_info.aby_threads};
-  m_logger->debug("Creating server on port {}, Remote host: {}\n", aby_config.port, aby_config.host);
+  m_logger->debug("Creating server on port {}, bound to: {}\n", aby_config.port, aby_config.host);
   m_server.emplace(id, make_shared<LocalServer>(id, aby_config, circuit_config));
   get_local_server(id)->connect_server();
 }
