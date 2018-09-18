@@ -30,6 +30,10 @@ namespace sel{
   }
   static SessionResponse not_initialized{restbed::UNAUTHORIZED, "No connection initialized", {{"Content-Length", "25"}, {"Connection", "Close"}}}; 
 
+  inline SessionResponse unauthorized(std::string auth_type) {
+  return {restbed::UNAUTHORIZED, "", {{"Content-Length", "0"}, {"WWW-Authenticate", move(auth_type)}, {"Connection", "Close"}}};
+  }
+
   } // namespace responses
 
 } // namespace sel

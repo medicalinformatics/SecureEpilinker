@@ -43,6 +43,7 @@ class JsonMethodHandler : public MethodHandler {
       const std::string& method,
       std::function<SessionResponse(
                               const nlohmann::json&,
+                              const std::string&,
                               const std::string&)> valid = nullptr,
       std::function<SessionResponse(valijson::ValidationResults&)> invalid = nullptr)
       : MethodHandler(method),
@@ -53,6 +54,7 @@ class JsonMethodHandler : public MethodHandler {
       std::shared_ptr<Validator> validator,
       std::function<SessionResponse(
                               const nlohmann::json&,
+                              const std::string&,
                               const std::string&)> valid = nullptr,
       std::function<SessionResponse(valijson::ValidationResults&)> invalid = nullptr)
       : MethodHandler(method, validator),
@@ -66,10 +68,12 @@ class JsonMethodHandler : public MethodHandler {
 
   void use_data(const std::shared_ptr<restbed::Session>&,
                 const nlohmann::json&,
+                const RemoteId&,
                 const std::string&) const;
 
   void set_valid_callback(std::function<SessionResponse(
                               const nlohmann::json&,
+                              const std::string&,
                               const std::string&)> fun) {
     m_valid_callback = fun;
   }
@@ -81,6 +85,7 @@ class JsonMethodHandler : public MethodHandler {
 
  private:
   std::function<SessionResponse(const nlohmann::json&,
+                                const std::string&,
                                 const std::string&)> m_valid_callback{nullptr};
 
   std::function<SessionResponse(valijson::ValidationResults&)>

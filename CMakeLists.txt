@@ -64,6 +64,7 @@ set(${P}_CIRCUIT_SOURCES
 
 set(${P}_MAIN_SOURCES
   ${${P}_CIRCUIT_SOURCES}
+  "include/authenticator.cpp"
   "include/resourcehandler.cpp"
   "include/validator.cpp"
   "include/jsonmethodhandler.cpp"

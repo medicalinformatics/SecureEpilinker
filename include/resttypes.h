@@ -47,11 +47,6 @@ AlgorithmType str_to_atype(const std::string& str);
 AuthenticationType str_to_authtype(const std::string& str);
 std::string js_enum_to_string(JobStatus);
 
-struct ConnectionConfig {
-  std::string url;
-  std::unique_ptr<AuthenticationConfig> authentication;
-};
-
 struct SessionResponse {
   int return_code;
   std::string body;

@@ -171,7 +171,7 @@ SessionResponse send_result_to_linkageservice(const Result<CircUnit>& share,
   }
   auto data{json_data.dump()};
   logger->trace("Data for linkage Service: {}",data);
-  list<string> headers{"Content-Type: application/json","Authorization: "s+dynamic_cast<APIKeyConfig*>(remote_config->get_linkage_service()->authentication.get())->get_key()};
+  list<string> headers{"Content-Type: application/json","Authorization: "s+remote_config->get_linkage_service()->authenticator.sign_transaction("")};
   string url = remote_config->get_linkage_service()->url+"/linkageResult/"+local_config->get_local_id()+'/'+remote_config->get_id();
   logger->debug("Sending {} result to linkage service at {}", role, url);
   auto response{perform_post_request(url, data, headers, false)};

@@ -71,12 +71,13 @@ Port ConnectionHandler::initialize_aby_server(
   }
   string data{"{}"};
   list<string> headers{
-    "Authorization: SEL ABCD", //FIXME(TK) Need to get AUTH
+    "Authorization: "s+ remote_config->get_remote_authenticator().sign_transaction(""),
     "Available-Ports: "s+get_available_ports(),
     "Content-Type: application/json",
     };
   string url{assemble_remote_url(remote_config)+"/testConfig/"+ConfigurationHandler::cget().get_local_config()->get_local_id()};
   auto response{perform_post_request(url, data, headers, true)};
+  // FIXME(TK): Auth from response
   auto resp_port(get_headers(response.body, "SEL-Port"));
   if(resp_port.empty()){
     throw runtime_error("No common available port for smpc communication");

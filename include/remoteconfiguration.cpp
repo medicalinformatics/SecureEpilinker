@@ -27,6 +27,7 @@
 #include <restbed>
 #include "logger.h"
 
+#include "connectionconfig.hpp"
 #include "connectionhandler.h"
 #include "serverhandler.h"
 using namespace std;
@@ -35,7 +36,6 @@ namespace sel {
 RemoteConfiguration::RemoteConfiguration(RemoteId c_id)
     : m_connection_id(move(c_id)) {}
 
-RemoteConfiguration::~RemoteConfiguration() {}
 
 Port RemoteConfiguration::get_remote_signaling_port() const {
   restbed::Uri address{m_connection_profile.url};
@@ -92,9 +92,7 @@ void RemoteConfiguration::test_configuration(
     const nlohmann::json& client_config) {
   auto logger{get_default_logger()};
   auto data = client_config.dump();
-  const auto auth{dynamic_cast<const APIKeyConfig*>(
-      m_connection_profile.authentication.get())};
-  list<string> headers{"Authorization: "s + auth->get_key(),
+  list<string> headers{"Authorization: "s + m_connection_profile.authenticator.sign_transaction(""),
                        "Content-Type: application/json" };
   string url{assemble_remote_url(this) + "/testConfig/" + client_id};
 
@@ -129,6 +127,10 @@ void RemoteConfiguration::test_configuration(
 
 ConnectionConfig const * RemoteConfiguration::get_linkage_service() const {
 return &m_linkage_service;
+}
+
+const Authenticator& RemoteConfiguration::get_remote_authenticator() const {
+  return m_connection_profile.authenticator;
 }
 
 }  // namespace sel
