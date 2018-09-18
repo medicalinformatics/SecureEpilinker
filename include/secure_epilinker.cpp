@@ -559,7 +559,7 @@ private:
 
 /******************** Public Epilinker Interface ********************/
 SecureEpilinker::SecureEpilinker(ABYConfig config, CircuitConfig circuit_config) :
-  party{config.role, config.remote_host, config.port, LT, BitLen, config.nthreads},
+  party{config.role, config.host, config.port, LT, BitLen, config.nthreads},
   bcirc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[config.bool_sharing]->GetCircuitBuildRoutine())},
   ccirc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[(config.bool_sharing==S_YAO)?S_BOOL:S_YAO]->GetCircuitBuildRoutine())},
   acirc{dynamic_cast<ArithmeticCircuit*>(party.GetSharings()[S_ARITH]->GetCircuitBuildRoutine())},

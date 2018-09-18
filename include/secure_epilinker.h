@@ -36,7 +36,7 @@ public:
   struct ABYConfig {
     e_role role; // SERVER or CLIENT
     e_sharing bool_sharing; // S_YAO or S_BOOL for boolean circuit parts?
-    std::string remote_host;
+    std::string host; // local for role SERVER, remote for role CLIENT
     uint16_t port;
     uint32_t nthreads;
   };
@@ -119,7 +119,7 @@ struct formatter<sel::SecureEpilinker::ABYConfig> {
         "Role: {}\nSharing: {}\nRemote: {}:{}\nThreads: {}\n",
         ((conf.role == SERVER) ? "Server" : "Client"),
         ((conf.bool_sharing == S_YAO) ? "Yao" : "GMW"),
-        conf.remote_host, conf.port, conf.nthreads);
+        conf.host, conf.port, conf.nthreads);
   }
 };
 

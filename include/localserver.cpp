@@ -48,7 +48,7 @@ LocalServer::LocalServer(RemoteId remote_id,
                          SecureEpilinker::ABYConfig aby_config,
                          CircuitConfig circuit_config)
     : m_remote_id(move(remote_id)),
-      m_client_ip(aby_config.remote_host),
+      m_client_ip(aby_config.host),
       m_client_port(aby_config.port),
       m_aby_server( aby_config, circuit_config) {}
 
