@@ -23,6 +23,7 @@ constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
 constexpr double Threshold = 0.9;
 constexpr double TThreshold = 0.7;
+const fs::path CircDir = "./circ";
 
 struct FieldData { ML_Field field; Bitmask data; };
 
@@ -338,7 +339,7 @@ void run_and_print_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
 
 void run_and_print_local_calcs(const EpilinkInput& in) {
   print("----- Local Calculations -----\n");
-  CircuitConfig cfg32{in.cfg, false, 32};
+  CircuitConfig cfg32{in.cfg, CircDir, false, 32};
   auto res_32bit = clear_epilink::calc_integer({in.client, in.server}, cfg32);
   print("32Bit Result:\n{}", res_32bit);
 
@@ -346,7 +347,7 @@ void run_and_print_local_calcs(const EpilinkInput& in) {
   auto res_32bit_ideal = clear_epilink::calc_integer({in.client, in.server}, cfg32);
   print("32Bit ideal Result:\n{}", res_32bit_ideal);
 
-  CircuitConfig cfg64{in.cfg, false, 64};
+  CircuitConfig cfg64{in.cfg, CircDir, false, 64};
   auto res_64bit = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
   print("64bit Result:\n{}", res_64bit);
 
@@ -407,7 +408,8 @@ int main(int argc, char *argv[])
   const auto in = input_dkfz_random(nvals);
   //auto [in, client_ins] = input_multi_test_0824();
 
-  SecureEpilinker linker{aby_cfg, in.cfg};
+  CircuitConfig circ_cfg{in.cfg, CircDir};
+  SecureEpilinker linker{aby_cfg, circ_cfg};
   if(!only_local) {
     linker.connect();
     run_and_print_sel_calcs(linker, in);

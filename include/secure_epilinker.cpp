@@ -211,7 +211,6 @@ public:
   }
 
 private:
-  // Epilink config
   const CircuitConfig cfg;
   // Circuits
   BooleanCircuit* bcirc; // boolean circuit for boolean parts
@@ -533,7 +532,7 @@ private:
     hw_and_num.set_bitlength(16);
 
     // int-divide
-    BoolShare dice = apply_file_binary(hw_and_num, hw_plus, 16, 16, "circ/int_div_16.aby");
+    BoolShare dice = apply_file_binary(hw_and_num, hw_plus, 16, 16, cfg.circ_dir/"int_div_16.aby");
 
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(hw_and, format("hw_and({}|{})", ileft, iright));

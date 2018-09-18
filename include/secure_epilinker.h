@@ -29,7 +29,6 @@
 class BooleanCircuit;
 class ArithmeticCircuit;
 
-
 namespace sel {
 
 class SecureEpilinker {
