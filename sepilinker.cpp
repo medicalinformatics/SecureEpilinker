@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
     ("v,verbose", "Log more information")
     ("d,dh", "File name of Diffi-Hellman group", cxxopts::value<std::string>())
     ("C,cert", "File name of server certificate", cxxopts::value<std::string>())
-    ("p,port", "Port for listening", cxxopts::value<unsigned>())
+    ("p,port", "Port for listening", cxxopts::value<uint16_t>())
     ("s,ssl", "Use SSL")
     ("h,help", " Print this help");
   auto cmdoptions{options.parse(argc,argv)};
