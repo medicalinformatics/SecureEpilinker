@@ -371,10 +371,12 @@ int main(int argc, char *argv[])
   unsigned int sharing = S_BOOL;
   uint32_t nvals = 1;
   uint32_t nthreads = 1;
+  string remote_host = "127.0.0.1";
 
   cxxopts::Options options{"test_aby", "Test ABY related components"};
   options.add_options()
     ("S,server", "Run as server. Default to client", cxxopts::value(role_server))
+    ("R,remote-host", "Remote host. Default 127.0.0.1", cxxopts::value(remote_host))
     ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO", cxxopts::value(sharing))
     ("n,nvals", "Parallellity", cxxopts::value(nvals))
     ("r,run-both", "Use run_as_both()", cxxopts::value(run_both))
@@ -402,7 +404,7 @@ int main(int argc, char *argv[])
   role = role_server ? SERVER : CLIENT;
 
   SecureEpilinker::ABYConfig aby_cfg {
-    role, (e_sharing)sharing, "127.0.0.1", 5676, nthreads
+    role, (e_sharing)sharing, remote_host, 5676, nthreads
   };
 
   const auto in = input_dkfz_random(nvals);
