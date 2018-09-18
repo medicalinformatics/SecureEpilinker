@@ -31,8 +31,10 @@ size_t bit_usage(const size_t dice_prec,
 }
 
 CircuitConfig::CircuitConfig(const EpilinkConfig& epi_,
+    const std::filesystem::path& circ_dir_,
     bool matching_mode, size_t bitlen) :
   epi {epi_},
+  circ_dir {circ_dir_},
   matching_mode {matching_mode},
   bitlen {bitlen}
 {
@@ -67,6 +69,14 @@ CircuitConfig::CircuitConfig(const EpilinkConfig& epi_,
   // which we cannot add to dice precision because it would overflow the
   // 16-bit integer division input... Need better int-div
   assert (bit_usage(dice_prec, weight_prec, epi.nfields) <= bitlen);
+
+  if (!std::filesystem::exists(circ_dir)) {
+    throw invalid_argument(fmt::format(
+          "Specified circuit dir {} doesn't exist!", circ_dir.string()));
+  } else if (!std::filesystem::is_directory(circ_dir)) {
+    throw invalid_argument(fmt::format(
+          "Specified circuit dir {} isn't a directory!", circ_dir.string()));
+  }
 
   get_default_logger()->trace("Constructed {}", *this);
 }
