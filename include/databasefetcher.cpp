@@ -111,21 +111,21 @@ ServerData DatabaseFetcher::fetch_data(bool matching_mode) {
       input_string += "\n";
     }
   }
-if(!matching_mode){
-  input_string +=
-      "------------------------------\nIDs\n-----------------------------\n";
-  for (const auto& m : m_ids) {
-      input_string += "ID: " + m + '\n';
+  if(!matching_mode){
+    input_string +=
+        "------------------------------\nIDs\n-----------------------------\n";
+    for (const auto& m : m_ids) {
+        input_string += "ID: " + m + '\n';
+    }
   }
-}
   m_logger->trace("Recieved Inputs:\n{}", input_string);
 #endif
 
-if(matching_mode) {
-  return {move(m_data), {}, move(m_todate), move(m_local_id), move(m_remote_id)};
-} else {
-  return {move(m_data), move(m_ids), move(m_todate), move(m_local_id), move(m_remote_id)};
-}
+  if(matching_mode) {
+    return {move(m_data), {}, move(m_todate), move(m_local_id), move(m_remote_id)};
+  } else {
+    return {move(m_data), move(m_ids), move(m_todate), move(m_local_id), move(m_remote_id)};
+  }
 }
 
 void DatabaseFetcher::save_page_data(const nlohmann::json& page_data, bool matching_mode) {
