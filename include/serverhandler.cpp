@@ -38,22 +38,31 @@ using namespace std;
 
 namespace sel {
 
-ServerHandler::ServerHandler(size_t worker_threads) {
-  while (worker_threads-->0) {
-    get_default_logger()->debug("Adding worker thread #{}", worker_threads);
-    std::thread job_queue_runner{&ServerHandler::execute_job_queue, this, worker_threads};
-    m_worker_threads.emplace_back(move(job_queue_runner));
+void run_job(const shared_ptr<LinkageJob>& job) {
+  assert (job->get_status() == JobStatus::QUEUED && "Only queued jobs can be run!");
+
+  const auto& remote_id = job->get_remote_id();
+  bool matching_mode = ConfigurationHandler::cget()
+      .get_remote_config(remote_id)->get_matching_mode();
+  if (matching_mode) {
+    job->run_linkage_job();
+  } else {
+#ifdef SEL_MATCHING_MODE
+    job->run_matching_job();
+#else
+    throw runtime_error("Attempt to run matching job but matching mode not compiled!");
+#endif
   }
 }
 
 ServerHandler::~ServerHandler() {
   for (auto& worker_thread : m_worker_threads) {
-    worker_thread.join();
+    worker_thread.second.join();
   }
 }
 
 ServerHandler& ServerHandler::get() {
-  static ServerHandler singleton{2}; //FIXME(TK) Magic Number
+  static ServerHandler singleton;
   return singleton;
 }
 
@@ -76,6 +85,9 @@ void ServerHandler::insert_client(RemoteId id) {
       remote_config->get_aby_port(), aby_info.aby_threads};
   m_logger->debug("Creating client on port {}, remote host: {}", aby_config.port, aby_config.host);
   m_aby_clients.emplace(id, make_shared<SecureEpilinker>(aby_config,circuit_config));
+
+  m_logger->debug("Creating worker thread for remote {}", id);
+  m_worker_threads.emplace(id, run_job);
   connect_client(id);
 }
 
@@ -97,70 +109,27 @@ void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
   get_local_server(id)->connect_server();
 }
 
-void ServerHandler::add_linkage_job(const RemoteId& remote_id, std::shared_ptr<LinkageJob>&& job){
-  const auto& config_handler{ConfigurationHandler::cget()};
-  const auto job_id{job->get_id()};
+void ServerHandler::add_linkage_job(const RemoteId& remote_id, const std::shared_ptr<LinkageJob>& job){
+  const auto& config_handler = ConfigurationHandler::cget();
+  const auto job_id = job->get_id();
   if(config_handler.get_remote_config(remote_id)->get_mutual_initialization_status()) {
-  m_job_remote_mapping.emplace(job->get_id(), remote_id);
-  m_client_jobs[remote_id].emplace(job->get_id(),move(job));
+    m_client_jobs.emplace(job_id, job);
+    m_worker_threads.at(remote_id).push(job);
   } else {
-    m_logger->error("Can not create linkage job {}: Connection to remote Secure EpiLinker is not properly initialized", job_id);
-  }
-}
-
-void ServerHandler::run_job(shared_ptr<LinkageJob>& job) {
-  const auto& remote_id = m_job_remote_mapping.at(job->get_id());
-  bool matching_mode = ConfigurationHandler::cget()
-      .get_remote_config(remote_id)->get_matching_mode();
-  if (matching_mode) {
-    job->run_linkage_job();
-  } else {
-#ifdef SEL_MATCHING_MODE
-    job->run_matching_job();
-#else
-    throw runtime_error("Attempt to run matching job but matching mode not compiled!");
-#endif
-  }
-}
-
-shared_ptr<LinkageJob> ServerHandler::retrieve_next_queued_job(size_t remote_index) {
-  auto& [remote_id, jobid_jobs] = *std::next(m_client_jobs.begin(), remote_index);
-  lock_guard<mutex> __lock{m_job_queue_mutex};
-  for (auto& jobp : jobid_jobs) {
-    auto job = jobp.second;
-    if (job->get_status() == JobStatus::QUEUED) {
-      job->set_status(JobStatus::RUNNING);
-      return job;
-    }
-  }
-  return nullptr;
-}
-
-void ServerHandler::execute_job_queue(size_t id) {
-  get_default_logger()->debug("Job queue runner #{} started.", id);
-  // Loops forever. Watches queue of jobs. If a job of one remote is found (and
-  // not already finished, running or faulty it starts that job. After that the
-  // next remote host is chosen. This should guarantee a fair distribution of
-  // jobs, i.e. round robbin w.r.t. remote hosts.
-  for (;;) {
-    for (size_t i = 0; i < m_client_jobs.size(); ++i) {
-      auto job = retrieve_next_queued_job(i);
-      if (job) run_job(job);
-    }
+    m_logger->error("Can not create linkage job {}: Connection to remote "
+        "Secure EpiLinker {} is not properly initialized.", job_id, remote_id);
   }
 }
 
 shared_ptr<const LinkageJob> ServerHandler::get_linkage_job(const JobId& j_id) const {
-  return m_client_jobs.at(m_job_remote_mapping.at(j_id)).at(j_id);
+  return m_client_jobs.at(j_id);
 }
 
 string ServerHandler::get_job_status(const JobId& j_id) const {
   if (j_id == "list"){ // Generate job status listing
     nlohmann::json result;
-    for(const auto& remote_queue : m_client_jobs) {
-      for(const auto& job : remote_queue.second) {
-        result[job.first] = js_enum_to_string(job.second->get_status());
-      }
+    for(const auto& job : m_client_jobs) {
+      result[job.first] = js_enum_to_string(job.second->get_status());
     }
     return result.dump();
   } else { // get specific job status

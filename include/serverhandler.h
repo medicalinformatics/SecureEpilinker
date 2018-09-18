@@ -23,9 +23,10 @@
 #include "seltypes.h"
 #include "resttypes.h"
 #include "connectionhandler.h"
+#include "serialworker.hpp"
+#include "logger.h"
 #include <map>
 #include <memory>
-#include "logger.h"
 
 namespace sel {
 
@@ -36,14 +37,12 @@ class DataHandler;
 class SecureEpilinker;
 
 class ServerHandler {
-  protected:
-    ServerHandler(size_t);
   public:
     static ServerHandler& get();
     static ServerHandler const& cget();
     void insert_client(RemoteId);
     void insert_server(RemoteId, RemoteAddress);
-    void add_linkage_job(const RemoteId&, std::shared_ptr<LinkageJob>&&);
+    void add_linkage_job(const RemoteId&, const std::shared_ptr<LinkageJob>&);
     std::shared_ptr<const LinkageJob> get_linkage_job(const JobId&) const;
     std::string get_job_status(const JobId&) const;
     std::shared_ptr<LocalServer> get_local_server(const RemoteId&) const;
@@ -51,18 +50,15 @@ class ServerHandler {
     std::shared_ptr<SecureEpilinker> get_epilink_client(const RemoteId&);
     void run_server(RemoteId, std::shared_ptr<const ServerData>);
     void connect_client(const RemoteId&);
+  protected:
+    ServerHandler() = default;
   private:
     ~ServerHandler();
-    void run_job(std::shared_ptr<LinkageJob>&);
-    std::shared_ptr<LinkageJob> retrieve_next_queued_job(size_t remote_counter);
-    void execute_job_queue(size_t id);
-    std::map<JobId, RemoteId> m_job_remote_mapping;
     std::map<RemoteId, std::shared_ptr<SecureEpilinker>> m_aby_clients;
-    std::map<RemoteId, std::map<JobId, std::shared_ptr<LinkageJob>> > m_client_jobs;
     std::map<RemoteId, std::shared_ptr<LocalServer>> m_server;
+    std::map<RemoteId, SerialWorker<LinkageJob>> m_worker_threads;
+    std::map<JobId, std::shared_ptr<LinkageJob>> m_client_jobs; // for status retrieval
     std::shared_ptr<spdlog::logger> m_logger{get_default_logger()};
-    std::mutex m_job_queue_mutex;
-    std::vector<std::thread> m_worker_threads;
 };
 
 } // namespace sel

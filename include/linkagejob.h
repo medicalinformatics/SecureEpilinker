@@ -52,6 +52,7 @@ class LinkageJob {
    JobStatus get_status() const;
    void set_status(JobStatus);
    JobId get_id() const;
+   RemoteId get_remote_id() const;
    void run_linkage_job();
    void run_matching_job();
    void set_local_config(std::shared_ptr<LocalConfiguration>);
