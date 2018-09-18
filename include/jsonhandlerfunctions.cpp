@@ -35,6 +35,7 @@
 #include "restbed"
 #include "resttypes.h"
 #include "restutils.h"
+#include "connectionconfig.hpp"
 #include "jsonutils.h"
 #include "restresponses.hpp"
 #include "serverhandler.h"
@@ -46,7 +47,8 @@ namespace sel {
 
 SessionResponse valid_test_config_json_handler(
     const nlohmann::json& client_config,
-    const RemoteId& remote_id) {
+    const RemoteId& remote_id,
+    const string& authorization) {
   auto logger{get_default_logger()};
   auto& config_handler{ConfigurationHandler::get()};
   auto& connection_handler{ConnectionHandler::get()};
@@ -84,7 +86,8 @@ SessionResponse valid_test_config_json_handler(
 
 SessionResponse valid_linkrecord_json_handler(
     const nlohmann::json& j,
-    const RemoteId& remote_id) {
+    const RemoteId& remote_id,
+    const string& authorization) {
   auto logger{get_default_logger()};
   const auto& config_handler{ConfigurationHandler::cget()};
   auto& server_handler{ServerHandler::get()};
@@ -93,7 +96,7 @@ SessionResponse valid_linkrecord_json_handler(
     JobId job_id;
     if (config_handler.get_remote_count()) {
       const auto local_config{config_handler.get_local_config()};
-      const auto remote_config{config_handler.get_remote_config(remote_id)};
+       const auto remote_config{config_handler.get_remote_config(remote_id)};
       auto job{make_shared<LinkageJob>(local_config, remote_config)};
       job_id = job->get_id();
       logger->info("Created Job on Path: {}", job_id);
@@ -125,7 +128,8 @@ SessionResponse valid_linkrecord_json_handler(
 
 SessionResponse valid_init_remote_json_handler(
     const nlohmann::json& j,
-    RemoteId remote_id) {
+    const RemoteId& remote_id,
+    const string&) {
   auto logger{get_default_logger()};
   auto& config_handler{ConfigurationHandler::get()};
   logger->trace("Payload: {}", j.dump(2));
@@ -137,8 +141,7 @@ SessionResponse valid_init_remote_json_handler(
   try {
     // Get Connection Profile
     con.url = j.at("connectionProfile").at("url").get<string>();
-    con.authentication =
-        parse_json_auth_config(j.at("connectionProfile").at("authentication"));
+    con.authenticator.set_auth_info(move(parse_json_auth_config(j.at("connectionProfile").at("authentication"))));
     remote_config->set_connection_profile(move(con));
     bool matching_mode;
     if (!j.count("matchingAllowed")) {
@@ -159,8 +162,7 @@ SessionResponse valid_init_remote_json_handler(
     // Get Linkage Service Config, if not in matching mode
     if (!matching_mode) {
       linkage_service.url = j.at("linkageService").at("url").get<string>();
-      linkage_service.authentication =
-          parse_json_auth_config(j.at("linkageService").at("authentication"));
+      linkage_service.authenticator.set_auth_info(move(parse_json_auth_config(j.at("linkageService").at("authentication"))));
       remote_config->set_linkage_service(move(linkage_service));
     }
   } catch (const exception& e) {
@@ -177,7 +179,8 @@ SessionResponse valid_init_remote_json_handler(
 
 SessionResponse valid_init_local_json_handler(
     const nlohmann::json& j,
-    RemoteId) {
+    const RemoteId&,
+    const string&) {
   auto logger = get_default_logger();
   auto& config_handler{ConfigurationHandler::get()};
   logger->trace("Payload: {}", j.dump(2));

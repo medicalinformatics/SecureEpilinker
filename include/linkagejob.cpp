@@ -176,10 +176,9 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
 void LinkageJob::signal_server(promise<size_t>& nvals) {
   auto logger{get_default_logger()};
   std::this_thread::sleep_for(1s);
-  // TODO(TK): get inter SEL Authorization stuff done
   string data{"{}"};
   list<string> headers{
-      "Authorization: apiKey apiKey=\""s+"\"",
+      "Authorization: "s+m_remote_config->get_remote_authenticator().sign_transaction(""),
       "SEL-Identifier: "s + m_local_config->get_local_id(),
       "Content-Type: application/json"};
   string url{assemble_remote_url(m_remote_config) + "/initMPC/"+m_local_config->get_local_id()};

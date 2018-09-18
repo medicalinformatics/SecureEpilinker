@@ -35,14 +35,15 @@ class AuthenticationConfig {
    */
 
  public:
-  explicit AuthenticationConfig() = default;
+  AuthenticationConfig() = default;
+  AuthenticationConfig(const AuthenticationConfig&) = default;
   explicit AuthenticationConfig(AuthenticationType type) : m_type(type) {}
   virtual ~AuthenticationConfig() = default;
   AuthenticationType get_type() const  { return m_type; }
   std::string print_type() const {
     switch(m_type){
-      case AuthenticationType::NONE: return "None"; break;
-      case AuthenticationType::API_KEY: return "Api_Key"; break;
+      case AuthenticationType::NONE: return "none"; break;
+      case AuthenticationType::API_KEY: return "apiKey"; break;
     }
     return "Unknown Type! That's an error!";
   }

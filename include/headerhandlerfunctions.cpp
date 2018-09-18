@@ -26,20 +26,26 @@ later version. This program is distributed in the hope that it will be useful,
 #include "remoteconfiguration.h"
 #include "connectionhandler.h"
 #include "logger.h"
+#include "util.h"
 
 using namespace std;
 namespace sel{
 
 SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
                               const shared_ptr<const restbed::Request>&,
-                              const multimap<string,string>&,
+                              const multimap<string,string>& header,
                               string remote_id,
                               const shared_ptr<spdlog::logger>& logger) {
   SessionResponse response;
   Port common_port;
   string client_ip;
   logger->info("Recieved Linkage Request from {}", remote_id);
-  // TODO(TK) Authorization
+  auto remote_config{ConfigurationHandler::cget().get_remote_config(remote_id)};
+  if(auto auth_result = // check authentication
+      remote_config->get_remote_authenticator().check_authentication_header(header);
+      auth_result.return_code != 200){ // auth not ok
+    return auth_result;
+  }
   common_port = ServerHandler::cget().get_server_port(remote_id);
   size_t nvals;
   shared_ptr<const ServerData> data;
@@ -66,15 +72,21 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
 
 SessionResponse test_configs(const shared_ptr<restbed::Session>&,
                               const shared_ptr<const restbed::Request>&,
-                              const multimap<string,string>&,
-                              string remote_id,
+                              const multimap<string,string>& header,
+                              const string& remote_id,
                               const shared_ptr<spdlog::logger>& logger) {
   SessionResponse response;
   logger->info("Recieved Test Request from {}", remote_id);
+  auto remote_config{ConfigurationHandler::cget().get_remote_config(remote_id)};
+  //if(auto auth_result = // check authentication
+      //remote_config->get_remote_authenticator().check_authentication_header(header);
+      //auth_result.return_code != 200){ // auth not ok
+    //return auth_result;
+  //}
   auto& config_handler{ConfigurationHandler::get()};
   config_handler.get_remote_config(remote_id)->test_configuration(config_handler.get_local_config()->get_local_id(), config_handler.make_comparison_config(remote_id));
   response.return_code = restbed::OK;
-  response.body = "Linkage server running"s;
+  response.body = "Remotes connected"s;
   response.headers = {{"Content-Length", to_string(response.body.length())},
                       {"SEL-Identifier", remote_id},
                       {"Connection", "Close"}};

@@ -29,11 +29,13 @@
 #include "linkagejob.h"
 #include "seltypes.h"
 #include "resttypes.h"
+#include "connectionconfig.hpp"
 
 namespace sel {
 class MatchingJob;
 class ServerHandler;
 class ConnectionHandler;
+class Authenticator;
 
 class RemoteConfiguration {
   /**
@@ -41,7 +43,7 @@ class RemoteConfiguration {
    */
  public:
   explicit RemoteConfiguration(RemoteId c_id);
-  ~RemoteConfiguration();
+  ~RemoteConfiguration() = default;
   void set_connection_profile(ConnectionConfig cconfig);
 
   void set_linkage_service(ConnectionConfig cconfig);
@@ -54,6 +56,7 @@ class RemoteConfiguration {
   void set_aby_port(Port port);
   std::string get_remote_host() const;
   std::string get_remote_scheme() const;
+  const Authenticator& get_remote_authenticator() const;
 
   void set_matching_mode(bool);
   bool get_matching_mode() const;

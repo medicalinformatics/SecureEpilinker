@@ -58,6 +58,7 @@ void JsonMethodHandler::handle_method(
   auto request{session->get_request()};
   auto headers{request->get_headers()};
   RemoteId remote_id{request->get_path_parameter("remote_id", "")};
+  string authorization{request->get_header("Authorization", "")};
   size_t content_length = request->get_header("Content-Length", 0);
   string header_string;
   for (const auto& h : headers) {
@@ -78,7 +79,7 @@ void JsonMethodHandler::handle_method(
             const restbed::Bytes& body) {
           string bodystring = string(body.begin(), body.end());
           nlohmann::json data = nlohmann::json::parse(bodystring);
-          use_data(session, data, remote_id);
+          use_data(session, data, remote_id, authorization);
         });
   } else {
     session->close(restbed::LENGTH_REQUIRED, "", {{"Connection", "Close"}});
@@ -87,14 +88,15 @@ void JsonMethodHandler::handle_method(
 
 void JsonMethodHandler::use_data(const shared_ptr<restbed::Session>& session,
                                  const nlohmann::json& bodydata,
-                                 const RemoteId& remote_id) const {
+                                 const RemoteId& remote_id,
+                                 const string& authorization) const {
   auto logger{get_default_logger()};
   logger->trace("JSON recieved:\n{}", bodydata.dump(4));
   auto validation = m_validator->validate_json(bodydata);
   SessionResponse response;
   if (validation.first) {
     if (m_valid_callback) {
-      response = m_valid_callback(bodydata, remote_id);
+      response = m_valid_callback(bodydata, remote_id, authorization);
     } else {
       throw runtime_error("Invalid valid_callback!");
     }

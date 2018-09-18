@@ -1,6 +1,7 @@
 /**
-\file    jsonhandlerfunctions.h
+\file    connectionconfig.hpp
 \author  Tobias Kussel <kussel@cbs.tu-darmstadt.de>
+\author  Sebastian Stammler <sebastian.stammler@cysec.de>
 \copyright SEL - Secure EpiLinker
     Copyright (C) 2018 Computational Biology & Simulation Group TU-Darmstadt
     This program is free software: you can redistribute it and/or modify
@@ -13,42 +14,30 @@
     GNU Affero General Public License for more details.
     You should have received a copy of the GNU Affero General Public License
     along with this program. If not, see <http://www.gnu.org/licenses/>.
-\brief Functions for handling given JSON Objects
+\brief saves connection urls and authentication infos
 */
 
-#ifndef SEL_JSONHANDLERFUNCTIONS_H
-#define SEL_JSONHANDLERFUNCTIONS_H
+#ifndef SEL_CONNECTIONCONFIG_HPP
+#define SEL_CONNECTIONCONFIG_HPP
 #pragma once
 
 #include <memory>
-#include "nlohmann/json.hpp"
-#include "resttypes.h"
-#include "valijson/validation_results.hpp"
+#include <string>
+#include "authenticator.h"
 
 namespace sel {
-
-SessionResponse valid_test_config_json_handler(
-    const nlohmann::json& j,
-    const RemoteId& remote_id,
-    const std::string&);
-
-SessionResponse valid_init_local_json_handler(
-    const nlohmann::json&,
-    const RemoteId&,
-    const std::string&);
-
-SessionResponse valid_init_remote_json_handler(
-    const nlohmann::json&,
-    const RemoteId&,
-    const std::string&);
-
-SessionResponse valid_linkrecord_json_handler(
-    const nlohmann::json&,
-    const RemoteId&,
-    const std::string&);
-
-
-SessionResponse invalid_json_handler(valijson::ValidationResults&);
-
-}  // namespace sel
-#endif  // SEL_JSONHANDLERFUNCTIONS_H
+struct ConnectionConfig {
+  std::string url;
+  sel::Authenticator authenticator;
+  //std::unique_ptr<AuthenticationConfig> authentication;
+  //ConnectionConfig& operator=(ConnectionConfig&& rhs){
+    //url = move(rhs.url);
+    //authenticator = std::move(rhs.authenticator);
+    ////authentication = move(rhs.authentication);
+    //return *this;
+  //}
+  //ConnectionConfig() = default;
+  //ConnectionConfig(ConnectionConfig&&) = default;
+};
+} // namespace sel
+#endif /* end of include guard: SEL_CONNECTIONCONFIG_HPP */
