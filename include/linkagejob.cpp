@@ -73,6 +73,10 @@ JobId LinkageJob::get_id() const {
   return m_id;
 }
 
+RemoteId LinkageJob::get_remote_id() const {
+  return m_remote_config->get_id();
+}
+
 void LinkageJob::run_linkage_job() {
   auto logger{get_default_logger()};
   m_status = JobStatus::RUNNING;

@@ -87,6 +87,7 @@ set(${P}_MAIN_SOURCES
   "include/logger.cpp"
   "include/base64.cpp"
   "include/monitormethodhandler.cpp"
+  "include/serialworker.hpp"
  )
 
 # include externals as system libs to suppress warnings
