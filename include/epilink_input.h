@@ -20,11 +20,12 @@
 #define SEL_EPILINKINPUT_H
 #pragma once
 
+#include "seltypes.h"
+#include "fmt/ostream.h"
+#include "util.h"
 #include <vector>
 #include <map>
 #include <cstdint>
-#include "seltypes.h"
-#include "fmt/ostream.h"
 
 namespace sel {
 
@@ -103,9 +104,10 @@ struct formatter<sel::EpilinkConfig> {
 
   template <typename FormatContext>
   auto format(const sel::EpilinkConfig& conf, FormatContext &ctx) {
+    const auto field_names = map_keys(conf.fields);
     return format_to(ctx.begin(),
-        "EpilinkConfig{{thresholds={};{}, nfields={}}}",
-        conf.threshold, conf.tthreshold, conf.nfields
+        "EpilinkConfig{{thresholds={};{}, nfields={}, fields={}}}",
+        conf.threshold, conf.tthreshold, conf.nfields, field_names
     );
   }
 };
