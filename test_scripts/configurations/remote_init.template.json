@@ -1,16 +1,17 @@
 {
-"connectionProfile": {
-  "url": "https://{{host}}:{{port}}",
-  "authentication": {
-    "authType": "apiKey",
-    "sharedKey": "xkcd123"
-  }
-},
-"linkageService": {
-  "url": "https://127.0.0.1:5000",
-  "authentication": {
-    "authType": "apiKey",
-    "sharedKey": "bcd234"
-  }
-}
+  "connectionProfile": {
+    "url": "https://{{host}}:{{port}}",
+    "authentication": {
+      "authType": "apiKey",
+      "sharedKey": "xkcd123"
+    }
+  },
+  "linkageService": {
+    "url": "https://127.0.0.1:5000",
+    "authentication": {
+      "authType": "apiKey",
+      "sharedKey": "bcd234"
+    }
+  },
+  "matchingAllowed": true
 }
