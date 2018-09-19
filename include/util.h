@@ -156,6 +156,15 @@ std::vector<ToValue> transform_map_vec(const std::map<Key, FromValue>& _map,
 }
 
 template <class Key, class Value>
+std::vector<Key> map_keys(const std::map<Key, Value>& _map) {
+  std::vector<Key> keys;
+  keys.reserve(_map.size());
+  for (const auto& kv : _map)
+    keys.push_back(kv.first);
+  return keys;
+}
+
+template <class Key, class Value>
 std::map<Key, std::vector<Value>>& append_to_map_of_vectors(
     const std::map<Key, std::vector<Value>>& source,
     std::map<Key, std::vector<Value>>& destination) {
