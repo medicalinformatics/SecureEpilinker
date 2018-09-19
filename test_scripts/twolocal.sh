@@ -12,4 +12,4 @@ remote_init $id2 $port1 localhost $port2
 remote_init $id1 $port2 localhost $port1
 sel_test_conn $id2 $port1
 sel_test_conn $id1 $port2
-link_record $id2 $port1
+match_record $id2 $port1

@@ -2,79 +2,74 @@
 # Reflects the requests from HTTP methods GET, POST, PUT, and DELETE
 # Written by Nathan Hamiel (2010)
 
+import re
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from optparse import OptionParser
+from jinja2 import Template
 
 class RequestHandler(BaseHTTPRequestHandler):
-    
-    def do_POST(self):
-        
-        request_path = self.path
-        
-        print("\n----- Request Start ----->\n")
-        print(request_path)
-        print((self.headers))
-        print("<----- Request End -----\n")
 
-        self.send_response(200)
-        self.send_header("Connection", "Close")
-        self.send_header('Content-Length', str(0))
-        self.end_headers()
-        
     def do_GET(self):
-        
-        request_path = self.path
-        
-        print("\n----- Request Start ----->\n")
-        print(request_path)
-        
-        request_headers = self.headers
-        print(request_headers)
-        if 'Authorization' in request_headers:
-            print("Authorization:", request_headers['Authorization'])
-        else:
-            print("Kein Auth-Header!")
-        #length = 1755
 
-        
-        #print((self.rfile.read(length)))
+        print("\n----- Request Start ----->")
+        request_path = self.path
+        request_headers = self.headers
+        print("Path:", request_path)
+        print(request_headers)
+
+        if 'Authorization' not in request_headers:
+            print("[Kein Authorization-Header]")
+
         content_len = int(self.headers.get('Content-Length', 0))
-        post_body = self.rfile.read(content_len)
-        print("<----- Request End -----\n")
-        
-        if(request_path.find("page=2")== -1 and request_path.find("page=3")== -1):
-            print("First Page")
-            with open('database/page1.json', 'r') as myfile:
-                msg=myfile.read().replace('\n', '')
-        if(request_path.find("page=2")!= -1):
-            print("Second Page")
-            with open('database/page2.json', 'r') as myfile:
-                msg=myfile.read().replace('\n', '')
-        if(request_path.find("page=3")!= -1):
-            with open('database/page3.json', 'r') as myfile:
-                msg=myfile.read().replace('\n', '')
-        if(request_path.find("linkCallback")!= -1):
-            print("Callback recieved:", post_body)
-        self.send_response(200,'')
+        post_body = self.rfile.read(content_len).decode("utf-8")
+
+        msg, code = "", 200
+        if "getAllRecords" in request_path:
+            page = extract_page(request_path)
+            remote = extract_remote(request_path)
+            print("Page {} requested for remote {}".format(page, remote))
+            msg = render_page(page, remote)
+
+        elif "Callback" in request_path:
+            print("Callback recieved:\n", post_body)
+
+        else:
+            print("Unknown request received:\n", post_body)
+            code = 401
+
+        print("<----- Request End -----")
+
+        self.send_response(code, '')
         self.send_header('Content-Length', str(len(msg)))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header("Connection", "Close")
         self.end_headers()
         self.wfile.write((msg+"\n").encode("utf-8"))
- 
-    do_PUT = do_POST
+
+    do_POST = do_GET
     do_DELETE = do_GET
-        
+    do_PUT = do_POST
+
+def extract_page(path):
+    match = re.search(r'(?<=page=)\d+', path)
+    if not match:
+        return '1'
+    return match[0]
+
+def extract_remote(path):
+    match = re.search(r'(?<=getAllRecords/)\w+', path)
+    return match[0]
+
+def render_page(page, remote):
+    with open('database/page{}.json'.format(page), 'r') as myfile:
+        t = Template(myfile.read().replace('\n', ''))
+        return t.render(local="http-dummy", remote=remote)
+
 def main():
     port = 8800
     print(('Listening on localhost:%s' % port))
     server = HTTPServer(('', port), RequestHandler)
     server.serve_forever()
 
-        
+
 if __name__ == "__main__":
-    parser = OptionParser()
-    parser.usage = ("Creates an http-server that will echo out any GET or POST parameters\n"
-                    "Run:\n\n"
-                    "   reflect")
-    (options, args) = parser.parse_args()
-    
-main()
+    main()

@@ -1,19 +1,19 @@
 { 
    "_links":{ 
       "self":{ 
-         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=2&todate=1524096000"
+         "href":"http://localhost:8800/Communicator/getAllRecords/{{remote}}?page=1&pagesize=2&todate=1524096000"
       },
       "first":{ 
-         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=2&todate=1524096000"
+         "href":"http://localhost:8800/Communicator/getAllRecords/{{remote}}?page=1&pagesize=2&todate=1524096000"
       },
       "prev":{ 
-         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=1&pagesize=2&todate=1524096000"
+         "href":"http://localhost:8800/Communicator/getAllRecords/{{remote}}?page=1&pagesize=2&todate=1524096000"
       },
       "next":{ 
-         "href":"http://localhost:8800/rest/api/AllRecords?page=2&pagesize=2&todate=1524096000"
+         "href":"http://localhost:8800/Communicator/getAllRecords/{{remote}}?page=2&pagesize=2&todate=1524096000"
       },
       "last":{ 
-         "href":"https://ml.mitro.dkfz.de:8080/rest/api/AllRecords?page=3&pagesize=2&todate=1524096000"
+         "href":"http://localhost:8800/Communicator/getAllRecords/{{remote}}?page=3&pagesize=2&todate=1524096000"
       }
    },
    "total":6,
@@ -21,8 +21,8 @@
    "lastPageNumber":3,
    "pageSize": 2,
    "todate":1524096000,
-   "localId": "TUDA2",
-   "remoteId": "TUDA1",
+   "localId": "{{local}}",
+   "remoteId": "{{remote}}",
    "records":[ 
       { 
          "fields":{ 
