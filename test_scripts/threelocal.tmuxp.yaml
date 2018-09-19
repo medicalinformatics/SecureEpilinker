@@ -1,0 +1,25 @@
+# tmuxp load twolocal.tmuxp.yaml
+session_name: SEL two local instances test
+environment:
+  sel_id1: tuda
+  sel_id2: dkfz
+  sel_id3: charite
+  sel_port1: "8161"
+  sel_port2: "8162"
+  sel_port3: "8163"
+windows:
+- three_sels:
+  panes:
+    - shell_command:
+      - ../build/sel -vvv -s -p $sel_port1
+    - shell_command:
+      - ../build/sel -vvv -s -p $sel_port2
+    - shell_command:
+      - ../build/sel -vvv -s -p $sel_port3
+- cmd:
+  panes:
+    - shell_command:
+      - python httplisten.py
+    - shell_command:
+      - ./threelocal.sh
+
