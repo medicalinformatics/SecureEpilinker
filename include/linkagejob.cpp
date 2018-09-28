@@ -57,7 +57,7 @@ void LinkageJob::add_data_field(const FieldName& fieldname,
   m_data.emplace(fieldname, move(datafield));
 }
 
-void LinkageJob::add_data(map<FieldName, FieldEntry> data) {
+void LinkageJob::add_data(Record data) {
   m_data = move(data);
 }
 

@@ -36,6 +36,8 @@ using VBitmask = std::vector<Bitmask>;
 // How we save all input data
 using FieldEntry = std::optional<Bitmask>;
 using VFieldEntry = std::vector<FieldEntry>;
+using Record = std::map<FieldName, FieldEntry>;
+using VRecord = std::map<FieldName, VFieldEntry>;
 
 struct EpilinkConfig {
   // field descriptions
@@ -67,7 +69,7 @@ struct EpilinkConfig {
 
 struct EpilinkClientInput {
   // nfields map of input record to link
-  const std::map<FieldName, FieldEntry> record;
+  const Record record;
 
   // need to know database size of remote during circuit building
   const size_t nvals;
@@ -76,11 +78,11 @@ struct EpilinkClientInput {
 struct EpilinkServerInput {
   // Outer vector by fields, inner by records!
   // Need to model like this for ABY SIMD layout
-  const std::map<FieldName, VFieldEntry> database;
+  const VRecord database;
 
   const size_t nvals; // calculated
-  EpilinkServerInput(const std::map<FieldName, VFieldEntry>& database);
-  EpilinkServerInput(std::map<FieldName, VFieldEntry>&& database);
+  EpilinkServerInput(const VRecord& database);
+  EpilinkServerInput(VRecord&& database);
   ~EpilinkServerInput() = default;
 private:
   void check_sizes(); // called by public constructors to check sizes

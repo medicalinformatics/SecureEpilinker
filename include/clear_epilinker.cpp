@@ -86,8 +86,8 @@ bool operator<(const FieldWeight<T>& left, const FieldWeight<T>& right) {
 }
 
 /******************** Input Class ********************/
-Input::Input(const std::map<FieldName, FieldEntry>& record,
-        const std::map<FieldName, VFieldEntry>& database) :
+Input::Input(const Record& record,
+        const VRecord& database) :
   record{record}, database{database},
   nvals{(*database.cbegin()).second.size()}
 {

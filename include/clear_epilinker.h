@@ -29,14 +29,14 @@ namespace sel::clear_epilink {
   * Combined input of record and database to match against
   */
 struct Input {
-  const std::map<FieldName, FieldEntry> record;
-  const std::map<FieldName, VFieldEntry> database;
+  const Record record;
+  const VRecord database;
   const size_t nvals;
   // Combines Epilink{Client,Server}Input
   Input(const EpilinkClientInput&, const EpilinkServerInput&);
   // Sets fields directly
-  Input(const std::map<FieldName, FieldEntry>& record,
-      const std::map<FieldName, VFieldEntry>& database);
+  Input(const Record& record,
+      const VRecord& database);
 };
 
 /**

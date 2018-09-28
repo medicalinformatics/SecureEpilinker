@@ -92,13 +92,13 @@ void EpilinkServerInput::check_sizes() {
 }
 
 EpilinkServerInput::EpilinkServerInput(
-    const std::map<FieldName, VFieldEntry>& database_) :
+    const VRecord& database_) :
   database(database_),
   nvals {database.cbegin()->second.size()}
 { check_sizes(); }
 
 EpilinkServerInput::EpilinkServerInput(
-    std::map<FieldName, VFieldEntry>&& database_) :
+    VRecord&& database_) :
   database{move(database_)},
   nvals {database.cbegin()->second.size()}
 { check_sizes(); }

@@ -239,7 +239,7 @@ auto read_database_file(const fs::path& db_path, const EpilinkConfig& epi_cfg) {
 }
 
 auto read_database_dir(const fs::path& dir_path, const EpilinkConfig& epi_cfg) {
-  map<FieldName, VFieldEntry> db;
+  VRecord db;
   for (auto& f: fs::directory_iterator(dir_path)) {
     if (f.path().extension() == ".json") {
       auto temp_db = read_database_file(f, epi_cfg);

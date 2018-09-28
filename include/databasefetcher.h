@@ -53,7 +53,7 @@ class DatabaseFetcher {
   nlohmann::json get_next_page() const;
   nlohmann::json request_page(const std::string& url) const;
   void save_page_data(const nlohmann::json&, bool);
-  std::map<FieldName, VFieldEntry> m_data;
+  VRecord m_data;
   std::vector<std::string> m_ids;
   std::string m_next_page;
   size_t m_todate;
