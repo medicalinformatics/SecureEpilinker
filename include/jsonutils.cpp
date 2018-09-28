@@ -125,7 +125,7 @@ map<FieldName, FieldEntry> parse_json_fields(
 
 map<FieldName, vector<FieldEntry>> parse_json_fields_array(
     const map<FieldName, ML_Field>& fields, const nlohmann::json& json) {
-  map<FieldName, VFieldEntry> records;
+  VRecord records;
   for (const auto& rec : json) {
     if (!rec.count("fields")) {
       throw runtime_error("Invalid JSON Data: missing 'fields' in records array");

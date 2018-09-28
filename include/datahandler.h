@@ -39,7 +39,7 @@ class ConfigurationHandler;
 class DatabaseFetcher;
 
 struct ServerData {
-  std::map<FieldName, VFieldEntry> data;
+  VRecord data;
   std::vector<std::string> ids;
   ToDate todate;
   RemoteId local_id;
