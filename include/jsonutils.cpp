@@ -113,9 +113,9 @@ FieldEntry parse_json_field(const ML_Field& field,
   }
 }
 
-map<FieldName, FieldEntry> parse_json_fields(
+Record parse_json_fields(
     const map<FieldName, ML_Field>& fields, const nlohmann::json& json) {
-  map<FieldName, FieldEntry> result;
+  Record result;
   for (auto f = json.cbegin(); f != json.cend(); ++f) {
     auto entry = parse_json_field(fields.at(f.key()), *f);
     result.emplace(f.key(), move(entry));
@@ -123,7 +123,7 @@ map<FieldName, FieldEntry> parse_json_fields(
   return result;
 }
 
-map<FieldName, vector<FieldEntry>> parse_json_fields_array(
+VRecord parse_json_fields_array(
     const map<FieldName, ML_Field>& fields, const nlohmann::json& json) {
   VRecord records;
   for (const auto& rec : json) {
