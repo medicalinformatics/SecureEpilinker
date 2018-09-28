@@ -17,3 +17,5 @@ CTestTestfile.cmake
 tags
 /.gdb_history
 /log
+*.autosave
+/CMakeLists.txt.user
