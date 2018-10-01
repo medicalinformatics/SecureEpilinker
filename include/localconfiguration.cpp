@@ -36,7 +36,7 @@ LocalConfiguration::LocalConfiguration(
     unique_ptr<AuthenticationConfig> local_auth)
     : m_local_authentication(move(local_auth)), m_data_service_url{move(url)} {}
 
-const ML_Field& LocalConfiguration::get_field(
+const FieldSpec& LocalConfiguration::get_field(
     const FieldName& fieldname) const {
     return cref(m_epilink_config.fields.at(fieldname));
 }
@@ -49,7 +49,7 @@ const EpilinkConfig& LocalConfiguration::get_epilink_config() const {
   return cref(m_epilink_config);
 }
 
-const std::map<FieldName, ML_Field>& LocalConfiguration::get_fields() const {
+const std::map<FieldName, FieldSpec>& LocalConfiguration::get_fields() const {
   return m_epilink_config.fields;
 }
 
@@ -92,7 +92,7 @@ string LocalConfiguration::get_local_id() const {
 }
 
 
-void to_json(nlohmann::json& j, const ML_Field& f) {
+void to_json(nlohmann::json& j, const FieldSpec& f) {
   j = nlohmann::json{
       {"name", f.name},
       {"weight", f.weight},
@@ -102,8 +102,8 @@ void to_json(nlohmann::json& j, const ML_Field& f) {
       {"fieldType", ftype_to_str(f.type)}};
 }
 
-void from_json(const nlohmann::json& j, ML_Field& f){
-f = ML_Field{j.at("name").get<string>(), j.at("weight").get<double>(),
+void from_json(const nlohmann::json& j, FieldSpec& f){
+f = FieldSpec{j.at("name").get<string>(), j.at("weight").get<double>(),
                   str_to_fcomp(j.at("comparator").get<string>()),
                   str_to_ftype(j.at("fieldType").get<string>()),
                   j.at("bitlength").get<size_t>()};

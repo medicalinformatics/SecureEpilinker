@@ -31,7 +31,7 @@ using fmt::print;
 namespace sel {
 
 EpilinkConfig::EpilinkConfig(
-      std::map<FieldName, ML_Field> fields_,
+      std::map<FieldName, FieldSpec> fields_,
       std::vector<IndexSet> exchange_groups_,
       double threshold, double tthreshold) :
   fields {fields_},
