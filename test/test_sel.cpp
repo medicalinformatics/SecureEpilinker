@@ -25,7 +25,7 @@ constexpr double Threshold = 0.9;
 constexpr double TThreshold = 0.7;
 const fs::path CircDir = "./circ";
 
-struct FieldData { ML_Field field; Bitmask data; };
+struct FieldData { FieldSpec field; Bitmask data; };
 
 map<string, FieldData> make_test_data() {
   vector<FieldData> field_data = {
@@ -58,21 +58,21 @@ EpilinkConfig make_dkfz_cfg() {
   return {
     { // begin map<string, ML_Field>
       { "vorname",
-        ML_Field("vorname", 0.000235, 0.01, "dice", "bitmask", 500) },
+        FieldSpec("vorname", 0.000235, 0.01, "dice", "bitmask", 500) },
       { "nachname",
-        ML_Field("nachname", 0.0000271, 0.008, "dice", "bitmask", 500) },
+        FieldSpec("nachname", 0.0000271, 0.008, "dice", "bitmask", 500) },
       { "geburtsname",
-        ML_Field("geburtsname", 0.0000271, 0.008, "dice", "bitmask", 500) },
+        FieldSpec("geburtsname", 0.0000271, 0.008, "dice", "bitmask", 500) },
       { "geburtstag",
-        ML_Field("geburtstag", 0.0333, 0.005, "binary", "integer", 5) },
+        FieldSpec("geburtstag", 0.0333, 0.005, "binary", "integer", 5) },
       { "geburtsmonat",
-        ML_Field("geburtsmonat", 0.0833, 0.002, "binary", "integer", 4) },
+        FieldSpec("geburtsmonat", 0.0833, 0.002, "binary", "integer", 4) },
       { "geburtsjahr",
-        ML_Field("geburtsjahr", 0.0286, 0.004, "binary", "integer", 11) },
+        FieldSpec("geburtsjahr", 0.0286, 0.004, "binary", "integer", 11) },
       { "plz",
-        ML_Field("plz", 0.01, 0.04, "binary", "string", 40) },
+        FieldSpec("plz", 0.01, 0.04, "binary", "string", 40) },
       { "ort",
-        ML_Field("ort", 0.01, 0.04, "dice", "bitmask", 500) }
+        FieldSpec("ort", 0.01, 0.04, "dice", "bitmask", 500) }
     }, // end map<string, ML_Field>
     { { "vorname", "nachname", "geburtsname" } }, // exchange groups
     Threshold, TThreshold

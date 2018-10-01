@@ -41,7 +41,7 @@ using VRecord = std::map<FieldName, VFieldEntry>;
 
 struct EpilinkConfig {
   // field descriptions
-  std::map<FieldName, ML_Field> fields;
+  std::map<FieldName, FieldSpec> fields;
 
   // exchange groups by index
   std::vector<IndexSet> exchange_groups;
@@ -55,7 +55,7 @@ struct EpilinkConfig {
   Weight max_weight; // maximum weight for rescaling of weights
 
   EpilinkConfig(
-      std::map<FieldName, ML_Field> fields,
+      std::map<FieldName, FieldSpec> fields,
       std::vector<IndexSet> exchange_groups,
       double threshold, double tthreshold
   );

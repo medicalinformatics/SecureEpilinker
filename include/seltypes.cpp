@@ -27,7 +27,7 @@ using namespace std;
 namespace sel {
 
 
-ML_Field::ML_Field(const std::string& name, const double weight,
+FieldSpec::FieldSpec(const std::string& name, const double weight,
       const FieldComparator comp, const FieldType type,
       const size_t bitsize) :
     name{name}, weight{weight},

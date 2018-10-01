@@ -45,23 +45,23 @@ FieldType str_to_ftype(const std::string& str);
 FieldComparator str_to_fcomp(const std::string& str);
 std::string ftype_to_str(const FieldType&);
 
-struct ML_Field {
-  ML_Field() = default;
+struct FieldSpec {
+  FieldSpec() = default;
 
   /**
    * Constructor from json
    */
-  ML_Field(const std::string& name, double frequency, double error,
+  FieldSpec(const std::string& name, double frequency, double error,
       const std::string& comparator, const std::string& type,
       const size_t bitsize) :
-    ML_Field(name, std::log2((1-error)/frequency), str_to_fcomp(comparator),
+    FieldSpec(name, std::log2((1-error)/frequency), str_to_fcomp(comparator),
         str_to_ftype(type), bitsize)
   {};
 
   /**
    * Internal constructor for testing
    */
-  ML_Field(const std::string& name, const double weight,
+  FieldSpec(const std::string& name, const double weight,
       const FieldComparator comp, const FieldType type,
       const size_t bitsize);
 
@@ -94,12 +94,12 @@ struct formatter<sel::FieldComparator> {
 };
 
 template <>
-struct formatter<sel::ML_Field> {
+struct formatter<sel::FieldSpec> {
   template <typename ParseContext>
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const sel::ML_Field& field, FormatContext &ctx) {
+  auto format(const sel::FieldSpec& field, FormatContext &ctx) {
     return format_to(ctx.begin(),
         "ML_Field{{name={}, weight={}, comp={}, type={}, bitsize={}}}",
         field.name, field.weight, field.comparator, ftype_to_str(field.type), field.bitsize

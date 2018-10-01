@@ -65,7 +65,7 @@ class ConnectionHandler {
 
   void populate_aby_ports();
 
-  const ML_Field& get_field(const FieldName& name);
+  const FieldSpec& get_field(const FieldName& name);
 
   std::shared_ptr<restbed::Service> get_service() const;
 

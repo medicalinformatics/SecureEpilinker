@@ -65,7 +65,7 @@ Bitmask RandomInputGenerator::random_bm(const size_t bitsize, const int density_
 EpilinkInput RandomInputGenerator::generate(const size_t nvals) {
   // Client Input
   EpilinkClientInput in_client {
-    transform_map(cfg.fields, [this](const ML_Field& f)
+    transform_map(cfg.fields, [this](const FieldSpec& f)
       -> FieldEntry {
         bool be_empty = vec_contains(client_empty_fields, f.name);
         if (be_empty) {
@@ -82,7 +82,7 @@ EpilinkInput RandomInputGenerator::generate(const size_t nvals) {
 
   EpilinkServerInput in_server {
     transform_map(cfg.fields,
-      [this, &nvals, &in_client](const ML_Field& f)
+      [this, &nvals, &in_client](const FieldSpec& f)
       -> VFieldEntry {
         VFieldEntry ve;
         ve.reserve(nvals);
