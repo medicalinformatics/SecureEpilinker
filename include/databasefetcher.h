@@ -45,15 +45,17 @@ class DatabaseFetcher {
                   std::string url,
                   AuthenticationConfig const* l_auth,
                   size_t page_size);
+  DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf);
   void set_url(const std::string& url) { m_url = url; }
   void set_page_size(unsigned size) { m_page_size = size; }
   size_t get_todate() const { return m_todate; }
+  void save_page_data(const nlohmann::json&, bool, bool);
+  std::unique_ptr<VRecord> move_client_data();
 
  private:
   nlohmann::json get_next_page() const;
   nlohmann::json request_page(const std::string& url) const;
-  void save_page_data(const nlohmann::json&, bool);
-  VRecord m_data;
+  VRecord m_records;
   std::vector<std::string> m_ids;
   std::string m_next_page;
   size_t m_todate;

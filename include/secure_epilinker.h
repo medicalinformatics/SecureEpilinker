@@ -55,7 +55,7 @@ public:
    * specifying the inputs, as all circuits start with the InputGates. Hence,
    * the actual circuit building will happen in run_as_*.
    */
-  void build_circuit(const uint32_t nvals);
+  void build_circuit(const uint32_t database_size, const uint32_t num_records);
 
   /*
    * TODO The separation of setup and online phase is currently not possible in
@@ -69,8 +69,8 @@ public:
    * database size must match on both sides and be smaller than used nvals
    * during build_circuit()
    */
-  Result<CircUnit> run_as_client(const EpilinkClientInput& input);
-  Result<CircUnit> run_as_server(const EpilinkServerInput& input);
+  Result<CircUnit> run_as_client(std::unique_ptr<EpilinkClientInput>&& input);
+  Result<CircUnit> run_as_server(const std::shared_ptr<EpilinkServerInput>& input);
 #ifdef DEBUG_SEL_CIRCUIT
   Result<CircUnit> run_as_both(const EpilinkClientInput& in_client,
       const EpilinkServerInput& in_server);

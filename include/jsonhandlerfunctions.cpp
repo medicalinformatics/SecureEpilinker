@@ -84,10 +84,11 @@ SessionResponse valid_test_config_json_handler(
   }
 }
 
-SessionResponse valid_linkrecord_json_handler(
+SessionResponse linkrecords(
     const nlohmann::json& j,
     const RemoteId& remote_id,
-    const string& authorization) {
+    const string& authorization,
+    bool multiple_records) {
   auto logger{get_default_logger()};
   const auto& config_handler{ConfigurationHandler::cget()};
   auto& server_handler{ServerHandler::get()};
@@ -96,19 +97,23 @@ SessionResponse valid_linkrecord_json_handler(
     JobId job_id;
     if (config_handler.get_remote_count()) {
       const auto local_config{config_handler.get_local_config()};
-       const auto remote_config{config_handler.get_remote_config(remote_id)};
+      const auto remote_config{config_handler.get_remote_config(remote_id)};
       auto job{make_shared<LinkageJob>(local_config, remote_config)};
       job_id = job->get_id();
       logger->info("Created Job on Path: {}", job_id);
       try {
         job->set_callback(j.at("callback")
-                              .at("url")
-                              .get<string>());  // no move to use copy elision
+            .at("url")
+            .get<string>());  // no move to use copy elision
 
-        auto data = parse_json_fields(local_config->get_fields(), j.at("fields"));
+        VRecord data;
+        if(!multiple_records) {
+          data = record_to_vrecord(parse_json_fields(local_config->get_fields(), j.at("fields")));
+        } else {
+          data = DataHandler::cget().get_client_records(j);
+        }
         job->add_data(move(data));
-
-        server_handler.add_linkage_job(remote_id, move(job));
+        server_handler.add_linkage_job(remote_id, job);
       } catch (const exception& e) {
         logger->error("Error in job creation: {}", e.what());
         return responses::status_error(restbed::BAD_REQUEST,e.what());
@@ -117,13 +122,27 @@ SessionResponse valid_linkrecord_json_handler(
       return responses::not_initialized;
     }
     return {restbed::ACCEPTED,
-            "Job Queued",
-            {{"Content-Length", "10"},
-             {"Connection", "Close"},
-             {"Location", "/jobs/" + job_id}}};
+      "Job Queued",
+      {{"Content-Length", "10"},
+        {"Connection", "Close"},
+        {"Location", "/jobs/" + job_id}}};
   } catch (const runtime_error& e) {
     return responses::status_error(restbed::INTERNAL_SERVER_ERROR, e.what());
   }
+}
+
+SessionResponse valid_linkrecord_json_handler(
+    const nlohmann::json& j,
+    const RemoteId& remote_id,
+    const string& authorization) {
+  return linkrecords(j, remote_id, authorization, false);
+}
+
+SessionResponse valid_linkrecords_json_handler(
+    const nlohmann::json& j,
+    const RemoteId& remote_id,
+    const string& authorization) {
+  return linkrecords(j,remote_id,authorization, true);
 }
 
 SessionResponse valid_init_remote_json_handler(
@@ -169,6 +188,9 @@ SessionResponse valid_init_remote_json_handler(
     logger->error("Error creating remote config: {}", e.what());
     return responses::status_error(restbed::INTERNAL_SERVER_ERROR, e.what());
   }
+  if(config_handler.remote_exists(remote_id)) {
+    return responses::status_error(restbed::NOT_IMPLEMENTED, "Updating of configurations is not implemented yet");
+  }
   config_handler.set_remote_config(move(remote_config));
   // Test connection and negotiate common port
   //auto placed_config{config_handler.get_remote_config(remote_id)};
@@ -197,6 +219,11 @@ SessionResponse valid_init_local_json_handler(
     auto algo_json = j.at("algorithm");
     EpilinkConfig epilink_config = parse_json_epilink_config(algo_json);
     local_config->set_epilink_config(epilink_config);
+  
+    if(config_handler.get_local_config()) {
+      return responses::status_error(restbed::NOT_IMPLEMENTED, "Updating of configurations is not implemented yet");
+    }
+
     config_handler.set_local_config(move(local_config));
 
     return {restbed::OK, "", {{"Connection", "Close"}}};
