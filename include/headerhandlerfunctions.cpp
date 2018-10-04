@@ -46,11 +46,16 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
       auth_result.return_code != 200){ // auth not ok
     return auth_result;
   }
+  if(header.find("Record-Number") == header.end()) {
+    logger->error("No client record number from {}", remote_id);
+    return responses::status_error(400, "No client record number transmitted");
+  }
   common_port = ServerHandler::cget().get_server_port(remote_id);
-  size_t nvals;
+  size_t num_records = stoull(header.find("Record-Number")->second);
+  size_t server_record_number;
   shared_ptr<const ServerData> data;
   try {
-    nvals = DataHandler::get().poll_database(remote_id);
+    server_record_number = DataHandler::get().poll_database(remote_id);
     data = DataHandler::get().get_database();
   } catch (const exception& e){
     logger->error("Error geting data from dataservice: {}", e.what());
@@ -59,12 +64,11 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
   response.return_code = restbed::OK;
   response.body = "Linkage server running"s;
   response.headers = {{"Content-Length", to_string(response.body.length())},
-                      {"SEL-Identifier", remote_id},
-                      {"Record-Number", to_string(nvals)},
+                      {"Record-Number", to_string(server_record_number)},
                       {"SEL-Port", to_string(common_port)},
                       {"Connection", "Close"}};
-  std::thread server_runner([remote_id, data]() {
-      ServerHandler::get().run_server(remote_id, data);
+  std::thread server_runner([remote_id, data, num_records]() {
+      ServerHandler::get().run_server(remote_id, data, num_records);
   });
   server_runner.detach();
   return response;

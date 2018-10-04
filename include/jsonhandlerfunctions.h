@@ -47,6 +47,16 @@ SessionResponse valid_linkrecord_json_handler(
     const RemoteId&,
     const std::string&);
 
+SessionResponse linkrecords(
+    const nlohmann::json&,
+    const RemoteId&,
+    const std::string&,
+    bool);
+
+SessionResponse valid_linkrecords_json_handler(
+    const nlohmann::json&,
+    const RemoteId&,
+    const std::string&);
 
 SessionResponse invalid_json_handler(valijson::ValidationResults&);
 

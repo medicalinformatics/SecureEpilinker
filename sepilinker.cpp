@@ -178,6 +178,10 @@ int main(int argc, char* argv[]) {
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
           "POST", linkrecord_validator,
           sel::valid_linkrecord_json_handler, sel::invalid_json_handler);
+  auto linkrecords_methodhandler =
+      sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
+          "POST", null_validator, // TODO(TK): Write json schema file for db linking
+          sel::valid_linkrecords_json_handler, sel::invalid_json_handler);
   auto matchrecord_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
           "POST", linkrecord_validator,
@@ -208,6 +212,8 @@ int main(int argc, char* argv[]) {
   // Create Ressource on <url/linkRecord> and instruct to use the built MethodHandler
   sel::ResourceHandler linkrecord_handler{"/linkRecord/{remote_id: .*}"};
   linkrecord_handler.add_method(linkrecord_methodhandler);
+  sel::ResourceHandler linkrecords_handler{"/linkRecords/{remote_id: .*}"};
+  linkrecords_handler.add_method(linkrecords_methodhandler);
 #ifdef SEL_MATCHING_MODE
   sel::ResourceHandler matchrecord_handler{"/matchRecord/{remote_id: .*}"};
   matchrecord_handler.add_method(matchrecord_methodhandler);
@@ -245,9 +251,11 @@ int main(int argc, char* argv[]) {
     settings->set_port(restconf.server_port);
   }
 
+  // Expose declared REST Endpoints
   local_initializer.publish(service);
   remote_initializer.publish(service);
   linkrecord_handler.publish(service);
+  linkrecords_handler.publish(service);
 #ifdef SEL_MATCHING_MODE
   matchrecord_handler.publish(service);
 #endif
@@ -255,6 +263,7 @@ int main(int argc, char* argv[]) {
   test_config_handler.publish(service);
   testconfig_handler.publish(service);
   sellink_handler.publish(service);
+
   logger->info("Service Running\n");
   service.start(settings);  // Eventloop
 

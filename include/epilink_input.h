@@ -68,21 +68,30 @@ struct EpilinkConfig {
 };
 
 struct EpilinkClientInput {
-  // nfields map of input record to link
-  const Record record;
+  // Outer vector by fields, inner by records!
+  // nfields map of vec input records to link
+  std::unique_ptr<VRecord> records;
 
   // need to know database size of remote during circuit building
-  const size_t nvals;
+  size_t database_size;
+  // need to know number of client records to link for SIMD
+  size_t num_records; // calculated
+
+  EpilinkClientInput(std::unique_ptr<VRecord>&& records, size_t database_size);
+  ~EpilinkClientInput() = default;
+private:
+  void check_sizes(); // called by public constructors to check sizes
 };
 
 struct EpilinkServerInput {
   // Outer vector by fields, inner by records!
   // Need to model like this for ABY SIMD layout
-  const VRecord database;
+  std::shared_ptr<VRecord> database;
 
-  const size_t nvals; // calculated
-  EpilinkServerInput(const VRecord& database);
-  EpilinkServerInput(VRecord&& database);
+  size_t database_size; // calculated
+  // need to know number of client records to link for SIMD
+  size_t num_records;
+  EpilinkServerInput(std::shared_ptr<VRecord> database, size_t num_records);
   ~EpilinkServerInput() = default;
 private:
   void check_sizes(); // called by public constructors to check sizes

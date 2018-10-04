@@ -85,24 +85,33 @@ EpilinkConfig::EpilinkConfig(
   }
 }
 
+EpilinkClientInput::EpilinkClientInput(
+    unique_ptr<VRecord>&& records_,
+    size_t database_size_) :
+  records{move(records_)},
+  num_records {records->cbegin()->second.size()},
+  database_size {database_size_}
+{ check_sizes(); }
+
+void EpilinkClientInput::check_sizes() {
+  for (const auto& row : *records) {
+    check_vector_size(row.second, num_records, "record field "s + row.first);
+  }
+}
+
 void EpilinkServerInput::check_sizes() {
-  for (const auto& row : database) {
-    check_vector_size(row.second, nvals, "database field "s + row.first);
+  for (const auto& row : *database) {
+    check_vector_size(row.second, database_size, "database field "s + row.first);
   }
 }
 
 EpilinkServerInput::EpilinkServerInput(
-    const VRecord& database_) :
-  database(database_),
-  nvals {database.cbegin()->second.size()}
+    shared_ptr<VRecord> database_,
+    size_t num_records_) :
+  database(move(database_)),
+  database_size {database->cbegin()->second.size()},
+  num_records {num_records_}
 { check_sizes(); }
-
-EpilinkServerInput::EpilinkServerInput(
-    VRecord&& database_) :
-  database{move(database_)},
-  nvals {database.cbegin()->second.size()}
-{ check_sizes(); }
-
 
 } // namespace sel
 
@@ -123,18 +132,22 @@ std::ostream& operator<<(std::ostream& os,
 
 std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in) {
   os << "----- Client Input -----\n";
-  for (const auto& f : in.record) {
-    os << f << '\n';
-  }
-  return os << "Number of database records: " << in.nvals;
-}
-
-std::ostream& operator<<(std::ostream& os, const sel::EpilinkServerInput& in) {
-  os << "----- Server Input -----\n";
-  for (const auto& fs : in.database) {
+  for (const auto& fs : *(in.records)) {
     for (size_t i = 0; i != fs.second.size(); ++i) {
       os << fs.first << '[' << i << "]: " << fs.second[i] << '\n';
     }
   }
-  return os << "Number of database records: " << in.nvals;
+  os << "Number of records to link: " << in.num_records << '\n';
+  return os << "Number of database records: " << in.database_size;
+}
+
+std::ostream& operator<<(std::ostream& os, const sel::EpilinkServerInput& in) {
+  os << "----- Server Input -----\n";
+  for (const auto& fs : *(in.database)) {
+    for (size_t i = 0; i != fs.second.size(); ++i) {
+      os << fs.first << '[' << i << "]: " << fs.second[i] << '\n';
+    }
+  }
+  os << "Number of records to link: " << in.num_records << '\n';
+  return os << "Number of database records: " << in.database_size;
 }

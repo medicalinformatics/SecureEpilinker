@@ -6,6 +6,7 @@
 #include "clear_epilinker.h"
 #include <memory>
 #include <mutex>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 namespace sel {
@@ -49,15 +50,20 @@ size_t DataHandler::poll_database(const RemoteId& remote_id) {
       config_handler.get_server_config().default_page_size};
   auto data{database_fetcher.fetch_data(config_handler.get_remote_config(remote_id)->get_matching_mode())};
   lock_guard<mutex> lock(m_db_mutex);
-  m_database = make_shared<const ServerData>(ServerData{
-      move(data.data), move(data.ids), data.todate, move(data.local_id), move(data.remote_id)});
-  return (m_database->data.begin()->second.size());
+  m_database = make_shared<const ServerData>(move(data));
+  return (m_database->data->begin()->second.size());
 }
 
 size_t DataHandler:: poll_database_diff() {
   // TODO(TK): Implement
   //return poll_database();
   return 0;
+}
+
+unique_ptr<const VRecord> DataHandler::get_client_records(const nlohmann::json& client_data) const {
+    DatabaseFetcher db_fetcher(ConfigurationHandler::cget().get_local_config());
+    db_fetcher.save_page_data(client_data, false, false);
+    return move(db_fetcher.move_client_data());
 }
 
 std::shared_ptr<const ServerData> DataHandler::get_database() const{

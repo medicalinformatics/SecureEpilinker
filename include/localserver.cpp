@@ -58,18 +58,18 @@ RemoteId LocalServer::get_id() const {
   return m_remote_id;
 }
 
-Result<CircUnit> LocalServer::run(shared_ptr<const ServerData> data) {
+Result<CircUnit> LocalServer::run(shared_ptr<const ServerData> data, size_t num_records) {
   m_data = move(data);
 
   auto logger{get_default_logger()};
   logger->info("The server is running and performing its computations");
 
-  const size_t nvals{m_data->data.begin()->second.size()};
-  m_aby_server.build_circuit(nvals);
+  const size_t database_size{m_data->data->begin()->second.size()};
+  m_aby_server.build_circuit(database_size, num_records);
   m_aby_server.run_setup_phase();
   logger->debug("Starting server computation");
-  auto server_input = std::make_shared<EpilinkServerInput>(m_data->data);
-  auto server_result = m_aby_server.run_as_server(*server_input);
+  auto server_input = std::make_shared<EpilinkServerInput>(m_data->data, num_records);
+  auto server_result = m_aby_server.run_as_server(server_input);
   m_aby_server.reset();
 
 #ifdef DEBUG_SEL_REST

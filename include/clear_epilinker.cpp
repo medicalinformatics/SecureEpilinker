@@ -98,9 +98,9 @@ Input::Input(const Record& record,
 
 Input::Input(const EpilinkClientInput& in_client,
     const EpilinkServerInput& in_server) :
-  Input{in_client.record, in_server.database}
+  Input{in_client.records, in_server.database}
 {
-  if (in_client.nvals != in_server.nvals)
+  if (in_client.database_size != in_server.database_size)
     throw logic_error("Client and server input need to be of same nvals.");
 }
 

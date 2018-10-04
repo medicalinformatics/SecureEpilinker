@@ -263,7 +263,7 @@ EpilinkInput input_json(const fs::path& local_config_file_path,
     read_database_file(database_file_or_dir_path, epi_cfg);
 
   EpilinkServerInput server_in{db};
-  EpilinkClientInput client_in{record, server_in.nvals};
+  EpilinkClientInput client_in{record, server_in.database_size};
   return {epi_cfg, client_in, server_in};
 }
 
@@ -297,7 +297,7 @@ pair<EpilinkInput, vector<EpilinkClientInput>> input_json_multi_request(
   vector<EpilinkClientInput> client_ins;
   for (auto& record_json : requests_json) {
     auto record = parse_json_fields(epi_cfg.fields, record_json.at("fields"));
-    client_ins.push_back({record, server_in.nvals});
+    client_ins.push_back({record, server_in.database_size});
   }
 
   EpilinkInput in{epi_cfg, client_ins.front(), server_in};
@@ -323,7 +323,7 @@ auto input_single_test_0824() {
 void run_and_print_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
   print("----- Secure Epilinker -----\n");
 
-  linker.build_circuit(in.client.nvals);
+  linker.build_circuit(in.client.database_size);
   linker.run_setup_phase();
 
 #ifdef DEBUG_SEL_CIRCUIT

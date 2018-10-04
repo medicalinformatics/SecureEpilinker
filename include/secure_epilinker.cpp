@@ -282,7 +282,7 @@ private:
   EntryShare make_entry_share(const EpilinkClientInput& input,
       const FieldName& i) {
     const auto& f = cfg.epi.fields.at(i);
-    const FieldEntry& entry = input.record.at(i);
+    const FieldEntry& entry = input.records.at(i);
     size_t bytesize = bitbytes(f.bitsize);
     Bitmask value = entry.value_or(Bitmask(bytesize));
     check_vector_size(value, bytesize, "client input byte vector "s + i);
@@ -581,7 +581,7 @@ void SecureEpilinker::connect() {
   logger->trace("ABYParty connected.");
 }
 
-void SecureEpilinker::build_circuit(const uint32_t) {
+void SecureEpilinker::build_circuit(const uint32_t, const uint32_t) {
   // TODO When separation of setup, online phase and input setting is done in
   // ABY, call selc->build_circuit() here instead of in run()
   // nvals is currently ignored as nvals is just taken from EpilinkInputs
@@ -596,7 +596,7 @@ void SecureEpilinker::run_setup_phase() {
 }
 
 Result<CircUnit> SecureEpilinker::run_as_client(
-    const EpilinkClientInput& input) {
+    unique_ptr<EpilinkClientInput>&& input) {
   if (!is_setup) {
     get_default_logger()->warn(
         "SecureEpilinker::run_as_client: Implicitly running setup phase.");
@@ -607,7 +607,7 @@ Result<CircUnit> SecureEpilinker::run_as_client(
 }
 
 Result<CircUnit> SecureEpilinker::run_as_server(
-    const EpilinkServerInput& input) {
+   const shared_ptr<EpilinkServerInput>& input) {
   if (!is_setup) {
     get_default_logger()->warn(
         "SecureEpilinker::run_as_server: Implicitly running setup phase.");

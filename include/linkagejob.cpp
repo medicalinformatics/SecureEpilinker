@@ -53,12 +53,12 @@ void LinkageJob::set_callback(string&& cc) {
 }
 
 void LinkageJob::add_data_field(const FieldName& fieldname,
-                                FieldEntry datafield) {
-  m_data.emplace(fieldname, move(datafield));
+                                VFieldEntry datafields) {
+  m_records.emplace(fieldname, move(datafields));
 }
 
-void LinkageJob::add_data(Record data) {
-  m_data = move(data);
+void LinkageJob::add_data(VRecord data) {
+  m_records = move(data);
 }
 
 JobStatus LinkageJob::get_status() const {
@@ -77,6 +77,8 @@ RemoteId LinkageJob::get_remote_id() const {
   return m_remote_config->get_id();
 }
 
+
+
 void LinkageJob::run_linkage_job() {
   auto logger{get_default_logger()};
   m_status = JobStatus::RUNNING;
@@ -93,19 +95,22 @@ void LinkageJob::run_linkage_job() {
     // Get number of records from server
     promise<size_t> nvals_prom;
     auto nvals{nvals_prom.get_future()};
-    signal_server(nvals_prom);
+    size_t num_records{m_records.begin()->second.size()};
+    signal_server(nvals_prom, num_records);
     nvals.wait_for(15s);
     if(!nvals.valid()){
       throw runtime_error("Error retrieving number of records from server");
     }
-    const auto nvals_value{nvals.get()};
-    logger->debug("Server has {} Records\n", nvals_value);
+    const auto database_size{nvals.get()};
+    logger->debug("Client has {} Records\n", num_records);
+    logger->debug("Server has {} Records\n", database_size);
     auto epilinker{ServerHandler::get().get_epilink_client(m_remote_config->get_id())};
-    epilinker->build_circuit(nvals_value);
+    epilinker->build_circuit(database_size, num_records);
     epilinker->run_setup_phase();
-    EpilinkClientInput client_input{m_data, nvals_value};
+    Result<CircUnit> client_share{};
+    EpilinkClientInput client_input{move(m_records), database_size};
+    client_share = epilinker->run_as_client(move(client_input));
     // run mpc
-    const auto client_share{epilinker->run_as_client(client_input)};
     // reset epilinker for the next linkage
     epilinker->reset();
 #ifdef DEBUG_SEL_REST
@@ -177,18 +182,19 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
  * Send server the configuration to compare and recieve back the number of
  * records in the database
  */
-void LinkageJob::signal_server(promise<size_t>& nvals) {
+void LinkageJob::signal_server(promise<size_t>& nvals, size_t num_records) {
   auto logger{get_default_logger()};
+  //FIXME(TK): THIS IS BAD AND I SHOULD FEEL BAD
   std::this_thread::sleep_for(1s);
-  string data{"{}"};
   list<string> headers{
       "Authorization: "s+m_remote_config->get_remote_authenticator().sign_transaction(""),
-      "SEL-Identifier: "s + m_local_config->get_local_id(),
+      "Record-Number: "s + to_string(num_records),
       "Content-Type: application/json"};
   string url{assemble_remote_url(m_remote_config) + "/initMPC/"+m_local_config->get_local_id()};
   logger->debug("Sending linkage request to {}\n", url);
   try{
-    auto response{perform_post_request(url, data, headers, true)};
+    // TODO(TK): Refactor perform_post_request w/ optional to avoid dummy data
+    auto response{perform_post_request(url, "{}", headers, true)};
     logger->debug("Response stream:\n{} - {}\n",response.return_code, response.body);
     // get nvals from response header
     if (response.return_code == 200) {
@@ -219,18 +225,20 @@ bool LinkageJob::perform_callback(const string& body) const {
 void LinkageJob::print_data() const {
   auto logger{get_default_logger()};
   string input_string;
-  for (auto& p : m_data) {
+  for (auto& p : m_records) {
     input_string += "-------------------------------\n" + p.first +
                     "\n-------------------------------"
                     "\n";
-    const auto& d = p.second;
-    bool empty{!d};
-    input_string += "Field "s + (empty ? "" : "not ") + "empty ";
-    if (!empty) {
-      for (const auto& byte : d.value())
-        input_string += to_string(byte) + " ";
+    for (auto& e : p.second) {
+      bool empty{!e};
+      input_string += "Field "s + (empty ? "" : "not ") + "empty ";
+      if (!empty) {
+        for (const auto& byte : e.value()) {
+          input_string += to_string(byte) + " ";
+        }
+      }
+      input_string += "\n";
     }
-    input_string += "\n";
   }
   logger->trace(input_string);
 }

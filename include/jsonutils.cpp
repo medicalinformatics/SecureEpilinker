@@ -140,6 +140,14 @@ VRecord parse_json_fields_array(
   return records;
 }
 
+VRecord record_to_vrecord(const Record& record){
+  VRecord result;
+  for (auto& field : record) {
+    result[field.first].push_back(field.second);
+  }
+  return result;
+}
+
 vector<string> parse_json_id_array(const nlohmann::json& json) {
   vector<string> ids;
   for (const auto& rec : json) {

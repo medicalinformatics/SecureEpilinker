@@ -27,6 +27,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 #ifdef DEBUG_SEL_REST
 #include "epilink_result.hpp"
@@ -39,8 +40,8 @@ class ConfigurationHandler;
 class DatabaseFetcher;
 
 struct ServerData {
-  VRecord data;
-  std::vector<std::string> ids;
+  std::shared_ptr<VRecord> data;
+  std::shared_ptr<std::vector<std::string>> ids;
   ToDate todate;
   RemoteId local_id;
   RemoteId remote_id;
@@ -69,6 +70,7 @@ class DataHandler {
   std::shared_ptr<const ServerData> get_database() const;
   size_t poll_database(const RemoteId&);
   size_t poll_database_diff();  // TODO(TK) Not implemented yet. Use full update
+  std::unique_ptr<const VRecord> get_client_records(const nlohmann::json&) const;
 #ifdef DEBUG_SEL_REST
   Debugger* get_epilink_debug() { return m_epilink_debug;}
 #endif
