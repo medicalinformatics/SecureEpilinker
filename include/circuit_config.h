@@ -32,7 +32,7 @@ constexpr size_t BitLen = sizeof(CircUnit)*8;
 
 struct CircuitConfig {
   EpilinkConfig epi;
-  std::filesystem::path circ_dir = "./circ";
+  std::filesystem::path circ_dir = "../data/circ";
 
   const bool matching_mode = false;
   const size_t bitlen = BitLen;
@@ -41,7 +41,7 @@ struct CircuitConfig {
   size_t dice_prec, weight_prec;
 
   CircuitConfig(const EpilinkConfig& epi,
-      const std::filesystem::path& circ_dir = "./circ",
+      const std::filesystem::path& circ_dir = "../data/circ",
       bool matching_mode = false, size_t bitlen = BitLen);
   ~CircuitConfig() = default;
 
