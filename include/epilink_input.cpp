@@ -26,7 +26,6 @@
 #include "logger.h"
 
 using namespace std;
-using fmt::print;
 
 namespace sel {
 
