@@ -85,7 +85,7 @@ void CircuitConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
   get_default_logger()->debug("Precisions changed to dice: {}; weight: {}",
       dice_prec_, weight_prec_);
 
-  if (bit_usage(dice_prec, weight_prec, epi.nfields) > bitlen) {
+  if (bit_usage(dice_prec_, weight_prec_, epi.nfields) > bitlen) {
     throw invalid_argument("Given dice and weight precision would potentially "
         "cause overflows in current bitlen!");
   }
