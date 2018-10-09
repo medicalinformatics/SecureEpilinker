@@ -1,0 +1,10 @@
+The circuits in the directory sel_int_div were produced using the pipeline from
+https://git.compbiol.bio.tu-darmstadt.de/stammler/int-div-circuits
+
+Each circuit {bitlen}_{prec}.aby calculates the rounding fixed-point integer division
+
+    x, y -> (x<<prec) + (y>>1) / y
+
+where it is assumed that x and y have max bitlength bitlen and the resulting
+fp precision is prec. It is also assumed that 0 < x/y <= 1 as this circuit is
+used for calculating dice coefficients.
