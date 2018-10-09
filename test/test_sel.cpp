@@ -23,7 +23,7 @@ constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
 constexpr double Threshold = 0.9;
 constexpr double TThreshold = 0.7;
-const fs::path CircDir = "./circ";
+const fs::path CircDir = "../data/circ";
 
 struct FieldData { FieldSpec field; Bitmask data; };
 
@@ -368,7 +368,7 @@ int main(int argc, char *argv[])
 {
   bool role_server = false;
   bool only_local = false;
-  unsigned int sharing = S_BOOL;
+  unsigned int sharing = S_YAO;
   uint32_t nvals = 1;
   uint32_t nthreads = 1;
   string remote_host = "127.0.0.1";

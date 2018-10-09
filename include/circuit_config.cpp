@@ -46,29 +46,7 @@ CircuitConfig::CircuitConfig(const EpilinkConfig& epi_,
         "This SEL is compiled without matching mode (-DSEL_MATCHING_MODE)!");
 #endif
 
-  // Set dice precision according to longest bitmask
-  size_t max_bm_size = 0;
-  for ( const auto& f : epi.fields ) {
-    if (f.second.comparator == FieldComparator::DICE) {
-      max_bm_size = max(max_bm_size, f.second.bitsize);
-    }
-  }
-  /* Evenly distribute precision bits between weight^2 and dice-coeff
-  When calculating the max of a quotient of the form fw/w, we have to compare
-  factors of the form fw*w, where the field weight fw is itself a sum of factor of a
-  weight and dice coefficient d. The denominator w is itself potentially a
-  sum of weights. So in order for the CircUnit to not overflow for a product
-  of the form sum_n(d * w) * sum_n(w), it has to hold that
-  ceil_log2(n^2) + dice_prec + 2*weight_prec <= bitlen = sizeof(CircUnit).
-  TODO: Currently we set the precisions to have max prec for dice such that it
-  still fits the 16-bit int-div... Ideal precision can be seen in set_ideal_precision()
-  */
-  dice_prec = (16 - 1 - hw_size(max_bm_size)); // -1 because of factor 2
-  weight_prec = (bitlen - ceil_log2(epi.nfields*epi.nfields) - dice_prec)/2;
-  // Division by 2 for weight_prec initialization could have wasted one bit
-  // which we cannot add to dice precision because it would overflow the
-  // 16-bit integer division input... Need better int-div
-  assert (bit_usage(dice_prec, weight_prec, epi.nfields) <= bitlen);
+  set_ideal_precision();
 
   if (!std::filesystem::exists(circ_dir)) {
     throw invalid_argument(fmt::format(
@@ -85,7 +63,7 @@ void CircuitConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
   get_default_logger()->debug("Precisions changed to dice: {}; weight: {}",
       dice_prec_, weight_prec_);
 
-  if (bit_usage(dice_prec, weight_prec, epi.nfields) > bitlen) {
+  if (bit_usage(dice_prec_, weight_prec_, epi.nfields) > bitlen) {
     throw invalid_argument("Given dice and weight precision would potentially "
         "cause overflows in current bitlen!");
   }
