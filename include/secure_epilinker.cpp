@@ -518,25 +518,20 @@ private:
   BoolShare dice_coefficient(const FieldName& ileft, const FieldName& iright) {
     const auto& client_entry = ins[ileft].client;
     const auto& server_entry = ins[iright].server;
-    // 1. Add single HWs
-    BoolShare hw_plus = client_entry.hw + server_entry.hw;
 
-    // 2. Calc HW of x&y and bit-shift to multiply with 2 and reach dice precision.
-    // Additionally add hw_plus/2 to have rounding integer-div
-    BoolShare hw_and = hammingweight(server_entry.val & client_entry.val);
-    BoolShare hw_and_num = hw_and << (cfg.dice_prec + 1); // *2 and dice precision
-    hw_and_num += (hw_plus >> 1); // rounding integer-div
-    // In theory, the addition could have exceeded 16 bits. But this is very
-    // unlikely because then all 10 most significant bits of hw_and would need to
-    // be set, while we deal with a rather sparse bitmask.
-    hw_and_num.set_bitlength(16);
+    BoolShare hw_plus = client_entry.hw + server_entry.hw; // denominator
+    BoolShare hw_and_twice = hammingweight(server_entry.val & client_entry.val) << 1; // numerator
 
-    // int-divide
-    BoolShare dice = apply_file_binary(hw_and_num, hw_plus, 16, 16, cfg.circ_dir/"int_div_16.aby");
+    // fixed point rounding integer division
+    // hw_size(bitsize) + 1 because we multiply numerator with 2 and denominator is sum
+    // of two values of original bitsize. Both are hammingweights.
+    const auto bitsize = hw_size(cfg.epi.fields.at(ileft).bitsize) + 1;
+    const auto int_div_file_path = format((cfg.circ_dir/"sel_int_div/{}_{}.aby").string(),
+        bitsize, cfg.dice_prec);
+    BoolShare dice = apply_file_binary(hw_and_twice, hw_plus, bitsize, bitsize, int_div_file_path);
 
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(hw_and, format("hw_and({}|{})", ileft, iright));
-    print_share(hw_and_num, format("hw_and_num({}|{})", ileft, iright));
+    print_share(hw_and_twice, format("hw_and_twice({}|{})", ileft, iright));
     print_share(hw_plus, format("hw_plus({}|{})", ileft, iright));
     print_share(dice, format("dice({}|{})", ileft, iright));
 #endif
