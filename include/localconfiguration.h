@@ -28,6 +28,7 @@
 #include <memory>
 #include <string>
 
+#include "authenticator.h"
 #include "authenticationconfig.hpp"
 #include "epilink_input.h"
 #include "nlohmann/json.hpp"
@@ -54,15 +55,14 @@ class LocalConfiguration {
   void set_data_service(std::string&& url);
   std::string get_data_service() const;
 
-  void set_local_auth(std::unique_ptr<AuthenticationConfig> auth);
-  std::string print_auth_type() const;
-  AuthenticationConfig const* get_local_authentication() const;
+  void configure_local_authenticator(std::unique_ptr<AuthenticationConfig>);
+  Authenticator const& get_local_authenticator() const;
 
   void set_local_id(std::string&&);
   std::string get_local_id() const;
 
  private:
-  std::unique_ptr<AuthenticationConfig> m_local_authentication;
+  Authenticator m_authenticator;
   std::map<FieldName, ML_Field> m_fields;
   std::vector<IndexSet> m_exchange_groups;
   std::string m_data_service_url;

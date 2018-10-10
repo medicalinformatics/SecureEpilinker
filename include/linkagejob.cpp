@@ -203,10 +203,8 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
 
 bool LinkageJob::perform_callback(const string& body) const {
   auto logger{get_default_logger()};
-  const auto auth{m_local_config->get_local_authentication()};
-  auto local_auth =  dynamic_cast<const APIKeyConfig*>(auth);
   list<string> headers{
-      "Authorization: apiKey apiKey=\""s+local_auth->get_key()+"\"",
+      "Authorization: "s + m_local_config->get_local_authenticator().sign_transaction(""),
       "Content-Type: application/json"};
   logger->debug("Sending callback to: {}\n", m_callback);
   auto response{perform_post_request(m_callback, body, headers, true)};

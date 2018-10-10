@@ -33,17 +33,18 @@ class logger;
 
 namespace sel {
 class LocalConfiguration;
+class Authenticator;
 
 class DatabaseFetcher {
  public:
   ServerData fetch_data(bool);
   DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf,
                   std::string url,
-                  AuthenticationConfig const* l_auth);
+                  Authenticator const& l_auth);
 
   DatabaseFetcher(std::shared_ptr<const LocalConfiguration> local_conf,
                   std::string url,
-                  AuthenticationConfig const* l_auth,
+                  Authenticator const& l_auth,
                   size_t page_size);
   void set_url(const std::string& url) { m_url = url; }
   void set_page_size(unsigned size) { m_page_size = size; }
@@ -61,7 +62,7 @@ class DatabaseFetcher {
   RemoteId m_remote_id;
   std::string m_url;
   std::shared_ptr<const LocalConfiguration> m_local_config;
-  AuthenticationConfig const* m_local_authentication;
+  Authenticator const& m_local_authenticator;
   unsigned m_page_size{25u};
   unsigned m_last_page{1u};
   unsigned m_page{1u};

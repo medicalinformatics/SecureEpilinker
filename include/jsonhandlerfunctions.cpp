@@ -55,6 +55,12 @@ SessionResponse valid_test_config_json_handler(
 
   SessionResponse response;
   if (config_handler.remote_exists(remote_id)) {
+    const auto remote_config{config_handler.get_remote_config(remote_id)};
+    if(auto auth_result = // check authentication
+        remote_config->get_remote_authenticator().check_authentication(authorization);
+        auth_result.return_code != 200){ // auth not ok
+      return auth_result;
+    }
     // negotiate common ABY port
     auto client_ports{client_config.at("availableAbyPorts").get<set<Port>>()};
     Port common_port = connection_handler.choose_common_port(client_ports);
@@ -65,7 +71,6 @@ SessionResponse valid_test_config_json_handler(
     // Compare Configs
     if (config_handler.compare_configuration(client_comparison_config, remote_id)) {
       logger->info("Valid config");
-      const auto remote_config{config_handler.get_remote_config(remote_id)};
       remote_config->set_aby_port(common_port);
       remote_config->mark_mutually_initialized();
 
@@ -96,7 +101,12 @@ SessionResponse valid_linkrecord_json_handler(
     JobId job_id;
     if (config_handler.get_remote_count()) {
       const auto local_config{config_handler.get_local_config()};
-       const auto remote_config{config_handler.get_remote_config(remote_id)};
+     const auto remote_config{config_handler.get_remote_config(remote_id)};
+     if(auto auth_result = // check authentication
+         local_config->get_local_authenticator().check_authentication(authorization);
+         auth_result.return_code != 200){ // auth not ok
+       return auth_result;
+     }
       auto job{make_shared<LinkageJob>(local_config, remote_config)};
       job_id = job->get_id();
       logger->info("Created Job on Path: {}", job_id);
@@ -189,7 +199,7 @@ SessionResponse valid_init_local_json_handler(
   try {
     local_config->set_local_id(j.at("localId"));
     auto l_auth = parse_json_auth_config(j.at("localAuthentication"));
-    local_config->set_local_auth(move(l_auth));
+    local_config->configure_local_authenticator(move(l_auth));
     auto url = j.at("dataService").at("url").get<string>();
     local_config->set_data_service(move(url));
 
