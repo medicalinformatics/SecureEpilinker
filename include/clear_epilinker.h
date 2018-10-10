@@ -29,12 +29,9 @@ namespace sel::clear_epilink {
   * Combined input of record and database to match against
   */
 struct Input {
-  const Record record;
-  const VRecord database;
-  const size_t nvals;
-  // Combines Epilink{Client,Server}Input
-  Input(const EpilinkClientInput&, const EpilinkServerInput&);
-  // Sets fields directly
+  const Record& record;
+  const VRecord& database;
+  const size_t dbsize;
   Input(const Record& record,
       const VRecord& database);
 };
