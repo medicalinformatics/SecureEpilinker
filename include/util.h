@@ -227,25 +227,6 @@ class ios_flags_saver {
 };
 
 /**
- * Print vectors to cout
- */
-template<typename T>
-std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
-  ios_flags_saver _flags_saver(out);
-  out << "[" << std::hex;
-  size_t last = v.size() - 1;
-  for(size_t i = 0; i < v.size(); ++i) {
-    out << v[i];
-    if (i != last) out << ", ";
-  }
-  out << "]";
-  return out;
-}
-
-// specialization for uint8_t / unsigned char
-std::ostream& operator<< (std::ostream& out, const std::vector<uint8_t>& v);
-
-/**
  * Functions to trim whitespace from strings
  */
 // trim from start (in place)
