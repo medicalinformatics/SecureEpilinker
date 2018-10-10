@@ -89,19 +89,11 @@ bool operator<(const FieldWeight<T>& left, const FieldWeight<T>& right) {
 Input::Input(const Record& record,
         const VRecord& database) :
   record{record}, database{database},
-  nvals{(*database.cbegin()).second.size()}
+  dbsize{(*database.cbegin()).second.size()}
 {
   for (const auto& col : database) {
-    check_vector_size(col.second, nvals, "Database column "s + col.first);
+    check_vector_size(col.second, dbsize, "Database column "s + col.first);
   }
-}
-
-Input::Input(const EpilinkClientInput& in_client,
-    const EpilinkServerInput& in_server) :
-  Input{in_client.records, in_server.database}
-{
-  if (in_client.database_size != in_server.database_size)
-    throw logic_error("Client and server input need to be of same nvals.");
 }
 
 /******************** Comparators & Threshold ********************
@@ -283,10 +275,10 @@ Result<T> calc(const Input& input, const CircuitConfig& cfg) {
     }
   }
 
-  const size_t nvals = input.nvals;
+  const size_t dbsize = input.dbsize;
 
   // Accumulator of individual field_weights
-  vector<FieldWeight<T>> scores(nvals);
+  vector<FieldWeight<T>> scores(dbsize);
 
   // 1. Field weights of individual fields
   // 1.1 For all exchange groups, find the permutation with the highest score
@@ -297,7 +289,7 @@ Result<T> calc(const Input& input, const CircuitConfig& cfg) {
   // for each group, store the best permutation's weight into field_weights
   for (const auto& group : cfg.epi.exchange_groups) {
     // add this group's field weight to vector
-    for (size_t idx = 0; idx != nvals; ++idx) {
+    for (size_t idx = 0; idx != dbsize; ++idx) {
       scores[idx] += best_group_weight<T>(input, cfg, idx, group);
     }
     // remove all indices that were covered by this index group
@@ -310,14 +302,14 @@ Result<T> calc(const Input& input, const CircuitConfig& cfg) {
 
   // 1.2 Remaining indices
   for (const auto& i : no_x_group) {
-    for (size_t idx = 0; idx != nvals; ++idx) {
+    for (size_t idx = 0; idx != dbsize; ++idx) {
       scores[idx] += field_weight<T>(input, cfg, idx, i, i);
     }
   }
 
 #ifdef DEBUG_SEL_CLEAR
-  print("---------- Final Scores ({}) ----------\n", nvals);
-  for (size_t idx = 0; idx != nvals; ++idx) {
+  print("---------- Final Scores ({}) ----------\n", dbsize);
+  for (size_t idx = 0; idx != dbsize; ++idx) {
     print_score("Idx", idx, scores[idx], cfg.dice_prec);
   }
 #endif
