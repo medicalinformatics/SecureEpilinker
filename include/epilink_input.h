@@ -38,6 +38,7 @@ using FieldEntry = std::optional<Bitmask>;
 using VFieldEntry = std::vector<FieldEntry>;
 using Record = std::map<FieldName, FieldEntry>;
 using VRecord = std::map<FieldName, VFieldEntry>;
+using Records = std::vector<Record>;
 
 struct EpilinkConfig {
   // field descriptions
@@ -70,17 +71,19 @@ struct EpilinkConfig {
 struct EpilinkClientInput {
   // Outer vector by fields, inner by records!
   // nfields map of vec input records to link
-  std::unique_ptr<VRecord> records;
+  std::unique_ptr<Records> records;
 
-  // need to know database size of remote during circuit building
+  // need to know database size of remote server when building circuit
   size_t database_size;
-  // need to know number of client records to link for SIMD
   size_t num_records; // calculated
 
-  EpilinkClientInput(std::unique_ptr<VRecord>&& records, size_t database_size);
+  EpilinkClientInput(std::unique_ptr<Records>&& records, size_t database_size);
+  EpilinkClientInput(const Record& record, size_t database_size);
+  EpilinkClientInput(EpilinkClientInput&&) = default;
+  EpilinkClientInput& operator=(EpilinkClientInput&&) = default;
   ~EpilinkClientInput() = default;
 private:
-  void check_sizes(); // called by public constructors to check sizes
+  void check_keys(); // called by public constructors to check that keys match
 };
 
 struct EpilinkServerInput {
@@ -89,9 +92,15 @@ struct EpilinkServerInput {
   std::shared_ptr<VRecord> database;
 
   size_t database_size; // calculated
-  // need to know number of client records to link for SIMD
+  // need to know number of remote client records when building circuit
   size_t num_records;
+
   EpilinkServerInput(std::shared_ptr<VRecord> database, size_t num_records);
+  EpilinkServerInput(const VRecord& database, size_t num_records);
+  EpilinkServerInput(const EpilinkServerInput&) = default;
+  EpilinkServerInput(EpilinkServerInput&&) = default;
+  EpilinkServerInput& operator=(const EpilinkServerInput&) = default;
+  EpilinkServerInput& operator=(EpilinkServerInput&&) = default;
   ~EpilinkServerInput() = default;
 private:
   void check_sizes(); // called by public constructors to check sizes
