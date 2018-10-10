@@ -28,13 +28,14 @@
 #include "seltypes.h"
 #include "util.h"
 #include "logger.h"
+#include "authenticator.h"
 
 using namespace std;
 namespace sel {
 LocalConfiguration::LocalConfiguration(
     string&& url,
     unique_ptr<AuthenticationConfig> local_auth)
-    : m_local_authentication(move(local_auth)), m_data_service_url{move(url)} {}
+    : m_authenticator(move(local_auth)), m_data_service_url{move(url)} {}
 
 const ML_Field& LocalConfiguration::get_field(
     const FieldName& fieldname) const {
@@ -70,17 +71,12 @@ string LocalConfiguration::get_data_service() const {
   return m_data_service_url;
 }
 
-void LocalConfiguration::set_local_auth(unique_ptr<AuthenticationConfig> auth) {
-  m_local_authentication = move(auth);
+void LocalConfiguration::configure_local_authenticator(unique_ptr<AuthenticationConfig> auth) {
+  m_authenticator.set_auth_info(move(auth));
 }
 
-string LocalConfiguration::print_auth_type() const {
-  return m_local_authentication->print_type();
-}
-
-AuthenticationConfig const* LocalConfiguration::get_local_authentication()
-    const {
-  return m_local_authentication.get();
+Authenticator const& LocalConfiguration::get_local_authenticator() const {
+  return m_authenticator;
 }
 
 void LocalConfiguration::set_local_id(string&& local_id){

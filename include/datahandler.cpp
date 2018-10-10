@@ -45,7 +45,7 @@ size_t DataHandler::poll_database(const RemoteId& remote_id) {
   DatabaseFetcher database_fetcher{
       local_configuration,
       local_configuration->get_data_service()+"/"+remote_id,
-      local_configuration->get_local_authentication(),
+      local_configuration->get_local_authenticator(),
       config_handler.get_server_config().default_page_size};
   auto data{database_fetcher.fetch_data(config_handler.get_remote_config(remote_id)->get_matching_mode())};
   lock_guard<mutex> lock(m_db_mutex);

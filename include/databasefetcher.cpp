@@ -47,20 +47,20 @@ namespace sel {
 DatabaseFetcher::DatabaseFetcher(
     std::shared_ptr<const LocalConfiguration> local_conf,
     std::string url,
-    AuthenticationConfig const* l_auth)
+    Authenticator const& l_auth)
     : m_url(move(url)),
       m_local_config(move(local_conf)),
-      m_local_authentication(l_auth),
+      m_local_authenticator(l_auth),
       m_logger{get_default_logger()} {}
 
 DatabaseFetcher::DatabaseFetcher(
     std::shared_ptr<const LocalConfiguration> local_conf,
     std::string url,
-    AuthenticationConfig const* l_auth,
+    Authenticator const& l_auth,
     size_t page_size)
     : m_url(move(url)),
       m_local_config(move(local_conf)),
-      m_local_authentication(l_auth),
+      m_local_authenticator(l_auth),
       m_page_size(page_size),
       m_logger{get_default_logger()} {}
 
@@ -153,12 +153,8 @@ nlohmann::json DatabaseFetcher::get_next_page() const {
 nlohmann::json DatabaseFetcher::request_page(const string& url) const {
   list<string> headers;
   m_logger->debug("DB request address: {}", url);
-  if (m_local_authentication->get_type() == AuthenticationType::API_KEY) {
-    auto apiauth = dynamic_cast<const APIKeyConfig*>(m_local_authentication);
-    m_logger->debug("ApiKey for DB: {}", apiauth->get_key());
-    headers.emplace_back("Authorization: apiKey apiKey=\""s +
-                          apiauth->get_key() + "\"");
-  }
+  m_logger->debug("Auth Header for DB: {}", m_local_authenticator.sign_transaction(""));
+  headers.emplace_back("Authorization: "s + m_local_authenticator.sign_transaction(""));
   auto response{perform_get_request(url,headers, false)};
   if (response.return_code == 200) {
     if (!(response.body.empty())) {
