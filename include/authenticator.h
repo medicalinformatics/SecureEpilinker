@@ -30,6 +30,7 @@ class Authenticator {
   public:
     explicit Authenticator(AuthenticationConfig);
     explicit Authenticator(AuthenticationConfig&&);
+    explicit Authenticator(std::unique_ptr<AuthenticationConfig>);
     Authenticator() = default;
     Authenticator(const Authenticator&) = default;
     Authenticator(Authenticator&&) = default;

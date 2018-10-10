@@ -38,6 +38,9 @@ Authenticator::Authenticator(AuthenticationConfig&& auth_config)
     : m_auth_config{std::make_unique<AuthenticationConfig>(move(auth_config))} {
 }
 
+Authenticator::Authenticator(unique_ptr<AuthenticationConfig> auth_config) :
+      m_auth_config{move(auth_config)} {}
+
 void Authenticator::set_auth_info(unique_ptr<AuthenticationConfig> auth_info) {
   if (!m_auth_config) {
     m_auth_config = move(auth_info);
