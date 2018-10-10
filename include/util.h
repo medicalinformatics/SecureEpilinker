@@ -335,4 +335,22 @@ template<> struct formatter<Bitmask> {
 
 } // namespace fmt
 
+// ostream printers
+
+/**
+ * Print maps to cout
+ */
+template<typename K, typename T>
+std::ostream& operator<< (std::ostream& out, const std::map<K, T>& v) {
+  sel::ios_flags_saver _flags_saver(out);
+  out << "{" << std::hex;
+  auto end = v.cend();
+  for(auto i = v.cbegin(); i != end; ++i) {
+    out << i->first << ": " << i->second;
+    if (i != end) out << ", ";
+  }
+  out << "}";
+  return out;
+}
+
 #endif /* end of include guard: SEL_UTIL_H */
