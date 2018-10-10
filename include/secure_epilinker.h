@@ -69,18 +69,18 @@ public:
    * database size must match on both sides and be smaller than used nvals
    * during build_circuit()
    */
-  Result<CircUnit> run_as_client(std::unique_ptr<EpilinkClientInput>&& input);
-  Result<CircUnit> run_as_server(const std::shared_ptr<EpilinkServerInput>& input);
+  std::vector<Result<CircUnit>> run_as_client(const EpilinkClientInput& input);
+  std::vector<Result<CircUnit>> run_as_server(const EpilinkServerInput& input);
 #ifdef DEBUG_SEL_CIRCUIT
-  Result<CircUnit> run_as_both(const EpilinkClientInput& in_client,
+  std::vector<Result<CircUnit>> run_as_both(const EpilinkClientInput& in_client,
       const EpilinkServerInput& in_server);
 #endif
 
   /**
    * Shortcut for run_as_*() depending on input
    */
-  Result<CircUnit> run(const EpilinkClientInput& input) { return run_as_client(input); }
-  Result<CircUnit> run(const EpilinkServerInput& input) { return run_as_server(input); }
+  std::vector<Result<CircUnit>> run(const EpilinkClientInput& input) { return run_as_client(input); }
+  std::vector<Result<CircUnit>> run(const EpilinkServerInput& input) { return run_as_server(input); }
 
   /**
    * Resets the ABY Party and states.
@@ -101,7 +101,7 @@ private:
   bool is_setup{false};
 
   // called by run_as_*() after inputs are set
-  Result<CircUnit> run_circuit();
+  std::vector<Result<CircUnit>> run_circuit();
 };
 
 } // namespace sel

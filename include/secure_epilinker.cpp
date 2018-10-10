@@ -21,8 +21,9 @@
 #include "fmt/format.h"
 using fmt::format;
 #include "abycore/sharing/sharing.h"
-#include "util.h"
 #include "secure_epilinker.h"
+#include "circuit_input.h"
+#include "util.h"
 #include "math.h"
 #include "aby/Share.h"
 #include "aby/gadgets.h"
@@ -36,15 +37,6 @@ namespace sel {
 
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
-using FieldNamePair = pair<FieldName, FieldName>;
-
-// hammingweight over vectors
-vector<CircUnit> hw(const vector<Bitmask>& v_bm) {
-  vector<CircUnit> res(v_bm.size());
-  transform(v_bm.cbegin(), v_bm.cend(), res.begin(),
-      [] (const Bitmask& x) -> CircUnit { return hw(x); });
-  return res;
-}
 
 /***************** Circuit gadgets *******************/
 /**
@@ -77,11 +69,19 @@ ArithQuotient sum(const vector<FieldWeight>& fweights) {
 }
 
 /******************** Circuit Builder ********************/
+struct ResultShares {
+  OutShare index, match, tmatch;
+#ifdef DEBUG_SEL_RESULT
+  OutShare score_numerator, score_denominator;
+#endif
+};
+
 class SecureEpilinker::SELCircuit {
 public:
   SELCircuit(CircuitConfig cfg_,
     BooleanCircuit* bcirc, BooleanCircuit* ccirc, ArithmeticCircuit* acirc) :
     cfg{cfg_}, bcirc{bcirc}, ccirc{ccirc}, acirc{acirc},
+    ins{cfg, bcirc, acirc}, // CircuitInput
     to_bool_closure{[this](auto x){return to_bool(x);}},
     to_arith_closure{[this](auto x){return to_arith(x);}}
   {
@@ -90,42 +90,21 @@ public:
 
   template<class EpilinkInput>
   void set_input(const EpilinkInput& input) {
-    set_constants(input.nvals);
-    set_one_real_input(input);
-
-    get_default_logger()->trace("SELCircuit inputs set.");
-    is_input_set = true;
+    ins.set(input);
   }
 
 #ifdef DEBUG_SEL_CIRCUIT
-  /**
-   * Debugging test_both_inputs() to test exactly mirrored inputs.
-   */
   void set_both_inputs(const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
-    assert (in_client.nvals == in_server.nvals);
-    set_constants(in_client.nvals);
-    set_both_real_inputs(in_client, in_server);
-
-    is_input_set = true;
+    ins.set_both(in_client, in_server);
   }
 #endif
-
-  struct ResultShares {
-    OutShare index, match, tmatch;
-#ifdef DEBUG_SEL_RESULT
-    OutShare score_numerator, score_denominator;
-#endif
-  };
 
   /*
   * Builds the shared component of the circuit after initial input shares of
   * client and server have been created.
   */
-  ResultShares build_circuit() {
-    if (!is_input_set) {
-      throw new runtime_error("Set the input first before building and running the ciruit!");
-    }
-    get_default_logger()->trace("Building circuit...");
+  ResultShares build_circuit(size_t index) {
+    get_default_logger()->trace("Building circuit {}...", index);
 
     // Where we store all group and individual comparison weights as ariths
     vector<FieldWeight> field_weights;
@@ -139,23 +118,23 @@ public:
     // for each group, store the best permutation's weight into field_weights
     for (const auto& group : cfg.epi.exchange_groups) {
       // add this group's field weight to vector
-      field_weights.emplace_back(best_group_weight(group));
+      field_weights.emplace_back(best_group_weight(index, group));
       // remove all indices that were covered by this index group
       for (const auto& i : group) no_x_group.erase(i);
     }
     // 1.2 Remaining indices
     for (const auto& i : no_x_group) {
-      field_weights.emplace_back(field_weight(i, i));
+      field_weights.emplace_back(field_weight({index, i, i}));
     }
 
     // 2. Sum up all field weights.
     ArithQuotient sum_field_weights = sum(field_weights);
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(sum_field_weights, "sum_field_weights");
+    print_share(sum_field_weights, format("[{}] sum_field_weights", index));
 #endif
 
     // 3. Determine index of max score of all nvals calculations
-    vector<BoolShare> max_idx = {const_idx};
+    vector<BoolShare> max_idx = {ins.const_idx()};
     // we summed up `nfields` many weights of size `weight_prec`
     const size_t weight_sum_bits = cfg.weight_prec + ceil_log2(cfg.epi.nfields);
     max_tie_index(sum_field_weights, max_idx,
@@ -167,21 +146,21 @@ public:
     //  locally. This is done in set_constants().
     //
     // 5. Set two comparison bits, whether > (tentative) threshold
-    BoolShare threshold_weight = to_bool(const_threshold * sum_field_weights.den);
-    BoolShare tthreshold_weight = to_bool(const_tthreshold * sum_field_weights.den);
+    BoolShare threshold_weight = to_bool(ins.const_threshold() * sum_field_weights.den);
+    BoolShare tthreshold_weight = to_bool(ins.const_tthreshold() * sum_field_weights.den);
     BoolShare b_sum_field_weight = to_bool(sum_field_weights.num);
     BoolShare match = threshold_weight < b_sum_field_weight;
     BoolShare tmatch = tthreshold_weight < b_sum_field_weight;
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(sum_field_weights, "best score");
-    print_share(max_idx[0], "index of best score");
-    print_share(threshold_weight, "T*W");
-    print_share(tthreshold_weight, "Tt*W");
-    print_share(match, "match?");
-    print_share(tmatch, "tentative match?");
+    print_share(sum_field_weights, format("[{}] best score", index));
+    print_share(max_idx[0], format("[{}] index of best score", index));
+    print_share(threshold_weight, format("[{}] T*W", index));
+    print_share(tthreshold_weight, format("[{}] Tt*W", index));
+    print_share(match, format("[{}] match?", index));
+    print_share(tmatch, format("[{}] tentative match?", index));
 #endif
 
-    get_default_logger()->trace("Circuit built.");
+    get_default_logger()->trace("Circuit {} built.", index);
 #ifdef DEBUG_SEL_RESULT
     // If result debugging is enabled, we let all parties learn all fields plus
     // the individual {field-,}weight-sums.
@@ -204,9 +183,20 @@ public:
 #endif // DEBUG_SEL_RESULT
   }
 
+  vector<ResultShares> build_parallel_circuits() {
+    if (!ins.is_input_set()) {
+      throw new runtime_error("Set the input first before building and running the ciruit!");
+    }
+    vector<ResultShares> result_shares;
+    result_shares.reserve(ins.nrecords());
+    for (size_t index = 0; index != ins.nrecords(); ++index) {
+      result_shares.emplace_back(build_circuit(index));
+    }
+    return result_shares;
+  }
+
   void reset() {
     ins.clear();
-    is_input_set = false;
     field_weight_cache.clear();
   }
 
@@ -217,31 +207,7 @@ private:
   BooleanCircuit* ccirc; // intermediate conversion circuit
   ArithmeticCircuit* acirc;
   // Input shares
-  struct EntryShare {
-    BoolShare val; // value as bool
-    ArithShare delta; // 1 if non-empty, 0 o/w
-    BoolShare hw; // precomputed HW of val - not used for bin
-  };
-  struct InputShares {
-    EntryShare client, server;
-  };
-  /**
-   * All input shares are stored in this map, keyed by fieldname
-   * Value is a vector over all fields, and each field holds the EntryShare for
-   * client and server. An EntryShare holds the value of the field itself, a
-   * delta flag, which is 1 if the field is non-empty, and the precalculated
-   * hammingweight for bitmasks.
-   */
-  map<FieldName, InputShares> ins;
-  // Constant shares
-  BoolShare const_idx;
-  ArithShare const_dice_prec_factor;
-  // Left side of inequality: T * sum(weights)
-  ArithShare const_threshold, const_tthreshold;
-
-  // state variables
-  uint32_t nvals{0};
-  bool is_input_set{false};
+  CircuitInput ins;
 
   // Dynamic converters, dependent on main bool sharing
   BoolShare to_bool(const ArithShare& s) {
@@ -256,155 +222,7 @@ private:
   const A2BConverter to_bool_closure;
   const B2AConverter to_arith_closure;
 
-  void set_constants(uint32_t nvals) {
-    this->nvals = nvals;
-    const_idx = ascending_numbers_constant(bcirc, nvals);
-    assert(const_idx.get_nvals() == nvals);
-
-    const_dice_prec_factor =
-      constant_simd(acirc, (1 << cfg.dice_prec), BitLen, nvals);
-
-    CircUnit T = llround(cfg.epi.threshold * (1 << cfg.dice_prec));
-    CircUnit Tt = llround(cfg.epi.tthreshold * (1 << cfg.dice_prec));
-
-    get_default_logger()->debug(
-        "Rescaled threshold: {:x}/ tentative: {:x}", T, Tt);
-
-    const_threshold = constant(acirc, T, BitLen);
-    const_tthreshold = constant(acirc, Tt, BitLen);
-#ifdef DEBUG_SEL_CIRCUIT
-    print_share(const_idx, "const_idx");
-    print_share(const_threshold , "const_threshold ");
-    print_share(const_tthreshold , "const_tthreshold ");
-#endif
-  }
-
-  EntryShare make_entry_share(const EpilinkClientInput& input,
-      const FieldName& i) {
-    const auto& f = cfg.epi.fields.at(i);
-    const FieldEntry& entry = input.records.at(i);
-    size_t bytesize = bitbytes(f.bitsize);
-    Bitmask value = entry.value_or(Bitmask(bytesize));
-    check_vector_size(value, bytesize, "client input byte vector "s + i);
-
-    // value
-    BoolShare val(bcirc,
-        repeat_vec(value, nvals).data(),
-        f.bitsize, CLIENT, nvals);
-
-    // delta
-    ArithShare delta(acirc,
-        vector<CircUnit>(nvals, static_cast<CircUnit>(entry.has_value())).data(),
-        BitLen, CLIENT, nvals);
-
-    // Set hammingweight input share only for bitmasks
-    BoolShare _hw;
-    if (f.comparator == BM) {
-      _hw = BoolShare(bcirc,
-          vector<CircUnit>(nvals, hw(value)).data(),
-          hw_size(f.bitsize), CLIENT, nvals);
-    }
-
-#ifdef DEBUG_SEL_CIRCUIT
-      print_share(val, format("client val[{}]", i));
-      print_share(delta, format("client delta[{}]", i));
-      if (f.comparator == BM) print_share(_hw, format("client hw[{}]", i));
-#endif
-
-    return {val, delta, _hw};
-  }
-
-  EntryShare make_entry_share(const EpilinkServerInput& input,
-      const FieldName& i) {
-    const auto& f = cfg.epi.fields.at(i);
-    const VFieldEntry& entries = input.database.at(i);
-    size_t bytesize = bitbytes(f.bitsize);
-    Bitmask dummy_bm(bytesize);
-    VBitmask values = transform_vec(entries,
-        [&dummy_bm](auto e){return e.value_or(dummy_bm);});
-    check_vectors_size(values, bytesize, "server input byte vector "s + i);
-
-    // value
-    BoolShare val(bcirc,
-        concat_vec(values).data(), f.bitsize, SERVER, nvals);
-
-    // delta
-    vector<CircUnit> db_delta(nvals);
-    for (size_t j=0; j!=nvals; ++j) db_delta[j] = entries[j].has_value();
-    ArithShare delta(acirc, db_delta.data(), BitLen, SERVER, nvals);
-
-    // Set hammingweight input share only for bitmasks
-    BoolShare _hw;
-    if (f.comparator == BM) {
-      _hw = BoolShare(bcirc,
-          hw(values).data(), hw_size(f.bitsize), SERVER, nvals);
-    }
-
-#ifdef DEBUG_SEL_CIRCUIT
-      print_share(val, format("server val[{}]", i));
-      print_share(delta, format("server delta[{}]", i));
-      if (f.comparator == BM) print_share(_hw, format("server hw[{}]", i));
-#endif
-
-    return {val, delta, _hw};
-  }
-
-  EntryShare make_dummy_entry_share(const FieldName& i) {
-    const auto& f = cfg.epi.fields.at(i);
-
-    BoolShare val(bcirc, f.bitsize, nvals); //dummy val
-
-    ArithShare delta(acirc, BitLen, nvals); // dummy delta
-
-    BoolShare _hw;
-    if (f.comparator == BM) {
-      _hw = BoolShare(bcirc, hw_size(f.bitsize), nvals); //dummy hw
-    }
-
-#ifdef DEBUG_SEL_CIRCUIT
-      print_share(val, format("dummy val[{}]", i));
-      print_share(delta, format("dummy delta[{}]", i));
-      if (f.comparator == BM) print_share(_hw, format("dummy hw[{}]", i));
-#endif
-
-    return {val, delta, _hw};
-  }
-
-  InputShares make_input_share(const EpilinkClientInput& input,
-      const FieldName& i) {
-    return {make_entry_share(input, i), make_dummy_entry_share(i)};
-  }
-
-  InputShares make_input_share(const EpilinkServerInput& input,
-      const FieldName& i) {
-    return {make_dummy_entry_share(i), make_entry_share(input, i)};
-  }
-
-  template<class EpilinkInput>
-  void set_one_real_input(const EpilinkInput& input) {
-    assert (nvals > 0 && "call set_constants() before set_*_input()");
-
-    for (const auto& _f : cfg.epi.fields) {
-      const FieldName& i = _f.first;
-
-      ins[i] = make_input_share(input, i);
-    }
-  }
-
-#ifdef DEBUG_SEL_CIRCUIT
-  void set_both_real_inputs(const EpilinkClientInput& in_client,
-      const EpilinkServerInput& in_server) {
-    assert (nvals > 0 && "call set_constants() before set_*_input()");
-
-    for (const auto& _f : cfg.epi.fields) {
-      const FieldName& i = _f.first;
-
-      ins[i] = {make_entry_share(in_client, i), make_entry_share(in_server, i)};
-    }
-  }
-#endif
-
-  FieldWeight best_group_weight(const IndexSet& group_set) {
+  FieldWeight best_group_weight(size_t index, const IndexSet& group_set) {
     vector<FieldName> group{begin(group_set), end(group_set)};
     // copy group to store permutations
     vector<FieldName> groupPerm = group;
@@ -419,13 +237,13 @@ private:
       for (size_t i = 0; i != size; ++i) {
         const auto& ileft = group[i];
         const auto& iright = groupPerm[i];
-        field_weights.emplace_back(field_weight(ileft, iright));
+        field_weights.emplace_back(field_weight({index, ileft, iright}));
       }
       // sum all field-weights for this permutation
       ArithQuotient sum_perm_weight{sum(field_weights)};
 #ifdef DEBUG_SEL_CIRCUIT
       print_share(sum_perm_weight,
-          format("sum_perm_weight ({}|{})", group, groupPerm));
+          format("[{}] sum_perm_weight ({}|{})", index, group, groupPerm));
 #endif
       // collect for later max
       perm_weights.emplace_back(sum_perm_weight);
@@ -437,7 +255,7 @@ private:
         perm_weights, to_bool_closure, to_arith_closure, weight_sum_bits);
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(max_perm_weight,
-        format("max_perm_weight ({})", group));
+        format("[{}] max_perm_weight ({})", index, group));
 #endif
     // Treat quotient as FieldWeight
     return {max_perm_weight.num, max_perm_weight.den};
@@ -447,7 +265,7 @@ private:
    * Cache to store calls to field_weight()
    * Can save half the circuit in permutation groups this way.
    */
-  map<FieldNamePair, FieldWeight> field_weight_cache;
+  map<ComparisonIndex, FieldWeight> field_weight_cache;
 
   /**
    * Calculates the field weight and addend to the total weight.
@@ -459,40 +277,36 @@ private:
    * - Multiply result of comparison with weight -> field weight
    * - Return field weight and weight
    */
-  const FieldWeight& field_weight(const FieldName& ileft, const FieldName& iright) {
+  const FieldWeight& field_weight(const ComparisonIndex& i) {
     // Probe cache
-    const FieldNamePair ipair = {ileft, iright};
-    const auto& cache_hit = field_weight_cache.find(ipair);
+    const auto& cache_hit = field_weight_cache.find(i);
     if (cache_hit != field_weight_cache.cend()) {
-      get_default_logger()->trace("field_weight cache hit for <{},{}>", ileft, iright);
+      get_default_logger()->trace("field_weight cache hit for {}", i);
       return cache_hit->second;
     }
 
+    auto [client_entry, server_entry] = ins.get(i);
     // 1. Calculate weight * delta(i,j)
-    const CircUnit weight_r = cfg.rescaled_weight(ileft, iright);
-    ArithShare a_weight = constant_simd(acirc, weight_r, BitLen, nvals);
-
-    const auto& client_entry = ins[ileft].client;
-    const auto& server_entry = ins[iright].server;
+    ArithShare a_weight = ins.get_const_weight(i);
     ArithShare delta = client_entry.delta * server_entry.delta;
     ArithShare weight = a_weight * delta; // free constant multiplication
 
     // 2. Compare values (with dice precision) and multiply with weight
     ArithShare comp;
-    const auto ftype = cfg.epi.fields.at(ileft).comparator;
+    const auto ftype = cfg.epi.fields.at(i.left).comparator;
     switch(ftype) {
       case BM: {
-        const auto b_comp = dice_coefficient(ileft, iright);
+        const auto b_comp = dice_coefficient(i);
         comp = to_arith(b_comp);
         break;
       }
       case BIN: {
-        const auto b_comp = equality(ileft, iright);
+        const auto b_comp = equality(i);
         // Instead of left-shifting the bool share, it is cheaper to first do a
         // single-bit conversion into an arithmetic share and then a free
         // multiplication with a constant 2^dice_prec
         comp = to_arith(b_comp);
-        comp *= const_dice_prec_factor;
+        comp *= ins.const_dice_prec_factor();
         break;
       }
     }
@@ -500,13 +314,13 @@ private:
     ArithShare field_weight = weight * comp;
 
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(weight, format("weight({},{},{})", ftype, ileft, iright));
-    print_share(comp, format("comp({},{},{})", ftype, ileft, iright));
-    print_share(field_weight, format("^^^^ field weight({},{},{}) ^^^^", ftype, ileft, iright));
+    print_share(weight, format("weight ({}){}", ftype, i));
+    print_share(comp, format("comp ({}){}", ftype, i));
+    print_share(field_weight, format("^^^^ field weight ({}){} ^^^^", ftype, i));
 #endif
 
     FieldWeight ret = {field_weight, weight};
-    return field_weight_cache[move(ipair)] = move(ret);
+    return field_weight_cache[i] = move(ret);
   }
 
   /**
@@ -515,9 +329,8 @@ private:
   * Note that we use rounding integer division, that is (x+(y/2))/y, because x/y
   * always rounds down, which would lead to a bias.
   */
-  BoolShare dice_coefficient(const FieldName& ileft, const FieldName& iright) {
-    const auto& client_entry = ins[ileft].client;
-    const auto& server_entry = ins[iright].server;
+  BoolShare dice_coefficient(const ComparisonIndex& i) {
+    auto [client_entry, server_entry] = ins.get(i);
 
     BoolShare hw_plus = client_entry.hw + server_entry.hw; // denominator
     BoolShare hw_and_twice = hammingweight(server_entry.val & client_entry.val) << 1; // numerator
@@ -525,15 +338,15 @@ private:
     // fixed point rounding integer division
     // hw_size(bitsize) + 1 because we multiply numerator with 2 and denominator is sum
     // of two values of original bitsize. Both are hammingweights.
-    const auto bitsize = hw_size(cfg.epi.fields.at(ileft).bitsize) + 1;
+    const auto bitsize = hw_size(cfg.epi.fields.at(i.left).bitsize) + 1;
     const auto int_div_file_path = format((cfg.circ_dir/"sel_int_div/{}_{}.aby").string(),
         bitsize, cfg.dice_prec);
     BoolShare dice = apply_file_binary(hw_and_twice, hw_plus, bitsize, bitsize, int_div_file_path);
 
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(hw_and_twice, format("hw_and_twice({}|{})", ileft, iright));
-    print_share(hw_plus, format("hw_plus({}|{})", ileft, iright));
-    print_share(dice, format("dice({}|{})", ileft, iright));
+    print_share(hw_and_twice, format("hw_and_twice {}", i));
+    print_share(hw_plus, format("hw_plus {}", i));
+    print_share(dice, format("dice {}", i));
 #endif
 
     return dice;
@@ -542,10 +355,11 @@ private:
   /*
   * Binary-compares two shares
   */
-  BoolShare equality(const FieldName& ileft, const FieldName& iright) {
-    BoolShare cmp = (ins[ileft].client.val == ins[iright].server.val);
+  BoolShare equality(const ComparisonIndex& i) {
+    auto [client_entry, server_entry] = ins.get(i);
+    BoolShare cmp = (client_entry.val == server_entry.val);
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(cmp, format("equality({}|{})", ileft, iright));
+    print_share(cmp, format("equality {}", i));
 #endif
     return cmp;
   }
@@ -590,8 +404,7 @@ void SecureEpilinker::run_setup_phase() {
   is_setup = true;
 }
 
-Result<CircUnit> SecureEpilinker::run_as_client(
-    unique_ptr<EpilinkClientInput>&& input) {
+vector<Result<CircUnit>> SecureEpilinker::run_as_client(const EpilinkClientInput& input) {
   if (!is_setup) {
     get_default_logger()->warn(
         "SecureEpilinker::run_as_client: Implicitly running setup phase.");
@@ -601,8 +414,7 @@ Result<CircUnit> SecureEpilinker::run_as_client(
   return run_circuit();
 }
 
-Result<CircUnit> SecureEpilinker::run_as_server(
-   const shared_ptr<EpilinkServerInput>& input) {
+vector<Result<CircUnit>> SecureEpilinker::run_as_server(const EpilinkServerInput& input) {
   if (!is_setup) {
     get_default_logger()->warn(
         "SecureEpilinker::run_as_server: Implicitly running setup phase.");
@@ -613,7 +425,7 @@ Result<CircUnit> SecureEpilinker::run_as_server(
 }
 
 #ifdef DEBUG_SEL_CIRCUIT
-Result<CircUnit> SecureEpilinker::run_as_both(
+vector<Result<CircUnit>> SecureEpilinker::run_as_both(
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
   if (!is_setup) {
     get_default_logger()->warn(
@@ -625,19 +437,12 @@ Result<CircUnit> SecureEpilinker::run_as_both(
 }
 #endif
 
-Result<CircUnit> SecureEpilinker::run_circuit() {
-  SELCircuit::ResultShares res = selc->build_circuit();
-  get_default_logger()->trace("Executing ABYParty Circuit...");
-  party.ExecCircuit();
-  get_default_logger()->trace("ABYParty Circuit executed.");
-
-  is_setup = false; // need to run new setup phase
-
+Result<CircUnit> to_clear_value(ResultShares& res, size_t dice_prec) {
 #ifdef DEBUG_SEL_RESULT
     const auto sum_field_weights = res.score_numerator.get_clear_value<CircUnit>();
     // shift by dice-precision to account for precision of threshold, i.e.,
     // get denominator and numerator to same scale
-    const auto sum_weights = res.score_denominator.get_clear_value<CircUnit>() << cfg.dice_prec;
+    const auto sum_weights = res.score_denominator.get_clear_value<CircUnit>() << dice_prec;
 #else
     const CircUnit sum_field_weights = 0;
     const CircUnit sum_weights = 0;
@@ -649,6 +454,19 @@ Result<CircUnit> SecureEpilinker::run_circuit() {
     res.tmatch.get_clear_value<bool>(),
     sum_field_weights, sum_weights
   };
+}
+
+vector<Result<CircUnit>> SecureEpilinker::run_circuit() {
+  auto results = selc->build_parallel_circuits();
+  get_default_logger()->trace("Executing ABYParty Circuit...");
+  party.ExecCircuit();
+  get_default_logger()->trace("ABYParty Circuit executed.");
+
+  is_setup = false; // need to run new setup phase
+
+  return transform_vec(results, [dice_prec=cfg.dice_prec](auto r){
+        return to_clear_value(r, dice_prec);
+      });
 }
 
 void SecureEpilinker::reset() {
