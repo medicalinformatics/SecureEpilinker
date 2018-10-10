@@ -96,7 +96,7 @@ auto run(SecureEpilinker& linker,
 }
 #endif
 
-EpilinkInput input_simple(uint32_t nvals) {
+EpilinkInput input_simple(uint32_t dbsize) {
   auto td = make_test_data();
   auto& data_int_1 = td["int_1"].data;
   auto& f_int1 = td["int_1"].field;
@@ -113,17 +113,18 @@ EpilinkInput input_simple(uint32_t nvals) {
 
   EpilinkClientInput in_client {
     { {"int_1", data_int_1} }, // record
-    nvals // nvals
+    dbsize // dbsize
   };
 
   EpilinkServerInput in_server {
-    { {"int_1", vector<FieldEntry>(nvals, data_int_1)} } // records
+    { {"int_1", vector<FieldEntry>(dbsize, data_int_1)} }, // db
+    1 // num_records
   };
 
-  return {epi_cfg, in_client, in_server};
+  return {move(epi_cfg), move(in_client), move(in_server)};
 }
 
-EpilinkInput input_simple_bm(uint32_t nvals) {
+EpilinkInput input_simple_bm(uint32_t dbsize) {
   auto td = make_test_data();
   // Only one bm field, single byte integer
   EpilinkConfig epi_cfg {
@@ -136,17 +137,18 @@ EpilinkInput input_simple_bm(uint32_t nvals) {
 
   EpilinkClientInput in_client {
     { {"bm_1", Bitmask{0b01110111}} }, // record
-    nvals // nvals
+    dbsize // dbsize
   };
 
   EpilinkServerInput in_server {
-    { {"bm_1", vector<FieldEntry>(nvals, Bitmask{0b11101110})} } // records
+    { {"bm_1", vector<FieldEntry>(dbsize, Bitmask{0b11101110})} }, // db
+    1 // num_records
   };
 
-  return {epi_cfg, in_client, in_server};
+  return {move(epi_cfg), move(in_client), move(in_server)};
 }
 
-EpilinkInput input_exchange_grp(uint32_t nvals) {
+EpilinkInput input_exchange_grp(uint32_t dbsize) {
   auto td = make_test_data();
   auto& data_int_1 = td["int_1"].data;
   auto& data_int_2 = td["int_2"].data;
@@ -174,19 +176,20 @@ EpilinkInput input_exchange_grp(uint32_t nvals) {
       {"int_1", data_int_1},
       {"int_2", data_int_2}
     }, // record
-    nvals // nvals
+    dbsize // dbsize
   };
 
   EpilinkServerInput in_server {
     {
-      {"bm_1", vector<FieldEntry>(nvals, Bitmask{0x44})}, // 2-bit mismatch
-      {"bm_2", vector<FieldEntry>(nvals, Bitmask{0x35})}, // 1-bit mismatch
-      {"int_1", vector<FieldEntry>(nvals, data_int_1)},
-      {"int_2", vector<FieldEntry>(nvals, data_int_2)}
-    } // records
+      {"bm_1", vector<FieldEntry>(dbsize, Bitmask{0x44})}, // 2-bit mismatch
+      {"bm_2", vector<FieldEntry>(dbsize, Bitmask{0x35})}, // 1-bit mismatch
+      {"int_1", vector<FieldEntry>(dbsize, data_int_1)},
+      {"int_2", vector<FieldEntry>(dbsize, data_int_2)}
+    }, // db
+    1 // num_records
   };
 
-  return {epi_cfg, in_client, in_server};
+  return {move(epi_cfg), move(in_client), move(in_server)};
 }
 
 EpilinkInput input_empty() {
@@ -209,23 +212,24 @@ EpilinkInput input_empty() {
       {"bm_1", nullopt},
       {"bm_2", Bitmask{0x44}},
     }, // record
-    2 // nvals
+    2 // dbsize
   };
 
   EpilinkServerInput in_server {
     {
       {"bm_1", { nullopt, Bitmask{0x31} }}, // 1-bit mismatch for #1
       {"bm_2", { Bitmask{0x43}, Bitmask{0x44} }}, // 2-bit mismatch for #0
-    } // records
+    }, // db
+    1 // num_records
   };
 
-  return {epi_cfg, in_client, in_server};
+  return {move(epi_cfg), move(in_client), move(in_server)};
 }
 
-EpilinkInput input_dkfz_random(size_t nvals) {
+EpilinkInput input_dkfz_random(size_t dbsize) {
   RandomInputGenerator random_input(make_dkfz_cfg());
   random_input.set_client_empty_fields({"ort"});
-  return random_input.generate(nvals);
+  return random_input.generate(dbsize);
 }
 
 EpilinkConfig read_config_file(const fs::path& cfg_path) {
@@ -259,12 +263,12 @@ EpilinkInput input_json(const fs::path& local_config_file_path,
   auto record = parse_json_fields(epi_cfg.fields, record_json);
 
   auto db = fs::is_directory(database_file_or_dir_path) ?
-    read_database_dir(database_file_or_dir_path, epi_cfg) :
-    read_database_file(database_file_or_dir_path, epi_cfg);
+      read_database_dir(database_file_or_dir_path, epi_cfg) :
+      read_database_file(database_file_or_dir_path, epi_cfg);
 
-  EpilinkServerInput server_in{db};
+  EpilinkServerInput server_in{make_shared<VRecord>(db), 1};
   EpilinkClientInput client_in{record, server_in.database_size};
-  return {epi_cfg, client_in, server_in};
+  return {move(epi_cfg), move(client_in), move(server_in)};
 }
 
 string test_scripts_dir_path() {
@@ -281,7 +285,7 @@ EpilinkInput input_test_json() {
       dir + "database"s);
 }
 
-pair<EpilinkInput, vector<EpilinkClientInput>> input_json_multi_request(
+EpilinkInput input_json_multi_request(
     const fs::path& local_config_file_path,
     const fs::path& requests_file_path,
     const fs::path& database_file_or_dir_path) {
@@ -291,17 +295,17 @@ pair<EpilinkInput, vector<EpilinkClientInput>> input_json_multi_request(
   auto db = fs::is_directory(database_file_or_dir_path) ?
     read_database_dir(database_file_or_dir_path, epi_cfg) :
     read_database_file(database_file_or_dir_path, epi_cfg);
-  EpilinkServerInput server_in{db};
 
   auto requests_json = read_json_from_disk(requests_file_path).at("requests");
-  vector<EpilinkClientInput> client_ins;
+  Records records;
   for (auto& record_json : requests_json) {
     auto record = parse_json_fields(epi_cfg.fields, record_json.at("fields"));
-    client_ins.push_back({record, server_in.database_size});
+    records.push_back(record);
   }
 
-  EpilinkInput in{epi_cfg, client_ins.front(), server_in};
-  return {in, client_ins};
+  EpilinkServerInput server_in{make_shared<VRecord>(db), records.size()};
+  EpilinkClientInput client_in{make_unique<Records>(records), server_in.database_size};
+  return {move(epi_cfg), move(client_in), move(server_in)};
 }
 
 auto input_multi_test_0824() {
@@ -320,10 +324,9 @@ auto input_single_test_0824() {
       dir + "db_1.json");
 }
 
-void run_and_print_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
-  print("----- Secure Epilinker -----\n");
+auto run_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
 
-  linker.build_circuit(in.client.database_size);
+  linker.build_circuit(in.client.database_size, in.client.num_records);
   linker.run_setup_phase();
 
 #ifdef DEBUG_SEL_CIRCUIT
@@ -334,29 +337,33 @@ void run_and_print_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
 #endif
   linker.reset();
 
-  print("Result:\n{}", res);
+  return res;
 }
 
-void run_and_print_local_calcs(const EpilinkInput& in) {
-  print("----- Local Calculations -----\n");
-  CircuitConfig cfg32{in.cfg, CircDir, false, 32};
-  auto res_32bit = clear_epilink::calc_integer({in.client, in.server}, cfg32);
-  print("32Bit Result:\n{}", res_32bit);
+void run_and_print_local_calcs(const clear_epilink::Input& input, const EpilinkConfig& cfg) {
+  CircuitConfig cfg32{cfg, CircDir, false, 32};
+  auto res_32bit = clear_epilink::calc_integer(input, cfg32);
+  print("------ 32 Bit ------\n{}", res_32bit);
 
-  cfg32.set_ideal_precision();
-  auto res_32bit_ideal = clear_epilink::calc_integer({in.client, in.server}, cfg32);
-  print("32Bit ideal Result:\n{}", res_32bit_ideal);
+  CircuitConfig cfg64{cfg, CircDir, false, 64};
+  auto res_64bit = clear_epilink::calc<uint64_t>(input, cfg64);
+  print("------ 64 Bit ------\n{}", res_64bit);
 
-  CircuitConfig cfg64{in.cfg, CircDir, false, 64};
-  auto res_64bit = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
-  print("64bit Result:\n{}", res_64bit);
+  auto res_exact = clear_epilink::calc_exact(input, cfg);
+  print("------ Double ------:\n{}", res_exact);
+}
 
-  cfg64.set_ideal_precision();
-  auto res_64bit_ideal = clear_epilink::calc<uint64_t>({in.client, in.server}, cfg64);
-  print("64bit ideal Result:\n{}", res_64bit_ideal);
+void run_and_print_calcs(SecureEpilinker& linker, const EpilinkInput& in, bool only_local) {
+  vector<Result<CircUnit>> results;
+  if (!only_local) results = run_sel_calcs(linker, in);
 
-  auto res_exact = clear_epilink::calc_exact({in.client, in.server}, in.cfg);
-  print("Exact Result:\n{}", res_exact);
+  const VRecord& database = *in.server.database;
+  for (size_t i = 0; i != in.client.num_records; ++i) {
+    print("********************* {} ********************\n", i);
+    if (!only_local) print("------ Secure Epilinker -------\n{}", results[i]);
+    const Record& record = in.client.records->at(i);
+    run_and_print_local_calcs({record, database}, in.cfg);
+  }
 }
 
 } /* END namespace sel::test */
@@ -369,7 +376,7 @@ int main(int argc, char *argv[])
   bool role_server = false;
   bool only_local = false;
   unsigned int sharing = S_YAO;
-  uint32_t nvals = 1;
+  uint32_t dbsize = 1;
   uint32_t nthreads = 1;
   string remote_host = "127.0.0.1";
 
@@ -378,7 +385,7 @@ int main(int argc, char *argv[])
     ("S,server", "Run as server. Default to client", cxxopts::value(role_server))
     ("R,remote-host", "Remote host. Default 127.0.0.1", cxxopts::value(remote_host))
     ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO", cxxopts::value(sharing))
-    ("n,nvals", "Parallellity", cxxopts::value(nvals))
+    ("n,dbsize", "Database size", cxxopts::value(dbsize))
     ("r,run-both", "Use run_as_both()", cxxopts::value(run_both))
     ("L,local-only", "Only run local calculations on clear values."
         " Doesn't initialize the SecureEpilinker.", cxxopts::value(only_local))
@@ -392,7 +399,6 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  // Logger
   create_terminal_logger();
   switch(op.count("verbose")){
     case 0: spdlog::set_level(spdlog::level::warn); break;
@@ -407,24 +413,13 @@ int main(int argc, char *argv[])
     role, (e_sharing)sharing, remote_host, 5676, nthreads
   };
 
-  const auto in = input_dkfz_random(nvals);
-  //auto [in, client_ins] = input_multi_test_0824();
+  //const auto in = input_dkfz_random(dbsize);
+  const auto in = input_multi_test_0824();
 
   CircuitConfig circ_cfg{in.cfg, CircDir};
   SecureEpilinker linker{aby_cfg, circ_cfg};
-  if(!only_local) {
-    linker.connect();
-    run_and_print_sel_calcs(linker, in);
-  }
-  run_and_print_local_calcs(in);
-
-  /*
-  for (auto& client_in : client_ins) {
-    EpilinkInput _in = {in.cfg, client_in, in.server};
-    if (!only_local) run_and_print_sel_calcs(linker, _in);
-    run_and_print_local_calcs(_in);
-  }
-  */
+  if(!only_local) linker.connect();
+  run_and_print_calcs(linker, in, only_local);
 
   return 0;
 }

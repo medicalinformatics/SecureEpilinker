@@ -92,17 +92,17 @@ EpilinkInput RandomInputGenerator::generate(const size_t nvals) {
           } else if (f.comparator == FieldComparator::DICE) {
             ve.emplace_back(random_bm(f.bitsize, bm_density_shift));
           } else if (random_match(gen)) {
-            ve.emplace_back(in_client.records.at(f.name));
+            ve.emplace_back(in_client.records->at(0).at(f.name));
           } else {
             ve.emplace_back(random_bm(f.bitsize, 0));
           }
         }
         return ve;
-      })
+      }),
+      1 // TODO generate multiple client records
   };
 
-  return {cfg, in_client, in_server};
-
+  return {move(cfg), move(in_client), move(in_server)};
 }
 
 } /* END namespace sel */
