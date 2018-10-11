@@ -53,9 +53,8 @@ struct formatter<sel::Result<T>> {
     std::string type_spec;
     if constexpr (std::is_integral_v<T>) type_spec = ":x";
     return format_to(ctx.begin(),
-        "best index: {}; match(/tent.)? {}/{}\n"
-        "sum(field-weights): {" + type_spec + "}; "
-        "sum(weights): {" + type_spec + "}; score: {}\n"
+        "best index: {}; match(/tent.)? {}/{}; "
+        "num: {" + type_spec + "}; den: {" + type_spec + "}; score: {}"
         , (uint64_t)r.index, r.match, r.tmatch
         , r.sum_field_weights, r.sum_weights,
         (((double)r.sum_field_weights)/r.sum_weights)
