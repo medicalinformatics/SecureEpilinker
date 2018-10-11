@@ -17,11 +17,13 @@ bool Debugger::all_values_set() const{
 }
 
 void Debugger::compute_int() {
-  int_result = clear_epilink::calc_integer({*client_input, *server_input},*circuit_config);
+  clear_epilink::Input input{client_input->records->front(), *(server_input->database)};
+  int_result = clear_epilink::calc_integer(input,*circuit_config);
 }
 
 void Debugger::compute_double() {
-  double_result = clear_epilink::calc_exact({*client_input, *server_input},*circuit_config);
+  clear_epilink::Input input{client_input->records->front(), *(server_input->database)};
+  double_result = clear_epilink::calc_exact(input,*circuit_config);
 }
 
 void Debugger::reset() {
