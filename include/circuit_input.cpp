@@ -30,7 +30,6 @@ namespace sel {
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
 
-// We wanna use ComparisonIndex as map keys
 bool operator<(const ComparisonIndex& l, const ComparisonIndex& r) {
   return l.left_idx < r.left_idx
     || (l.left_idx == r.left_idx && l.left < r.left)
