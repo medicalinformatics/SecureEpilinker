@@ -44,7 +44,7 @@ struct ComparisonShares {
 
 struct ComparisonIndex {
   size_t left_idx;
-  const FieldName &left, &right;
+  const FieldName left, right;
 };
 
 // We want to use ComparisonIndex as map keys
