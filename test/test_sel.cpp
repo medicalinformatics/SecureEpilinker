@@ -83,18 +83,26 @@ EpilinkConfig make_dkfz_cfg() {
 bool run_both{false};
 e_role role;
 
-#ifdef DEBUG_SEL_CIRCUIT
-auto run(SecureEpilinker& linker,
+auto set_inputs(SecureEpilinker& linker,
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
-  print("Calling run_as_{}()\n", run_both ? "both" : ((role==CLIENT) ? "client" : "server"));
+  print("Calling set_{}_input()\n", run_both ? "both" : ((role==CLIENT) ? "client" : "server"));
   if (!run_both) {
-    return (role==CLIENT) ?
-      linker.run_as_client(in_client) : linker.run_as_server(in_server);
-  } else {
-    return linker.run_as_both(in_client, in_server);
+    if (role==CLIENT) {
+      linker.set_client_input(in_client);
+    } else {
+      linker.set_server_input(in_server);
+    }
   }
-}
+#ifdef DEBUG_SEL_CIRCUIT
+  else {
+    linker.run_as_both(in_client, in_server);
+  }
+#else
+  else {
+    throw runtime_error("Not compiled with DEBUG_SEL_CIRCUIT, cannot set both inputs.");
+  }
 #endif
+}
 
 EpilinkInput input_simple(uint32_t dbsize) {
   auto td = make_test_data();
@@ -325,18 +333,11 @@ auto input_single_test_0824() {
 }
 
 auto run_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
-
-  linker.build_circuit(in.client.database_size, in.client.num_records);
+  linker.build_linkage_circuit(in.client.num_records, in.client.database_size);
   linker.run_setup_phase();
-
-#ifdef DEBUG_SEL_CIRCUIT
-  const auto res = run(linker, in.client, in.server);
-#else
-  const auto res = (role == CLIENT) ?
-    linker.run_as_client(in.client) : linker.run_as_server(in.server);
-#endif
+  set_inputs(linker, in.client, in.server);
+  const auto res = linker.run_linkage();
   linker.reset();
-
   return res;
 }
 
