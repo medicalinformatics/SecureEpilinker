@@ -343,4 +343,23 @@ Result<double> calc_exact(const Input& input, const CircuitConfig& cfg) {
   return calc<double>(input, cfg);
 }
 
+// vectorized records
+template<typename T> std::vector<Result<T>> calc(const Records& records,
+    const VRecord& database, const CircuitConfig& cfg) {
+  return transform_vec(records, [&database, &cfg](const auto& record) {
+      return calc<T>({record, database}, cfg);
+      });
+}
+
+template vector<Result<uint8_t>> calc<uint8_t>(
+    const Records& records, const VRecord& database, const CircuitConfig& cfg);
+template vector<Result<uint16_t>> calc<uint16_t>(
+    const Records& records, const VRecord& database, const CircuitConfig& cfg);
+template vector<Result<uint32_t>> calc<uint32_t>(
+    const Records& records, const VRecord& database, const CircuitConfig& cfg);
+template vector<Result<uint64_t>> calc<uint64_t>(
+    const Records& records, const VRecord& database, const CircuitConfig& cfg);
+template vector<Result<double>> calc<double>(
+    const Records& records, const VRecord& database, const CircuitConfig& cfg);
+
 } /* end of namespace sel::clear_epilink */
