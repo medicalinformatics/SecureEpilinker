@@ -12,7 +12,7 @@
 #include <filesystem>
 
 using namespace std;
-using fmt::print;
+using fmt::print, fmt::format;
 using nlohmann::json;
 
 namespace fs = std::filesystem;
@@ -341,29 +341,58 @@ auto run_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
   return res;
 }
 
-void run_and_print_local_calcs(const clear_epilink::Input& input, const EpilinkConfig& cfg) {
-  CircuitConfig cfg32{cfg, CircDir, false, 32};
-  auto res_32bit = clear_epilink::calc_integer(input, cfg32);
-  print("------ 32 Bit ------\n{}", res_32bit);
+template <typename T>
+auto calc_local(const EpilinkInput& in) {
+  unique_ptr<CircuitConfig> cfg;
+  if constexpr (is_integral_v<T>) {
+    cfg = make_unique<CircuitConfig>(in.cfg, CircDir, false, sizeof(T)*8);
+  } else {
+    cfg = make_unique<CircuitConfig>(in.cfg);
+  }
+  return clear_epilink::calc<T>(*in.client.records, *in.server.database, *cfg);
+}
 
-  CircuitConfig cfg64{cfg, CircDir, false, 64};
-  auto res_64bit = clear_epilink::calc<uint64_t>(input, cfg64);
-  print("------ 64 Bit ------\n{}", res_64bit);
+template <typename T, typename U>
+double deviation_perc(const Result<T>& l, const Result<U>& r) {
+  return ( 1.0 - ((double)(r.sum_field_weights * l.sum_weights))
+    / (r.sum_weights * l.sum_field_weights) ) * 100;
+}
 
-  auto res_exact = clear_epilink::calc_exact(input, cfg);
-  print("------ Double ------:\n{}", res_exact);
+template <typename T>
+void print_local_result(Result<CircUnit>* sel, const Result<T>& local, const string& name) {
+  const string dev = sel ? format("{:+.3f}%", deviation_perc(*sel, local)) : "";
+  print("------ {} ------\n{} {}\n", name, local, dev);
 }
 
 void run_and_print_calcs(SecureEpilinker& linker, const EpilinkInput& in, bool only_local) {
   vector<Result<CircUnit>> results;
   if (!only_local) results = run_sel_calcs(linker, in);
+  const auto results_32 = calc_local<uint32_t>(in);
+  const auto results_64 = calc_local<uint64_t>(in);
+  const auto results_double = calc_local<double>(in);
 
-  const VRecord& database = *in.server.database;
+  bool all_good = true;
   for (size_t i = 0; i != in.client.num_records; ++i) {
     print("********************* {} ********************\n", i);
-    if (!only_local) print("------ Secure Epilinker -------\n{}", results[i]);
-    const Record& record = in.client.records->at(i);
-    run_and_print_local_calcs({record, database}, in.cfg);
+    Result<CircUnit>* resp = nullptr;
+    if (!only_local) {
+      const auto& res = results[i];
+      resp = &results[i];
+      bool correct = res == results_32[i];
+      all_good &= correct;
+      auto indicator = correct ? "✅" : "💥";
+      string res_string = format("{}", res);
+      print("------ Secure Epilinker -------\n{} {}\n", res_string, indicator);
+    }
+    print_local_result(resp, results_32[i], "32 Bit");
+    print_local_result(resp, results_64[i], "64 Bit");
+    print_local_result(resp, results_double[i], "Double");
+  }
+
+  if (all_good) {
+    print ("🎉🎉🎉 All good! 🎉🎉🎉\n");
+  } else {
+    print ("💩💩💩 Errors occured! 💩💩💩\n");
   }
 }
 
