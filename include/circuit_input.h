@@ -39,12 +39,12 @@ struct EntryShare {
 using VEntryShare = std::vector<EntryShare>;
 
 struct ComparisonShares {
-  const EntryShare& left, right;
+  const EntryShare &left, &right;
 };
 
 struct ComparisonIndex {
   size_t left_idx;
-  const FieldName& left, right;
+  const FieldName &left, &right;
 };
 
 // We want to use ComparisonIndex as map keys
