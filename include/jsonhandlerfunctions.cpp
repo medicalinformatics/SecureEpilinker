@@ -106,13 +106,15 @@ SessionResponse linkrecords(
             .at("url")
             .get<string>());  // no move to use copy elision
 
-        VRecord data;
+        Records data;
         if(!multiple_records) {
-          data = record_to_vrecord(parse_json_fields(local_config->get_fields(), j.at("fields")));
+          data.emplace_back(parse_json_fields(local_config->get_fields(), j.at("fields")));
         } else {
-          data = DataHandler::cget().get_client_records(j);
+            for(auto& record : j.at("fields")){
+                data.emplace_back(parse_json_fields(local_config->get_fields(), record));
+            }
         }
-        job->add_data(move(data));
+        job->add_data(make_unique<Records>(move(data)));
         server_handler.add_linkage_job(remote_id, job);
       } catch (const exception& e) {
         logger->error("Error in job creation: {}", e.what());

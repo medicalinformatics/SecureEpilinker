@@ -63,7 +63,7 @@ std::string assemble_remote_url(const std::shared_ptr<const RemoteConfiguration>
 std::string assemble_remote_url(RemoteConfiguration const * );
 SessionResponse perform_post_request(std::string, std::string, std::list<std::string>, bool);
 SessionResponse perform_get_request(std::string, std::list<std::string>, bool);
-SessionResponse send_result_to_linkageservice(const Result<CircUnit>&, std::optional<std::vector<std::string> >,const std::string&,const std::shared_ptr<const LocalConfiguration>&,const std::shared_ptr<const RemoteConfiguration>&);
+SessionResponse send_result_to_linkageservice(const std::vector<Result<CircUnit>>&, std::optional<std::vector<std::string> >,const std::string&,const std::shared_ptr<const LocalConfiguration>&,const std::shared_ptr<const RemoteConfiguration>&);
 std::vector<std::string> get_headers(std::istream& is,const std::string& header);
 std::vector<std::string> get_headers(const std::string&,const std::string& header);
 

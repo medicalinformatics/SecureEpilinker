@@ -152,23 +152,33 @@ SessionResponse perform_get_request(string url, list<string> headers, bool get_h
   return {static_cast<int>(responsecode), stream.str(),{}};
 }
 
-SessionResponse send_result_to_linkageservice(const Result<CircUnit>& share,
+  SessionResponse send_result_to_linkageservice(const vector<Result<CircUnit>>& share,
     optional<vector<string>> ids, const string& role,
     const shared_ptr<const LocalConfiguration>& local_config,
     const shared_ptr<const RemoteConfiguration>& remote_config) {
   auto logger{get_default_logger()};
   nlohmann::json json_data;
   json_data["role"] = role;
-  json_data["result"] = {{"match", share.match},
-                          {"tentative_match", share.tmatch},
-                          {"bestIndex", share.index}};
-  if (role=="server") {
-    if(ids) {
-      json_data["ids"] = ids.value();
-    } else {
-      throw runtime_error("Missing IDS from server result");
-    }
+  if(share.size() == 1){ // Client sent one record
+    json_data["result"] = {{"match", share.front().match},
+    {"tentative_match", share.front().tmatch},
+    {"bestIndex", share.front().index}};
+  } else { // Client sent whole database
+  nlohmann::json results;
+  for(auto& result : share){
+    results.push_back({{"match", result.match},
+                       {"tentative_match", result.tmatch},
+                       {"bestIndex", result.index}});
   }
+  json_data["result"] = results;
+}
+if(role=="server") {
+  if(ids) {
+    json_data["ids"] = ids.value();
+  } else {
+    throw runtime_error("Missing IDs from server result");
+  }
+}
   auto data{json_data.dump()};
   logger->trace("Data for linkage Service: {}",data);
   list<string> headers{"Content-Type: application/json","Authorization: "s+remote_config->get_linkage_service()->authenticator.sign_transaction("")};

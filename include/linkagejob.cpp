@@ -52,12 +52,7 @@ void LinkageJob::set_callback(string&& cc) {
   m_callback = move(cc);
 }
 
-void LinkageJob::add_data_field(const FieldName& fieldname,
-                                VFieldEntry datafields) {
-  m_records.emplace(fieldname, move(datafields));
-}
-
-void LinkageJob::add_data(VRecord data) {
+void LinkageJob::add_data(unique_ptr<Records> data) {
   m_records = move(data);
 }
 
@@ -95,7 +90,7 @@ void LinkageJob::run_linkage_job() {
     // Get number of records from server
     promise<size_t> nvals_prom;
     auto nvals{nvals_prom.get_future()};
-    size_t num_records{m_records.begin()->second.size()};
+    size_t num_records{m_records->size()};
     signal_server(nvals_prom, num_records);
     nvals.wait_for(15s);
     if(!nvals.valid()){
@@ -107,16 +102,17 @@ void LinkageJob::run_linkage_job() {
     auto epilinker{ServerHandler::get().get_epilink_client(m_remote_config->get_id())};
     epilinker->build_circuit(database_size, num_records);
     epilinker->run_setup_phase();
-    Result<CircUnit> client_share{};
     EpilinkClientInput client_input{move(m_records), database_size};
-    client_share = epilinker->run_as_client(move(client_input));
-    // run mpc
+    auto client_share{epilinker->run_as_client(client_input)};
+      // run mpc
     // reset epilinker for the next linkage
     epilinker->reset();
 #ifdef DEBUG_SEL_REST
     print_data();
 #endif
-    logger->info("Client Result: {}", client_share);
+    for(auto& record : client_share){
+      logger->info("Client Result: {}", record);
+    }
     if(!m_remote_config->get_matching_mode()){
       try{
       auto response{send_result_to_linkageservice(client_share, nullopt , "client", m_local_config, m_remote_config)};
@@ -130,20 +126,22 @@ void LinkageJob::run_linkage_job() {
 #ifdef SEL_MATCHING_MODE
       nlohmann::json match_json;
       nlohmann::json match_result;
-      match_result["match"] = client_share.match;
-      match_result["tentativeMatch"] = client_share.tmatch;
+      // TODO(TK): Matching mode return will change!
+//      match_result["match"] = client_share.match;
+//      match_result["tentativeMatch"] = client_share.tmatch;
       match_json["result"] = match_result;
       logger->trace("Result to callback: {}", match_json.dump(0));
       perform_callback(match_json.dump());
 #endif
     }
 #ifdef DEBUG_SEL_REST
-    debugger->client_input = make_shared<EpilinkClientInput>(client_input);
-    if(!(debugger->circuit_config)) {
-      debugger->circuit_config = make_shared<CircuitConfig>(make_circuit_config(m_local_config, m_remote_config));
-    }
-    //debugger->epilink_config->set_precisions(5,11);
-    logger->debug("Clear Precision: Dice {},\tWeight {}", debugger->circuit_config->dice_prec,debugger->circuit_config->weight_prec);
+// FIXME(TK) Update Debugger
+//    debugger->client_input = make_shared<EpilinkClientInput>(client_input);
+//    if(!(debugger->circuit_config)) {
+//      debugger->circuit_config = make_shared<CircuitConfig>(make_circuit_config(m_local_config, m_remote_config));
+//    }
+//    //debugger->epilink_config->set_precisions(5,11);
+//    logger->debug("Clear Precision: Dice {},\tWeight {}", debugger->circuit_config->dice_prec,debugger->circuit_config->weight_prec);
     if(debugger->all_values_set()){
       if(!debugger->run) {
       fmt::print("============= Integer Computation ============\n");
@@ -225,21 +223,22 @@ bool LinkageJob::perform_callback(const string& body) const {
 void LinkageJob::print_data() const {
   auto logger{get_default_logger()};
   string input_string;
-  for (auto& p : m_records) {
-    input_string += "-------------------------------\n" + p.first +
-                    "\n-------------------------------"
-                    "\n";
-    for (auto& e : p.second) {
-      bool empty{!e};
-      input_string += "Field "s + (empty ? "" : "not ") + "empty ";
-      if (!empty) {
-        for (const auto& byte : e.value()) {
-          input_string += to_string(byte) + " ";
-        }
-      }
-      input_string += "\n";
-    }
-  }
+  // FIXME(TK): Adapt printing to new format
+//  for (auto& p : m_records) {
+//    input_string += "-------------------------------\n" + p.first +
+//                    "\n-------------------------------"
+//                    "\n";
+//    for (auto& e : p.second) {
+//      bool empty{!e};
+//      input_string += "Field "s + (empty ? "" : "not ") + "empty ";
+//      if (!empty) {
+//        for (const auto& byte : e.value()) {
+//          input_string += to_string(byte) + " ";
+//        }
+//      }
+//      input_string += "\n";
+//    }
+//  }
   logger->trace(input_string);
 }
 #endif

@@ -47,8 +47,7 @@ class LinkageJob {
    LinkageJob();
    LinkageJob(std::shared_ptr<const LocalConfiguration>, std::shared_ptr<const RemoteConfiguration>);
    void set_callback(std::string&& cc);
-   void add_data_field(const FieldName& fieldname, VFieldEntry field);
-   void add_data(VRecord);
+   void add_data(std::unique_ptr<Records>);
    JobStatus get_status() const;
    void set_status(JobStatus);
    JobId get_id() const;
@@ -65,7 +64,7 @@ class LinkageJob {
 #endif
   JobId m_id;
   JobStatus m_status{JobStatus::QUEUED};
-  std::unique_ptr<VRecord> m_records;
+    std::unique_ptr<Records> m_records;
   std::string m_callback;
   std::shared_ptr<const LocalConfiguration> m_local_config;
   std::shared_ptr<const RemoteConfiguration> m_remote_config;
