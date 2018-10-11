@@ -36,6 +36,7 @@ bool operator<(const ComparisonIndex& l, const ComparisonIndex& r) {
     || (l.left_idx == r.left_idx && l.left < r.left)
     || (l.left_idx == r.left_idx && l.left == r.left && l.right < r.right);
 }
+
 CircuitInput::CircuitInput(const CircuitConfig& cfg,
     BooleanCircuit* bcirc, ArithmeticCircuit* acirc) :
   cfg{cfg}, bcirc{bcirc}, acirc{acirc} {}
