@@ -33,6 +33,12 @@ struct Result {
   T sum_weights;
 };
 
+template<typename T>
+struct CountResult {
+  T matches;
+  T tmatches;
+};
+
 } /* END namespace sel */
 
 // Custom fmt formatters
@@ -54,6 +60,17 @@ struct formatter<sel::Result<T>> {
         , r.sum_field_weights, r.sum_weights,
         (((double)r.sum_field_weights)/r.sum_weights)
         );
+  }
+};
+
+template <typename T>
+struct formatter<sel::CountResult<T>> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::CountResult<T>& r, FormatContext &ctx) {
+    return format_to(ctx.begin(), "matches/tent.: {}/{}", r.matches, r.tmatches);
   }
 };
 
