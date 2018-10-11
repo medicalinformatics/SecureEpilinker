@@ -32,9 +32,9 @@ using fmt::format;
 
 using namespace std;
 
-
 namespace sel {
 
+using State = SecureEpilinker::State;
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
 
@@ -69,11 +69,22 @@ ArithQuotient sum(const vector<FieldWeight>& fweights) {
 }
 
 /******************** Circuit Builder ********************/
-struct ResultShares {
+struct LinkageShares {
+  BoolShare index, match, tmatch;
+#ifdef DEBUG_SEL_RESULT
+  ArithShare score_numerator, score_denominator;
+#endif
+};
+
+struct LinkageOutputShares {
   OutShare index, match, tmatch;
 #ifdef DEBUG_SEL_RESULT
   OutShare score_numerator, score_denominator;
 #endif
+};
+
+struct CountOutputShares {
+  OutShare matches, tmatches;
 };
 
 class SecureEpilinker::SELCircuit {
@@ -99,12 +110,86 @@ public:
   }
 #endif
 
+
+  vector<LinkageOutputShares> build_linkage_circuit() {
+    if (!ins.is_input_set()) {
+      throw new runtime_error("Set the input first before building the ciruit!");
+    }
+
+    vector<LinkageOutputShares> output_shares;
+    output_shares.reserve(ins.nrecords());
+    for (size_t index = 0; index != ins.nrecords(); ++index) {
+      output_shares.emplace_back(
+          to_linkage_output(build_single_linkage_circuit(index)));
+    }
+
+    built = true;
+    return output_shares;
+  }
+
+  CountOutputShares build_count_circuit() {
+    if (!ins.is_input_set()) {
+      throw new runtime_error("Set the input first before building the ciruit!");
+    }
+
+    vector<LinkageShares> linkage_shares;
+    linkage_shares.reserve(ins.nrecords());
+    for (size_t index = 0; index != ins.nrecords(); ++index) {
+      linkage_shares.emplace_back(build_single_linkage_circuit(index));
+    }
+
+    built = true;
+    return sum_linkage_shares(linkage_shares);
+  }
+
+  State get_state() const {
+    return {
+      ins.nrecords(),
+      ins.dbsize(),
+      ins.is_input_set(),
+      built
+    };
+  }
+
+  void reset() {
+    ins.clear();
+    field_weight_cache.clear();
+    built = false;
+  }
+
+private:
+  const CircuitConfig cfg;
+  // Circuits
+  BooleanCircuit* bcirc; // boolean circuit for boolean parts
+  BooleanCircuit* ccirc; // intermediate conversion circuit
+  ArithmeticCircuit* acirc;
+  // Input shares
+  CircuitInput ins;
+  // State
+  bool built{false};
+
+  // Dynamic converters, dependent on main bool sharing
+  BoolShare to_bool(const ArithShare& s) {
+    return (bcirc->GetContext() == S_YAO) ? a2y(bcirc, s) : a2b(bcirc, ccirc, s);
+  }
+
+  ArithShare to_arith(const BoolShare& s) {
+    return (bcirc->GetContext() == S_YAO) ? y2a(acirc, ccirc, s) : b2a(acirc, s);
+  }
+
+  BoolShare to_gmw(const BoolShare& s) {
+    return (bcirc->GetContext() == S_YAO) ? y2b(ccirc, s) : s;
+  }
+
+  // closures
+  const A2BConverter to_bool_closure;
+  const B2AConverter to_arith_closure;
+
   /*
-  * Builds the shared component of the circuit after initial input shares of
-  * client and server have been created.
+  * Builds the record linkage component of the circuit
   */
-  ResultShares build_circuit(size_t index) {
-    get_default_logger()->trace("Building circuit {}...", index);
+  LinkageShares build_single_linkage_circuit(size_t index) {
+    get_default_logger()->trace("Building linkage circuit component {}...", index);
 
     // Where we store all group and individual comparison weights as ariths
     vector<FieldWeight> field_weights;
@@ -160,67 +245,53 @@ public:
     print_share(tmatch, format("[{}] tentative match?", index));
 #endif
 
-    get_default_logger()->trace("Circuit {} built.", index);
+    get_default_logger()->trace("Linkage circuit component {} built.", index);
+
+#ifdef DEBUG_SEL_RESULT
+    return {max_idx[0], match, tmatch, sum_field_weights.num, sum_field_weights.den};
+#else
+    return {max_idx[0], match, tmatch};
+#endif
+  }
+
+  LinkageOutputShares to_linkage_output(const LinkageShares& s) {
+    // Output shares should be XOR, not Yao shares
+    auto index = to_gmw(s.index);
+    auto match = to_gmw(s.match);
+    auto tmatch = to_gmw(s.tmatch);
 #ifdef DEBUG_SEL_RESULT
     // If result debugging is enabled, we let all parties learn all fields plus
     // the individual {field-,}weight-sums.
     // matching mode flag is ignored - it's basically always on.
-    return {out(max_idx[0], ALL), out(match, ALL), out(tmatch, ALL),
-      out(sum_field_weights.num, ALL),
-      out(sum_field_weights.den, ALL)};
+    return {out(index, ALL), out(match, ALL), out(tmatch, ALL),
+      out(s.score_numerator, ALL), out(s.score_denominator, ALL)};
 #else // !DEBUG_SEL_RESULT - Normal productive mode
 #ifdef SEL_MATCHING_MODE
     // Only if matching mode is to be compiled in, will the cfg.mathcing_mode
     // flag have an effect on the result
     if (cfg.matching_mode) {
-      return {out_shared(max_idx[0]), out(match, ALL), out(tmatch, ALL)};
+      return {out_shared(index), out(match, ALL), out(tmatch, ALL)};
     } else {
-      return {out_shared(max_idx[0]), out_shared(match), out_shared(tmatch)};
+      return {out_shared(index), out_shared(match), out_shared(tmatch)};
     }
 #else // !SEL_MATCHING_MODE - don't compile matching mode, always give shared output
-    return {out_shared(max_idx[0]), out_shared(match), out_shared(tmatch)};
+    return {out_shared(index), out_shared(match), out_shared(tmatch)};
 #endif // SEL_MATCHING_MODE
 #endif // DEBUG_SEL_RESULT
   }
 
-  vector<ResultShares> build_parallel_circuits() {
-    if (!ins.is_input_set()) {
-      throw new runtime_error("Set the input first before building and running the ciruit!");
+  CountOutputShares sum_linkage_shares(vector<LinkageShares> ls) {
+    vector<BoolShare> matches, tmatches;
+    const auto n = ls.size();
+    matches.reserve(n);
+    tmatches.reserve(n);
+    for (auto& l : ls) {
+      matches.emplace_back(l.match);
+      tmatches.emplace_back(l.tmatch);
     }
-    vector<ResultShares> result_shares;
-    result_shares.reserve(ins.nrecords());
-    for (size_t index = 0; index != ins.nrecords(); ++index) {
-      result_shares.emplace_back(build_circuit(index));
-    }
-    return result_shares;
+
+    return {out(to_gmw(sum(matches)), ALL), out(to_gmw(sum(tmatches)), ALL)};
   }
-
-  void reset() {
-    ins.clear();
-    field_weight_cache.clear();
-  }
-
-private:
-  const CircuitConfig cfg;
-  // Circuits
-  BooleanCircuit* bcirc; // boolean circuit for boolean parts
-  BooleanCircuit* ccirc; // intermediate conversion circuit
-  ArithmeticCircuit* acirc;
-  // Input shares
-  CircuitInput ins;
-
-  // Dynamic converters, dependent on main bool sharing
-  BoolShare to_bool(const ArithShare& s) {
-    return (bcirc->GetContext() == S_YAO) ? a2y(bcirc, s) : a2b(bcirc, ccirc, s);
-  }
-
-  ArithShare to_arith(const BoolShare& s) {
-    return (bcirc->GetContext() == S_YAO) ? y2a(acirc, ccirc, s) : b2a(acirc, s);
-  }
-
-  // closures
-  const A2BConverter to_bool_closure;
-  const B2AConverter to_arith_closure;
 
   FieldWeight best_group_weight(size_t index, const IndexSet& group_set) {
     vector<FieldName> group{begin(group_set), end(group_set)};
@@ -287,7 +358,7 @@ private:
 
     auto [client_entry, server_entry] = ins.get(i);
     // 1. Calculate weight * delta(i,j)
-    ArithShare a_weight = ins.get_const_weight(i);
+    auto a_weight = ins.get_const_weight(i);
     ArithShare delta = client_entry.delta * server_entry.delta;
     ArithShare weight = a_weight * delta; // free constant multiplication
 
@@ -390,54 +461,73 @@ void SecureEpilinker::connect() {
   logger->trace("ABYParty connected.");
 }
 
-void SecureEpilinker::build_circuit(const uint32_t, const uint32_t) {
+State SecureEpilinker::get_state() {
+  return state;
+}
+
+void SecureEpilinker::build_linkage_circuit(const size_t num_records, const size_t database_size) {
+  build_circuit(num_records, database_size);
+  state.matching_mode = false;
+}
+void SecureEpilinker::build_count_circuit(const size_t num_records, const size_t database_size) {
+  build_circuit(num_records, database_size);
+  state.matching_mode = true;
+}
+void SecureEpilinker::build_circuit(const size_t num_records_, const size_t database_size_) {
   // TODO When separation of setup, online phase and input setting is done in
   // ABY, call selc->build_circuit() here instead of in run()
   // nvals is currently ignored as nvals is just taken from EpilinkInputs
-  is_built = true;
+  state.num_records = num_records_;
+  state.database_size = database_size_;
+  state.built = true;
+}
+
+void throw_if_not_built(bool built, const string& origin) {
+  if (!built) {
+    throw runtime_error("Build circuit with build_*_circuit() before "s+origin+'!');
+  }
+}
+
+template <class EpilinkInput>
+void check_state_for_input(const State& state,
+    const EpilinkInput& input) {
+  throw_if_not_built(state.built, "setting inputs");
+  if (state.num_records < input.num_records || state.database_size < input.database_size) {
+    throw runtime_error(format("Built circuit too small for input!"
+          " nrecords/dbsize is {}/{} but need {}/{}",
+          state.num_records, state.database_size, input.num_records, input.database_size));
+  }
 }
 
 void SecureEpilinker::run_setup_phase() {
-  if (!is_built) {
-    throw runtime_error("Circuit must first be built with build_circuit() before running setup phase.");
-  }
-  is_setup = true;
+  throw_if_not_built(state.built, "running setup phase");
+  state.setup = true;
 }
 
-vector<Result<CircUnit>> SecureEpilinker::run_as_client(const EpilinkClientInput& input) {
-  if (!is_setup) {
-    get_default_logger()->warn(
-        "SecureEpilinker::run_as_client: Implicitly running setup phase.");
-    run_setup_phase();
-  }
+void SecureEpilinker::set_client_input(const EpilinkClientInput& input) {
+  check_state_for_input(state, input);
   selc->set_input(input);
-  return run_circuit();
+  state.input_set = true;
 }
 
-vector<Result<CircUnit>> SecureEpilinker::run_as_server(const EpilinkServerInput& input) {
-  if (!is_setup) {
-    get_default_logger()->warn(
-        "SecureEpilinker::run_as_server: Implicitly running setup phase.");
-    run_setup_phase();
-  }
+void SecureEpilinker::set_server_input(const EpilinkServerInput& input) {
+  check_state_for_input(state, input);
   selc->set_input(input);
-  return run_circuit();
+  state.input_set = true;
 }
 
 #ifdef DEBUG_SEL_CIRCUIT
-vector<Result<CircUnit>> SecureEpilinker::run_as_both(
+void SecureEpilinker::set_both_inputs(
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
-  if (!is_setup) {
-    get_default_logger()->warn(
-        "SecureEpilinker::run_as_both: Implicitly running setup phase.");
-    run_setup_phase();
-  }
+  assert(in_client.num_records == in_server.num_records
+      && in_client.database_size == in_server.database_size)
+  check_state_for_input(state, in_client);
   selc->set_both_inputs(in_client, in_server);
-  return run_circuit();
+  state.input_set = true;
 }
 #endif
 
-Result<CircUnit> to_clear_value(ResultShares& res, size_t dice_prec) {
+Result<CircUnit> to_clear_value(LinkageOutputShares& res, size_t dice_prec) {
 #ifdef DEBUG_SEL_RESULT
     const auto sum_field_weights = res.score_numerator.get_clear_value<CircUnit>();
     // shift by dice-precision to account for precision of threshold, i.e.,
@@ -456,23 +546,62 @@ Result<CircUnit> to_clear_value(ResultShares& res, size_t dice_prec) {
   };
 }
 
-vector<Result<CircUnit>> SecureEpilinker::run_circuit() {
-  auto results = selc->build_parallel_circuits();
+
+vector<Result<CircUnit>> SecureEpilinker::run_linkage() {
+  if (!state.setup) {
+    get_default_logger()->warn(
+        "SecureEpilinker::run_linkage: Implicitly running setup phase.");
+    run_setup_phase();
+  }
+
+  auto results = selc->build_linkage_circuit();
   get_default_logger()->trace("Executing ABYParty Circuit...");
   party.ExecCircuit();
   get_default_logger()->trace("ABYParty Circuit executed.");
 
-  is_setup = false; // need to run new setup phase
-
-  return transform_vec(results, [dice_prec=cfg.dice_prec](auto r){
+  auto clear_results = transform_vec(results, [dice_prec=cfg.dice_prec](auto r){
         return to_clear_value(r, dice_prec);
       });
+  state.reset(); // need to setup new circuit
+  return clear_results;
+}
+
+CountResult<CircUnit> to_clear_value(CountOutputShares& res) {
+  return {
+    res.matches.get_clear_value<CircUnit>(),
+    res.tmatches.get_clear_value<CircUnit>()
+  };
+}
+
+CountResult<CircUnit> SecureEpilinker::run_count() {
+  if (!state.setup) {
+    get_default_logger()->warn(
+        "SecureEpilinker::run_count: Implicitly running setup phase.");
+    run_setup_phase();
+
+  }
+  auto results = selc->build_count_circuit();
+  get_default_logger()->trace("Executing ABYParty Circuit...");
+  party.ExecCircuit();
+  get_default_logger()->trace("ABYParty Circuit executed.");
+
+  auto clear_results = to_clear_value(results);
+  state.reset(); // need to setup new circuit
+  return clear_results;
+}
+
+void SecureEpilinker::State::reset() {
+  num_records = 0;
+  database_size = 0;
+  built = false;
+  setup = false;
+  input_set = false;
 }
 
 void SecureEpilinker::reset() {
   selc->reset();
   party.Reset();
-  is_setup = false;
+  state.reset();
 }
 
 } // namespace sel
