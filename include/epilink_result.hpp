@@ -39,6 +39,12 @@ struct CountResult {
   T tmatches;
 };
 
+template<typename T>
+bool operator==(const Result<T>& l, const Result<T>& r) {
+  return l.index == r.index && l.match == r.match && l.tmatch == r.tmatch
+    && l.sum_field_weights == r.sum_field_weights && l.sum_weights == r.sum_weights;
+}
+
 } /* END namespace sel */
 
 // Custom fmt formatters
