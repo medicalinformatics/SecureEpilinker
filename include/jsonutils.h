@@ -32,7 +32,6 @@ Record parse_json_fields(const std::map<FieldName, FieldSpec>&,
                          const nlohmann::json&);
 VRecord parse_json_fields_array(const std::map<FieldName, FieldSpec>& fields,
                                 const nlohmann::json& json);
-VRecord record_to_vrecord(const Record&);
 std::vector<std::string> parse_json_id_array(const nlohmann::json& json);
 std::map<FieldName, FieldSpec> parse_json_fields_config(
     nlohmann::json fields_json);
