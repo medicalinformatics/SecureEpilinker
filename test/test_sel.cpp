@@ -360,7 +360,11 @@ double deviation_perc(const Result<T>& l, const Result<U>& r) {
 
 template <typename T>
 void print_local_result(Result<CircUnit>* sel, const Result<T>& local, const string& name) {
-  const string dev = sel ? format("{:+.3f}%", deviation_perc(*sel, local)) : "";
+  string dev = "";
+  if (sel) {
+    const auto dev_perc = deviation_perc(*sel, local);
+    if (dev_perc) dev = format("{:+.3f}%", dev_perc);
+  }
   print("------ {} ------\n{} {}\n", name, local, dev);
 }
 
@@ -376,13 +380,11 @@ void run_and_print_calcs(SecureEpilinker& linker, const EpilinkInput& in, bool o
     print("********************* {} ********************\n", i);
     Result<CircUnit>* resp = nullptr;
     if (!only_local) {
-      const auto& res = results[i];
       resp = &results[i];
-      bool correct = res == results_32[i];
+      bool correct = *resp == results_32[i];
       all_good &= correct;
       auto indicator = correct ? "✅" : "💥";
-      string res_string = format("{}", res);
-      print("------ Secure Epilinker -------\n{} {}\n", res_string, indicator);
+      print("------ Secure Epilinker -------\n{} {}\n", *resp, indicator);
     }
     print_local_result(resp, results_32[i], "32 Bit");
     print_local_result(resp, results_64[i], "64 Bit");
@@ -414,9 +416,9 @@ int main(int argc, char *argv[])
   options.add_options()
     ("S,server", "Run as server. Default to client", cxxopts::value(role_server))
     ("R,remote-host", "Remote host. Default 127.0.0.1", cxxopts::value(remote_host))
-    ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO", cxxopts::value(sharing))
+    ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO (default)", cxxopts::value(sharing))
     ("n,dbsize", "Database size", cxxopts::value(dbsize))
-    ("r,run-both", "Use run_as_both()", cxxopts::value(run_both))
+    ("r,run-both", "Use set_both_inputs()", cxxopts::value(run_both))
     ("L,local-only", "Only run local calculations on clear values."
         " Doesn't initialize the SecureEpilinker.", cxxopts::value(only_local))
     ("v,verbose", "Set verbosity. May be specified multiple times to log on "
