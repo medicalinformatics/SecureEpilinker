@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
     default: spdlog::set_level(spdlog::level::trace); break;
   }
     // Program
-  auto logger = get_default_logger();
+  auto logger = get_logger();
 
   restbed::Service service;
   curlpp::Cleanup curl_cleanup;

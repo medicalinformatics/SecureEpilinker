@@ -34,7 +34,7 @@ ML_Field::ML_Field(const std::string& name, const double weight,
     comparator{comp}, type{type},
     bitsize{bitsize}
 {
-  get_default_logger()->trace("ML_Field created: {}", *this);
+  get_logger()->trace("ML_Field created: {}", *this);
 }
 
 FieldType str_to_ftype(const string& str) {

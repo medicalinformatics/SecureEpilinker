@@ -49,7 +49,7 @@ SessionResponse valid_test_config_json_handler(
     const nlohmann::json& client_config,
     const RemoteId& remote_id,
     const string& authorization) {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   auto& config_handler{ConfigurationHandler::get()};
   auto& connection_handler{ConnectionHandler::get()};
 
@@ -93,7 +93,7 @@ SessionResponse valid_linkrecord_json_handler(
     const nlohmann::json& j,
     const RemoteId& remote_id,
     const string& authorization) {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   const auto& config_handler{ConfigurationHandler::cget()};
   auto& server_handler{ServerHandler::get()};
   try {
@@ -140,7 +140,7 @@ SessionResponse valid_init_remote_json_handler(
     const nlohmann::json& j,
     const RemoteId& remote_id,
     const string&) {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   auto& config_handler{ConfigurationHandler::get()};
   logger->trace("Payload: {}", j.dump(2));
   logger->info("Creating remote Config for: \"{}\"", remote_id);
@@ -191,7 +191,7 @@ SessionResponse valid_init_local_json_handler(
     const nlohmann::json& j,
     const RemoteId&,
     const string&) {
-  auto logger = get_default_logger();
+  auto logger = get_logger();
   auto& config_handler{ConfigurationHandler::get()};
   logger->trace("Payload: {}", j.dump(2));
   auto local_config = make_shared<LocalConfiguration>();

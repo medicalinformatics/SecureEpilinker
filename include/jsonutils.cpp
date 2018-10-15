@@ -30,7 +30,7 @@ Bitmask check_size_and_get_as_bitmask(
     const void* source, const size_t source_bytes, const size_t size_bitmask) {
   auto bytes_to_copy = size_bitmask;
   if (source_bytes < size_bitmask) {
-    get_default_logger()->warn(
+    get_logger()->warn(
         "Source smaller than field bitlength, padding with zeros.");
     bytes_to_copy = source_bytes;
   }
@@ -42,7 +42,7 @@ Bitmask check_size_and_get_as_bitmask(
 }
 
 Bitmask check_size_and_get_as_bitmask(const string& source, const size_t size_bitmask) {
-  auto logger = get_default_logger();
+  auto logger = get_logger();
   auto bytes_to_copy = source.size();
   if (bytes_to_copy > size_bitmask) {
     logger->warn("String larger than field bitlength, truncating.");
@@ -66,14 +66,14 @@ void check_bitsize_and_clear_extra_bits(std::vector<uint8_t>& bitmask,
   auto& rear = bitmask.back();
   if (extrabits && (rear >> extrabits)) {  // Extra bits set outside
     rear &= (1u << extrabits) - 1u;
-    get_default_logger()->warn(
+    get_logger()->warn(
         "Bits set after bitmask's size, setting to zero.\n");
   }
 }
 
 FieldEntry parse_json_field(const ML_Field& field,
                                             const nlohmann::json& json) {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   if (!(json.is_null())) {
     size_t field_bytes = bitbytes(field.bitsize);
     switch (field.type) {
@@ -191,7 +191,7 @@ EpilinkConfig parse_json_epilink_config(nlohmann::json config_json) {
 
 nlohmann::json read_json_from_disk(
     const filesystem::path& json_path) {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   nlohmann::json content;
   if (filesystem::exists(json_path)) {
     ifstream in(json_path);

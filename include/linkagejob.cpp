@@ -78,7 +78,7 @@ RemoteId LinkageJob::get_remote_id() const {
 }
 
 void LinkageJob::run_linkage_job() {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   m_status = JobStatus::RUNNING;
 
   // Prepare Data, weights and exchange groups
@@ -164,7 +164,7 @@ void LinkageJob::run_linkage_job() {
 }
 
 void LinkageJob::run_matching_job() {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   logger->warn("A matching job is starting.");
   run_linkage_job();
 }
@@ -178,7 +178,7 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
  * records in the database
  */
 void LinkageJob::signal_server(promise<size_t>& nvals) {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   std::this_thread::sleep_for(1s);
   string data{"{}"};
   list<string> headers{
@@ -202,7 +202,7 @@ void LinkageJob::signal_server(promise<size_t>& nvals) {
 }
 
 bool LinkageJob::perform_callback(const string& body) const {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   list<string> headers{
       "Authorization: "s + m_local_config->get_local_authenticator().sign_transaction(""),
       "Content-Type: application/json"};
@@ -215,7 +215,7 @@ bool LinkageJob::perform_callback(const string& body) const {
 
 #ifdef DEBUG_SEL_REST
 void LinkageJob::print_data() const {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   string input_string;
   for (auto& p : m_data) {
     input_string += "-------------------------------\n" + p.first +

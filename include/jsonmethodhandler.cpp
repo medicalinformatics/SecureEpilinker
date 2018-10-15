@@ -54,7 +54,7 @@ namespace sel {
 
 void JsonMethodHandler::handle_method(
     shared_ptr<restbed::Session> session) const {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   auto request{session->get_request()};
   auto headers{request->get_headers()};
   RemoteId remote_id{request->get_path_parameter("remote_id", "")};
@@ -90,7 +90,7 @@ void JsonMethodHandler::use_data(const shared_ptr<restbed::Session>& session,
                                  const nlohmann::json& bodydata,
                                  const RemoteId& remote_id,
                                  const string& authorization) const {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   logger->trace("JSON recieved:\n{}", bodydata.dump(4));
   auto validation = m_validator->validate_json(bodydata);
   SessionResponse response;
