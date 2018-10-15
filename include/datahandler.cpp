@@ -60,12 +60,6 @@ size_t DataHandler:: poll_database_diff() {
   return 0;
 }
 
-unique_ptr<const VRecord> DataHandler::get_client_records(const nlohmann::json& client_data) const {
-    DatabaseFetcher db_fetcher(ConfigurationHandler::cget().get_local_config());
-    db_fetcher.save_page_data(client_data, false, false);
-    return move(db_fetcher.move_client_data());
-}
-
 std::shared_ptr<const ServerData> DataHandler::get_database() const{
   lock_guard<mutex> lock(m_db_mutex);
   return m_database;

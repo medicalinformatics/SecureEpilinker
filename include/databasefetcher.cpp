@@ -154,10 +154,6 @@ void DatabaseFetcher::save_page_data(const nlohmann::json& page_data, bool match
   }
 }
 
-unique_ptr<VRecord> DatabaseFetcher::move_client_data() {
-    return make_unique<VRecord>(move(m_records));
-}
-
 nlohmann::json DatabaseFetcher::get_next_page() const {
   return request_page(m_next_page);
 }

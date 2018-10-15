@@ -50,7 +50,6 @@ class DatabaseFetcher {
   void set_page_size(unsigned size) { m_page_size = size; }
   size_t get_todate() const { return m_todate; }
   void save_page_data(const nlohmann::json&, bool, bool);
-  std::unique_ptr<VRecord> move_client_data();
 
  private:
   nlohmann::json get_next_page() const;
