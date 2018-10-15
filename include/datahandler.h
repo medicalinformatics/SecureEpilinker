@@ -49,12 +49,12 @@ struct ServerData {
 
 #ifdef DEBUG_SEL_REST
 struct Debugger{
-  std::shared_ptr<sel::EpilinkClientInput> client_input;
-  std::shared_ptr<sel::EpilinkServerInput> server_input;
-  std::shared_ptr<sel::CircuitConfig> circuit_config;
-  Result<CircUnit> int_result;
-  Result<double> double_result;
-  bool run{false};
+  std::optional<Records> client_input;
+  std::optional<VRecord> server_input;
+  std::optional<sel::CircuitConfig> circuit_config;
+  std::vector<Result<CircUnit>> int_result;
+  std::vector<Result<double>> double_result;
+  bool run;
   bool all_values_set() const;
   void compute_int();
   void compute_double();

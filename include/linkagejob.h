@@ -68,6 +68,7 @@ class LinkageJob {
   void signal_server(std::promise<size_t>&, size_t);
   bool perform_callback(const std::string&) const;
 #ifdef DEBUG_SEL_REST
+  void compute_debugging_result(const Records&);
   void print_data() const;
 #endif
   JobId m_id;
