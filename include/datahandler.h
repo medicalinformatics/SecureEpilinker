@@ -70,7 +70,6 @@ class DataHandler {
   std::shared_ptr<const ServerData> get_database() const;
   size_t poll_database(const RemoteId&);
   size_t poll_database_diff();  // TODO(TK) Not implemented yet. Use full update
-  std::unique_ptr<const VRecord> get_client_records(const nlohmann::json&) const;
 #ifdef DEBUG_SEL_REST
   Debugger* get_epilink_debug() { return m_epilink_debug;}
 #endif
