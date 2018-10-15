@@ -48,7 +48,7 @@ class ServerHandler {
     std::shared_ptr<LocalServer> get_local_server(const RemoteId&) const;
     Port get_server_port(const RemoteId&) const;
     std::shared_ptr<SecureEpilinker> get_epilink_client(const RemoteId&);
-    void run_server(RemoteId, std::shared_ptr<const ServerData>, size_t);
+    void run_server(RemoteId, std::shared_ptr<const ServerData>, size_t, bool);
     void connect_client(const RemoteId&);
   protected:
     ServerHandler() = default;

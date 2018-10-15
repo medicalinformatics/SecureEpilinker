@@ -58,26 +58,43 @@ RemoteId LocalServer::get_id() const {
   return m_remote_id;
 }
 
-vector<Result<CircUnit>> LocalServer::run(shared_ptr<const ServerData> data, size_t num_records) {
+vector<Result<CircUnit>> LocalServer::run_linkage(shared_ptr<const ServerData> data, size_t num_records) {
   m_data = move(data);
 
   auto logger{get_default_logger()};
-  logger->info("The server is running and performing its computations");
+  logger->info("The server is running and performing its linkage computations");
 
   const size_t database_size{m_data->data->begin()->second.size()};
-  m_aby_server.build_circuit(database_size, num_records);
-  m_aby_server.run_setup_phase();
-  logger->debug("Starting server computation");
-  auto server_result = m_aby_server.run_as_server({m_data->data, num_records});
-  m_aby_server.reset();
-
 #ifdef DEBUG_SEL_REST
   auto debugger{DataHandler::get().get_epilink_debug()};
   //FIXME(TK): Update
   // debugger->server_input = server_input;
 #endif
+  logger->debug("Server Sizes\nnum_records: {}, database_size: {}", num_records, database_size);
+    m_aby_server.build_linkage_circuit(num_records, database_size);
+    m_aby_server.run_setup_phase();
+    logger->debug("Starting server linkage computation");
+    m_aby_server.set_server_input({m_data->data, num_records});
+    auto linkage_result = m_aby_server.run_linkage();
+  m_aby_server.reset();
+  return linkage_result;
+}
 
-  return server_result;
+CountResult<CircUnit> LocalServer::run_count(shared_ptr<const ServerData> data, size_t num_records) {
+  m_data = move(data);
+
+  auto logger{get_default_logger()};
+  logger->info("The server is running and performing its matching computations");
+
+  const size_t database_size{m_data->data->begin()->second.size()};
+    m_aby_server.build_count_circuit(num_records, database_size);
+    m_aby_server.run_setup_phase();
+    logger->debug("Starting server matching computation");
+    m_aby_server.set_input({m_data->data, num_records});
+    auto count_result = m_aby_server.run_count();
+  m_aby_server.reset();
+
+  return count_result;
 }
 
 Port LocalServer::get_port() const {

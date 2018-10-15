@@ -41,8 +41,14 @@ class ConnectionHandler;
 class LocalConfiguration;
 class RemoteConfiguration;
 class ServerHandler;
+class SecureEpilinker;
 
 class LinkageJob {
+  struct JobPreparation {
+    size_t num_records;
+    size_t database_size;
+    std::shared_ptr<SecureEpilinker> epilinker;
+  };
  public:
    LinkageJob();
    LinkageJob(std::shared_ptr<const LocalConfiguration>, std::shared_ptr<const RemoteConfiguration>);
@@ -50,13 +56,15 @@ class LinkageJob {
    void add_data(std::unique_ptr<Records>);
    JobStatus get_status() const;
    void set_status(JobStatus);
+   bool is_counting_job() {return m_counting_job;}
+   void set_counting_job() {m_counting_job = true;}
    JobId get_id() const;
    RemoteId get_remote_id() const;
    void run_linkage_job();
    void run_matching_job();
    void set_local_config(std::shared_ptr<LocalConfiguration>);
  private:
-  void run_linkage_job(bool);
+  JobPreparation prepare_run();
   void signal_server(std::promise<size_t>&, size_t);
   bool perform_callback(const std::string&) const;
 #ifdef DEBUG_SEL_REST
@@ -68,6 +76,7 @@ class LinkageJob {
   std::string m_callback;
   std::shared_ptr<const LocalConfiguration> m_local_config;
   std::shared_ptr<const RemoteConfiguration> m_remote_config;
+  bool m_counting_job{false};
 };
 
 }  // namespace sel

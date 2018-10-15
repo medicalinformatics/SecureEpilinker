@@ -182,10 +182,16 @@ int main(int argc, char* argv[]) {
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
           "POST", null_validator, // TODO(TK): Write json schema file for db linking
           sel::valid_linkrecords_json_handler, sel::invalid_json_handler);
+#ifdef SEL_MATCHING_MODE
   auto matchrecord_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
           "POST", linkrecord_validator,
-          sel::valid_linkrecord_json_handler, sel::invalid_json_handler);
+          sel::valid_matchrecord_json_handler, sel::invalid_json_handler);
+  auto matchrecords_methodhandler =
+      sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
+          "POST", linkrecord_validator,
+          sel::valid_matchrecords_json_handler, sel::invalid_json_handler);
+#endif
   // Create GET-Handler for job status monitoring
   auto jobmonitor_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::MonitorMethodHandler>(
@@ -217,6 +223,8 @@ int main(int argc, char* argv[]) {
 #ifdef SEL_MATCHING_MODE
   sel::ResourceHandler matchrecord_handler{"/matchRecord/{remote_id: .*}"};
   matchrecord_handler.add_method(matchrecord_methodhandler);
+  sel::ResourceHandler matchrecords_handler{"/matchRecords/{remote_id: .*}"};
+  matchrecords_handler.add_method(matchrecords_methodhandler);
 #endif
   sel::ResourceHandler testconfig_handler{"/test/{parameter: .*}"};
   testconfig_handler.add_method(testconfig_methodhandler);
