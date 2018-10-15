@@ -57,6 +57,8 @@ Result<double> calc_exact(const Input& input, const CircuitConfig& cfg);
 template<typename T> Result<T> calc(const Input& input, const CircuitConfig& cfg);
 template<typename T> std::vector<Result<T>> calc(const Records& records,
     const VRecord& database, const CircuitConfig& cfg);
+template<typename T> CountResult<size_t> calc_count(const Records& records,
+    const VRecord& database, const CircuitConfig& cfg);
 
 } /* end of namespace sel::clear_epilink */
 
