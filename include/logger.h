@@ -26,6 +26,12 @@
 
 namespace sel {
 
+ /*! \enum ComponentLogger
+  *
+  *  Enumerates all logger options for subcomponents
+  */
+enum class ComponentLogger {MAIN, CIRCUIT, CLEARCIRCUIT, TEST, REST, SERVER, CLIENT};
+
 /**
  * Create a rotating file + stdout logger
  */
@@ -39,7 +45,7 @@ void create_terminal_logger();
 /**
  * Returns the default logger, which got created by any create*() function
  */
-std::shared_ptr<spdlog::logger> get_default_logger();
+std::shared_ptr<spdlog::logger> get_logger(ComponentLogger = ComponentLogger::MAIN);
 
 } // namespace sel
 

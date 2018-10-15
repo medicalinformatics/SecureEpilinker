@@ -61,7 +61,7 @@ RemoteId LocalServer::get_id() const {
 Result<CircUnit> LocalServer::run(shared_ptr<const ServerData> data) {
   m_data = move(data);
 
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   logger->info("The server is running and performing its computations");
 
   const size_t nvals{m_data->data.begin()->second.size()};

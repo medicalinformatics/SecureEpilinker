@@ -39,7 +39,7 @@ HeaderMethodHandler::HeaderMethodHandler(
         const string&,
         const shared_ptr<spdlog::logger>&)> handling_function)
       : MethodHandler(method),
-        m_logger(get_default_logger()),
+        m_logger(get_logger()),
         m_handling_function(move(handling_function)) {}
 
 void HeaderMethodHandler::set_handling_function(function<SessionResponse(

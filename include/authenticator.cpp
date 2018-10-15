@@ -72,7 +72,7 @@ bool Authenticator::verify_transaction(const string& signature) const {
 
 SessionResponse Authenticator::check_authentication_header(
     const std::multimap<std::string, std::string>& header) const {
-  auto logger = get_default_logger();
+  auto logger = get_logger();
   try {
     string auth_info;
     if (auto it = header.find("Authorization"); it != header.end()) {
@@ -90,7 +90,7 @@ SessionResponse Authenticator::check_authentication_header(
 }
 
 SessionResponse Authenticator::check_authentication(const string& auth_info) const {
-  auto logger = get_default_logger();
+  auto logger = get_logger();
   try {
     auto expected_type{print_auth_type()};
     string given_type(auth_info.begin(),

@@ -31,13 +31,13 @@ namespace sel {
 MonitorMethodHandler::MonitorMethodHandler(
     const std::string& method)
     : MethodHandler(method),
-      m_logger{get_default_logger()} {}
+      m_logger{get_logger()} {}
 
 MonitorMethodHandler::MonitorMethodHandler(
     const std::string& method,
     std::shared_ptr<Validator>& validator)
     : MethodHandler(method, validator),
-      m_logger{get_default_logger()} {}
+      m_logger{get_logger()} {}
 
 void MonitorMethodHandler::handle_method(
     shared_ptr<restbed::Session> session) const {

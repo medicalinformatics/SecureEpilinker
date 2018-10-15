@@ -90,7 +90,7 @@ bool RemoteConfiguration::get_mutual_initialization_status() const {
 void RemoteConfiguration::test_configuration(
     const RemoteId& client_id,
     const nlohmann::json& client_config) {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   auto data = client_config.dump();
   list<string> headers{"Authorization: "s + m_connection_profile.authenticator.sign_transaction(""),
                        "Content-Type: application/json" };

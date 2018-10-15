@@ -30,7 +30,7 @@ using namespace std;
 
 namespace sel{
 
-constexpr char logger_name[]{"default"};
+constexpr char logger_name[]{"Main"};
 constexpr size_t async_log_queue_size{8192u};
 constexpr size_t log_file_size{1024u*1024u*5u};
 constexpr unsigned log_history{5u};
@@ -56,6 +56,7 @@ void create_file_logger(const std::string& filename) {
   };
 
   register_multisink_logger(sinks);
+  spdlog::set_pattern("[%Y-%m-%d %T.%e][%n][%t][%^%l%$] %v");
 }
 
 void create_terminal_logger() {
@@ -66,10 +67,21 @@ void create_terminal_logger() {
  };
 
   register_multisink_logger(sinks);
+  spdlog::set_pattern("[%Y-%m-%d %T.%e][%n][%t]%^[%l]%$ %v");
 }
 
-std::shared_ptr<spdlog::logger> get_default_logger(){
-  return spdlog::get(logger_name);
+std::shared_ptr<spdlog::logger> get_logger(ComponentLogger subcomponent){
+  auto rootlogger{spdlog::get(logger_name)};
+  switch (subcomponent) {
+    case ComponentLogger::MAIN: return rootlogger;
+    case ComponentLogger::CIRCUIT: return rootlogger->clone("Circuit");
+    case ComponentLogger::CLEARCIRCUIT: return rootlogger->clone("ClearCircuit");
+    case ComponentLogger::TEST: return rootlogger->clone("Test");
+    case ComponentLogger::REST: return rootlogger->clone("REST");
+    case ComponentLogger::SERVER: return rootlogger->clone("Server");
+    case ComponentLogger::CLIENT: return rootlogger->clone("Client");
+    default: assert(!"You forgot an enum case in logger.cpp"); return rootlogger;
+  }
 }
 
 } /* END namespace sel */

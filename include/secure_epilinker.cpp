@@ -85,7 +85,7 @@ public:
     to_bool_closure{[this](auto x){return to_bool(x);}},
     to_arith_closure{[this](auto x){return to_arith(x);}}
   {
-    get_default_logger()->trace("SELCircuit created.");
+    get_logger()->trace("SELCircuit created.");
   }
 
   template<class EpilinkInput>
@@ -93,7 +93,7 @@ public:
     set_constants(input.nvals);
     set_one_real_input(input);
 
-    get_default_logger()->trace("SELCircuit inputs set.");
+    get_logger()->trace("SELCircuit inputs set.");
     is_input_set = true;
   }
 
@@ -125,7 +125,7 @@ public:
     if (!is_input_set) {
       throw new runtime_error("Set the input first before building and running the ciruit!");
     }
-    get_default_logger()->trace("Building circuit...");
+    get_logger()->trace("Building circuit...");
 
     // Where we store all group and individual comparison weights as ariths
     vector<FieldWeight> field_weights;
@@ -181,7 +181,7 @@ public:
     print_share(tmatch, "tentative match?");
 #endif
 
-    get_default_logger()->trace("Circuit built.");
+    get_logger()->trace("Circuit built.");
 #ifdef DEBUG_SEL_RESULT
     // If result debugging is enabled, we let all parties learn all fields plus
     // the individual {field-,}weight-sums.
@@ -267,7 +267,7 @@ private:
     CircUnit T = llround(cfg.epi.threshold * (1 << cfg.dice_prec));
     CircUnit Tt = llround(cfg.epi.tthreshold * (1 << cfg.dice_prec));
 
-    get_default_logger()->debug(
+    get_logger()->debug(
         "Rescaled threshold: {:x}/ tentative: {:x}", T, Tt);
 
     const_threshold = constant(acirc, T, BitLen);
@@ -464,7 +464,7 @@ private:
     const FieldNamePair ipair = {ileft, iright};
     const auto& cache_hit = field_weight_cache.find(ipair);
     if (cache_hit != field_weight_cache.cend()) {
-      get_default_logger()->trace("field_weight cache hit for <{},{}>", ileft, iright);
+      get_logger()->trace("field_weight cache hit for <{},{}>", ileft, iright);
       return cache_hit->second;
     }
 
@@ -559,7 +559,7 @@ SecureEpilinker::SecureEpilinker(ABYConfig config, CircuitConfig circuit_config)
   ccirc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[(config.bool_sharing==S_YAO)?S_BOOL:S_YAO]->GetCircuitBuildRoutine())},
   acirc{dynamic_cast<ArithmeticCircuit*>(party.GetSharings()[S_ARITH]->GetCircuitBuildRoutine())},
   cfg{circuit_config}, selc{make_unique<SELCircuit>(cfg, bcirc, ccirc, acirc)} {
-    get_default_logger()->debug("SecureEpilinker created.");
+    get_logger()->debug("SecureEpilinker created.");
   }
 // TODO when ABY can separate circuit building/setup/online phases, we create
 // different SELCircuits per build_circuit()...
@@ -569,7 +569,7 @@ SecureEpilinker::SecureEpilinker(ABYConfig config, CircuitConfig circuit_config)
 SecureEpilinker::~SecureEpilinker() = default;
 
 void SecureEpilinker::connect() {
-  const auto& logger = get_default_logger();
+  const auto& logger = get_logger();
   logger->trace("Connecting ABYParty...");
   // Currently, we only let the aby parties connect, which runs the Base OTs.
   party.InitOnline();
@@ -593,7 +593,7 @@ void SecureEpilinker::run_setup_phase() {
 Result<CircUnit> SecureEpilinker::run_as_client(
     const EpilinkClientInput& input) {
   if (!is_setup) {
-    get_default_logger()->warn(
+    get_logger()->warn(
         "SecureEpilinker::run_as_client: Implicitly running setup phase.");
     run_setup_phase();
   }
@@ -604,7 +604,7 @@ Result<CircUnit> SecureEpilinker::run_as_client(
 Result<CircUnit> SecureEpilinker::run_as_server(
     const EpilinkServerInput& input) {
   if (!is_setup) {
-    get_default_logger()->warn(
+    get_logger()->warn(
         "SecureEpilinker::run_as_server: Implicitly running setup phase.");
     run_setup_phase();
   }
@@ -627,9 +627,9 @@ Result<CircUnit> SecureEpilinker::run_as_both(
 
 Result<CircUnit> SecureEpilinker::run_circuit() {
   SELCircuit::ResultShares res = selc->build_circuit();
-  get_default_logger()->trace("Executing ABYParty Circuit...");
+  get_logger()->trace("Executing ABYParty Circuit...");
   party.ExecCircuit();
-  get_default_logger()->trace("ABYParty Circuit executed.");
+  get_logger()->trace("ABYParty Circuit executed.");
 
   is_setup = false; // need to run new setup phase
 

@@ -38,7 +38,7 @@ CircuitConfig::CircuitConfig(const EpilinkConfig& epi_,
   matching_mode {matching_mode},
   bitlen {bitlen}
 {
-  get_default_logger()->trace("Constructing CircuitConfig with {},"
+  get_logger()->trace("Constructing CircuitConfig with {},"
       " matching_mode={}, bitlen={}", epi, matching_mode, bitlen);
 
 #ifndef SEL_MATCHING_MODE
@@ -56,11 +56,11 @@ CircuitConfig::CircuitConfig(const EpilinkConfig& epi_,
           "Specified circuit dir {} isn't a directory!", circ_dir.string()));
   }
 
-  get_default_logger()->trace("Constructed {}", *this);
+  get_logger()->trace("Constructed {}", *this);
 }
 
 void CircuitConfig::set_precisions(size_t dice_prec_, size_t weight_prec_) {
-  get_default_logger()->debug("Precisions changed to dice: {}; weight: {}",
+  get_logger()->debug("Precisions changed to dice: {}; weight: {}",
       dice_prec_, weight_prec_);
 
   if (bit_usage(dice_prec_, weight_prec_, epi.nfields) > bitlen) {

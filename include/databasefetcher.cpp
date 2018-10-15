@@ -51,7 +51,7 @@ DatabaseFetcher::DatabaseFetcher(
     : m_url(move(url)),
       m_local_config(move(local_conf)),
       m_local_authenticator(l_auth),
-      m_logger{get_default_logger()} {}
+      m_logger{get_logger()} {}
 
 DatabaseFetcher::DatabaseFetcher(
     std::shared_ptr<const LocalConfiguration> local_conf,
@@ -62,7 +62,7 @@ DatabaseFetcher::DatabaseFetcher(
       m_local_config(move(local_conf)),
       m_local_authenticator(l_auth),
       m_page_size(page_size),
-      m_logger{get_default_logger()} {}
+      m_logger{get_logger()} {}
 
 ServerData DatabaseFetcher::fetch_data(bool matching_mode) {
   m_logger->debug("Requesting Database from {}?pageSize={}\n", m_url,

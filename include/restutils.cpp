@@ -110,7 +110,7 @@ unique_ptr<AuthenticationConfig> parse_json_auth_config(const nlohmann::json& j)
 }
 
 SessionResponse perform_post_request(string url, string data, list<string> headers, bool get_headers){
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   curlpp::Easy curl_request;
   promise<stringstream> response_promise;
   future<stringstream> response_stream{response_promise.get_future()};
@@ -133,7 +133,7 @@ SessionResponse perform_post_request(string url, string data, list<string> heade
 }
 
 SessionResponse perform_get_request(string url, list<string> headers, bool get_headers){
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   curlpp::Easy curl_request;
   promise<stringstream> response_promise;
   future<stringstream> response_stream{response_promise.get_future()};
@@ -156,7 +156,7 @@ SessionResponse send_result_to_linkageservice(const Result<CircUnit>& share,
     optional<vector<string>> ids, const string& role,
     const shared_ptr<const LocalConfiguration>& local_config,
     const shared_ptr<const RemoteConfiguration>& remote_config) {
-  auto logger{get_default_logger()};
+  auto logger{get_logger()};
   nlohmann::json json_data;
   json_data["role"] = role;
   json_data["result"] = {{"match", share.match},
