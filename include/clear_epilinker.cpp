@@ -362,4 +362,28 @@ template vector<Result<uint64_t>> calc<uint64_t>(
 template vector<Result<double>> calc<double>(
     const Records& records, const VRecord& database, const CircuitConfig& cfg);
 
+// match counting
+
+template<typename T> CountResult<size_t> calc_count(const Records& records,
+    const VRecord& database, const CircuitConfig& cfg) {
+  const auto results = calc<T>(records, database, cfg);
+  size_t matches = 0, tmatches = 0;
+  for (const auto& result : results) {
+    matches += result.match;
+    tmatches += result.tmatch;
+  }
+  return {matches, tmatches};
+}
+
+template CountResult<size_t> calc_count<uint8_t>(
+    const Records& records, const VRecord& database, const CircuitConfig& cfg);
+template CountResult<size_t> calc_count<uint16_t>(
+    const Records& records, const VRecord& database, const CircuitConfig& cfg);
+template CountResult<size_t> calc_count<uint32_t>(
+    const Records& records, const VRecord& database, const CircuitConfig& cfg);
+template CountResult<size_t> calc_count<uint64_t>(
+    const Records& records, const VRecord& database, const CircuitConfig& cfg);
+template CountResult<size_t> calc_count<double>(
+    const Records& records, const VRecord& database, const CircuitConfig& cfg);
+
 } /* end of namespace sel::clear_epilink */
