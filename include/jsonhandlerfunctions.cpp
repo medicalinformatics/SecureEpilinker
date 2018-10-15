@@ -84,11 +84,12 @@ SessionResponse valid_test_config_json_handler(
   }
 }
 
-SessionResponse linkrecords(
+SessionResponse create_job(
     const nlohmann::json& j,
     const RemoteId& remote_id,
     const string& authorization,
-    bool multiple_records) {
+    bool multiple_records,
+    bool counting_mode) {
   auto logger{get_default_logger()};
   const auto& config_handler{ConfigurationHandler::cget()};
   auto& server_handler{ServerHandler::get()};
@@ -110,11 +111,17 @@ SessionResponse linkrecords(
         if(!multiple_records) {
           data.emplace_back(parse_json_fields(local_config->get_fields(), j.at("fields")));
         } else {
-            for(auto& record : j.at("fields")){
-                data.emplace_back(parse_json_fields(local_config->get_fields(), record));
+            for(auto& record : j.at("records")){
+                data.emplace_back(parse_json_fields(local_config->get_fields(), record.front()));
             }
         }
+        logger->debug("Number of Client Records: {}", data.size());
         job->add_data(make_unique<Records>(move(data)));
+#ifdef SEL_MATCHING_MODE
+        if(counting_mode){
+          job->set_counting_job();
+        }
+#endif
         server_handler.add_linkage_job(remote_id, job);
       } catch (const exception& e) {
         logger->error("Error in job creation: {}", e.what());
@@ -137,15 +144,32 @@ SessionResponse valid_linkrecord_json_handler(
     const nlohmann::json& j,
     const RemoteId& remote_id,
     const string& authorization) {
-  return linkrecords(j, remote_id, authorization, false);
+  return create_job(j, remote_id, authorization, false, false);
 }
 
 SessionResponse valid_linkrecords_json_handler(
     const nlohmann::json& j,
     const RemoteId& remote_id,
     const string& authorization) {
-  return linkrecords(j,remote_id,authorization, true);
+  return create_job(j,remote_id,authorization, true, false);
 }
+
+#ifdef SEL_MATCHING_MODE
+
+SessionResponse valid_matchrecord_json_handler(
+    const nlohmann::json& j,
+    const RemoteId& remote_id,
+    const string& authorization) {
+  return create_job(j, remote_id, authorization, false, true);
+}
+
+SessionResponse valid_matchrecords_json_handler(
+    const nlohmann::json& j,
+    const RemoteId& remote_id,
+    const string& authorization) {
+  return create_job(j,remote_id,authorization, true, true);
+}
+#endif
 
 SessionResponse valid_init_remote_json_handler(
     const nlohmann::json& j,

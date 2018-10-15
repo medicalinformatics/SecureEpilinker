@@ -72,93 +72,47 @@ RemoteId LinkageJob::get_remote_id() const {
   return m_remote_config->get_id();
 }
 
+LinkageJob::JobPreparation LinkageJob::prepare_run() {
+  m_status = JobStatus::RUNNING;
+  // Get number of records from server
+  promise<size_t> nvals_prom;
+  auto nvals{nvals_prom.get_future()};
+  size_t num_records{m_records->size()};
+  signal_server(nvals_prom, num_records);
+  nvals.wait_for(15s);
+  if(!nvals.valid()){
+    throw runtime_error("Error retrieving number of records from server");
+  }
+  const auto database_size{nvals.get()};
+  return {num_records, database_size, ServerHandler::get().get_epilink_client(m_remote_config->get_id())};
+}
 
 
 void LinkageJob::run_linkage_job() {
   auto logger{get_default_logger()};
-  m_status = JobStatus::RUNNING;
-
-  // Prepare Data, weights and exchange groups
-
-  logger->info("Job {} started\n", m_id);
-#ifdef DEBUG_SEL_REST
-  auto debugger = DataHandler::get().get_epilink_debug();
-  debugger->reset();
-#endif
-
+  logger->info("Linkage job {} started\n", m_id);
   try {
-    // Get number of records from server
-    promise<size_t> nvals_prom;
-    auto nvals{nvals_prom.get_future()};
-    size_t num_records{m_records->size()};
-    signal_server(nvals_prom, num_records);
-    nvals.wait_for(15s);
-    if(!nvals.valid()){
-      throw runtime_error("Error retrieving number of records from server");
-    }
-    const auto database_size{nvals.get()};
+    auto [num_records, database_size, epilinker] = prepare_run();
     logger->debug("Client has {} Records\n", num_records);
     logger->debug("Server has {} Records\n", database_size);
-    auto epilinker{ServerHandler::get().get_epilink_client(m_remote_config->get_id())};
-    epilinker->build_circuit(database_size, num_records);
+    epilinker->build_linkage_circuit(num_records, database_size);
     epilinker->run_setup_phase();
-    EpilinkClientInput client_input{move(m_records), database_size};
-    auto client_share{epilinker->run_as_client(client_input)};
-      // run mpc
-    // reset epilinker for the next linkage
-    epilinker->reset();
 #ifdef DEBUG_SEL_REST
-    print_data();
+      print_data();
 #endif
-    for(auto& record : client_share){
-      logger->info("Client Result: {}", record);
-    }
-    if(!m_remote_config->get_matching_mode()){
+    epilinker->set_client_input({move(m_records), database_size});
+    auto linkage_share{epilinker->run_linkage()};
+      // reset epilinker for the next linkage
+      epilinker->reset();
+      logger->info("Client Result: {}", linkage_share);
       try{
-      auto response{send_result_to_linkageservice(client_share, nullopt , "client", m_local_config, m_remote_config)};
-      if (response.return_code == 200) {
-        perform_callback(response.body);
-      }
+        auto response{send_result_to_linkageservice(linkage_share, nullopt , "client", m_local_config, m_remote_config)};
+        if (response.return_code == 200) {
+          perform_callback(response.body);
+        }
       } catch (const exception& e) {
         logger->error("Can not connect to linkage service or callback: {}", e.what());
       }
-    } else {
-#ifdef SEL_MATCHING_MODE
-      nlohmann::json match_json;
-      nlohmann::json match_result;
-      // TODO(TK): Matching mode return will change!
-//      match_result["match"] = client_share.match;
-//      match_result["tentativeMatch"] = client_share.tmatch;
-      match_json["result"] = match_result;
-      logger->trace("Result to callback: {}", match_json.dump(0));
-      perform_callback(match_json.dump());
-#endif
-    }
-#ifdef DEBUG_SEL_REST
-// FIXME(TK) Update Debugger
-//    debugger->client_input = make_shared<EpilinkClientInput>(client_input);
-//    if(!(debugger->circuit_config)) {
-//      debugger->circuit_config = make_shared<CircuitConfig>(make_circuit_config(m_local_config, m_remote_config));
-//    }
-//    //debugger->epilink_config->set_precisions(5,11);
-//    logger->debug("Clear Precision: Dice {},\tWeight {}", debugger->circuit_config->dice_prec,debugger->circuit_config->weight_prec);
-    if(debugger->all_values_set()){
-      if(!debugger->run) {
-      fmt::print("============= Integer Computation ============\n");
-      debugger->compute_int();
-      logger->info("Integer Result: {}", debugger->int_result);
-      fmt::print("============= Double Computation =============\n");
-      debugger->compute_double();
-      logger->info("Double Result: {}", debugger->double_result);
-      debugger->run=true;
-      }
-    } else {
-      string ss{debugger->server_input?"Set":"Not Set"};
-      string cs{debugger->client_input?"Set":"Not Set"};
-      string ec{debugger->circuit_config?"Set":"Not Set"};
-      logger->warn("Server: {}, Client: {}, Config: {}\n", ss, cs, ec);
-    }
-#endif
     m_status = JobStatus::DONE;
   } catch (const exception& e) {
     logger->error("Error running MPC Client: {}\n", e.what());
@@ -168,8 +122,40 @@ void LinkageJob::run_linkage_job() {
 
 void LinkageJob::run_matching_job() {
   auto logger{get_default_logger()};
+#ifdef SEL_MATCHING_MODE
   logger->warn("A matching job is starting.");
-  run_linkage_job();
+  try {
+    auto [num_records, database_size, epilinker] = prepare_run();
+    logger->debug("Client has {} Records\n", num_records);
+    logger->debug("Server has {} Records\n", database_size);
+    epilinker->build_count_circuit(num_records, database_size);
+    epilinker->run_setup_phase();
+#ifdef DEBUG_SEL_REST
+      print_data();
+#endif
+    epilinker->set_input({move(m_records), database_size});
+    auto count_result{epilinker->run_count()};
+      // reset epilinker for the next operation
+      epilinker->reset();
+      // The strange assembly of the json is due to strange object/array
+      // distinctions in nlohmann/json
+      nlohmann::json match_json;
+      nlohmann::json match_result;
+      match_result["matches"] = count_result.matches;
+      match_result["tentativeMatches"] = count_result.tmatches;
+      match_json["result"] = match_result;
+      logger->trace("Result to callback: {}", match_json.dump(0));
+      perform_callback(match_json.dump());
+    m_status = JobStatus::DONE;
+  } catch (const exception& e) {
+    logger->error("Error running MPC Client: {}\n", e.what());
+    m_status = JobStatus::FAULT;
+  }
+#endif
+#ifndef SEL_MATCHING_MODE
+  logger->error("Matching mode not allowed");
+  m_status = JobStatus::FAULT;
+#endif
 }
 
 void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
@@ -187,9 +173,10 @@ void LinkageJob::signal_server(promise<size_t>& nvals, size_t num_records) {
   list<string> headers{
       "Authorization: "s+m_remote_config->get_remote_authenticator().sign_transaction(""),
       "Record-Number: "s + to_string(num_records),
+      "Counting-Mode: "s + (m_counting_job ? "true" : "false"),
       "Content-Type: application/json"};
   string url{assemble_remote_url(m_remote_config) + "/initMPC/"+m_local_config->get_local_id()};
-  logger->debug("Sending linkage request to {}\n", url);
+  logger->debug("Sending {} request to {}\n",(m_counting_job ? "matching" : "linkage"), url);
   try{
     // TODO(TK): Refactor perform_post_request w/ optional to avoid dummy data
     auto response{perform_post_request(url, "{}", headers, true)};
@@ -223,23 +210,22 @@ bool LinkageJob::perform_callback(const string& body) const {
 void LinkageJob::print_data() const {
   auto logger{get_default_logger()};
   string input_string;
-  // FIXME(TK): Adapt printing to new format
-//  for (auto& p : m_records) {
-//    input_string += "-------------------------------\n" + p.first +
-//                    "\n-------------------------------"
-//                    "\n";
-//    for (auto& e : p.second) {
-//      bool empty{!e};
-//      input_string += "Field "s + (empty ? "" : "not ") + "empty ";
-//      if (!empty) {
-//        for (const auto& byte : e.value()) {
-//          input_string += to_string(byte) + " ";
-//        }
-//      }
-//      input_string += "\n";
-//    }
-//  }
-  logger->trace(input_string);
+  for (auto& record : *m_records) {
+    input_string += "=================================\n";
+    for(auto& p : record){ // Every field in Record
+      input_string += "-------- " + p.first + " --------\n";
+      bool empty{!p.second};
+      input_string += (empty ? "Field empty" : "");
+      if (!empty) {
+        for (const auto& byte : p.second.value()) {
+          input_string += to_string(byte) + " ";
+        }
+      }
+      input_string += "\n";
+    }
+  }
+  logger->trace("Client Data:\n{}",input_string);
+}
 }
 #endif
 }  // namespace sel
