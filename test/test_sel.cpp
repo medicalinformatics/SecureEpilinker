@@ -19,6 +19,12 @@ namespace fs = std::filesystem;
 
 namespace sel::test {
 
+// GLOBALS
+// Whether to use run_as_{client/server}() or run_as_both()
+bool run_both{false};
+e_role role;
+bool only_local{false};
+
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
 constexpr double Threshold = 0.9;
@@ -78,10 +84,6 @@ EpilinkConfig make_dkfz_cfg() {
     Threshold, TThreshold
   };
 }
-
-// Whether to use run_as_{client/server}() or run_as_both()
-bool run_both{false};
-e_role role;
 
 auto set_inputs(SecureEpilinker& linker,
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
@@ -332,7 +334,7 @@ auto input_single_test_0824() {
       dir + "db_1.json");
 }
 
-auto run_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
+auto run_sel_linkage(SecureEpilinker& linker, const EpilinkInput& in) {
   linker.build_linkage_circuit(in.client.num_records, in.client.database_size);
   linker.run_setup_phase();
   set_inputs(linker, in.client, in.server);
@@ -341,15 +343,34 @@ auto run_sel_calcs(SecureEpilinker& linker, const EpilinkInput& in) {
   return res;
 }
 
+auto run_sel_count(SecureEpilinker& linker, const EpilinkInput& in) {
+  linker.build_count_circuit(in.client.num_records, in.client.database_size);
+  linker.run_setup_phase();
+  set_inputs(linker, in.client, in.server);
+  const auto res = linker.run_count();
+  linker.reset();
+  return res;
+}
+
 template <typename T>
-auto calc_local(const EpilinkInput& in) {
-  unique_ptr<CircuitConfig> cfg;
+auto resized_config(const CircuitConfig& cfg) {
   if constexpr (is_integral_v<T>) {
-    cfg = make_unique<CircuitConfig>(in.cfg, CircDir, false, sizeof(T)*8);
+    return make_unique<CircuitConfig>(cfg.epi, CircDir, true, sizeof(T)*8);
   } else {
-    cfg = make_unique<CircuitConfig>(in.cfg);
+    return make_unique<CircuitConfig>(cfg);
   }
+}
+
+template <typename T>
+auto run_local_linkage(const EpilinkInput& in) {
+  const auto cfg = resized_config<T>(in.cfg);
   return clear_epilink::calc<T>(*in.client.records, *in.server.database, *cfg);
+}
+
+template <typename T>
+auto run_local_count(const EpilinkInput& in) {
+  const auto cfg = resized_config<T>(in.cfg);
+  return clear_epilink::calc_count<T>(*in.client.records, *in.server.database, *cfg);
 }
 
 template <typename T, typename U>
@@ -368,12 +389,16 @@ void print_local_result(Result<CircUnit>* sel, const Result<T>& local, const str
   print("------ {} ------\n{} {}\n", name, local, dev);
 }
 
-void run_and_print_calcs(SecureEpilinker& linker, const EpilinkInput& in, bool only_local) {
+string test_str(bool test) {
+  return test ? "✅" : "💥";
+}
+
+void run_and_print_linkage(SecureEpilinker& linker, const EpilinkInput& in) {
   vector<Result<CircUnit>> results;
-  if (!only_local) results = run_sel_calcs(linker, in);
-  const auto results_32 = calc_local<uint32_t>(in);
-  const auto results_64 = calc_local<uint64_t>(in);
-  const auto results_double = calc_local<double>(in);
+  if (!only_local) results = run_sel_linkage(linker, in);
+  const auto results_32 = run_local_linkage<uint32_t>(in);
+  const auto results_64 = run_local_linkage<uint64_t>(in);
+  const auto results_double = run_local_linkage<double>(in);
 
   bool all_good = true;
   for (size_t i = 0; i != in.client.num_records; ++i) {
@@ -383,8 +408,7 @@ void run_and_print_calcs(SecureEpilinker& linker, const EpilinkInput& in, bool o
       resp = &results[i];
       bool correct = *resp == results_32[i];
       all_good &= correct;
-      auto indicator = correct ? "✅" : "💥";
-      print("------ Secure Epilinker -------\n{} {}\n", *resp, indicator);
+      print("------ Secure Epilinker -------\n{} {}\n", *resp, test_str(correct));
     }
     print_local_result(resp, results_32[i], "32 Bit");
     print_local_result(resp, results_64[i], "64 Bit");
@@ -398,6 +422,32 @@ void run_and_print_calcs(SecureEpilinker& linker, const EpilinkInput& in, bool o
   }
 }
 
+void run_and_print_counting(SecureEpilinker& linker, const EpilinkInput& in) {
+  vector<pair<string, CountResult<size_t>>> results;
+  if (!only_local) {
+    const auto sel_result = run_sel_count(linker, in);
+    results.emplace_back("SEL",
+        CountResult<size_t>{sel_result.matches, sel_result.tmatches});
+  }
+  results.emplace_back("32 Bit", run_local_count<uint32_t>(in));
+  results.emplace_back("64 Bit", run_local_count<uint64_t>(in));
+  results.emplace_back("Double", run_local_count<double>(in));
+
+  const auto& first_result = results.cbegin()->second;
+  vector<bool> same_count = {true, true};
+  print("\tmatches\ttmatches\n");
+  for (const auto& resp : results) {
+    const auto& res = resp.second;
+    print("{}\t{}\t{}\n", resp.first, res.matches, res.tmatches);
+    same_count[0] = same_count[0] && (first_result.matches == res.matches);
+    same_count[1] = same_count[1] && (first_result.tmatches == res.tmatches);
+  }
+  for (const auto good : same_count) {
+    print("\t{}", test_str(good));
+  }
+  print("\n");
+}
+
 } /* END namespace sel::test */
 
 using namespace sel;
@@ -406,11 +456,11 @@ using namespace sel::test;
 int main(int argc, char *argv[])
 {
   bool role_server = false;
-  bool only_local = false;
   unsigned int sharing = S_YAO;
   uint32_t dbsize = 1;
   uint32_t nthreads = 1;
   string remote_host = "127.0.0.1";
+  bool match_counting = false;
 
   cxxopts::Options options{"test_aby", "Test ABY related components"};
   options.add_options()
@@ -421,6 +471,7 @@ int main(int argc, char *argv[])
     ("r,run-both", "Use set_both_inputs()", cxxopts::value(run_both))
     ("L,local-only", "Only run local calculations on clear values."
         " Doesn't initialize the SecureEpilinker.", cxxopts::value(only_local))
+    ("m,match-count", "Run match counting instead of linkage.", cxxopts::value(match_counting))
     ("v,verbose", "Set verbosity. May be specified multiple times to log on "
       "info/debug/trace level. Default level is warning.")
     ("h,help", "Print help");
@@ -448,10 +499,11 @@ int main(int argc, char *argv[])
   //const auto in = input_dkfz_random(dbsize);
   const auto in = input_multi_test_0824();
 
-  CircuitConfig circ_cfg{in.cfg, CircDir};
+  CircuitConfig circ_cfg{in.cfg, CircDir, true};
   SecureEpilinker linker{aby_cfg, circ_cfg};
   if(!only_local) linker.connect();
-  run_and_print_calcs(linker, in, only_local);
+  if(match_counting) run_and_print_counting(linker, in);
+  else run_and_print_linkage(linker, in);
 
   return 0;
 }
