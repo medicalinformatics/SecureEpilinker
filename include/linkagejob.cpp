@@ -99,6 +99,8 @@ void LinkageJob::run_linkage_job() {
     epilinker->run_setup_phase();
 #ifdef DEBUG_SEL_REST
       print_data();
+      logger->warn("Setting Client Debug inputs");
+      compute_debugging_result(*m_records);
 #endif
     epilinker->set_client_input({move(m_records), database_size});
     auto linkage_share{epilinker->run_linkage()};
@@ -226,6 +228,34 @@ void LinkageJob::print_data() const {
   }
   logger->trace("Client Data:\n{}",input_string);
 }
+
+void LinkageJob::compute_debugging_result(const Records& client_input) {
+    auto debugger{DataHandler::get().get_epilink_debug()};
+    auto logger{get_default_logger()};
+    debugger->reset();
+        debugger->client_input = client_input;
+        if(!(debugger->circuit_config)) {
+          debugger->circuit_config.emplace(make_circuit_config(m_local_config, m_remote_config));
+        }
+        //debugger->epilink_config->set_precisions(5,11);
+        logger->debug("Clear Precision: Dice {},\tWeight {}", debugger->circuit_config->dice_prec,debugger->circuit_config->weight_prec);
+    if(debugger->all_values_set()){
+      if(!debugger->run) {
+        fmt::print("============= Integer Computation ============\n");
+        debugger->compute_int();
+        logger->info("Integer Result: {}", debugger->int_result);
+        fmt::print("============= Double Computation =============\n");
+        debugger->compute_double();
+        logger->info("Double Result: {}", debugger->double_result);
+        debugger->run=true;
+      }
+    } else {
+      string ss{debugger->server_input?"Set":"Not Set"};
+      string cs{debugger->client_input?"Set":"Not Set"};
+      string ec{debugger->circuit_config?"Set":"Not Set"};
+      logger->warn("Server: {}, Client: {}, Config: {}\n", ss, cs, ec);
+    }
+
 }
 #endif
 }  // namespace sel
