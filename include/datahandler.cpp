@@ -40,7 +40,7 @@ void Debugger::reset() {
     return cref(get());
   }
 
-size_t DataHandler::poll_database(const RemoteId& remote_id) {
+size_t DataHandler::poll_database(const RemoteId& remote_id, bool counting_mode) {
   const auto& config_handler{ConfigurationHandler::cget()};
   const auto local_configuration{config_handler.get_local_config()};
   DatabaseFetcher database_fetcher{
@@ -48,7 +48,7 @@ size_t DataHandler::poll_database(const RemoteId& remote_id) {
       local_configuration->get_data_service()+"/"+remote_id,
       local_configuration->get_local_authenticator(),
       config_handler.get_server_config().default_page_size};
-  auto data{database_fetcher.fetch_data(config_handler.get_remote_config(remote_id)->get_matching_mode())};
+  auto data{database_fetcher.fetch_data(counting_mode)};
   lock_guard<mutex> lock(m_db_mutex);
   m_database = make_shared<const ServerData>(move(data));
   return (m_database->data->begin()->second.size());

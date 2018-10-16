@@ -60,7 +60,7 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
   size_t server_record_number;
   shared_ptr<const ServerData> data;
   try {
-    server_record_number = DataHandler::get().poll_database(remote_id);
+    server_record_number = DataHandler::get().poll_database(remote_id, counting_mode);
     data = DataHandler::get().get_database();
   } catch (const exception& e){
     logger->error("Error geting data from dataservice: {}", e.what());

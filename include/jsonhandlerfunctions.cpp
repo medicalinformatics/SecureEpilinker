@@ -214,11 +214,15 @@ SessionResponse valid_init_remote_json_handler(
 #endif
     }
 
-    // Get Linkage Service Config, if not in matching mode
-    if (!matching_mode) {
+    // Get Linkage Service Config
+    if (j.count("linkageService")) {
       linkage_service.url = j.at("linkageService").at("url").get<string>();
       linkage_service.authenticator.set_auth_info(parse_json_auth_config(j.at("linkageService").at("authentication")));
       remote_config->set_linkage_service(move(linkage_service));
+    } else {
+      if (!matching_mode) {
+        throw runtime_error("Linkage service information required for linking");
+      }
     }
   } catch (const exception& e) {
     logger->error("Error creating remote config: {}", e.what());
