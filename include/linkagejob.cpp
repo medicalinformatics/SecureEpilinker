@@ -173,7 +173,7 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
 void LinkageJob::signal_server(promise<size_t>& nvals, size_t num_records) {
   auto logger{get_logger(ComponentLogger::CLIENT)};
   //FIXME(TK): THIS IS BAD AND I SHOULD FEEL BAD
-  std::this_thread::sleep_for(1s);
+  std::this_thread::sleep_for(200ms);
   list<string> headers{
       "Authorization: "s+m_remote_config->get_remote_authenticator().sign_transaction(""),
       "Record-Number: "s + to_string(num_records),
