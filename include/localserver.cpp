@@ -65,8 +65,8 @@ vector<Result<CircUnit>> LocalServer::run_linkage(shared_ptr<const ServerData> d
   const size_t database_size{m_data->data->begin()->second.size()};
 #ifdef DEBUG_SEL_REST
   auto debugger{DataHandler::get().get_epilink_debug()};
-  logger->warn("Setting Server Debug inputs");
-  debugger->server_input = *(m_data->data);
+  auto data_copy{*(m_data->data)};
+  debugger->server_input = data_copy;
 #endif
   logger->debug("Server Sizes\nnum_records: {}, database_size: {}", num_records, database_size);
     m_aby_server.build_linkage_circuit(num_records, database_size);
