@@ -26,11 +26,12 @@
 #include "logger.h"
 
 using namespace std;
+using fmt::format;
 
 namespace sel {
 
 EpilinkConfig::EpilinkConfig(
-      std::map<FieldName, ML_Field> fields_,
+      std::map<FieldName, FieldSpec> fields_,
       std::vector<IndexSet> exchange_groups_,
       double threshold, double tthreshold) :
   fields {fields_},
@@ -84,24 +85,46 @@ EpilinkConfig::EpilinkConfig(
   }
 }
 
-void EpilinkServerInput::check_sizes() {
-  for (const auto& row : database) {
-    check_vector_size(row.second, nvals, "database field "s + row.first);
+EpilinkClientInput::EpilinkClientInput(unique_ptr<Records>&& records_, size_t database_size_) :
+  records{move(records_)},
+  database_size {database_size_},
+  num_records {records->size()}
+{ check_keys(); }
+
+EpilinkClientInput::EpilinkClientInput(const Record& record, size_t database_size_) :
+  records{new Records{record}},
+  database_size {database_size_},
+  num_records {1}
+{ check_keys(); }
+
+void EpilinkClientInput::check_keys() {
+  const auto first_keys = map_keys(*records->cbegin());
+  for (const auto& record : *records) {
+    const auto keys = map_keys(record);
+    if (!(keys == first_keys)) {
+      throw invalid_argument(format("EpilinkClientInput: Keys of input maps "
+            "are inconsistent. Found {} and {}.", first_keys, keys));
+    }
   }
 }
 
-EpilinkServerInput::EpilinkServerInput(
-    const VRecord& database_) :
-  database(database_),
-  nvals {database.cbegin()->second.size()}
+void EpilinkServerInput::check_sizes() {
+  for (const auto& row : *database) {
+    check_vector_size(row.second, database_size, "database field "s + row.first);
+  }
+}
+
+EpilinkServerInput::EpilinkServerInput(shared_ptr<VRecord> database_, size_t num_records_) :
+  database(move(database_)),
+  database_size {database->cbegin()->second.size()},
+  num_records {num_records_}
 { check_sizes(); }
 
-EpilinkServerInput::EpilinkServerInput(
-    VRecord&& database_) :
-  database{move(database_)},
-  nvals {database.cbegin()->second.size()}
+EpilinkServerInput::EpilinkServerInput(const VRecord& database_, size_t num_records_) :
+  database(make_shared<VRecord>(database_)),
+  database_size {database->cbegin()->second.size()},
+  num_records {num_records_}
 { check_sizes(); }
-
 
 } // namespace sel
 
@@ -122,18 +145,21 @@ std::ostream& operator<<(std::ostream& os,
 
 std::ostream& operator<<(std::ostream& os, const sel::EpilinkClientInput& in) {
   os << "----- Client Input -----\n";
-  for (const auto& f : in.record) {
-    os << f << '\n';
+  const auto& records = *(in.records);
+  for (size_t i = 0; i != records.size(); ++i) {
+    os << '[' << i << "] " << records[i];
   }
-  return os << "Number of database records: " << in.nvals;
+  os << "Number of records to link: " << in.num_records << '\n';
+  return os << "Number of database records: " << in.database_size;
 }
 
 std::ostream& operator<<(std::ostream& os, const sel::EpilinkServerInput& in) {
   os << "----- Server Input -----\n";
-  for (const auto& fs : in.database) {
+  for (const auto& fs : *(in.database)) {
     for (size_t i = 0; i != fs.second.size(); ++i) {
       os << fs.first << '[' << i << "]: " << fs.second[i] << '\n';
     }
   }
-  return os << "Number of database records: " << in.nvals;
+  os << "Number of records to link: " << in.num_records << '\n';
+  return os << "Number of database records: " << in.database_size;
 }

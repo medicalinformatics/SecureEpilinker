@@ -47,6 +47,29 @@ SessionResponse valid_linkrecord_json_handler(
     const RemoteId&,
     const std::string&);
 
+SessionResponse valid_linkrecords_json_handler(
+    const nlohmann::json&,
+    const RemoteId&,
+    const std::string&);
+
+#ifdef SEL_MATCHING_MODE
+SessionResponse valid_matchrecord_json_handler(
+    const nlohmann::json&,
+    const RemoteId&,
+    const std::string&);
+
+SessionResponse valid_matchrecords_json_handler(
+    const nlohmann::json&,
+    const RemoteId&,
+    const std::string&);
+#endif
+
+SessionResponse create_job(
+    const nlohmann::json&,
+    const RemoteId&,
+    const std::string&,
+    bool, bool);
+
 
 SessionResponse invalid_json_handler(valijson::ValidationResults&);
 

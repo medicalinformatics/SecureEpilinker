@@ -33,6 +33,18 @@ struct Result {
   T sum_weights;
 };
 
+template<typename T>
+struct CountResult {
+  T matches;
+  T tmatches;
+};
+
+template<typename T>
+bool operator==(const Result<T>& l, const Result<T>& r) {
+  return l.index == r.index && l.match == r.match && l.tmatch == r.tmatch
+    && l.sum_field_weights == r.sum_field_weights && l.sum_weights == r.sum_weights;
+}
+
 } /* END namespace sel */
 
 // Custom fmt formatters
@@ -47,13 +59,23 @@ struct formatter<sel::Result<T>> {
     std::string type_spec;
     if constexpr (std::is_integral_v<T>) type_spec = ":x";
     return format_to(ctx.begin(),
-        "best index: {}; match(/tent.)? {}/{}\n"
-        "sum(field-weights): {" + type_spec + "}; "
-        "sum(weights): {" + type_spec + "}; score: {}\n"
+        "best index: {}; match(/tent.)? {}/{}; "
+        "num: {" + type_spec + "}; den: {" + type_spec + "}; score: {}"
         , (uint64_t)r.index, r.match, r.tmatch
         , r.sum_field_weights, r.sum_weights,
         (((double)r.sum_field_weights)/r.sum_weights)
         );
+  }
+};
+
+template <typename T>
+struct formatter<sel::CountResult<T>> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::CountResult<T>& r, FormatContext &ctx) {
+    return format_to(ctx.begin(), "matches/tent.: {}/{}", r.matches, r.tmatches);
   }
 };
 

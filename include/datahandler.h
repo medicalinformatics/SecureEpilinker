@@ -27,6 +27,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 #ifdef DEBUG_SEL_REST
 #include "epilink_result.hpp"
@@ -39,8 +40,8 @@ class ConfigurationHandler;
 class DatabaseFetcher;
 
 struct ServerData {
-  VRecord data;
-  std::vector<std::string> ids;
+  std::shared_ptr<VRecord> data;
+  std::shared_ptr<std::vector<std::string>> ids;
   ToDate todate;
   RemoteId local_id;
   RemoteId remote_id;
@@ -48,12 +49,12 @@ struct ServerData {
 
 #ifdef DEBUG_SEL_REST
 struct Debugger{
-  std::shared_ptr<sel::EpilinkClientInput> client_input;
-  std::shared_ptr<sel::EpilinkServerInput> server_input;
-  std::shared_ptr<sel::CircuitConfig> circuit_config;
-  Result<CircUnit> int_result;
-  Result<double> double_result;
-  bool run{false};
+  std::optional<Records> client_input;
+  std::optional<VRecord> server_input;
+  std::optional<sel::CircuitConfig> circuit_config;
+  std::vector<Result<CircUnit>> int_result;
+  std::vector<Result<double>> double_result;
+  bool run;
   bool all_values_set() const;
   void compute_int();
   void compute_double();

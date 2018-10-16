@@ -6,6 +6,7 @@
 #include "clear_epilinker.h"
 #include <memory>
 #include <mutex>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 namespace sel {
@@ -16,11 +17,11 @@ bool Debugger::all_values_set() const{
 }
 
 void Debugger::compute_int() {
-  int_result = clear_epilink::calc_integer({*client_input, *server_input},*circuit_config);
+  int_result = clear_epilink::calc<CircUnit>(client_input.value(), server_input.value(),circuit_config.value());
 }
 
 void Debugger::compute_double() {
-  double_result = clear_epilink::calc_exact({*client_input, *server_input},*circuit_config);
+  double_result = clear_epilink::calc<double>(client_input.value(), server_input.value(),circuit_config.value());
 }
 
 void Debugger::reset() {
@@ -49,9 +50,8 @@ size_t DataHandler::poll_database(const RemoteId& remote_id) {
       config_handler.get_server_config().default_page_size};
   auto data{database_fetcher.fetch_data(config_handler.get_remote_config(remote_id)->get_matching_mode())};
   lock_guard<mutex> lock(m_db_mutex);
-  m_database = make_shared<const ServerData>(ServerData{
-      move(data.data), move(data.ids), data.todate, move(data.local_id), move(data.remote_id)});
-  return (m_database->data.begin()->second.size());
+  m_database = make_shared<const ServerData>(move(data));
+  return (m_database->data->begin()->second.size());
 }
 
 size_t DataHandler:: poll_database_diff() {

@@ -39,6 +39,7 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
   SessionResponse response;
   Port common_port;
   string client_ip;
+  bool counting_mode;
   logger->info("Recieved Linkage Request from {}", remote_id);
   auto remote_config{ConfigurationHandler::cget().get_remote_config(remote_id)};
   if(auto auth_result = // check authentication
@@ -46,25 +47,37 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
       auth_result.return_code != 200){ // auth not ok
     return auth_result;
   }
+  if(header.find("Record-Number") == header.end()) {
+    logger->error("No client record number from {}", remote_id);
+    return responses::status_error(400, "No client record number transmitted");
+  }
+  if(header.find("Counting-Mode") == header.end()) {
+    counting_mode = false;
+  }
   common_port = ServerHandler::cget().get_server_port(remote_id);
-  size_t nvals;
+  size_t num_records = stoull(header.find("Record-Number")->second);
+  counting_mode = header.find("Counting-Mode")->second == "true" ? true : false;
+  size_t server_record_number;
   shared_ptr<const ServerData> data;
   try {
-    nvals = DataHandler::get().poll_database(remote_id);
+    server_record_number = DataHandler::get().poll_database(remote_id);
     data = DataHandler::get().get_database();
   } catch (const exception& e){
     logger->error("Error geting data from dataservice: {}", e.what());
     return sel::responses::status_error(restbed::INTERNAL_SERVER_ERROR, "Can not get data from dataservice");
   }
   response.return_code = restbed::OK;
-  response.body = "Linkage server running"s;
+  if(!counting_mode){
+    response.body = "Linkage server running"s;
+  } else {
+    response.body = "Counting server running"s;
+  }
   response.headers = {{"Content-Length", to_string(response.body.length())},
-                      {"SEL-Identifier", remote_id},
-                      {"Record-Number", to_string(nvals)},
+                      {"Record-Number", to_string(server_record_number)},
                       {"SEL-Port", to_string(common_port)},
                       {"Connection", "Close"}};
-  std::thread server_runner([remote_id, data]() {
-      ServerHandler::get().run_server(remote_id, data);
+  std::thread server_runner([remote_id, data, num_records, counting_mode]() {
+      ServerHandler::get().run_server(remote_id, data, num_records, counting_mode);
   });
   server_runner.detach();
   return response;
