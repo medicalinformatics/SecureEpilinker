@@ -71,7 +71,7 @@ void check_bitsize_and_clear_extra_bits(std::vector<uint8_t>& bitmask,
   }
 }
 
-FieldEntry parse_json_field(const ML_Field& field,
+FieldEntry parse_json_field(const FieldSpec& field,
                                             const nlohmann::json& json) {
   auto logger{get_logger()};
   if (!(json.is_null())) {
@@ -114,7 +114,7 @@ FieldEntry parse_json_field(const ML_Field& field,
 }
 
 Record parse_json_fields(
-    const map<FieldName, ML_Field>& fields, const nlohmann::json& json) {
+    const map<FieldName, FieldSpec>& fields, const nlohmann::json& json) {
   Record result;
   for (auto f = json.cbegin(); f != json.cend(); ++f) {
     auto entry = parse_json_field(fields.at(f.key()), *f);
@@ -124,7 +124,7 @@ Record parse_json_fields(
 }
 
 VRecord parse_json_fields_array(
-    const map<FieldName, ML_Field>& fields, const nlohmann::json& json) {
+    const map<FieldName, FieldSpec>& fields, const nlohmann::json& json) {
   VRecord records;
   for (const auto& rec : json) {
     if (!rec.count("fields")) {
@@ -153,11 +153,11 @@ vector<string> parse_json_id_array(const nlohmann::json& json) {
   return ids;
 }
 
-map<FieldName, ML_Field> parse_json_fields_config(nlohmann::json fields_json) {
-  map<FieldName, ML_Field> fields_config;
+map<FieldName, FieldSpec> parse_json_fields_config(nlohmann::json fields_json) {
+  map<FieldName, FieldSpec> fields_config;
   for (const auto& f : fields_json) {
     const string field_name = f.at("name").get<string>();
-    ML_Field tempfield(
+    FieldSpec tempfield(
         field_name, f.at("frequency").get<double>(),
         f.at("errorRate").get<double>(), f.at("comparator").get<string>(),
         f.at("fieldType").get<string>(), f.at("bitlength").get<size_t>());

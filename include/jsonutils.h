@@ -27,12 +27,14 @@
 
 namespace sel {
 
-FieldEntry parse_json_field(const ML_Field&, const nlohmann::json&);
-std::map<FieldName,FieldEntry> parse_json_fields(const std::map<FieldName, ML_Field>&, const nlohmann::json&);
-std::map<FieldName, std::vector<FieldEntry>> parse_json_fields_array(
-    const std::map<FieldName, ML_Field>& fields, const nlohmann::json& json);
+FieldEntry parse_json_field(const FieldSpec&, const nlohmann::json&);
+Record parse_json_fields(const std::map<FieldName, FieldSpec>&,
+                         const nlohmann::json&);
+VRecord parse_json_fields_array(const std::map<FieldName, FieldSpec>& fields,
+                                const nlohmann::json& json);
 std::vector<std::string> parse_json_id_array(const nlohmann::json& json);
-std::map<FieldName, ML_Field> parse_json_fields_config(nlohmann::json fields_json);
+std::map<FieldName, FieldSpec> parse_json_fields_config(
+    nlohmann::json fields_json);
 std::vector<IndexSet> parse_json_exchange_groups(nlohmann::json xgroups_json);
 EpilinkConfig parse_json_epilink_config(nlohmann::json config_json);
 

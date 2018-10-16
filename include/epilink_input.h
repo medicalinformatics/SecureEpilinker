@@ -38,10 +38,11 @@ using FieldEntry = std::optional<Bitmask>;
 using VFieldEntry = std::vector<FieldEntry>;
 using Record = std::map<FieldName, FieldEntry>;
 using VRecord = std::map<FieldName, VFieldEntry>;
+using Records = std::vector<Record>;
 
 struct EpilinkConfig {
   // field descriptions
-  std::map<FieldName, ML_Field> fields;
+  std::map<FieldName, FieldSpec> fields;
 
   // exchange groups by index
   std::vector<IndexSet> exchange_groups;
@@ -55,7 +56,7 @@ struct EpilinkConfig {
   Weight max_weight; // maximum weight for rescaling of weights
 
   EpilinkConfig(
-      std::map<FieldName, ML_Field> fields,
+      std::map<FieldName, FieldSpec> fields,
       std::vector<IndexSet> exchange_groups,
       double threshold, double tthreshold
   );
@@ -68,21 +69,38 @@ struct EpilinkConfig {
 };
 
 struct EpilinkClientInput {
-  // nfields map of input record to link
-  const Record record;
+  // Outer vector by fields, inner by records!
+  // nfields map of vec input records to link
+  std::unique_ptr<Records> records;
 
-  // need to know database size of remote during circuit building
-  const size_t nvals;
+  // need to know database size of remote server when building circuit
+  size_t database_size;
+  size_t num_records; // calculated
+
+  EpilinkClientInput(std::unique_ptr<Records>&& records, size_t database_size);
+  EpilinkClientInput(const Record& record, size_t database_size);
+  EpilinkClientInput(EpilinkClientInput&&) = default;
+  EpilinkClientInput& operator=(EpilinkClientInput&&) = default;
+  ~EpilinkClientInput() = default;
+private:
+  void check_keys(); // called by public constructors to check that keys match
 };
 
 struct EpilinkServerInput {
   // Outer vector by fields, inner by records!
   // Need to model like this for ABY SIMD layout
-  const VRecord database;
+  std::shared_ptr<VRecord> database;
 
-  const size_t nvals; // calculated
-  EpilinkServerInput(const VRecord& database);
-  EpilinkServerInput(VRecord&& database);
+  size_t database_size; // calculated
+  // need to know number of remote client records when building circuit
+  size_t num_records;
+
+  EpilinkServerInput(std::shared_ptr<VRecord> database, size_t num_records);
+  EpilinkServerInput(const VRecord& database, size_t num_records);
+  EpilinkServerInput(const EpilinkServerInput&) = default;
+  EpilinkServerInput(EpilinkServerInput&&) = default;
+  EpilinkServerInput& operator=(const EpilinkServerInput&) = default;
+  EpilinkServerInput& operator=(EpilinkServerInput&&) = default;
   ~EpilinkServerInput() = default;
 private:
   void check_sizes(); // called by public constructors to check sizes

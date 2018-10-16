@@ -42,8 +42,8 @@ class LocalConfiguration {
   LocalConfiguration(std::string&& url,
                      std::unique_ptr<AuthenticationConfig> local_auth);
 
-  const ML_Field& get_field(const FieldName& fieldname) const;
-  const std::map<FieldName, ML_Field>& get_fields() const;
+  const FieldSpec& get_field(const FieldName& fieldname) const;
+  const std::map<FieldName, FieldSpec>& get_fields() const;
 
   std::vector<IndexSet> const& get_exchange_groups() const;
 
@@ -63,15 +63,15 @@ class LocalConfiguration {
 
  private:
   Authenticator m_authenticator;
-  std::map<FieldName, ML_Field> m_fields;
+  std::map<FieldName, FieldSpec> m_fields;
   std::vector<IndexSet> m_exchange_groups;
   std::string m_data_service_url;
   std::string m_local_id;
   EpilinkConfig m_epilink_config;
 };
 
-void to_json (nlohmann::json&, const ML_Field&);
-void from_json(const nlohmann::json&, ML_Field&);
+void to_json (nlohmann::json&, const FieldSpec&);
+void from_json(const nlohmann::json&, FieldSpec&);
 
 }  // namespace sel
 

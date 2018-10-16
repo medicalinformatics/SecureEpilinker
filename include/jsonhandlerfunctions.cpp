@@ -89,10 +89,12 @@ SessionResponse valid_test_config_json_handler(
   }
 }
 
-SessionResponse valid_linkrecord_json_handler(
+SessionResponse create_job(
     const nlohmann::json& j,
     const RemoteId& remote_id,
-    const string& authorization) {
+    const string& authorization,
+    bool multiple_records,
+    bool counting_mode) {
   auto logger{get_logger()};
   const auto& config_handler{ConfigurationHandler::cget()};
   auto& server_handler{ServerHandler::get()};
@@ -112,13 +114,25 @@ SessionResponse valid_linkrecord_json_handler(
       logger->info("Created Job on Path: {}", job_id);
       try {
         job->set_callback(j.at("callback")
-                              .at("url")
-                              .get<string>());  // no move to use copy elision
+            .at("url")
+            .get<string>());  // no move to use copy elision
 
-        auto data = parse_json_fields(local_config->get_fields(), j.at("fields"));
-        job->add_data(move(data));
-
-        server_handler.add_linkage_job(remote_id, move(job));
+        Records data;
+        if(!multiple_records) {
+          data.emplace_back(parse_json_fields(local_config->get_fields(), j.at("fields")));
+        } else {
+            for(auto& record : j.at("records")){
+                data.emplace_back(parse_json_fields(local_config->get_fields(), record.front()));
+            }
+        }
+        logger->debug("Number of Client Records: {}", data.size());
+        job->add_data(make_unique<Records>(move(data)));
+#ifdef SEL_MATCHING_MODE
+        if(counting_mode){
+          job->set_counting_job();
+        }
+#endif
+        server_handler.add_linkage_job(remote_id, job);
       } catch (const exception& e) {
         logger->error("Error in job creation: {}", e.what());
         return responses::status_error(restbed::BAD_REQUEST,e.what());
@@ -127,14 +141,45 @@ SessionResponse valid_linkrecord_json_handler(
       return responses::not_initialized;
     }
     return {restbed::ACCEPTED,
-            "Job Queued",
-            {{"Content-Length", "10"},
-             {"Connection", "Close"},
-             {"Location", "/jobs/" + job_id}}};
+      "Job Queued",
+      {{"Content-Length", "10"},
+        {"Connection", "Close"},
+        {"Location", "/jobs/" + job_id}}};
   } catch (const runtime_error& e) {
     return responses::status_error(restbed::INTERNAL_SERVER_ERROR, e.what());
   }
 }
+
+SessionResponse valid_linkrecord_json_handler(
+    const nlohmann::json& j,
+    const RemoteId& remote_id,
+    const string& authorization) {
+  return create_job(j, remote_id, authorization, false, false);
+}
+
+SessionResponse valid_linkrecords_json_handler(
+    const nlohmann::json& j,
+    const RemoteId& remote_id,
+    const string& authorization) {
+  return create_job(j,remote_id,authorization, true, false);
+}
+
+#ifdef SEL_MATCHING_MODE
+
+SessionResponse valid_matchrecord_json_handler(
+    const nlohmann::json& j,
+    const RemoteId& remote_id,
+    const string& authorization) {
+  return create_job(j, remote_id, authorization, false, true);
+}
+
+SessionResponse valid_matchrecords_json_handler(
+    const nlohmann::json& j,
+    const RemoteId& remote_id,
+    const string& authorization) {
+  return create_job(j,remote_id,authorization, true, true);
+}
+#endif
 
 SessionResponse valid_init_remote_json_handler(
     const nlohmann::json& j,
@@ -179,6 +224,9 @@ SessionResponse valid_init_remote_json_handler(
     logger->error("Error creating remote config: {}", e.what());
     return responses::status_error(restbed::INTERNAL_SERVER_ERROR, e.what());
   }
+  if(config_handler.remote_exists(remote_id)) {
+    return responses::status_error(restbed::NOT_IMPLEMENTED, "Updating of configurations is not implemented yet");
+  }
   config_handler.set_remote_config(move(remote_config));
   // Test connection and negotiate common port
   //auto placed_config{config_handler.get_remote_config(remote_id)};
@@ -207,6 +255,11 @@ SessionResponse valid_init_local_json_handler(
     auto algo_json = j.at("algorithm");
     EpilinkConfig epilink_config = parse_json_epilink_config(algo_json);
     local_config->set_epilink_config(epilink_config);
+  
+    if(config_handler.get_local_config()) {
+      return responses::status_error(restbed::NOT_IMPLEMENTED, "Updating of configurations is not implemented yet");
+    }
+
     config_handler.set_local_config(move(local_config));
 
     return {restbed::OK, "", {{"Connection", "Close"}}};
