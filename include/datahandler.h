@@ -68,7 +68,7 @@ class DataHandler {
   static DataHandler& get();
   static DataHandler const& cget();
   std::shared_ptr<const ServerData> get_database() const;
-  size_t poll_database(const RemoteId&);
+  size_t poll_database(const RemoteId&, bool);
   size_t poll_database_diff();  // TODO(TK) Not implemented yet. Use full update
 #ifdef DEBUG_SEL_REST
   Debugger* get_epilink_debug() { return m_epilink_debug;}
