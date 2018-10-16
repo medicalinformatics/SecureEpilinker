@@ -89,7 +89,7 @@ LinkageJob::JobPreparation LinkageJob::prepare_run() {
 
 
 void LinkageJob::run_linkage_job() {
-  auto logger{get_logger()};
+  auto logger{get_logger(ComponentLogger::CLIENT)};
   logger->info("Linkage job {} started\n", m_id);
   try {
     auto [num_records, database_size, epilinker] = prepare_run();
@@ -123,7 +123,7 @@ void LinkageJob::run_linkage_job() {
 }
 
 void LinkageJob::run_matching_job() {
-  auto logger{get_logger()};
+  auto logger{get_logger(ComponentLogger::CLIENT)};
 #ifdef SEL_MATCHING_MODE
   logger->warn("A matching job is starting.");
   try {
@@ -169,7 +169,7 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
  * records in the database
  */
 void LinkageJob::signal_server(promise<size_t>& nvals, size_t num_records) {
-  auto logger{get_logger()};
+  auto logger{get_logger(ComponentLogger::CLIENT)};
   //FIXME(TK): THIS IS BAD AND I SHOULD FEEL BAD
   std::this_thread::sleep_for(1s);
   list<string> headers{
@@ -195,7 +195,7 @@ void LinkageJob::signal_server(promise<size_t>& nvals, size_t num_records) {
 }
 
 bool LinkageJob::perform_callback(const string& body) const {
-  auto logger{get_logger()};
+  auto logger{get_logger(ComponentLogger::CLIENT)};
   list<string> headers{
       "Authorization: "s + m_local_config->get_local_authenticator().sign_transaction(""),
       "Content-Type: application/json"};
@@ -208,7 +208,7 @@ bool LinkageJob::perform_callback(const string& body) const {
 
 #ifdef DEBUG_SEL_REST
 void LinkageJob::print_data() const {
-  auto logger{get_logger()};
+  auto logger{get_logger(ComponentLogger::CLIENT)};
   string input_string;
   for (auto& record : *m_records) {
     input_string += "=================================\n";
@@ -229,8 +229,7 @@ void LinkageJob::print_data() const {
 
 void LinkageJob::compute_debugging_result(const Records& client_input) {
     auto debugger{DataHandler::get().get_epilink_debug()};
-    auto logger{get_logger()};
-    debugger->reset();
+  auto logger{get_logger(ComponentLogger::TEST)};
         debugger->client_input = client_input;
         if(!(debugger->circuit_config)) {
           debugger->circuit_config.emplace(make_circuit_config(m_local_config, m_remote_config));

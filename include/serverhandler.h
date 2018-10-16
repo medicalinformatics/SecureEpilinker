@@ -58,7 +58,7 @@ class ServerHandler {
     std::map<RemoteId, std::shared_ptr<LocalServer>> m_server;
     std::map<RemoteId, SerialWorker<LinkageJob>> m_worker_threads;
     std::map<JobId, std::shared_ptr<LinkageJob>> m_client_jobs; // for status retrieval
-    std::shared_ptr<spdlog::logger> m_logger{get_logger()};
+    std::shared_ptr<spdlog::logger> m_logger{get_logger(ComponentLogger::SERVER)};
 };
 
 } // namespace sel
