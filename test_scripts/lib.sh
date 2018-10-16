@@ -3,7 +3,11 @@ curl_json_file() {
   if [[ ${url:0:5} == https ]]; then
     flags=-k
   fi
-  curl -v $flags -H "Expect:" -H "Content-Type: application/json" --data "@${2}" -X $1 "${url}"
+  if [[ -n "${4}" ]]; then
+    auth=-H
+    key="Authorization: ${4}"
+  fi
+  curl -v $flags $auth "$key" -H "Expect:" -H "Content-Type: application/json" --data "@${2}" -X $1 "${url}"
 }
 
 local_init() {
@@ -52,7 +56,8 @@ mpc_action() {
   curl_json_file POST <(sed \
       -e "s^{{callback}}^${callback}^g" \
       < configurations/linkRecord.template.json) \
-    "https://${host}:${port}/${action}Record/${id}"
+    "https://${host}:${port}/${action}Record/${id}" \
+    "apiKey apiKey=\"123abc\""
 }
 
 link_record() {
