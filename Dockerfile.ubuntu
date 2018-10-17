@@ -65,6 +65,7 @@ COPY --from=build --chown=sel:sel /app/data /data
 COPY --chown=sel:sel data/*.json /data/
 # copy config and circuit files
 COPY extern/ABY/bin/circ/int_div_16.aby /app/circ/
+ADD data/circ /data/circ/
 RUN chmod a+r circ/* \
   && mkdir /log && chown sel:sel /log
 
