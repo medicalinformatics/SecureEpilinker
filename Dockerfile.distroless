@@ -67,6 +67,7 @@ COPY --from=build /app/data /data
 COPY data/*.json /data/
 # copy config and circuit files
 COPY extern/ABY/bin/circ/int_div_16.aby /app/circ/
+ADD data/circ /data/circ/
 
 # find libraries in the correct order
 ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/:/deps/
