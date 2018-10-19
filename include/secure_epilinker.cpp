@@ -266,18 +266,8 @@ private:
     return {out(index, ALL), out(match, ALL), out(tmatch, ALL),
       out(s.score_numerator, ALL), out(s.score_denominator, ALL)};
 #else // !DEBUG_SEL_RESULT - Normal productive mode
-#ifdef SEL_MATCHING_MODE
-    // Only if matching mode is to be compiled in, will the cfg.mathcing_mode
-    // flag have an effect on the result
-    if (cfg.matching_mode) {
-      return {out_shared(index), out(match, ALL), out(tmatch, ALL)};
-    } else {
-      return {out_shared(index), out_shared(match), out_shared(tmatch)};
-    }
-#else // !SEL_MATCHING_MODE - don't compile matching mode, always give shared output
     return {out_shared(index), out_shared(match), out_shared(tmatch)};
-#endif // SEL_MATCHING_MODE
-#endif // DEBUG_SEL_RESULT
+#endif // end ifdef DEBUG_SEL_RESULT
   }
 
   CountOutputShares sum_linkage_shares(vector<LinkageShares> ls) {
