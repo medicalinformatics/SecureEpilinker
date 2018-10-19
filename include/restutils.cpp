@@ -159,19 +159,13 @@ SessionResponse perform_get_request(string url, list<string> headers, bool get_h
   auto logger{get_logger()};
   nlohmann::json json_data;
   json_data["role"] = role;
-  if(share.size() == 1){ // Client sent one record
-    json_data["result"] = {{"match", share.front().match},
-    {"tentative_match", share.front().tmatch},
-    {"bestIndex", share.front().index}};
-  } else { // Client sent whole database
   nlohmann::json results;
   for(auto& result : share){
     results.push_back({{"match", result.match},
-                       {"tentative_match", result.tmatch},
+                       {"tentativeMatch", result.tmatch},
                        {"bestIndex", result.index}});
   }
   json_data["result"] = results;
-}
 if(role=="server") {
   if(ids) {
     json_data["ids"] = ids.value();
