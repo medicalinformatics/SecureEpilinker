@@ -20,6 +20,7 @@
 #include <algorithm>
 #include "fmt/format.h"
 using fmt::format;
+#include "abycore/aby/abyparty.h"
 #include "abycore/sharing/sharing.h"
 #include "secure_epilinker.h"
 #include "circuit_input.h"
@@ -37,6 +38,8 @@ namespace sel {
 using State = SecureEpilinker::State;
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
+constexpr auto GMW = BooleanSharing::GMW;
+constexpr auto YAO = BooleanSharing::YAO;
 
 /***************** Circuit gadgets *******************/
 /**
@@ -427,12 +430,22 @@ private:
 
 };
 
+e_sharing to_aby_sharing(BooleanSharing s) {
+  return s == GMW ? S_BOOL : S_YAO;
+}
+
+e_role to_aby_role(MPCRole r) {
+  return r == MPCRole::CLIENT ? CLIENT : SERVER;
+}
+
 /******************** Public Epilinker Interface ********************/
 SecureEpilinker::SecureEpilinker(ABYConfig config, CircuitConfig circuit_config) :
-  party{config.role, config.host, config.port, LT, BitLen, config.nthreads},
-  bcirc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[config.bool_sharing]->GetCircuitBuildRoutine())},
-  ccirc{dynamic_cast<BooleanCircuit*>(party.GetSharings()[(config.bool_sharing==S_YAO)?S_BOOL:S_YAO]->GetCircuitBuildRoutine())},
-  acirc{dynamic_cast<ArithmeticCircuit*>(party.GetSharings()[S_ARITH]->GetCircuitBuildRoutine())},
+  party{make_unique<ABYParty>(to_aby_role(config.role), config.host, config.port, LT, BitLen, config.nthreads)},
+  bcirc{dynamic_cast<BooleanCircuit*>(party->GetSharings()[to_aby_sharing(circuit_config.bool_sharing)]
+      ->GetCircuitBuildRoutine())},
+  ccirc{dynamic_cast<BooleanCircuit*>(party->GetSharings()[to_aby_sharing(other(circuit_config.bool_sharing))]
+      ->GetCircuitBuildRoutine())},
+  acirc{dynamic_cast<ArithmeticCircuit*>(party->GetSharings()[S_ARITH]->GetCircuitBuildRoutine())},
   cfg{circuit_config}, selc{make_unique<SELCircuit>(cfg, bcirc, ccirc, acirc)} {
     get_logger()->debug("SecureEpilinker created.");
   }
@@ -447,7 +460,7 @@ void SecureEpilinker::connect() {
   const auto& logger = get_logger();
   logger->trace("Connecting ABYParty...");
   // Currently, we only let the aby parties connect, which runs the Base OTs.
-  party.InitOnline();
+  party->InitOnline();
   logger->trace("ABYParty connected.");
 }
 
@@ -546,7 +559,7 @@ vector<Result<CircUnit>> SecureEpilinker::run_linkage() {
 
   auto results = selc->build_linkage_circuit();
   get_logger()->trace("Executing ABYParty Circuit...");
-  party.ExecCircuit();
+  party->ExecCircuit();
   get_logger()->trace("ABYParty Circuit executed.");
 
   auto clear_results = transform_vec(results, [dice_prec=cfg.dice_prec](auto r){
@@ -572,7 +585,7 @@ CountResult<CircUnit> SecureEpilinker::run_count() {
   }
   auto results = selc->build_count_circuit();
   get_logger()->trace("Executing ABYParty Circuit...");
-  party.ExecCircuit();
+  party->ExecCircuit();
   get_logger()->trace("ABYParty Circuit executed.");
 
   auto clear_results = to_clear_value(results);
@@ -590,7 +603,7 @@ void SecureEpilinker::State::reset() {
 
 void SecureEpilinker::reset() {
   selc->reset();
-  party.Reset();
+  party->Reset();
   state.reset();
 }
 
