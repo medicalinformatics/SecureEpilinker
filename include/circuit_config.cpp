@@ -23,7 +23,15 @@
 
 using namespace std;
 
+
 namespace sel {
+
+constexpr auto GMW = BooleanSharing::GMW;
+constexpr auto YAO = BooleanSharing::YAO;
+
+BooleanSharing other(BooleanSharing x) {
+  return (x==GMW) ? YAO : GMW;
+}
 
 size_t bit_usage(const size_t dice_prec,
     const size_t weight_prec, const size_t nfields) {
@@ -32,14 +40,18 @@ size_t bit_usage(const size_t dice_prec,
 
 CircuitConfig::CircuitConfig(const EpilinkConfig& epi_,
     const std::filesystem::path& circ_dir_,
-    bool matching_mode, size_t bitlen) :
+    const bool matching_mode, const size_t bitlen,
+    const BooleanSharing bool_sharing_, const bool use_conversion_) :
   epi {epi_},
   circ_dir {circ_dir_},
   matching_mode {matching_mode},
-  bitlen {bitlen}
+  bitlen {bitlen},
+  bool_sharing{bool_sharing_},
+  use_conversion{use_conversion_}
 {
-  get_logger()->trace("Constructing CircuitConfig with {},"
-      " matching_mode={}, bitlen={}", epi, matching_mode, bitlen);
+  get_logger()->trace("Constructing CircuitConfig with {}"
+      "matching_mode={}, bitlen={}, bool_sharing={}, use_conversion={}",
+      epi, matching_mode, bitlen, bool_sharing, use_conversion);
 
 #ifndef SEL_MATCHING_MODE
     if (matching_mode) throw invalid_argument(

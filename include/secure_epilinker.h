@@ -24,18 +24,19 @@
 #include "epilink_input.h"
 #include "epilink_result.hpp"
 #include "circuit_config.h"
-#include "abycore/aby/abyparty.h"
 
 class BooleanCircuit;
 class ArithmeticCircuit;
+class ABYParty;
 
 namespace sel {
+
+enum class MPCRole { CLIENT, SERVER };
 
 class SecureEpilinker {
 public:
   struct ABYConfig {
-    e_role role; // SERVER or CLIENT
-    e_sharing bool_sharing; // S_YAO or S_BOOL for boolean circuit parts?
+    MPCRole role;
     std::string host; // local for role SERVER, remote for role CLIENT
     uint16_t port;
     uint32_t nthreads;
@@ -101,7 +102,7 @@ public:
   State get_state();
 
 private:
-  ABYParty party;
+  std::unique_ptr<ABYParty> party;
   BooleanCircuit* bcirc; // boolean circuit for boolean parts
   BooleanCircuit* ccirc; // intermediate conversion circuit
   ArithmeticCircuit* acirc;
@@ -139,9 +140,8 @@ struct formatter<sel::SecureEpilinker::ABYConfig> {
   auto format(const sel::SecureEpilinker::ABYConfig& conf, FormatContext &ctx) {
     return format_to(ctx.begin(),
         "ABYConfig{{role={}, sharing={}, {}={}:{}, threads={}}}",
-        ((conf.role == SERVER) ? "Server" : "Client"),
-        ((conf.bool_sharing == S_YAO) ? "Yao" : "GMW"),
-        ((conf.role == SERVER) ? "binding to" : "remote host"),
+        ((conf.role == sel::MPCRole::SERVER) ? "Server" : "Client"),
+        ((conf.role == sel::MPCRole::SERVER) ? "binding to" : "remote host"),
         conf.host, conf.port, conf.nthreads);
   }
 };

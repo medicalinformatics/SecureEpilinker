@@ -29,20 +29,27 @@ using CircUnit = uint32_t;
 using VCircUnit = std::vector<CircUnit>;
 constexpr size_t BitLen = sizeof(CircUnit)*8;
 
+enum class BooleanSharing { GMW = 0, YAO = 1 };
+
+BooleanSharing other(BooleanSharing x);
 
 struct CircuitConfig {
   EpilinkConfig epi;
   std::filesystem::path circ_dir = "../data/circ";
 
-  const bool matching_mode = false;
-  const size_t bitlen = BitLen;
+  bool matching_mode = false;
+  size_t bitlen = BitLen;
+  BooleanSharing bool_sharing = BooleanSharing::YAO;
+  bool use_conversion = true;
 
   // pre-calculated fields
   size_t dice_prec, weight_prec;
 
   CircuitConfig(const EpilinkConfig& epi,
       const std::filesystem::path& circ_dir = "../data/circ",
-      bool matching_mode = false, size_t bitlen = BitLen);
+      const bool matching_mode = false, const size_t bitlen = BitLen,
+      const BooleanSharing bool_sharing = BooleanSharing::YAO,
+      const bool use_conversion = true);
   ~CircuitConfig() = default;
 
   /**
@@ -75,6 +82,17 @@ size_t hw_size(size_t size);
 namespace fmt {
 
 template <>
+struct formatter<sel::BooleanSharing> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const sel::BooleanSharing& bs, FormatContext &ctx) {
+    return format_to(ctx.begin(), bs == sel::BooleanSharing::GMW ? "GMW" : "YAO");
+  }
+};
+
+template <>
 struct formatter<sel::CircuitConfig> {
   template <typename ParseContext>
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
@@ -83,9 +101,11 @@ struct formatter<sel::CircuitConfig> {
   auto format(const sel::CircuitConfig& conf, FormatContext &ctx) {
     auto out =  format_to(ctx.begin(),
         "CircuitConfig{{{}, mathing_mode={}, bitlen={}, "
+        "bool_sharing={}, use_conversion={}, "
         "precisions{{dice={}, weight={}}}, rescaled_weights={{",
-        conf.epi,
-        conf.matching_mode, conf.bitlen, conf.dice_prec, conf.weight_prec
+        conf.epi, conf.matching_mode, conf.bitlen,
+        conf.bool_sharing, conf.use_conversion,
+        conf.dice_prec, conf.weight_prec
     );
     for (const auto& f : conf.epi.fields) {
       out = format_to(out, "{}: {:x}, ", f.first, conf.rescaled_weight(f.first));
