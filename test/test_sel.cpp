@@ -22,8 +22,10 @@ namespace sel::test {
 // GLOBALS
 // Whether to use run_as_{client/server}() or run_as_both()
 bool run_both{false};
-e_role role;
 bool only_local{false};
+MPCRole role;
+BooleanSharing sharing;
+bool use_conversion{true};
 
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
@@ -87,9 +89,9 @@ EpilinkConfig make_dkfz_cfg() {
 
 auto set_inputs(SecureEpilinker& linker,
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
-  print("Calling set_{}_input()\n", run_both ? "both" : ((role==CLIENT) ? "client" : "server"));
+  print("Calling set_{}_input()\n", run_both ? "both" : ((role==MPCRole::CLIENT) ? "client" : "server"));
   if (!run_both) {
-    if (role==CLIENT) {
+    if (role==MPCRole::CLIENT) {
       linker.set_client_input(in_client);
     } else {
       linker.set_server_input(in_server);
@@ -353,24 +355,24 @@ auto run_sel_count(SecureEpilinker& linker, const EpilinkInput& in) {
 }
 
 template <typename T>
-auto resized_config(const CircuitConfig& cfg) {
+CircuitConfig make_circuit_config(const EpilinkConfig& cfg) {
+  size_t bitlen = BitLen;
   if constexpr (is_integral_v<T>) {
-    return make_unique<CircuitConfig>(cfg.epi, CircDir, true, sizeof(T)*8);
-  } else {
-    return make_unique<CircuitConfig>(cfg);
+    bitlen = sizeof(T)*8;
   }
+  return {cfg, CircDir, true, bitlen, sharing, use_conversion};
 }
 
 template <typename T>
 auto run_local_linkage(const EpilinkInput& in) {
-  const auto cfg = resized_config<T>(in.cfg);
-  return clear_epilink::calc<T>(*in.client.records, *in.server.database, *cfg);
+  const auto circ_cfg = make_circuit_config<T>(in.cfg);
+  return clear_epilink::calc<T>(*in.client.records, *in.server.database, circ_cfg);
 }
 
 template <typename T>
 auto run_local_count(const EpilinkInput& in) {
-  const auto cfg = resized_config<T>(in.cfg);
-  return clear_epilink::calc_count<T>(*in.client.records, *in.server.database, *cfg);
+  const auto circ_cfg = make_circuit_config<T>(in.cfg);
+  return clear_epilink::calc_count<T>(*in.client.records, *in.server.database, circ_cfg);
 }
 
 template <typename T, typename U>
@@ -456,7 +458,7 @@ using namespace sel::test;
 int main(int argc, char *argv[])
 {
   bool role_server = false;
-  unsigned int sharing = S_YAO;
+  unsigned int sharing_num = S_YAO;
   uint32_t dbsize = 1;
   uint32_t nthreads = 1;
   string remote_host = "127.0.0.1";
@@ -466,7 +468,7 @@ int main(int argc, char *argv[])
   options.add_options()
     ("S,server", "Run as server. Default to client", cxxopts::value(role_server))
     ("R,remote-host", "Remote host. Default 127.0.0.1", cxxopts::value(remote_host))
-    ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO (default)", cxxopts::value(sharing))
+    ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO (default)", cxxopts::value(sharing_num))
     ("n,dbsize", "Database size", cxxopts::value(dbsize))
     ("r,run-both", "Use set_both_inputs()", cxxopts::value(run_both))
     ("L,local-only", "Only run local calculations on clear values."
@@ -490,16 +492,17 @@ int main(int argc, char *argv[])
     default: spdlog::set_level(spdlog::level::trace); break;
   }
 
-  role = role_server ? SERVER : CLIENT;
+  role = role_server ? MPCRole::SERVER : MPCRole::CLIENT;
+  sharing = sharing_num ? BooleanSharing::YAO : BooleanSharing::GMW;
 
   SecureEpilinker::ABYConfig aby_cfg {
-    role, (e_sharing)sharing, remote_host, 5676, nthreads
+    role, remote_host, 5676, nthreads
   };
 
-  //const auto in = input_dkfz_random(dbsize);
-  const auto in = input_multi_test_0824();
+  const auto in = input_dkfz_random(dbsize);
+  //const auto in = input_multi_test_0824();
 
-  CircuitConfig circ_cfg{in.cfg, CircDir, true};
+  const auto circ_cfg = make_circuit_config<CircUnit>(in.cfg);
   SecureEpilinker linker{aby_cfg, circ_cfg};
   if(!only_local) linker.connect();
   if(match_counting) run_and_print_counting(linker, in);
