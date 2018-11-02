@@ -30,16 +30,19 @@ namespace sel {
   * An EntryShare holds the value of the field itself, a delta flag, which is 1
   * if the field is non-empty, and the precalculated hammingweight for bitmasks.
   */
+template <class MultShare>
 struct EntryShare {
   BoolShare val; // value as bool
-  ArithShare delta; // 1 if non-empty, 0 o/w
+  MultShare delta; // 1 if non-empty, 0 o/w
   BoolShare hw; // precomputed HW of val - not used for bin
 };
 
-using VEntryShare = std::vector<EntryShare>;
+template <class MultShare>
+using VEntryShare = std::vector<EntryShare<MultShare>>;
 
+template <class MultShare>
 struct ComparisonShares {
-  const EntryShare &left, &right;
+  const EntryShare<MultShare> &left, &right;
 };
 
 struct ComparisonIndex {
@@ -52,6 +55,7 @@ bool operator<(const ComparisonIndex& l, const ComparisonIndex& r);
 
 using FieldNamePair = std::pair<FieldName, FieldName>;
 
+template <class MultShare>
 class CircuitInput {
   public:
     CircuitInput(const CircuitConfig& cfg,
@@ -64,46 +68,51 @@ class CircuitInput {
 #endif
     void clear();
 
-    bool is_input_set() const { return input_set; };
+    bool is_input_set() const { return input_set; }
     size_t dbsize() const { return dbsize_; }
     size_t nrecords() const { return nrecords_; }
-    ComparisonShares get(const ComparisonIndex& i) const;
-    const ArithShare& get_const_weight(const ComparisonIndex& i) const;
+    ComparisonShares<MultShare> get(const ComparisonIndex& i) const;
+    const MultShare& get_const_weight(const ComparisonIndex& i) const;
     const BoolShare& const_idx() const { return const_idx_; }
-    const ArithShare& const_dice_prec_factor() const { return const_dice_prec_factor_; }
-    const ArithShare& const_threshold() const { return const_threshold_; }
-    const ArithShare& const_tthreshold() const { return const_tthreshold_; }
+    const MultShare& const_dice_prec_factor() const { return const_dice_prec_factor_; }
+    const MultShare& const_threshold() const { return const_threshold_; }
+    const MultShare& const_tthreshold() const { return const_tthreshold_; }
 
   private:
+    static constexpr bool do_arith_mult = std::is_same_v<MultShare, ArithShare>;
+    static constexpr size_t delta_bitlen = do_arith_mult ? BitLen : 1;
+    using MultCircuit = std::conditional_t<do_arith_mult, ArithmeticCircuit, BooleanCircuit>;
+
     const CircuitConfig& cfg;
     BooleanCircuit* bcirc;
     ArithmeticCircuit* acirc;
+    MultCircuit* mcirc;
     bool input_set{false};
 
     size_t dbsize_{0};
     size_t nrecords_{0};
     // Constant shares
     BoolShare const_idx_;
-    ArithShare const_dice_prec_factor_;
+    MultShare const_dice_prec_factor_;
     // Left side of inequality: T * sum(weights)
-    ArithShare const_threshold_, const_tthreshold_;
-    mutable std::map<FieldNamePair, ArithShare> weight_cache;
+    MultShare const_threshold_, const_tthreshold_;
+    mutable std::map<FieldNamePair, MultShare> weight_cache;
 
-    std::map<FieldName, VEntryShare> left_shares;
-    std::map<FieldName, EntryShare> right_shares;
+    std::map<FieldName, VEntryShare<MultShare>> left_shares;
+    std::map<FieldName, EntryShare<MultShare>> right_shares;
 
     void set_constants(size_t database_size, size_t num_records);
     void set_real_client_input(const EpilinkClientInput& input);
     void set_real_server_input(const EpilinkServerInput& input);
     void set_dummy_client_input();
     void set_dummy_server_input();
-    EntryShare make_server_entries_share(const EpilinkServerInput& input,
+    EntryShare<MultShare> make_server_entries_share(const EpilinkServerInput& input,
         const FieldName& i);
-    VEntryShare make_client_entry_shares(const EpilinkClientInput& input,
+    VEntryShare<MultShare> make_client_entry_shares(const EpilinkClientInput& input,
         const FieldName& i);
-    EntryShare make_client_entry_share(const EpilinkClientInput& input,
+    EntryShare<MultShare> make_client_entry_share(const EpilinkClientInput& input,
         const FieldName& i, size_t index);
-    EntryShare make_dummy_entry_share(const FieldName& i);
+    EntryShare<MultShare> make_dummy_entry_share(const FieldName& i);
 };
 
 } /* end of namespace: sel */
