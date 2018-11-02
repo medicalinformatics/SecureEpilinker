@@ -34,7 +34,7 @@ namespace sel {
 
 enum class MPCRole { CLIENT, SERVER };
 
-class CircuitBuilder; // forward declaration of circuit builder class
+class CircuitBuilderBase; // forward declaration of circuit builder class
 
 class SecureEpilinker {
 public:
@@ -111,7 +111,7 @@ private:
   ArithmeticCircuit* acirc;
   const CircuitConfig cfg;
 
-  std::unique_ptr<CircuitBuilder> selc; // ~pimpl
+  std::unique_ptr<CircuitBuilderBase> selc; // ~pimpl
 
   /*
    * Note that we currently maintain an outside-facing state that behaves as if
