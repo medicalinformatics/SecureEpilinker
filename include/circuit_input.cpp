@@ -36,11 +36,23 @@ bool operator<(const ComparisonIndex& l, const ComparisonIndex& r) {
     || (l.left_idx == r.left_idx && l.left == r.left && l.right < r.right);
 }
 
-CircuitInput::CircuitInput(const CircuitConfig& cfg,
-    BooleanCircuit* bcirc, ArithmeticCircuit* acirc) :
-  cfg{cfg}, bcirc{bcirc}, acirc{acirc} {}
+template <class CircT>
+constexpr CircT typed_circ(BooleanCircuit* bcirc, ArithmeticCircuit* acirc) {
+  if constexpr (is_same_v<CircT, BooleanCircuit>) {
+    return bcirc;
+  } else if constexpr (is_same_v<CircT, ArithmeticCircuit>) {
+    return acirc;
+  }
+}
 
-void CircuitInput::set(const EpilinkClientInput& input) {
+template <class MultShare>
+CircuitInput<MultShare>::CircuitInput(const CircuitConfig& cfg,
+    BooleanCircuit* bcirc, ArithmeticCircuit* acirc)
+  : cfg{cfg}, bcirc{bcirc}, acirc{acirc},
+    mcirc{typed_circ<MultCircuit>(bcirc, acirc)} {}
+
+template <class MultShare>
+void CircuitInput<MultShare>::set(const EpilinkClientInput& input) {
   assert(!input_set && "Input already set. Call clear() first if resetting.");
   set_constants(input.database_size, input.num_records);
   set_real_client_input(input);
@@ -49,7 +61,8 @@ void CircuitInput::set(const EpilinkClientInput& input) {
   input_set = true;
 }
 
-void CircuitInput::set(const EpilinkServerInput& input) {
+template <class MultShare>
+void CircuitInput<MultShare>::set(const EpilinkServerInput& input) {
   assert(!input_set && "Input already set. Call clear() first if resetting.");
   set_constants(input.database_size, input.num_records);
   set_dummy_client_input();
@@ -59,7 +72,8 @@ void CircuitInput::set(const EpilinkServerInput& input) {
 }
 
 #ifdef DEBUG_SEL_CIRCUIT
-void CircuitInput::set_both(const EpilinkClientInput& in_client,
+template <class MultShare>
+void CircuitInput<MultShare>::set_both(const EpilinkClientInput& in_client,
     const EpilinkServerInput& in_server) {
   assert(!input_set && "Input already set. Call clear() first if resetting.");
   assert(in_client.database_size == in_server.database_size && "Database sizes don't match!");
@@ -73,7 +87,8 @@ void CircuitInput::set_both(const EpilinkClientInput& in_client,
 }
 #endif
 
-void CircuitInput::clear() {
+template <class MultShare>
+void CircuitInput<MultShare>::clear() {
   left_shares.clear();
   right_shares.clear();
   weight_cache.clear();
@@ -82,11 +97,13 @@ void CircuitInput::clear() {
   input_set = false;
 }
 
-ComparisonShares CircuitInput::get(const ComparisonIndex& i) const {
+template <class MultShare>
+ComparisonShares<MultShare> CircuitInput<MultShare>::get(const ComparisonIndex& i) const {
   return {left_shares.at(i.left)[i.left_idx], right_shares.at(i.right)};
 }
 
-const ArithShare& CircuitInput::get_const_weight(const ComparisonIndex& i) const {
+template <class MultShare>
+const MultShare& CircuitInput<MultShare>::get_const_weight(const ComparisonIndex& i) const {
   FieldNamePair ipair{i.left, i.right};
   const auto& cache_hit = weight_cache.find(ipair);
   if (cache_hit != weight_cache.cend()) {
@@ -95,18 +112,19 @@ const ArithShare& CircuitInput::get_const_weight(const ComparisonIndex& i) const
   }
 
   const CircUnit weight_r = cfg.rescaled_weight(i.left, i.right);
-  ArithShare weight = constant_simd(acirc, weight_r, BitLen, dbsize_);
+  MultShare weight = constant_simd(mcirc, weight_r, BitLen, dbsize_);
 
   return weight_cache[ipair] = weight;
 }
 
-void CircuitInput::set_constants(size_t database_size, size_t num_records) {
+template <class MultShare>
+void CircuitInput<MultShare>::set_constants(size_t database_size, size_t num_records) {
   dbsize_ = database_size;
   nrecords_ = num_records;
   const_idx_ = ascending_numbers_constant(bcirc, dbsize_);
 
   const_dice_prec_factor_ =
-    constant_simd(acirc, (1 << cfg.dice_prec), BitLen, database_size);
+    constant_simd(mcirc, (1 << cfg.dice_prec), BitLen, database_size);
 
   CircUnit T = llround(cfg.epi.threshold * (1 << cfg.dice_prec));
   CircUnit Tt = llround(cfg.epi.tthreshold * (1 << cfg.dice_prec));
@@ -114,8 +132,8 @@ void CircuitInput::set_constants(size_t database_size, size_t num_records) {
   get_default_logger()->debug(
       "Rescaled threshold: {:x}/ tentative: {:x}", T, Tt);
 
-  const_threshold_ = constant(acirc, T, BitLen);
-  const_tthreshold_ = constant(acirc, Tt, BitLen);
+  const_threshold_ = constant(mcirc, T, BitLen);
+  const_tthreshold_ = constant(mcirc, Tt, BitLen);
 #ifdef DEBUG_SEL_CIRCUIT
   print_share(const_idx_, "const_idx");
   print_share(const_dice_prec_factor_, "const_dice_prec_factor");
@@ -124,21 +142,24 @@ void CircuitInput::set_constants(size_t database_size, size_t num_records) {
 #endif
 }
 
-void CircuitInput::set_real_client_input(const EpilinkClientInput& input) {
+template <class MultShare>
+void CircuitInput<MultShare>::set_real_client_input(const EpilinkClientInput& input) {
   for (const auto& _f : cfg.epi.fields) {
     const FieldName& i = _f.first;
     left_shares[i] = make_client_entry_shares(input, i);
   }
 }
 
-void CircuitInput::set_real_server_input(const EpilinkServerInput& input) {
+template <class MultShare>
+void CircuitInput<MultShare>::set_real_server_input(const EpilinkServerInput& input) {
   for (const auto& _f : cfg.epi.fields) {
     const FieldName& i = _f.first;
     right_shares[i] = make_server_entries_share(input, i);
   }
 }
 
-void CircuitInput::set_dummy_client_input() {
+template <class MultShare>
+void CircuitInput<MultShare>::set_dummy_client_input() {
   for (const auto& _f : cfg.epi.fields) {
     const FieldName& i = _f.first;
     auto& entries = left_shares[i];
@@ -149,14 +170,16 @@ void CircuitInput::set_dummy_client_input() {
   }
 }
 
-void CircuitInput::set_dummy_server_input() {
+template <class MultShare>
+void CircuitInput<MultShare>::set_dummy_server_input() {
   for (const auto& _f : cfg.epi.fields) {
     const FieldName& i = _f.first;
     right_shares[i] = make_dummy_entry_share(i);
   }
 }
 
-EntryShare CircuitInput::make_server_entries_share(const EpilinkServerInput& input,
+template <class MultShare>
+EntryShare<MultShare> CircuitInput<MultShare>::make_server_entries_share(const EpilinkServerInput& input,
     const FieldName& i) {
   const auto& f = cfg.epi.fields.at(i);
   const VFieldEntry& entries = input.database->at(i);
@@ -173,7 +196,7 @@ EntryShare CircuitInput::make_server_entries_share(const EpilinkServerInput& inp
   // delta
   vector<CircUnit> db_delta(dbsize_);
   for (size_t j=0; j!=dbsize_; ++j) db_delta[j] = entries[j].has_value();
-  ArithShare delta(acirc, db_delta.data(), BitLen, SERVER, dbsize_);
+  MultShare delta(acirc, db_delta.data(), delta_bitlen, SERVER, dbsize_);
 
   // Set hammingweight input share only for bitmasks
   BoolShare _hw;
@@ -189,13 +212,14 @@ EntryShare CircuitInput::make_server_entries_share(const EpilinkServerInput& inp
     if (f.comparator == BM) print_share(_hw, format("server hw[{}]", i));
 #endif
 
-  return {val, delta, _hw};
+  return {move(val), move(delta), move(_hw)};
 
 }
 
-VEntryShare CircuitInput::make_client_entry_shares(const EpilinkClientInput& input,
-    const FieldName& i) {
-  VEntryShare entry_shares;
+template <class MultShare>
+VEntryShare<MultShare> CircuitInput<MultShare>::make_client_entry_shares(
+    const EpilinkClientInput& input, const FieldName& i) {
+  VEntryShare<MultShare> entry_shares;
   entry_shares.reserve(nrecords_);
   for (size_t j = 0; j != nrecords_; ++j) {
     entry_shares.emplace_back(make_client_entry_share(input, i, j));
@@ -203,7 +227,8 @@ VEntryShare CircuitInput::make_client_entry_shares(const EpilinkClientInput& inp
   return entry_shares;
 }
 
-EntryShare CircuitInput::make_client_entry_share(const EpilinkClientInput& input,
+template <class MultShare>
+EntryShare<MultShare> CircuitInput<MultShare>::make_client_entry_share(const EpilinkClientInput& input,
     const FieldName& i, size_t index) {
   const auto& f = cfg.epi.fields.at(i);
   const FieldEntry& entry = input.records->at(index).at(i);
@@ -217,9 +242,9 @@ EntryShare CircuitInput::make_client_entry_share(const EpilinkClientInput& input
       f.bitsize, CLIENT, dbsize_);
 
   // delta
-  ArithShare delta(acirc,
+  MultShare delta(acirc,
       vector<CircUnit>(dbsize_, static_cast<CircUnit>(entry.has_value())).data(),
-      BitLen, CLIENT, dbsize_);
+      delta_bitlen, CLIENT, dbsize_);
 
   // Set hammingweight input share only for bitmasks
   BoolShare _hw;
@@ -235,15 +260,16 @@ EntryShare CircuitInput::make_client_entry_share(const EpilinkClientInput& input
     if (f.comparator == BM) print_share(_hw, format("client[{}] hw[{}]", index, i));
 #endif
 
-  return {val, delta, _hw};
+  return {move(val), move(delta), move(_hw)};
 }
 
-EntryShare CircuitInput::make_dummy_entry_share(const FieldName& i) {
+template <class MultShare>
+EntryShare<MultShare> CircuitInput<MultShare>::make_dummy_entry_share(const FieldName& i) {
   const auto& f = cfg.epi.fields.at(i);
 
   BoolShare val(bcirc, f.bitsize, dbsize_); //dummy val
 
-  ArithShare delta(acirc, BitLen, dbsize_); // dummy delta
+  MultShare delta(acirc, delta_bitlen, dbsize_); // dummy delta
 
   BoolShare _hw;
   if (f.comparator == BM) {
@@ -256,7 +282,7 @@ EntryShare CircuitInput::make_dummy_entry_share(const FieldName& i) {
     if (f.comparator == BM) print_share(_hw, format("dummy hw[{}]", i));
 #endif
 
-  return {val, delta, _hw};
+  return {move(val), move(delta), move(_hw)};
 }
 
 } /* end of namespace: sel */
