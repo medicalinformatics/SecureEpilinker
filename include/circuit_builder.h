@@ -20,31 +20,12 @@
 #define SEL_CIRCUIT_BUILDER_H
 #pragma once
 
-#include "fmt/format.h"
-using fmt::format;
-#include "util.h"
-#include "math.h"
-#include "seltypes.h"
-#include "logger.h"
 #include "circuit_input.h"
-#include "aby/Share.h"
-#include "aby/gadgets.h"
+
+class BooleanCircuit;
+class ArithmeticCircuit;
 
 namespace sel {
-
-/**
-  * Return type of weight_compare_*()
-  * fw - field weight = weight * comparison * empty-deltas
-  * w - weight for weight sum = weight * empyt-deltas
-  */
-struct FieldWeight { ArithShare fw, w; };
-
-struct LinkageShares {
-  BoolShare index, match, tmatch;
-#ifdef DEBUG_SEL_RESULT
-  ArithShare score_numerator, score_denominator;
-#endif
-};
 
 struct LinkageOutputShares {
   OutShare index, match, tmatch;
@@ -57,94 +38,26 @@ struct CountOutputShares {
   OutShare matches, tmatches;
 };
 
-class CircuitBuilder {
+class CircuitBuilderBase {
 public:
-  CircuitBuilder(CircuitConfig cfg_,
-    BooleanCircuit* bcirc, BooleanCircuit* ccirc, ArithmeticCircuit* acirc);
+  virtual ~CircuitBuilderBase() = default;
 
-  template<class EpilinkInput>
-  void set_input(const EpilinkInput& input) {
-    ins.set(input);
-  }
-
+  virtual void set_input(const EpilinkClientInput& input) = 0;
+  virtual void set_input(const EpilinkServerInput& input) = 0;
 #ifdef DEBUG_SEL_CIRCUIT
-  void set_both_inputs(const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
-    ins.set_both(in_client, in_server);
-  }
+  virtual void set_both_inputs(const EpilinkClientInput& in_client,
+      const EpilinkServerInput& in_server) = 0;
 #endif
 
+  virtual std::vector<LinkageOutputShares> build_linkage_circuit() = 0;
+  virtual CountOutputShares build_count_circuit() = 0;
 
-  std::vector<LinkageOutputShares> build_linkage_circuit();
-
-  CountOutputShares build_count_circuit();
-
-  void reset();
-
-private:
-  const CircuitConfig cfg;
-  // Circuits
-  BooleanCircuit* bcirc; // boolean circuit for boolean parts
-  BooleanCircuit* ccirc; // intermediate conversion circuit
-  ArithmeticCircuit* acirc;
-  // Input shares
-  CircuitInput ins;
-  // State
-  bool built{false};
-
-  // Dynamic converters, dependent on main bool sharing
-  BoolShare to_bool(const ArithShare& s);
-
-  ArithShare to_arith(const BoolShare& s);
-
-  BoolShare to_gmw(const BoolShare& s);
-
-  // closures
-  const A2BConverter to_bool_closure;
-  const B2AConverter to_arith_closure;
-
-  /*
-  * Builds the record linkage component of the circuit
-  */
-  LinkageShares build_single_linkage_circuit(size_t index);
-
-  LinkageOutputShares to_linkage_output(const LinkageShares& s);
-
-  CountOutputShares sum_linkage_shares(std::vector<LinkageShares> ls);
-
-  FieldWeight best_group_weight(size_t index, const IndexSet& group_set);
-
-  /**
-   * Cache to store calls to field_weight()
-   * Can save half the circuit in permutation groups this way.
-   */
-  std::map<ComparisonIndex, FieldWeight> field_weight_cache;
-
-  /**
-   * Calculates the field weight and addend to the total weight.
-   * - Set rescaled weight as arithmetic constant
-   * - Set weight to 0 if any field on either side is empty
-   * - Run comparison, dependent on field type:
-   *   - Bitmasks: Dice coefficient with precision dice_prec
-   *   - Binary: Simple Equality, but 0/1 shifted to the left by same dice_prec
-   * - Multiply result of comparison with weight -> field weight
-   * - Return field weight and weight
-   */
-  const FieldWeight& field_weight(const ComparisonIndex& i);
-
-  /**
-  * Calculates dice coefficient of given bitmasks via their hamming weights, up
-  * to the configured precision.
-  * Note that we use rounding integer division, that is (x+(y/2))/y, because x/y
-  * always rounds down, which would lead to a bias.
-  */
-  BoolShare dice_coefficient(const ComparisonIndex& i);
-
-  /**
-  * Binary-compares two shares
-  */
-  BoolShare equality(const ComparisonIndex& i);
-
+  virtual void reset() = 0;
 };
+
+std::unique_ptr<CircuitBuilderBase> make_unique_circuit_builder(const CircuitConfig& cfg,
+    BooleanCircuit* bcirc, BooleanCircuit* ccirc, ArithmeticCircuit* acirc);
+
 } /* end of namespace: sel */
 
 #endif /* end of include guard: SEL_CIRCUIT_BUILDER_H */

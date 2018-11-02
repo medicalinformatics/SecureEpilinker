@@ -25,12 +25,18 @@
 
 namespace sel {
 
-struct ArithQuotient { ArithShare num, den; };
-struct BoolQuotient { BoolShare num, den; };
+template <class ShareT> struct Quotient { ShareT num, den; };
+using ArithQuotient = Quotient<ArithShare>;
+using BoolQuotient = Quotient<BoolShare>;
 
+template <class ShareT>
+  using UnaryOp = std::function<ShareT (const ShareT&)>;
 using UnaryOp_Share = std::function<Share (const Share&)>;
 using UnaryOp_BoolShare = std::function<BoolShare (const BoolShare&)>;
 using UnaryOp_ArithShare = std::function<ArithShare (const ArithShare&)>;
+
+template <class ShareT>
+  using BinaryOp = std::function<ShareT (const ShareT&, const ShareT&)>;
 using BinaryOp_Share = std::function<Share (const Share&, const Share&)>;
 using BinaryOp_BoolShare = std::function<BoolShare (const BoolShare&, const BoolShare&)>;
 using BinaryOp_ArithShare = std::function<ArithShare (const ArithShare&, const ArithShare&)>;
