@@ -55,6 +55,7 @@ set(${P}_CIRCUIT_SOURCES
   "include/epilink_input.cpp"
   "include/circuit_config.cpp"
   "include/circuit_input.cpp"
+  "include/circuit_builder.cpp"
   "include/secure_epilinker.cpp"
   "include/clear_epilinker.cpp"
   "include/seltypes.cpp"

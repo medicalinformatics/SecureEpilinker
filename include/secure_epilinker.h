@@ -25,6 +25,7 @@
 #include "epilink_result.hpp"
 #include "circuit_config.h"
 
+// ABY forward declarations
 class BooleanCircuit;
 class ArithmeticCircuit;
 class ABYParty;
@@ -32,6 +33,8 @@ class ABYParty;
 namespace sel {
 
 enum class MPCRole { CLIENT, SERVER };
+
+class CircuitBuilder; // forward declaration of circuit builder class
 
 class SecureEpilinker {
 public:
@@ -108,8 +111,7 @@ private:
   ArithmeticCircuit* acirc;
   const CircuitConfig cfg;
 
-  class SELCircuit; // forward declaration of circuit implementation class
-  std::unique_ptr<SELCircuit> selc; // ~pimpl
+  std::unique_ptr<CircuitBuilder> selc; // ~pimpl
 
   /*
    * Note that we currently maintain an outside-facing state that behaves as if
