@@ -60,10 +60,32 @@ mpc_action() {
     "apiKey apiKey=\"123abc\""
 }
 
+n-m_mpc_action() { #Sorry for duplicating code in your nice test suite, but
+  action=${1}      #Due to default arguments this does not work parameterized
+  id=${2}
+  port=${3:-8161}
+  host=${4:-127.0.0.1}
+  callback=${5:-http://localhost:8800/${action}Callback}
+
+  curl_json_file POST <(sed \
+      -e "s^{{callback}}^${callback}^g" \
+      < configurations/linkRecords.template.json) \
+    "https://${host}:${port}/${action}Records/${id}" \
+    "apiKey apiKey=\"123abc\""
+}
+
 link_record() {
   mpc_action link ${@}
 }
 
 match_record() {
   mpc_action match ${@}
+}
+
+link_records() {
+  n-m_mpc_action link ${@}
+}
+
+match_records() {
+  n-m_mpc_action match ${@}
 }

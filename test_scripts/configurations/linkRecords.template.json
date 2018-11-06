@@ -1,0 +1,30 @@
+{
+  "callback": {
+    "url": "{{callback}}"
+  },
+  "total": 2,
+  "toDate": 123132234524563,
+  "records": [{
+  "fields": {
+    "vorname": "iz1tCN0iHA9Odb0K4u8CneS8O/SBFz5PmUk+GD+k952cH6SymAxKlzlL0kglvXMR1Qk2sBeRfs1IaNfPn/1A",
+    "nachname": "SLrGRxkLDlrcMUtsqbyHS/LvEt+sjRvVDbymnrYPWhBoxhdL/Wh4BFnSVMWeHyw15TtrNygPqa9lk9aCFR1g",
+    "geburtsname": "LNSyH7znH/8+/lxRNTIHBu7gHYIqqoor1yO5AWOpNfK0Ylgr+/AZMZvJI52ypw7v3Ed4IIYvaWa/DRjIvfDw",
+    "geburtstag": 24,
+    "geburtsmonat": 12,
+    "geburtsjahr": 1964,
+    "plz": "65432",
+    "ort": null
+  }},{
+  "fields": {
+    "vorname": "iz1tCN0iHA9Odb0K4u8C00S8O/SBFz5PmUk+GD+k952cH6SymAxKlzlL0kglvXMR1Qk2sBeRfs1IaNfPn/1A",
+    "nachname": "SLrGRxkADlrcMUtsqbyHS/LvEt+sjRvVDbymnrYPWhBoxhdL/Wh4BFnSVMWeHyw15TtrNygPqa9lk9aCFR1g",
+    "geburtsname": "LNSyH7znH/8+/lxRNTIHBu7gHYIqqoor1yO5AWOpNfK0Ylgr+/AZMZvJI52ypw7v3Ed4IIYvaWa/DRjIvfDw",
+    "geburtstag": 22,
+    "geburtsmonat": 10,
+    "geburtsjahr": 1981,
+    "plz": "65432",
+    "ort": null
+  }}
+
+  ]
+}
