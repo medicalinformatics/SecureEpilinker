@@ -1,6 +1,7 @@
 #include "restutils.h"
 #include "apikeyconfig.hpp"
 #include "epilink_input.h"
+#include "circuit_config.h" // for BooleanSharing
 #include "epilink_result.hpp"
 #include "seltypes.h"
 #include "util.h"
