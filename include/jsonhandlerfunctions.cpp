@@ -115,7 +115,7 @@ SessionResponse create_job(
       try {
         job->set_callback(j.at("callback")
             .at("url")
-            .get<string>());  // no move to use copy elision
+            .get<string>());
 
         Records data;
         if(!multiple_records) {
