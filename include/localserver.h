@@ -42,8 +42,8 @@ class LocalServer {
               SecureEpilinker::ABYConfig,
               CircuitConfig);
   RemoteId get_id() const;
-  std::vector<Result<CircUnit>> run_linkage(std::shared_ptr<const ServerData>, size_t);
-  CountResult<CircUnit> run_count(std::shared_ptr<const ServerData>, size_t);
+  void run_linkage(std::shared_ptr<const ServerData>, size_t);
+  void run_count(std::shared_ptr<const ServerData>, size_t);
   Port get_port() const;
   std::string get_ip() const;
   SecureEpilinker& get_epilinker();
@@ -52,13 +52,13 @@ class LocalServer {
   std::shared_ptr<std::vector<std::string>> get_ids() const {return m_data->ids;}
 
  private:
+  void send_server_result_to_linkageservice(const std::vector<Result<CircUnit>>&) const;
   RemoteId m_remote_id;
   std::string m_client_ip;
   Port m_client_port;
   std::shared_ptr<const ServerData> m_data;
   SecureEpilinker m_aby_server;
 };
-
 }  // namespace sel
 
 #endif /* end of include guard: SEL_LOCALSERVER_H */

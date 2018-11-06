@@ -160,31 +160,9 @@ void ServerHandler::run_server(RemoteId remote_id,
   auto local_config{config_handler.get_local_config()};
   if (remote_config->get_mutual_initialization_status()) {
     if (!counting_mode) {
-      const auto result{
-        get_local_server(remote_id)->run_linkage(move(data), num_records)};
-      m_logger->info("Server Result\n{}", result);
-      const auto ids{get_local_server(remote_id)->get_ids()};
-      string id_string;
-      for (size_t i = 0; i != ids->size(); ++i) {
-        id_string += "Index: " + to_string(i) + " ID: " + ids->at(i) + '\n';
-      }
-      m_logger->info("IDs:\n{}", id_string);
-      auto linkage_service{remote_config->get_linkage_service()};
-      string url{linkage_service->url + "/linkageResult/" +
-                 local_config->get_local_id() + '/' + remote_id};
-      m_logger->debug("Sending server result to Linkage Service URL {}", url);
-      try {
-      auto response{send_result_to_linkageservice(result, make_optional(*ids), "server",
-                                                  local_config, remote_config)};
-      m_logger->trace("Linkage Server responded with {} - {}",
-                      response.return_code, response.body);
-      } catch (const exception& e) {
-        m_logger->error("Can not connect to linkage service: {}", e.what());
-      }
+      get_local_server(remote_id)->run_linkage(move(data), num_records);
     } else if(remote_config->get_matching_mode()){ // Matching mode
-      const auto result{
-        get_local_server(remote_id)->run_count(move(data), num_records)};
-      m_logger->info("Server Result\n{}", result);
+      get_local_server(remote_id)->run_count(move(data), num_records);
     } else {
       m_logger->error("Matching mode not allowed for remote");
     }
