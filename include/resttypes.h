@@ -26,6 +26,7 @@
 #include <string>
 #include <set>
 
+#include "circuit_config.h" // for BooleanSharing
 #include <filesystem>
 
 namespace sel {
@@ -41,7 +42,6 @@ using Port = uint16_t;
 enum class AlgorithmType { EPILINK };
 enum class AuthenticationType { NONE, API_KEY };
 enum class JobStatus { QUEUED, RUNNING, HOLD, FAULT, DONE };
-enum class BooleanSharing { GMW = 0, YAO = 1 }; // mirror ABY's e_sharing
 
 AlgorithmType str_to_atype(const std::string& str);
 AuthenticationType str_to_authtype(const std::string& str);
