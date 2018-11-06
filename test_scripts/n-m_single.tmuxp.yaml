@@ -1,0 +1,17 @@
+# tmuxp load single.tmuxp.yaml
+session_name: SEL single instance test
+environment:
+  sel_id: tuda
+  sel_port: "8161"
+windows:
+- single_sel:
+  panes:
+    - shell_command:
+      - ../build/sel -vvv -s -p $sel_port
+- cmd:
+  panes:
+    - shell_command:
+      - python httplisten.py
+    - shell_command:
+      - ./n-m_single.sh
+
