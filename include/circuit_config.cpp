@@ -40,14 +40,14 @@ size_t bit_usage(const size_t dice_prec,
 
 CircuitConfig::CircuitConfig(const EpilinkConfig& epi_,
     const std::filesystem::path& circ_dir_,
-    const bool matching_mode, const size_t bitlen,
-    const BooleanSharing bool_sharing_, const bool use_conversion_) :
-  epi {epi_},
-  circ_dir {circ_dir_},
-  matching_mode {matching_mode},
-  bitlen {bitlen},
+    const bool matching_mode, const BooleanSharing bool_sharing_,
+    const bool use_conversion_, const size_t bitlen) :
+  epi{epi_},
+  circ_dir{circ_dir_},
+  matching_mode{matching_mode},
   bool_sharing{bool_sharing_},
-  use_conversion{use_conversion_}
+  use_conversion{use_conversion_},
+  bitlen{bitlen}
 {
   get_logger()->trace("Constructing CircuitConfig with {}"
       "matching_mode={}, bitlen={}, bool_sharing={}, use_conversion={}",

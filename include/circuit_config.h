@@ -38,18 +38,19 @@ struct CircuitConfig {
   std::filesystem::path circ_dir = "../data/circ";
 
   bool matching_mode = false;
-  size_t bitlen = BitLen;
   BooleanSharing bool_sharing = BooleanSharing::YAO;
   bool use_conversion = true;
+  size_t bitlen = BitLen;
 
   // pre-calculated fields
   size_t dice_prec, weight_prec;
 
   CircuitConfig(const EpilinkConfig& epi,
       const std::filesystem::path& circ_dir = "../data/circ",
-      const bool matching_mode = false, const size_t bitlen = BitLen,
+      const bool matching_mode = false,
       const BooleanSharing bool_sharing = BooleanSharing::YAO,
-      const bool use_conversion = true);
+      const bool use_conversion = true,
+      const size_t bitlen = BitLen);
   ~CircuitConfig() = default;
 
   /**
