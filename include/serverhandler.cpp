@@ -80,11 +80,10 @@ void ServerHandler::insert_client(RemoteId id) {
   if(circuit_config.matching_mode){
     m_logger->warn("Client created with matching mode allowed!");
   }
-  auto aby_info{config_handler.get_server_config()};
+  auto server_config{config_handler.get_server_config()};
   SecureEpilinker::ABYConfig aby_config{
-      CLIENT, static_cast<e_sharing>(aby_info.boolean_sharing),
-      remote_config->get_remote_host(),
-      remote_config->get_aby_port(), aby_info.aby_threads};
+    MPCRole::CLIENT, remote_config->get_remote_host(),
+      remote_config->get_aby_port(), server_config.aby_threads};
   m_logger->debug("Creating client on port {}, remote host: {}", aby_config.port, aby_config.host);
   m_aby_clients.emplace(id, make_shared<SecureEpilinker>(aby_config,circuit_config));
 
@@ -101,11 +100,10 @@ void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
   if(circuit_config.matching_mode){
     m_logger->warn("Server created with matching mode allowed!");
   }
-  auto aby_info{config_handler.get_server_config()};
+  auto server_config{config_handler.get_server_config()};
   SecureEpilinker::ABYConfig aby_config{
-      SERVER, static_cast<e_sharing>(aby_info.boolean_sharing),
-      ConfigurationHandler::cget().get_server_config().bind_address,
-      remote_address.port, aby_info.aby_threads};
+    MPCRole::SERVER, ConfigurationHandler::cget().get_server_config().bind_address,
+      remote_address.port, server_config.aby_threads};
   m_logger->debug("Creating server on port {}, bound to: {}\n", aby_config.port, aby_config.host);
   m_server.emplace(id, make_shared<LocalServer>(id, aby_config, circuit_config));
   get_local_server(id)->connect_server();

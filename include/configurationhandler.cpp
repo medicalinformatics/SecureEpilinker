@@ -79,9 +79,14 @@ ServerConfig ConfigurationHandler::get_server_config() const {
   return m_server_config;
 }
 
-return {local_config->get_epilink_config(), ConfigurationHandler::cget().get_server_config().circuit_directory,  remote_config->get_matching_mode()};
 CircuitConfig make_circuit_config(const shared_ptr<const LocalConfiguration>& local_config,
                                   const shared_ptr<const RemoteConfiguration>& remote_config){
+auto server_config{ConfigurationHandler::cget().get_server_config()};
+return {local_config->get_epilink_config(),
+  server_config.circuit_directory,
+  remote_config->get_matching_mode(),
+  server_config.boolean_sharing,
+  server_config.use_circuit_conversion};
 }
 
 nlohmann::json ConfigurationHandler::make_comparison_config(const RemoteId& remote_id) const {
