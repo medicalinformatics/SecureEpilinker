@@ -115,7 +115,7 @@ void LinkageJob::run_linkage_job() {
           perform_callback(response.body);
         }
       } catch (const exception& e) {
-        logger->error("Can not connect to linkage service or callback: {}", e.what());
+        get_logger(ComponentLogger::REST)->error("Can not connect to linkage service or callback: {}", e.what());
       }
     m_status = JobStatus::DONE;
   } catch (const exception& e) {
@@ -241,12 +241,10 @@ void LinkageJob::compute_debugging_result(const Records& client_input) {
     if(debugger->all_values_set()){
       if(!debugger->run) {
         debugger->run=true;
-        fmt::print("============= Integer Computation ============\n");
         debugger->compute_int();
-        logger->info("Integer Result: {}", debugger->int_result);
-        fmt::print("============= Double Computation =============\n");
+        logger->debug("============= Integer Computation ============\nInteger Result: {}", debugger->int_result);
         debugger->compute_double();
-        logger->info("Double Result: {}", debugger->double_result);
+        logger->debug("============= Double Computation =============\nDouble Result: {}", debugger->double_result);
         debugger->reset();
       }
     } else {

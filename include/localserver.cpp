@@ -27,6 +27,7 @@
 #include "seltypes.h"
 #include "resttypes.h"
 #include "util.h"
+#include "restutils.h"
 #include "logger.h"
 
 using namespace std;
@@ -58,41 +59,62 @@ RemoteId LocalServer::get_id() const {
   return m_remote_id;
 }
 
-vector<Result<CircUnit>> LocalServer::run_linkage(shared_ptr<const ServerData> data, size_t num_records) {
+void LocalServer::run_linkage(shared_ptr<const ServerData> data, size_t num_records) {
   m_data = move(data);
-  auto logger{get_logger()};
-  logger->info("The server is running and performing its linkage computations");
+  auto logger{get_logger(ComponentLogger::SERVER)};
+  logger->info("The linkage server is running");
   const size_t database_size{m_data->data->begin()->second.size()};
 #ifdef DEBUG_SEL_REST
-  auto debugger{DataHandler::get().get_epilink_debug()};
-  auto data_copy{*(m_data->data)};
-  debugger->server_input = data_copy;
+  DataHandler::get().get_epilink_debug()->server_input = *(m_data->data);
 #endif
-  logger->debug("Server Sizes\nnum_records: {}, database_size: {}", num_records, database_size);
-    m_aby_server.build_linkage_circuit(num_records, database_size);
-    m_aby_server.run_setup_phase();
-    logger->debug("Starting server linkage computation");
-    m_aby_server.set_server_input({m_data->data, num_records});
-    auto linkage_result = m_aby_server.run_linkage();
+  m_aby_server.build_linkage_circuit(num_records, database_size);
+  m_aby_server.run_setup_phase();
+  m_aby_server.set_server_input({m_data->data, num_records});
+  auto linkage_result = m_aby_server.run_linkage();
   m_aby_server.reset();
-  return linkage_result;
+
+  logger->debug("Server Result\n{}", linkage_result);
+  string id_string;
+  for (size_t i = 0; i != m_data->ids->size(); ++i) {
+    id_string += "Index: " + to_string(i) + " ID: " + m_data->ids->at(i) + '\n';
+  }
+  logger->debug("IDs:\n{}", id_string);
+  send_server_result_to_linkageservice(linkage_result);
+
 }
 
-CountResult<CircUnit> LocalServer::run_count(shared_ptr<const ServerData> data, size_t num_records) {
+void LocalServer::send_server_result_to_linkageservice(const vector<Result<CircUnit>>& result) const {
+  auto logger{get_logger(ComponentLogger::REST)};
+  auto local_config{ConfigurationHandler::cget().get_local_config()};
+  auto remote_config{ConfigurationHandler::get().get_remote_config(m_remote_id)};
+  auto linkage_service{remote_config->get_linkage_service()};
+  logger->info("Sending server result to Linkage Service");
+  try {
+    auto response{send_result_to_linkageservice(result,
+                              make_optional(*(m_data->ids)), "server",
+                              local_config, remote_config)};
+    logger->trace("Linkage Server responded with {} - {}",
+                      response.return_code, response.body);
+  } catch (const exception& e) {
+    logger->error("Can not connect to linkage service: {}", e.what());
+  }
+
+}
+
+void LocalServer::run_count(shared_ptr<const ServerData> data, size_t num_records) {
   m_data = move(data);
 
   auto logger{get_logger()};
   logger->info("The server is running and performing its matching computations");
 
   const size_t database_size{m_data->data->begin()->second.size()};
-    m_aby_server.build_count_circuit(num_records, database_size);
-    m_aby_server.run_setup_phase();
-    logger->debug("Starting server matching computation");
-    m_aby_server.set_input({m_data->data, num_records});
-    auto count_result = m_aby_server.run_count();
+  m_aby_server.build_count_circuit(num_records, database_size);
+  m_aby_server.run_setup_phase();
+  logger->debug("Starting server matching computation");
+  m_aby_server.set_input({m_data->data, num_records});
+  auto count_result = m_aby_server.run_count();
   m_aby_server.reset();
-
-  return count_result;
+  logger->debug("Server Result\n{}", count_result);
 }
 
 Port LocalServer::get_port() const {
