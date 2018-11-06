@@ -61,8 +61,8 @@ class ConfigurationHandler {
   mutable std::mutex m_remote_mutex;  // Maybe one Mutex per remote? (perf)
 };
 
-CircuitConfig make_circuit_config(std::shared_ptr<const LocalConfiguration>,
-                                    std::shared_ptr<const RemoteConfiguration>);
+CircuitConfig make_circuit_config(const std::shared_ptr<const LocalConfiguration>&,
+                                  const std::shared_ptr<const RemoteConfiguration>&);
 }  // namespace sel
 
 #endif /* end of include guard: SEL_CONFIGURATIONHANDLER_H */

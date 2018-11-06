@@ -152,7 +152,7 @@ std::shared_ptr<LocalServer> ServerHandler::get_local_server(const RemoteId& rem
   return m_server.at(remote_id);
 }
 
-void ServerHandler::run_server(RemoteId remote_id,
+void ServerHandler::run_server(const RemoteId& remote_id,
                                std::shared_ptr<const ServerData> data,
                                size_t num_records, bool counting_mode) {
   const auto& config_handler{ConfigurationHandler::cget()};
