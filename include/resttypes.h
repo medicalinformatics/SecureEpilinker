@@ -63,6 +63,7 @@ struct ServerConfig {
   std::filesystem::path log_file;
   std::filesystem::path circuit_directory;
   bool use_ssl;
+  bool use_circuit_conversion;
   Port server_port;
   std::string bind_address;
   size_t rest_worker;

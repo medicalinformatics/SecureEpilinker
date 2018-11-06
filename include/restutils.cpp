@@ -90,6 +90,7 @@ ServerConfig parse_json_server_config(const nlohmann::json& json) {
           get_checked_result<string>(json,"logFilePath"),
           get_checked_result<string>(json,"circuitDirectory"),
           get_checked_result<bool>(json,"useSSL"),
+          get_checked_result<bool>(json,"useCircuitConversion"),
           get_checked_result<Port>(json,"port"),
           get_checked_result<string>(json,"bindAddress"),
           get_checked_result<size_t>(json,"restWorkerThreads"),
