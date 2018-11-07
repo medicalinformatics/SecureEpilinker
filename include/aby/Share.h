@@ -39,9 +39,7 @@ class Share {
    */
   Share(Circuit* c, share* s) : circ{c}, sh{s} {};
   Share(Circuit* c, const share_p& sp) : circ{c}, sh{sp} {};
-  Share(Circuit* c, const std::vector<uint32_t>& gates) :
-    Share{c, new boolshare(gates, c)} {};
-  ~Share() = default;
+  virtual ~Share() = default;
   /*
    * Constructor to create new INGate from plain-text value
    */
@@ -138,7 +136,7 @@ class Share {
   }
 
   protected:
-  Circuit* circ; // we don't handle memory of Circuit object
+  Circuit* circ; // ABYParty (hopefully) handles memory of Circuit objects
   std::shared_ptr<share> sh;
 };
 
@@ -151,10 +149,10 @@ class BoolShare: public Share {
     BoolShare{bc, new boolshare(gates, static_cast<Circuit*>(bc))} {};
   // Consume Share move contructor
   BoolShare(Share&& s) :
-    Share{s}, bcirc{dynamic_cast<BooleanCircuit*>(circ)} {};
-  ~BoolShare() = default;
+    Share{std::forward<Share>(s)}, bcirc{dynamic_cast<BooleanCircuit*>(circ)} {};
+  ~BoolShare() override = default;
 
-  void reset() { bcirc = nullptr; Share::reset(); }
+  void reset() override { bcirc = nullptr; Share::reset(); }
 
   BooleanCircuit* get_circuit() const { return bcirc; };
 
@@ -300,9 +298,9 @@ class ArithShare: public Share {
   // Consume Share move contructor
   ArithShare(Share&& s) :
     Share{std::move(s)}, acirc{dynamic_cast<ArithmeticCircuit*>(circ)} {};
-  ~ArithShare() = default;
+  ~ArithShare() override = default;
 
-  void reset() { acirc = nullptr; Share::reset(); }
+  void reset() override { acirc = nullptr; Share::reset(); }
 
   ArithmeticCircuit* get_circuit() const { return acirc; };
 
@@ -405,10 +403,8 @@ BoolShare b2y(BooleanCircuit* ycirc, const BoolShare& s);
  * Vertically Combines the given shares to a new share having the same number of
  * wires=bitlen and nvals the sum of the individual nvals
  */
-Share vcombine(const std::vector<Share>& shares);
-inline BoolShare vcombine_bool(const std::vector<BoolShare>& shares) {
-  return vcombine(std::vector<Share>(shares.cbegin(), shares.cend()));
-}
+template <class ShareT>
+ShareT vcombine(const std::vector<ShareT>&);
 
 } // namespace sel
 
