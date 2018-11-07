@@ -19,6 +19,7 @@
 #include <fmt/format.h>
 #include "Share.h"
 #include "../math.h"
+#include "../util.h"
 
 using namespace std;
 
@@ -188,24 +189,27 @@ BoolShare b2y(BooleanCircuit* ycirc, const BoolShare& s) {
 
 /******************** SIMD stuff ********************/
 
-Share vcombine(const vector<Share>& shares) {
+template <class ShareT>
+ShareT vcombine(const vector<ShareT>& shares) {
   // TODO handle size() == 0 ?
   size_t bitlen = shares.at(0).get_bitlen();
-  vector<vector<uint32_t>> combwires{bitlen};
-  vector<uint32_t> reswires;
-  reswires.reserve(bitlen);
   auto circ = shares.at(0).get_circuit();
+
+  vector<vector<uint32_t>> combwires(bitlen);
   for (const auto& share : shares) {
-    vector<uint32_t> wires{share.get()->get_wires()};
+    auto wires = share.get()->get_wires();
     for (size_t i{0}; i != wires.size(); ++i) {
       combwires[i].emplace_back(wires[i]);
     }
   }
-  for (vector<uint32_t>& cw : combwires) {
-    reswires.emplace_back(circ->PutCombinerGate(cw));
-  }
-  return Share{circ, reswires};
+
+  auto reswires = transform_vec(combwires,
+      [&circ](auto cw){ return circ->PutCombinerGate(cw); });
+  return {circ, reswires};
 }
 
-// TODO sum, all, any, prod -> gadgets
+template BoolShare vcombine(const vector<BoolShare>&);
+template ArithShare vcombine(const vector<ArithShare>&);
+
+// TODO all, any, prod -> gadgets
 } // namespace sel
