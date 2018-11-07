@@ -48,6 +48,7 @@ set(${P}_ABY_SOURCES
   "include/aby/Share.cpp"
   "include/aby/gadgets.cpp"
   "include/aby/util.cpp"
+  "include/aby/quotient_folder.hpp"
 )
 
 set(${P}_CIRCUIT_SOURCES

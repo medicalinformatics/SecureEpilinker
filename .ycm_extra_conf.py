@@ -46,6 +46,16 @@ HEADER_DIRECTORIES = [
 
 BUILD_DIRECTORY = 'build';
 
+FLAGS_FRIENDS = {
+        'aby/quotient_folder.hpp': 'aby/Share.cpp'
+        }
+
+def FindFlagsFriend(filename):
+    for header_file, friend in FLAGS_FRIENDS.items():
+        if filename.endswith(header_file):
+            return filename.replace(header_file, friend)
+    return None
+
 def IsHeaderFile(filename):
     extension = os.path.splitext(filename)[1]
     return extension in HEADER_EXTENSIONS
@@ -160,6 +170,10 @@ def FlagsForCompilationDatabase(root, filename):
         return None
 
 def FlagsForFile(filename):
+    flags_friend = FindFlagsFriend(filename)
+    if flags_friend:
+        return FlagsForFile(flags_friend)
+
     root = os.path.realpath(filename);
     compilation_db_flags = FlagsForCompilationDatabase(root, filename)
     if compilation_db_flags:
