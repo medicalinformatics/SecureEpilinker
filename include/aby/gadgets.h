@@ -86,10 +86,12 @@ BoolShare split_accumulate(BoolShare simd_share, const BinaryOp_BoolShare& op);
 void split_select_target(BoolShare& selector, BoolShare& target,
     const BinaryOp_BoolShare& op_select);
 
+/*
 template <class ShareT>
 void split_select_quotient_target(
     Quotient<ShareT>& selector, std::vector<BoolShare>& targets,
     const QuotientSelector<ShareT>& op_select, const B2TConverter<ShareT>& to_T);
+    */
 
 template <class ShareT>
 QuotientSelector<ShareT> make_max_selector(const T2BConverter<ShareT>& to_bool);
@@ -100,6 +102,11 @@ template <class ShareT>
 QuotientSelector<ShareT> make_max_tie_selector(const T2BConverter<ShareT>& to_bool,
     const size_t den_bits = 0);
 
+template <class ShareT>
+QuotientSelector<ShareT> make_min_tie_selector(const T2BConverter<ShareT>& to_bool,
+    const size_t den_bits = 0);
+
+/*
 void max_tie_index(
     BoolQuotient& selector, std::vector<BoolShare>& targets,
     const size_t den_bits = 0);
@@ -116,6 +123,7 @@ void max_index(
 void min_index(
     ArithQuotient& selector, std::vector<BoolShare>& targets,
     const A2BConverter& to_bool, const B2AConverter& to_arith);
+    */
 
 BoolShare max(const std::vector<BoolShare>&);
 template <class ShareT>
