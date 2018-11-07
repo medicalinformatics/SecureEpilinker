@@ -2,12 +2,15 @@
 #include "../include/math.h"
 #include "../include/aby/Share.h"
 #include "../include/aby/gadgets.h"
+#include "../include/aby/quotient_folder.hpp"
 #include "abycore/aby/abyparty.h"
 #include "abycore/sharing/sharing.h"
 #include "cxxopts.hpp"
 #include <numeric>
 #include <algorithm>
 #include <random>
+#include <fmt/format.h>
+using fmt::print;
 
 using namespace std;
 using namespace sel;
@@ -50,7 +53,7 @@ struct ABYTester {
     cout << "Testing ABY with role: " << get_role_name(role) <<
      " with sharing: " << get_sharing_name(sharing) << " nvals: " << nvals <<
      " bitlen: " << bitlen << endl;
-    party.InitOnline();
+    party.ConnectAndBaseOTs();
   }
 
   // Dynamic converters, dependent on main bool sharing
@@ -165,15 +168,15 @@ struct ABYTester {
 
     party.ExecCircuit();
 
-    cout << "a*c = " << out_ac.get_clear_value_vec() << endl;
+    print("a*c = {}", out_ac.get_clear_value_vec());
   }
 
   void test_max_bits() {
     size_t bytes = 64;
     vector<uint8_t> data(bytes, 0xc3u);
     vector<uint8_t> data2(bytes, 0x95u);
-    cout << "data: " << data << endl;
-    cout << "data2: " << data << endl;
+    print("data: {}", data);
+    print("data2: {}", data);
 
     BoolShare in(bc, data.data(), bytes*8-1, CLIENT, 1);
     BoolShare in2(bc, data2.data(), bytes*8-1, CLIENT, 1);
@@ -296,40 +299,62 @@ struct ABYTester {
     party.ExecCircuit();
   }
 
-  void test_split_select_quotient_target() {
+  template <class MultShare>
+  std::conditional_t<std::is_same_v<MultShare, ArithShare>,
+    ArithmeticCircuit, BooleanCircuit>* circuit() {
+      if constexpr (std::is_same_v<MultShare, ArithShare>) {
+        return ac;
+      } else {
+        return bc;
+      }
+  }
+
+  template <class MultShare>
+  void test_quotient_folder() {
+    auto circ = circuit<MultShare>();
     size_t num_bits = llround(2*((double)(bitlen)/3));
     size_t den_bits = llround((double)(bitlen)/3);
     assert (num_bits + den_bits == bitlen);
     auto data_num = make_random_vector(num_bits);
     auto data_den = make_random_vector(den_bits);
-    cout << "numerators: " << data_num << "\ndenominators: " << data_den << endl;
+    print("numerators: {}\ndenominators: {}\n", data_num, data_den);
 
     uint64_t max_num = 0, max_den = 1;
     size_t max_idx = numeric_limits<size_t>::max();
     for (size_t i = 0; i < nvals; ++i) {
       auto num = data_num[i], den = data_den[i];
       if (den == 0) continue;
-      if (num * max_den > max_num * den) {
+      if ( (num * max_den > max_num * den)
+          or ( (num * max_den == max_num * den) and (den > max_den) )
+         ) {
         max_den = den, max_num = num;
         max_idx = i;
       }
     }
-    fmt::print("Maximum num: {:x}, den: {:x}, index: {:x}\n", max_num, max_den, max_idx);
+    fmt::print("Maximum num: {}, den: {}, index: {}\n", max_num, max_den, max_idx);
 
-    ArithQuotient inq = {
-      ArithShare{ac, data_num.data(), bitlen, SERVER, nvals},
-      ArithShare{ac, data_den.data(), bitlen, CLIENT, nvals}
+    Quotient<MultShare> inq = {
+      {circ, data_num.data(), bitlen, SERVER, nvals},
+      {circ, data_den.data(), bitlen, CLIENT, nvals}
     };
     print_share(inq.num, "num");
     print_share(inq.den, "den");
 
     vector<BoolShare> targets = {ascending_numbers_constant(bc, nvals)};
-    ArithQuotientSelector op_max = make_max_selector(to_bool_closure);
-    split_select_quotient_target(inq, targets, op_max, to_arith_closure);
+    //QuotientSelector<ArithShare> op_max = make_max_selector(to_bool_closure);
+    //split_select_quotient_target(inq, targets, op_max, to_arith_closure);
 
-    print_share(inq.num, "max.num");
-    print_share(inq.den, "max.den");
-    print_share(targets[0], "index of max");
+    using QF = QuotientFolder<MultShare>;
+
+    QF folder(move(inq), move(targets), QF::FoldOp::MAX_TIE);
+    if constexpr (std::is_same_v<MultShare, ArithShare>) {
+      folder.set_converters_and_den_bits(&to_bool_closure, &to_arith_closure, den_bits);
+    }
+    auto res = folder.fold();
+
+    print_share(res.get_selector().num, "max num");
+    print_share(res.get_selector().den, "max den");
+    print_share(res.get_targets()[0], "index of max");
 
     party.ExecCircuit();
   }
@@ -394,7 +419,7 @@ int main(int argc, char *argv[])
   //tester.test_conversion();
   //tester.test_reinterpret();
   //tester.test_split_accumulate();
-  tester.test_split_select_quotient_target();
+  tester.test_quotient_folder<BoolShare>();
   //tester.test_max_quotient();
   //tester.test_bm_input();
   //tester.test_deterministic_aby_chaos();
