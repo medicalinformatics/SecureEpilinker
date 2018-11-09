@@ -25,7 +25,7 @@ bool run_both{false};
 bool only_local{false};
 MPCRole role;
 BooleanSharing sharing;
-bool use_conversion{true};
+bool use_conversion{false};
 
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
@@ -360,7 +360,7 @@ CircuitConfig make_circuit_config(const EpilinkConfig& cfg) {
   if constexpr (is_integral_v<T>) {
     bitlen = sizeof(T)*8;
   }
-  return {cfg, CircDir, true, bitlen, sharing, use_conversion};
+  return {cfg, CircDir, true, sharing, use_conversion, bitlen};
 }
 
 template <typename T>
@@ -469,6 +469,8 @@ int main(int argc, char *argv[])
     ("S,server", "Run as server. Default to client", cxxopts::value(role_server))
     ("R,remote-host", "Remote host. Default 127.0.0.1", cxxopts::value(remote_host))
     ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO (default)", cxxopts::value(sharing_num))
+    ("c,conversion", "Whether to convert to arithmetic space for multiplications",
+        cxxopts::value(use_conversion))
     ("n,dbsize", "Database size", cxxopts::value(dbsize))
     ("r,run-both", "Use set_both_inputs()", cxxopts::value(run_both))
     ("L,local-only", "Only run local calculations on clear values."
