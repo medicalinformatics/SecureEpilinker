@@ -79,8 +79,8 @@ class CircuitInput {
     const MultShare& const_tthreshold() const { return const_tthreshold_; }
 
   private:
-    static constexpr bool do_arith_mult = std::is_same_v<MultShare, ArithShare>;
-    static constexpr size_t delta_bitlen = do_arith_mult ? BitLen : 1;
+    inline static constexpr bool do_arith_mult = std::is_same_v<MultShare, ArithShare>;
+    inline static constexpr size_t delta_bitlen = do_arith_mult ? BitLen : 1;
     using MultCircuit = std::conditional_t<do_arith_mult, ArithmeticCircuit, BooleanCircuit>;
 
     const CircuitConfig& cfg;
