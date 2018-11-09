@@ -37,10 +37,12 @@ bool operator<(const ComparisonIndex& l, const ComparisonIndex& r) {
 }
 
 template <class CircT>
-constexpr CircT typed_circ(BooleanCircuit* bcirc, ArithmeticCircuit* acirc) {
+constexpr CircT* typed_circ(BooleanCircuit* bcirc, ArithmeticCircuit* acirc) {
   if constexpr (is_same_v<CircT, BooleanCircuit>) {
+    __ignore(acirc);
     return bcirc;
   } else if constexpr (is_same_v<CircT, ArithmeticCircuit>) {
+    __ignore(bcirc);
     return acirc;
   }
 }
@@ -196,7 +198,7 @@ EntryShare<MultShare> CircuitInput<MultShare>::make_server_entries_share(const E
   // delta
   vector<CircUnit> db_delta(dbsize_);
   for (size_t j=0; j!=dbsize_; ++j) db_delta[j] = entries[j].has_value();
-  MultShare delta(acirc, db_delta.data(), delta_bitlen, SERVER, dbsize_);
+  MultShare delta(mcirc, db_delta.data(), delta_bitlen, SERVER, dbsize_);
 
   // Set hammingweight input share only for bitmasks
   BoolShare _hw;
@@ -242,7 +244,7 @@ EntryShare<MultShare> CircuitInput<MultShare>::make_client_entry_share(const Epi
       f.bitsize, CLIENT, dbsize_);
 
   // delta
-  MultShare delta(acirc,
+  MultShare delta(mcirc,
       vector<CircUnit>(dbsize_, static_cast<CircUnit>(entry.has_value())).data(),
       delta_bitlen, CLIENT, dbsize_);
 
@@ -269,7 +271,7 @@ EntryShare<MultShare> CircuitInput<MultShare>::make_dummy_entry_share(const Fiel
 
   BoolShare val(bcirc, f.bitsize, dbsize_); //dummy val
 
-  MultShare delta(acirc, delta_bitlen, dbsize_); // dummy delta
+  MultShare delta(mcirc, delta_bitlen, dbsize_); // dummy delta
 
   BoolShare _hw;
   if (f.comparator == BM) {
@@ -284,5 +286,8 @@ EntryShare<MultShare> CircuitInput<MultShare>::make_dummy_entry_share(const Fiel
 
   return {move(val), move(delta), move(_hw)};
 }
+
+template class CircuitInput<BoolShare>;
+template class CircuitInput<ArithShare>;
 
 } /* end of namespace: sel */
