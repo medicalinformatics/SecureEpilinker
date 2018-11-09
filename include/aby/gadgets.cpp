@@ -31,13 +31,15 @@ using namespace std;
 
 namespace sel {
 
+BoolShare bool_identity(const BoolShare& x) { return x; }
+
 /**
  * Accumulates all objects of vector using binary operation op in a balanced
  * binary tree structure.
  */
-template <class ShareT>
-ShareT binary_accumulate(vector<ShareT> vals,
-    const function<ShareT (const ShareT&, const ShareT&)>& op) {
+template <class T>
+T binary_accumulate(vector<T> vals,
+    const function<T (const T&, const T&)>& op) {
   for(size_t j, n{vals.size()}; n > 1; n = j) {
     j = 0;
     for(size_t i{0}; i < n; ++j) {
@@ -54,14 +56,11 @@ ShareT binary_accumulate(vector<ShareT> vals,
   return vals.at(0);
 }
 
-template Share binary_accumulate(vector<Share> vals,
-    const BinaryOp_Share& op);
-
 template ArithShare binary_accumulate(vector<ArithShare> vals,
-    const BinaryOp_ArithShare& op);
+    const BinaryOp<ArithShare>& op);
 
 template BoolShare binary_accumulate(vector<BoolShare> vals,
-    const BinaryOp_BoolShare& op);
+    const BinaryOp<BoolShare>& op);
 
 template <class ShareT>
 void print_share(const Quotient<ShareT>& q, const string& msg) {
@@ -113,7 +112,7 @@ template ArithShare sum(const vector<ArithShare>&);
  * log(nvals) simd operations as if simd_share was completely split into nval
  * shares and then binary_accumulate()'d.
  */
-BoolShare split_accumulate(BoolShare simd_share, const BinaryOp_BoolShare& op) {
+BoolShare split_accumulate(BoolShare simd_share, const BinaryOp<BoolShare>& op) {
 #ifdef DEBUG_SEL_GADGETS
   cout << "==== split-accumulating share of nvals: " << simd_share.get_nvals() << " ====\n";
 #endif
@@ -174,7 +173,7 @@ BoolShare split_accumulate(BoolShare simd_share, const BinaryOp_BoolShare& op) {
 }
 
 void split_select_target(BoolShare& selector, BoolShare& target,
-    const BinaryOp_BoolShare& op_select) {
+    const BinaryOp<BoolShare>& op_select) {
   assert (selector.get_nvals() == target.get_nvals());
 #ifdef DEBUG_SEL_GADGETS
   cout << "==== split-select-target share of nvals: " << selector.get_nvals() << " ====\n";
@@ -352,13 +351,22 @@ template <class ShareT>
 QuotientSelector<ShareT> make_tie_selector(const T2BConverter<ShareT>& to_bool,
     const BinaryOp<BoolShare>& op_select, const size_t den_bits = 0) {
   return [&to_bool, op_select, den_bits] (auto a, auto b) {
-      auto ax = to_bool(a.num * b.den);
-      auto bx = to_bool(b.num * a.den);
+      BoolShare ax, bx, a_den, b_den;
+      if constexpr(is_same_v<ShareT, ArithShare>) {
+        ax = to_bool(a.num * b.den);
+        bx = to_bool(b.num * a.den);
+        a_den = to_bool(a.den);
+        b_den = to_bool(b.den);
+      } else {
+        ax = a.num * b.den;
+        bx = b.num * a.den;
+        a_den = a.den;
+        b_den = b.den;
+      }
+
       auto quotients_equal = ax == bx;
       auto quotient_select = op_select(ax, bx);
 
-      auto a_den = to_bool(a.den);
-      auto b_den = to_bool(b.den);
       if (den_bits) {
         a_den.set_bitlength(den_bits);
         b_den.set_bitlength(den_bits);
@@ -366,12 +374,11 @@ QuotientSelector<ShareT> make_tie_selector(const T2BConverter<ShareT>& to_bool,
       auto scale_select = op_select(a_den, b_den);
 
       // If quotients are equal, select by scale.
-      auto selection = (quotients_equal & scale_select)
-        | (~quotients_equal & quotient_select);
+      auto selection = quotient_select | (quotients_equal & scale_select);
 
 #ifdef DEBUG_SEL_GADGETS
       static unsigned i = 0;
-      string i_str = '[' + to_string(i++) + "] ";
+      const string i_str = '[' + to_string(i++) + "] ";
       print_share(a, i_str+"selector a");
       print_share(b, i_str+"selector b");
       print_share(a_den, i_str+"a_den");
@@ -410,16 +417,6 @@ QuotientSelector<BoolShare> make_min_tie_selector(const T2BConverter<BoolShare>&
 template
 QuotientSelector<ArithShare> make_min_tie_selector(const T2BConverter<ArithShare>&, const size_t);
 
-/*
-void max_tie_index(
-    ArithQuotient& selector, std::vector<BoolShare>& targets,
-    const A2BConverter& to_bool, const B2AConverter& to_arith,
-    const size_t den_bits) {
-  auto op_select = make_max_tie_selector(to_bool, den_bits);
-  return split_select_quotient_target(selector, targets, op_select, to_arith);
-}
-*/
-
 template <class ShareT>
 QuotientSelector<ShareT> make_max_selector(const T2BConverter<ShareT>& to_bool) {
   return [&to_bool] (auto a, auto b) {
@@ -446,24 +443,6 @@ QuotientSelector<BoolShare> make_min_selector(const T2BConverter<BoolShare>&);
 template
 QuotientSelector<ArithShare> make_min_selector(const T2BConverter<ArithShare>&);
 
-/*
-void max_index(
-    ArithQuotient& selector, std::vector<BoolShare>& targets,
-    const A2BConverter& to_bool, const B2AConverter& to_arith) {
-  auto op_select = make_max_selector(to_bool);
-  return split_select_quotient_target(selector, targets, op_select, to_arith);
-}
-*/
-
-/*
-void min_index(
-    ArithQuotient& selector, std::vector<BoolShare>& targets,
-    const A2BConverter& to_bool, const B2AConverter& to_arith) {
-  auto op_select= make_min_selector(to_bool);
-  return split_select_quotient_target(selector, targets, op_select, to_arith);
-}
-*/
-
 // TODO#13 If we can mux with ArithShares, use it here.
 ArithQuotient select_quotient(const ArithQuotient& a, const ArithQuotient& b,
     const QuotientSelector<ArithShare>& op_select, const B2AConverter& to_arith) {
@@ -488,22 +467,30 @@ ArithQuotient select_quotient(const ArithQuotient& a, const ArithQuotient& b,
 
   ArithShare num = acmp * a.num + notcmp * b.num;
   ArithShare den = acmp * a.den + notcmp * b.den;
-  return {num, den};
+  return {move(num), move(den)};
 }
 
-ArithQuotient max_tie(const ArithQuotient& a, const ArithQuotient& b,
-    const A2BConverter& to_bool, const B2AConverter& to_arith,
-    const size_t den_bits) {
-  auto op_select = make_max_tie_selector(to_bool, den_bits);
-  return select_quotient(a, b, op_select, to_arith);
+BoolQuotient select_quotient(const BoolQuotient& a, const BoolQuotient& b,
+    const QuotientSelector<BoolShare>& op_select) {
+  const auto selection = op_select(a, b);
+  return {selection.mux(a.num, b.num), selection.mux(a.den, b.den)};
 }
 
 ArithQuotient max_tie(const vector<ArithQuotient>& qs,
     const A2BConverter& to_bool, const B2AConverter& to_arith,
     const size_t den_bits) {
-  return binary_accumulate(qs, (BinaryOp_ArithQuotient)
-      [&to_bool, &to_arith, den_bits](auto a, auto b) {
-      return max_tie(a, b, to_bool, to_arith, den_bits);
+  auto op_select = make_max_tie_selector(to_bool, den_bits);
+  return binary_accumulate(qs, (BinaryOp<ArithQuotient>)
+      [&op_select, &to_arith](auto a, auto b) {
+      return select_quotient(a, b, op_select, to_arith);
+      });
+}
+
+BoolQuotient max_tie(const vector<BoolQuotient>& qs) {
+  auto op_select = make_max_tie_selector<BoolShare>(bool_identity);
+  return binary_accumulate(qs, (BinaryOp<BoolQuotient>)
+      [&op_select](auto a, auto b) {
+      return select_quotient(a, b, op_select);
       });
 }
 
@@ -515,7 +502,7 @@ ArithQuotient max(const ArithQuotient& a, const ArithQuotient& b,
 
 ArithQuotient max(const vector<ArithQuotient>& qs,
     const A2BConverter& to_bool, const B2AConverter& to_arith) {
-  return binary_accumulate(qs, (BinaryOp_ArithQuotient)
+  return binary_accumulate(qs, (BinaryOp<ArithQuotient>)
       [&to_bool, &to_arith](auto a, auto b) {
       return max(a, b, to_bool, to_arith);
       });
@@ -536,7 +523,7 @@ BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
 
   BoolShare num = cmp.mux(to_bool(a.num), to_bool(b.num));
   BoolShare den = cmp.mux(to_bool(a.den), to_bool(b.den));
-  return {num, den};
+  return {move(num), move(den)};
 }
 
 BoolShare ascending_numbers_constant(BooleanCircuit* bcirc,

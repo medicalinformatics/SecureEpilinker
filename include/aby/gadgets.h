@@ -31,16 +31,9 @@ using BoolQuotient = Quotient<BoolShare>;
 
 template <class ShareT>
   using UnaryOp = std::function<ShareT (const ShareT&)>;
-using UnaryOp_Share = std::function<Share (const Share&)>;
-using UnaryOp_BoolShare = std::function<BoolShare (const BoolShare&)>;
-using UnaryOp_ArithShare = std::function<ArithShare (const ArithShare&)>;
 
 template <class ShareT>
   using BinaryOp = std::function<ShareT (const ShareT&, const ShareT&)>;
-using BinaryOp_Share = std::function<Share (const Share&, const Share&)>;
-using BinaryOp_BoolShare = std::function<BoolShare (const BoolShare&, const BoolShare&)>;
-using BinaryOp_ArithShare = std::function<ArithShare (const ArithShare&, const ArithShare&)>;
-using BinaryOp_ArithQuotient = std::function<ArithQuotient (const ArithQuotient&, const ArithQuotient&)>;
 template <class ShareT>
   using QuotientSelector = std::function<BoolShare (const Quotient<ShareT>&, const Quotient<ShareT>&)>;
 
@@ -50,17 +43,6 @@ using A2BConverter = std::function<BoolShare (const ArithShare&)>;
 template <class ShareT>
   using B2TConverter = std::function<ShareT (const BoolShare&)>;
 using B2AConverter = std::function<ArithShare (const BoolShare&)>;
-
-/*
-Share binary_accumulate(vector<Share> vals,
-    const BinaryOp_Share& op);
-
-BoolShare binary_accumulate(vector<BoolShare> vals,
-    const BinaryOp_BoolShare& op);
-
-ArithShare binary_accumulate(vector<ArithShare> vals,
-    const BinaryOp_ArithShare& op);
-*/
 
 template<class ShareT>
 void print_share(const Quotient<ShareT>& q, const std::string& msg);
@@ -74,7 +56,7 @@ void print_share(const Quotient<ShareT>& q, const std::string& msg);
  * iteration. If nvals is odd, remainder share is saved and later appended if
  * there is another odd split.
  */
-BoolShare split_accumulate(BoolShare simd_share, const BinaryOp_BoolShare& op);
+BoolShare split_accumulate(BoolShare simd_share, const BinaryOp<BoolShare>& op);
 
 /**
  * Like split_accumulate but more specific to running a selector op_select which
@@ -84,14 +66,7 @@ BoolShare split_accumulate(BoolShare simd_share, const BinaryOp_BoolShare& op);
  * Output will be saved to input references, so initial shares are overwritten.
  */
 void split_select_target(BoolShare& selector, BoolShare& target,
-    const BinaryOp_BoolShare& op_select);
-
-/*
-template <class ShareT>
-void split_select_quotient_target(
-    Quotient<ShareT>& selector, std::vector<BoolShare>& targets,
-    const QuotientSelector<ShareT>& op_select, const B2TConverter<ShareT>& to_T);
-    */
+    const BinaryOp<BoolShare>& op_select);
 
 template <class ShareT>
 QuotientSelector<ShareT> make_max_selector(const T2BConverter<ShareT>& to_bool);
@@ -101,43 +76,20 @@ QuotientSelector<ShareT> make_min_selector(const T2BConverter<ShareT>& to_bool);
 template <class ShareT>
 QuotientSelector<ShareT> make_max_tie_selector(const T2BConverter<ShareT>& to_bool,
     const size_t den_bits = 0);
-
 template <class ShareT>
 QuotientSelector<ShareT> make_min_tie_selector(const T2BConverter<ShareT>& to_bool,
     const size_t den_bits = 0);
 
-/*
-void max_tie_index(
-    BoolQuotient& selector, std::vector<BoolShare>& targets,
-    const size_t den_bits = 0);
-
-void max_tie_index(
-    ArithQuotient& selector, std::vector<BoolShare>& targets,
-    const A2BConverter& to_bool, const B2AConverter& to_arith,
-    const size_t den_bits = 0);
-
-void max_index(
-    ArithQuotient& selector, std::vector<BoolShare>& targets,
-    const A2BConverter& to_bool, const B2AConverter& to_arith);
-
-void min_index(
-    ArithQuotient& selector, std::vector<BoolShare>& targets,
-    const A2BConverter& to_bool, const B2AConverter& to_arith);
-    */
-
-BoolShare max(const std::vector<BoolShare>&);
 template <class ShareT>
 ShareT sum(const std::vector<ShareT>&);
 
-BoolQuotient max_tie(const std::vector<BoolQuotient>& qs,
-    const size_t den_bits = 0);
+BoolQuotient max_tie(const std::vector<BoolQuotient>& qs);
 
-ArithQuotient max_tie(const ArithQuotient& a, const ArithQuotient& b,
-    const A2BConverter& to_bool, const B2AConverter& to_arith,
-    const size_t den_bits = 0);
 ArithQuotient max_tie(const std::vector<ArithQuotient>& qs,
     const A2BConverter& to_bool, const B2AConverter& to_arith,
     const size_t den_bits = 0);
+
+BoolShare max(const std::vector<BoolShare>&);
 
 BoolQuotient max(const ArithQuotient& a, const ArithQuotient& b,
     const A2BConverter& to_bool);
