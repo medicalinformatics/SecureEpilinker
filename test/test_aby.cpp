@@ -346,7 +346,7 @@ struct ABYTester {
 
     using QF = QuotientFolder<MultShare>;
 
-    QF folder(move(inq), move(targets), QF::FoldOp::MAX_TIE);
+    QF folder(move(inq), QF::FoldOp::MAX_TIE, move(targets));
     if constexpr (std::is_same_v<MultShare, ArithShare>) {
       folder.set_converters_and_den_bits(&to_bool_closure, &to_arith_closure, den_bits);
     }
