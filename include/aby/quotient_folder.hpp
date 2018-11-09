@@ -32,8 +32,8 @@ class QuotientFolder {
 public:
   enum class FoldOp { MIN, MIN_TIE, MAX, MAX_TIE };
 
-  QuotientFolder(Quotient<ShareT>&& selector, std::vector<BoolShare>&& targets,
-      FoldOp _fold_op = FoldOp::MAX_TIE)
+  QuotientFolder(Quotient<ShareT>&& selector, FoldOp _fold_op = FoldOp::MAX_TIE,
+      std::vector<BoolShare>&& targets = {})
     : base{std::forward<Quotient<ShareT>>(selector),
            std::forward<std::vector<BoolShare>>(targets)},
       fold_op{_fold_op}
@@ -93,8 +93,8 @@ public:
       for (auto& t : targets) t.reset();
     }
 
-    auto const& get_selector() { return selector; }
-    auto const& get_targets() { return targets; }
+    auto get_selector() const { return selector; }
+    auto get_targets() const { return targets; }
 
   protected:
     friend class QuotientFolder<ShareT>;
