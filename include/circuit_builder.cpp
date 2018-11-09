@@ -24,7 +24,7 @@ using fmt::format;
 #include "seltypes.h"
 #include "logger.h"
 #include "aby/Share.h"
-#include "aby/gadgets.h"
+#include "aby/quotient_folder.hpp"
 
 using namespace std;
 
@@ -145,8 +145,9 @@ public:
   }
 
 private:
-  static constexpr bool do_arith_mult = std::is_same_v<MultShare, ArithShare>;
+  inline static constexpr bool do_arith_mult = std::is_same_v<MultShare, ArithShare>;
   using QuotientShare = Quotient<MultShare>;
+  using MultQuotientFolder = QuotientFolder<MultShare>;
 
   const CircuitConfig cfg;
   // Circuits
@@ -223,25 +224,18 @@ private:
 #endif
 
     // 3. Determine index of max score of all nvals calculations
-    vector<BoolShare> max_idx = {ins.const_idx()};
-    // we summed up `nfields` many weights of size `weight_prec`
-    const size_t weight_sum_bits = cfg.weight_prec + ceil_log2(cfg.epi.nfields);
-    max_tie_index(sum_field_weights, max_idx,
-                  to_bool_closure, to_arith_closure,
-                  weight_sum_bits);
+    const auto max_fw_and_index = max_index(move(sum_field_weights));
+    const auto max_field_weight = max_fw_and_index.get_selector();
+    const auto max_idx = max_fw_and_index.get_targets();
 
-    // 4. Left side: sum up all weights and multiply with threshold
-    //  Since weights and threshold are public inputs, this can be computed
-    //  locally. This is done in set_constants().
-    //
-    // 5. Set two comparison bits, whether > (tentative) threshold
-    BoolShare threshold_weight = to_logic_space(ins.const_threshold() * sum_field_weights.den);
-    BoolShare tthreshold_weight = to_logic_space(ins.const_tthreshold() * sum_field_weights.den);
-    BoolShare b_sum_field_weight = to_logic_space(sum_field_weights.num);
+    // 4. Set two comparison bits, whether field-weight-sum > (tentative) threshold * weight-sum
+    BoolShare threshold_weight = to_logic_space(ins.const_threshold() * max_field_weight.den);
+    BoolShare tthreshold_weight = to_logic_space(ins.const_tthreshold() * max_field_weight.den);
+    BoolShare b_sum_field_weight = to_logic_space(max_field_weight.num);
     BoolShare match = threshold_weight < b_sum_field_weight;
     BoolShare tmatch = tthreshold_weight < b_sum_field_weight;
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(sum_field_weights, format("[{}] best score", index));
+    print_share(max_field_weight, format("[{}] best score", index));
     print_share(max_idx[0], format("[{}] index of best score", index));
     print_share(threshold_weight, format("[{}] T*W", index));
     print_share(tthreshold_weight, format("[{}] Tt*W", index));
@@ -252,9 +246,10 @@ private:
     get_logger()->trace("Linkage circuit component {} built.", index);
 
 #ifdef DEBUG_SEL_RESULT
-    return {max_idx[0], match, tmatch, sum_field_weights.num, sum_field_weights.den};
+    return {move(max_idx[0]), move(match), move(tmatch),
+      move(max_field_weight.num), move(max_field_weight.den)};
 #else
-    return {max_idx[0], match, tmatch};
+    return {move(max_idx[0]), move(match), move(tmatch)};
 #endif
   }
 
@@ -287,6 +282,38 @@ private:
     return {out(to_gmw(sum(matches)), ALL), out(to_gmw(sum(tmatches)), ALL)};
   }
 
+  /**
+   * Bit-usage of nfields many weights summed up
+   */
+  size_t weight_sum_bits(size_t nfields) {
+      return cfg.weight_prec + ceil_log2(nfields);
+  }
+
+  auto max_quotient(const vector<QuotientShare>& quotients,
+      size_t nfields) {
+    __ignore(nfields);
+    if constexpr (do_arith_mult) {
+      return max_tie(quotients, to_bool_closure, to_arith_closure, weight_sum_bits(nfields));
+    } else {
+      return max_tie(quotients);
+    }
+  }
+
+  auto max_index(QuotientShare&& field_weights) {
+    return max_targets(forward<QuotientShare>(field_weights), {ins.const_idx()}, cfg.epi.nfields);
+  }
+
+  auto max_targets(QuotientShare&& quotients, vector<BoolShare>&& targets, size_t nfields) {
+    __ignore(nfields);
+    MultQuotientFolder folder(forward<QuotientShare>(quotients),
+        MultQuotientFolder::FoldOp::MAX_TIE, forward<vector<BoolShare>>(targets));
+    if constexpr (do_arith_mult) {
+      folder.set_converters_and_den_bits(&to_bool_closure, &to_arith_closure,
+          weight_sum_bits(nfields));
+    }
+    return folder.fold();
+  }
+
   FieldWeight<MultShare> best_group_weight(size_t index, const IndexSet& group_set) {
     vector<FieldName> group{begin(group_set), end(group_set)};
     // copy group to store permutations
@@ -314,16 +341,13 @@ private:
       perm_weights.emplace_back(sum_perm_weight);
     } while (next_permutation(groupPerm.begin(), groupPerm.end()));
 
-    // we summed up `size` many weights of size `weight_prec`
-    const size_t weight_sum_bits = cfg.weight_prec + ceil_log2(size);
-    QuotientShare max_perm_weight = max_tie(
-          perm_weights, to_bool_closure, to_arith_closure, weight_sum_bits);
+    auto max_perm_weight = max_quotient(perm_weights, weight_sum_bits(size));
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(max_perm_weight,
                 format("[{}] max_perm_weight ({})", index, group));
 #endif
     // Treat quotient as FieldWeight
-    return {max_perm_weight.num, max_perm_weight.den};
+    return {move(max_perm_weight.num), move(max_perm_weight.den)};
   }
 
   /**
@@ -376,7 +400,7 @@ private:
       }
     }
 
-    ArithShare field_weight = weight * comp;
+    MultShare field_weight = weight * comp;
 
 #ifdef DEBUG_SEL_CIRCUIT
     print_share(weight, format("weight ({}){}", ftype, i));
@@ -394,7 +418,7 @@ private:
   * Note that we use rounding integer division, that is (x+(y/2))/y, because x/y
   * always rounds down, which would lead to a bias.
   */
-  MultShare dice_coefficient(const ComparisonIndex& i) {
+  BoolShare dice_coefficient(const ComparisonIndex& i) {
     auto [client_entry, server_entry] = ins.get(i);
 
         BoolShare hw_plus = client_entry.hw + server_entry.hw; // denominator
@@ -420,7 +444,7 @@ private:
   /**
   * Binary-compares two shares
   */
-  MultShare equality(const ComparisonIndex& i) {
+  BoolShare equality(const ComparisonIndex& i) {
     auto [client_entry, server_entry] = ins.get(i);
         BoolShare cmp = (client_entry.val == server_entry.val);
     #ifdef DEBUG_SEL_CIRCUIT
@@ -434,10 +458,10 @@ private:
 unique_ptr<CircuitBuilderBase> make_unique_circuit_builder(const CircuitConfig& cfg,
     BooleanCircuit* bcirc, BooleanCircuit* ccirc, ArithmeticCircuit* acirc) {
   if (cfg.use_conversion) {
-    return make_unique<CircuitBuilderBase>(
+    return unique_ptr<CircuitBuilderBase>(
         new CircuitBuilder<ArithShare>(cfg, bcirc, ccirc, acirc));
   } else {
-    return make_unique<CircuitBuilderBase>(
+    return unique_ptr<CircuitBuilderBase>(
         new CircuitBuilder<BoolShare>(cfg, bcirc, ccirc, acirc));
   }
 }
