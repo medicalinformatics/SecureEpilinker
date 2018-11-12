@@ -374,42 +374,41 @@ private:
       return cache_hit->second;
     }
 
-    auto [client_entry, server_entry] = ins.get(i);
-    // 1. Calculate weight * delta(i,j)
-    auto a_weight = ins.get_const_weight(i);
-    MultShare delta = client_entry.delta * server_entry.delta;
-    MultShare weight = a_weight * delta; // free constant multiplication
+    const auto delta_weight = weight(i);
+    const auto comp = compare(i);
 
-    // 2. Compare values (with dice precision) and multiply with weight
-    MultShare comp;
-    const auto ftype = cfg.epi.fields.at(i.left).comparator;
-    switch(ftype) {
-      case FieldComparator::DICE: {
-        const auto b_comp = dice_coefficient(i);
-        comp = to_mult_space(b_comp);
-        break;
-      }
-      case FieldComparator::BINARY: {
-        const auto b_comp = equality(i);
-        // Instead of left-shifting the bool share, it is cheaper to first do a
-        // single-bit conversion into an arithmetic share and then a free
-        // multiplication with a constant 2^dice_prec
-        comp = to_mult_space(b_comp);
-        comp *= ins.const_dice_prec_factor();
-        break;
-      }
-    }
-
-    MultShare field_weight = weight * comp;
+    MultShare field_weight = delta_weight * comp;
 
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(weight, format("weight ({}){}", ftype, i));
+    print_share(delta_weight, format("weight ({}){}", ftype, i));
     print_share(comp, format("comp ({}){}", ftype, i));
     print_share(field_weight, format("^^^^ field weight ({}){} ^^^^", ftype, i));
 #endif
 
-    FieldWeight<MultShare> ret = {field_weight, weight};
-    return field_weight_cache[i] = move(ret);
+    return field_weight_cache[i] = {field_weight, delta_weight};
+  }
+
+  MultShare weight(const ComparisonIndex& i) {
+    return delta(i) * ins.get_const_weight(i); // Arith: free constant multiplication
+  }
+
+  MultShare delta(const ComparisonIndex& i) {
+    const auto [client_entry, server_entry] = ins.get(i);
+    if constexpr (do_arith_mult) {
+      return client_entry.delta * server_entry.delta;
+    } else {
+      return client_entry.delta & server_entry.delta;
+    }
+  }
+
+  /**
+   * compare returns the comparison of the fields specified by i
+   * It handles the logic of choosing the right comparison method depending on
+   * the field comparator type
+   */
+  MultShare compare(const ComparisonIndex& i) {
+    const auto ftype = cfg.epi.fields.at(i.left).comparator;
+    return (ftype == FieldComparator::DICE) ?  dice_coefficient(i) : equality(i);
   }
 
   /**
@@ -417,40 +416,49 @@ private:
   * to the configured precision.
   * Note that we use rounding integer division, that is (x+(y/2))/y, because x/y
   * always rounds down, which would lead to a bias.
+  * Output is a fixed-point number with precision cfg.dice_prec
   */
-  BoolShare dice_coefficient(const ComparisonIndex& i) {
-    auto [client_entry, server_entry] = ins.get(i);
+  MultShare dice_coefficient(const ComparisonIndex& i) {
+    const auto [client_entry, server_entry] = ins.get(i);
 
-        BoolShare hw_plus = client_entry.hw + server_entry.hw; // denominator
-        BoolShare hw_and_twice = hammingweight(server_entry.val & client_entry.val) << 1; // numerator
+    const BoolShare hw_plus = client_entry.hw + server_entry.hw; // denominator
+    const BoolShare hw_and_twice = hammingweight(server_entry.val & client_entry.val) << 1; // numerator
 
-        // fixed point rounding integer division
-        // hw_size(bitsize) + 1 because we multiply numerator with 2 and denominator is sum
-        // of two values of original bitsize. Both are hammingweights.
-        const auto bitsize = hw_size(cfg.epi.fields.at(i.left).bitsize) + 1;
-        const auto int_div_file_path = format((cfg.circ_dir/"sel_int_div/{}_{}.aby").string(),
-        bitsize, cfg.dice_prec);
-        BoolShare dice = apply_file_binary(hw_and_twice, hw_plus, bitsize, bitsize, int_div_file_path);
+    // fixed point rounding integer division
+    // hw_size(bitsize) + 1 because we multiply numerator with 2 and denominator is sum
+    // of two values of original bitsize. Both are hammingweights.
+    const auto bitsize = hw_size(cfg.epi.fields.at(i.left).bitsize) + 1;
+    const auto int_div_file_path = format((cfg.circ_dir/"sel_int_div/{}_{}.aby").string(),
+    bitsize, cfg.dice_prec);
+    const BoolShare dice = apply_file_binary(hw_and_twice, hw_plus, bitsize, bitsize, int_div_file_path);
 
-    #ifdef DEBUG_SEL_CIRCUIT
-        print_share(hw_and_twice, format("hw_and_twice {}", i));
-        print_share(hw_plus, format("hw_plus {}", i));
-        print_share(dice, format("dice {}", i));
-    #endif
+#ifdef DEBUG_SEL_CIRCUIT
+    print_share(hw_and_twice, format("hw_and_twice {}", i));
+    print_share(hw_plus, format("hw_plus {}", i));
+    print_share(dice, format("dice {}", i));
+#endif
 
-        return dice;
+    return to_mult_space(dice);
   }
 
   /**
   * Binary-compares two shares
   */
-  BoolShare equality(const ComparisonIndex& i) {
-    auto [client_entry, server_entry] = ins.get(i);
-        BoolShare cmp = (client_entry.val == server_entry.val);
-    #ifdef DEBUG_SEL_CIRCUIT
-        print_share(cmp, format("equality {}", i));
-    #endif
-        return cmp;
+  MultShare equality(const ComparisonIndex& i) {
+    const auto [client_entry, server_entry] = ins.get(i);
+    const BoolShare cmp = (client_entry.val == server_entry.val);
+#ifdef DEBUG_SEL_CIRCUIT
+    print_share(cmp, format("equality {}", i));
+#endif
+    if constexpr (do_arith_mult) {
+    // For arithmetic multiplication:
+    // Instead of left-shifting the bool share, it is cheaper to first do a
+    // single-bit conversion into an arithmetic share and then a free
+    // multiplication with a constant 2^dice_prec
+      return to_mult_space(cmp) * ins.const_dice_prec_factor();
+    } else {
+      return to_mult_space(cmp << cfg.dice_prec);
+    }
   }
 
 };
