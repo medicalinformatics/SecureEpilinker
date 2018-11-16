@@ -12,6 +12,8 @@ RUN apt-get update && \
   openssl \
   cmake \
   libboost-dev \
+  libboost-system-dev \
+  libboost-thread-dev \
   libgmp-dev \
   libcurl4-openssl-dev \
   && rm -rf /var/lib/apt/lists/*
@@ -61,13 +63,12 @@ COPY --from=build /app/build/sel /app/sel
 COPY --from=build /deps /deps
 # openssl keys
 COPY --from=build --chown=sel:sel /app/data /data
-# json schemes and default config
+# json schemes, default config and circuit files
 COPY --chown=sel:sel data/*.json /data/
-# copy config and circuit files
-COPY extern/ABY/bin/circ/int_div_16.aby /app/circ/
-ADD data/circ /data/circ/
-RUN chmod a+r circ/* \
-  && mkdir /log && chown sel:sel /log
+COPY --chown=sel:sel data/circ /data/circ
+
+#RUN chmod a+r circ/* \
+RUN mkdir /log && chown sel:sel /log
 
 # find libraries in the correct order
 ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/:/deps/

@@ -15,6 +15,8 @@ COPY --from=runtime /shared-libs.list /shared-libs.list
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
   libboost-dev \
+  libboost-system-dev \
+  libboost-thread-dev \
   libgmp-dev \
   libcurl4-openssl-dev \
   && rm -rf /var/lib/apt/lists/*
@@ -63,11 +65,9 @@ COPY --from=build /app/build/sel /app/sel
 COPY --from=build /deps /deps
 # openssl keys
 COPY --from=build /app/data /data
-# json schemes and default config
+# json schemes, default config and circuit files
 COPY data/*.json /data/
-# copy config and circuit files
-COPY extern/ABY/bin/circ/int_div_16.aby /app/circ/
-ADD data/circ /data/circ/
+COPY data/circ /data/circ
 
 # find libraries in the correct order
 ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/:/deps/

@@ -6,6 +6,7 @@
 "localInitSchemaPath": "../data/local-init-schema.json",
 "remoteInitSchemaPath": "../data/remote-init-schema.json",
 "linkRecordSchemaPath": "../data/linkrecord-schema.json",
+"circuitDirectory": "../data/circ",
 "useSSL": false,
 "bindAddress": "0.0.0.0",
 "restWorkerThreads": 2,
@@ -14,6 +15,5 @@
 "booleanSharing": "yao",
 "useCircuitConversion": true,
 "logFilePath": "../log/secure_epilinker.log",
-"circuitDirectory": "../data/circ",
 "abyPorts": [1337,1338,1339,1340,1341,1342,1343,1344]
 }
