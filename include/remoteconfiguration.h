@@ -64,6 +64,7 @@ class RemoteConfiguration {
   bool get_mutual_initialization_status() const;
 
   void test_configuration(const RemoteId&, const nlohmann::json&);
+  void test_linkage_service() const;
   void mark_mutually_initialized() const; // changes mutable flag
  protected:
  private:
