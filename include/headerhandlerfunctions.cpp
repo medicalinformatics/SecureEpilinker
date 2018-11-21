@@ -90,7 +90,6 @@ SessionResponse test_configs(const shared_ptr<restbed::Session>&,
                               const shared_ptr<spdlog::logger>& logger) {
   SessionResponse response;
   logger->info("Recieved Test Request from {}", remote_id);
-  auto remote_config{ConfigurationHandler::cget().get_remote_config(remote_id)};
   //if(auto auth_result = // check authentication
       //remote_config->get_remote_authenticator().check_authentication_header(header);
       //auth_result.return_code != 200){ // auth not ok
@@ -106,4 +105,29 @@ SessionResponse test_configs(const shared_ptr<restbed::Session>&,
   return response;
 }
 
+SessionResponse test_linkage_service(const shared_ptr<restbed::Session>&,
+                              const shared_ptr<const restbed::Request>&,
+                              const multimap<string,string>&,
+                              const string& remote_id,
+                              const shared_ptr<spdlog::logger>& logger) {
+  SessionResponse response;
+  logger->info("Recieved Test Linkage Service Request for {}", remote_id);
+  auto remote_config{ConfigurationHandler::cget().get_remote_config(remote_id)};
+  //if(auto auth_result = // check authentication
+      //remote_config->get_remote_authenticator().check_authentication_header(header);
+      //auth_result.return_code != 200){ // auth not ok
+    //return auth_result;
+  //}
+  try{
+    remote_config->test_linkage_service();
+  } catch(const exception& e) {
+      logger->error("Error connecting to Linkage Service: {}", e.what());
+      return responses::status_error(500, e.what());
+  }
+    response.return_code = restbed::OK;
+    response.body = "Linkage Service connected"s;
+    response.headers = {{"Content-Length", to_string(response.body.length())},
+                        {"Connection", "Close"}};
+    return response;
+}
 } // namespace sel
