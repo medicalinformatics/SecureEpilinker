@@ -29,15 +29,6 @@ namespace sel {
 struct ConnectionConfig {
   std::string url;
   sel::Authenticator authenticator;
-  //std::unique_ptr<AuthenticationConfig> authentication;
-  //ConnectionConfig& operator=(ConnectionConfig&& rhs){
-    //url = move(rhs.url);
-    //authenticator = std::move(rhs.authenticator);
-    ////authentication = move(rhs.authentication);
-    //return *this;
-  //}
-  //ConnectionConfig() = default;
-  //ConnectionConfig(ConnectionConfig&&) = default;
   bool empty() const {return url.empty();}
 };
 } // namespace sel
