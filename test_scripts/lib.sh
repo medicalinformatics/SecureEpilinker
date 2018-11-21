@@ -45,6 +45,13 @@ sel_test_conn() {
 
   curl -v -k "https://${host}:${port}/test/${id}"
 }
+sel_test_ls() {
+  id=${1}
+  port=${2:-8161}
+  host=${3:-127.0.0.1}
+
+  curl -v -k "https://${host}:${port}/testLS/${id}"
+}
 
 mpc_action() {
   action=${1}
