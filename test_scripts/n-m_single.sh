@@ -7,5 +7,6 @@ port=${sel_port:-8161}
 local_init $id $port
 remote_init $id $port
 sel_test_conn $id $port
+sel_test_ls $id $port
 link_records $id $port
 
