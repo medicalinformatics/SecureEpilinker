@@ -133,4 +133,19 @@ const Authenticator& RemoteConfiguration::get_remote_authenticator() const {
   return m_connection_profile.authenticator;
 }
 
+void RemoteConfiguration::test_linkage_service() const {
+  if (!m_linkage_service.empty()) {
+    const string url{m_linkage_service.url+"/testConnection/"+
+      ConfigurationHandler::cget().get_local_config()->get_local_id()};
+    list<string> header{"Authorization: "s+m_linkage_service.authenticator.sign_transaction("")};
+    get_logger(ComponentLogger::REST)->info("Testing Connection to Linkage Service at: {}", url);
+    auto response{perform_get_request(url, header, false)};
+    if(response.return_code != 204) {
+      throw logic_error(to_string(response.return_code)+" - "+response.body);
+    }
+  } else {
+    throw logic_error("Linkage Service not set");
+  }
+
+}
 }  // namespace sel

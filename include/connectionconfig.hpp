@@ -38,6 +38,7 @@ struct ConnectionConfig {
   //}
   //ConnectionConfig() = default;
   //ConnectionConfig(ConnectionConfig&&) = default;
+  bool empty() const {return url.empty();}
 };
 } // namespace sel
 #endif /* end of include guard: SEL_CONNECTIONCONFIG_HPP */
