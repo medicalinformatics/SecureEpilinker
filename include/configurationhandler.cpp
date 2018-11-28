@@ -19,6 +19,7 @@
 #include "configurationhandler.h"
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include "localconfiguration.h"
 #include "connectionhandler.h"
 #include "remoteconfiguration.h"
@@ -39,35 +40,35 @@ ConfigurationHandler const& ConfigurationHandler::cget(){
 
 void ConfigurationHandler::set_remote_config(
     shared_ptr<RemoteConfiguration>&& remote) {
-  lock_guard<mutex> lock(m_remote_mutex);
+  unique_lock<shared_mutex> lock(m_remote_mutex);
   m_remote_configs[remote->get_id()] = remote;
 }
 
 void ConfigurationHandler::set_local_config(
     shared_ptr<LocalConfiguration>&& local) {
-  lock_guard<mutex> lock(m_local_mutex);
+  unique_lock<shared_mutex> lock(m_local_mutex);
   m_local_config = local;
 }
 
 shared_ptr<const LocalConfiguration> ConfigurationHandler::get_local_config()
     const {
-  lock_guard<mutex> lock(m_local_mutex);
+  shared_lock<shared_mutex> lock(m_local_mutex);
   return m_local_config;
 }
 
 shared_ptr<RemoteConfiguration> ConfigurationHandler::get_remote_config(
     const RemoteId& remote_id) const {
-  lock_guard<mutex> lock(m_remote_mutex);
+  shared_lock<shared_mutex> lock(m_remote_mutex);
   return m_remote_configs.at(remote_id);
 }
 
 bool ConfigurationHandler::remote_exists(const RemoteId& remote_id) {
-  lock_guard<mutex> lock(m_remote_mutex);
+  shared_lock<shared_mutex> lock(m_remote_mutex);
   return m_remote_configs.find(remote_id) != m_remote_configs.end();
 }
 
 size_t ConfigurationHandler::get_remote_count() const {
-  lock_guard<mutex> lock(m_remote_mutex);
+  shared_lock<shared_mutex> lock(m_remote_mutex);
   return m_remote_configs.size();
 }
 
@@ -92,15 +93,16 @@ return {local_config->get_epilink_config(),
 nlohmann::json ConfigurationHandler::make_comparison_config(const RemoteId& remote_id) const {
   nlohmann::json server_config({});
   {
-  lock_guard<mutex> local_lock(m_local_mutex);
+  unique_lock<shared_mutex> local_lock(m_local_mutex);
   auto epi_config = m_local_config->get_epilink_config();
+  local_lock.unlock();
   server_config["fields"] = epi_config.fields;
   server_config["exchangeGroups"] = epi_config.exchange_groups;
   server_config["threshold_match"] = epi_config.threshold;
   server_config["threshold_non_match"] = epi_config.tthreshold;
   }
   {
-  lock_guard<mutex> remote_lock(m_remote_mutex);
+  lock_guard<shared_mutex> remote_lock(m_remote_mutex);
   server_config["matchingMode"] = m_remote_configs.at(remote_id)->get_matching_mode();
   }
   server_config["availableAbyPorts"] = ConnectionHandler::cget().get_free_ports();
