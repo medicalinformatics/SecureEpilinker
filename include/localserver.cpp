@@ -86,7 +86,6 @@ void LocalServer::send_server_result_to_linkageservice(const vector<Result<CircU
   auto logger{get_logger(ComponentLogger::REST)};
   auto local_config{ConfigurationHandler::cget().get_local_config()};
   auto remote_config{ConfigurationHandler::get().get_remote_config(m_remote_id)};
-  auto linkage_service{remote_config->get_linkage_service()};
   logger->info("Sending server result to Linkage Service");
   try {
     auto response{send_result_to_linkageservice(result,
