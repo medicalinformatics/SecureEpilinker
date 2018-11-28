@@ -24,6 +24,7 @@
 #include "circuit_config.h"
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 
 namespace sel {
 class RemoteConfiguration;
@@ -57,8 +58,8 @@ class ConfigurationHandler {
   std::map<RemoteId, std::shared_ptr<RemoteConfiguration>>
       m_remote_configs;
   ServerConfig m_server_config;
-  mutable std::mutex m_local_mutex;
-  mutable std::mutex m_remote_mutex;  // Maybe one Mutex per remote? (perf)
+  mutable std::shared_mutex m_local_mutex;
+  mutable std::shared_mutex m_remote_mutex;  // Maybe one Mutex per remote? (perf)
 };
 
 CircuitConfig make_circuit_config(const std::shared_ptr<const LocalConfiguration>&,
