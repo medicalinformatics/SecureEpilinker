@@ -65,7 +65,7 @@ class LinkageJob {
    void set_local_config(std::shared_ptr<LocalConfiguration>);
  private:
   JobPreparation prepare_run();
-  void signal_server(std::promise<size_t>&, size_t);
+  size_t get_server_nvals(size_t);
   bool perform_callback(const std::string&) const;
 #ifdef DEBUG_SEL_REST
   void compute_debugging_result(const Records&);
