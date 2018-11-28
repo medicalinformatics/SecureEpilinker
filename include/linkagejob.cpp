@@ -75,10 +75,9 @@ RemoteId LinkageJob::get_remote_id() const {
 LinkageJob::JobPreparation LinkageJob::prepare_run() {
   m_status = JobStatus::RUNNING;
   // Get number of records from server
-  promise<size_t> nvals_prom;
-  auto nvals{nvals_prom.get_future()};
   size_t num_records{m_records->size()};
-  signal_server(nvals_prom, num_records);
+  //this future trickery has to be done to properly wait for a reply
+  auto nvals{std::async(&LinkageJob::get_server_nvals, this, num_records)};
   nvals.wait_for(15s);
   if(!nvals.valid()){
     throw runtime_error("Error retrieving number of records from server");
@@ -170,7 +169,7 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
  * Send server the configuration to compare and recieve back the number of
  * records in the database
  */
-void LinkageJob::signal_server(promise<size_t>& nvals, size_t num_records) {
+size_t LinkageJob::get_server_nvals(size_t num_records) {
   auto logger{get_logger(ComponentLogger::CLIENT)};
   //FIXME(TK): THIS IS BAD AND I SHOULD FEEL BAD
   std::this_thread::sleep_for(500ms);
@@ -187,7 +186,7 @@ void LinkageJob::signal_server(promise<size_t>& nvals, size_t num_records) {
     logger->debug("Response stream:\n{} - {}\n",response.return_code, response.body);
     // get nvals from response header
     if (response.return_code == 200) {
-      nvals.set_value(stoull(get_headers(response.body, "Record-Number").front()));
+      return stoull(get_headers(response.body, "Record-Number").front());
     } else {
       logger->error("Error communicating with remote epilinker: {} - {}", response.return_code, response.body);
     }

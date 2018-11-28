@@ -67,7 +67,7 @@ SessionResponse send_result_to_linkageservice(const std::vector<Result<CircUnit>
 std::vector<std::string> get_headers(std::istream& is,const std::string& header);
 std::vector<std::string> get_headers(const std::string&,const std::string& header);
 
-void send_curl(curlpp::Easy& request, std::promise<std::stringstream> barrier);
+std::stringstream send_curl(curlpp::Easy& request);
 
 } // namespace sel
 #endif /* end of include guard: SEL_RESTUTILS_H */

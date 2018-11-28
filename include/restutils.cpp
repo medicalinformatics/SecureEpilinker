@@ -111,11 +111,16 @@ unique_ptr<AuthenticationConfig> parse_json_auth_config(const nlohmann::json& j)
   return make_unique<AuthenticationConfig>(AuthenticationType::NONE);
 }
 
+stringstream send_curl(curlpp::Easy& request){
+  std::stringstream response;
+  request.setOpt(new curlpp::Options::WriteStream(&response));
+  request.perform();
+  return response;
+}
+
 SessionResponse perform_post_request(string url, string data, list<string> headers, bool get_headers){
   auto logger{get_logger()};
   curlpp::Easy curl_request;
-  promise<stringstream> response_promise;
-  future<stringstream> response_stream{response_promise.get_future()};
   headers.emplace_back("Expect:");
   headers.emplace_back("Content-Length: "s+to_string(data.length()));
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
@@ -127,7 +132,8 @@ SessionResponse perform_post_request(string url, string data, list<string> heade
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
   curl_request.setOpt(new curlpp::Options::Header(get_headers));
-  send_curl(curl_request, move(response_promise));
+  //this future trickery has to be done to properly wait for a reply
+  auto response_stream{async(send_curl,std::ref(curl_request))};
   response_stream.wait();
   auto responsecode = curlpp::Infos::ResponseCode::get(curl_request);
   auto stream = response_stream.get();
@@ -137,8 +143,6 @@ SessionResponse perform_post_request(string url, string data, list<string> heade
 SessionResponse perform_get_request(string url, list<string> headers, bool get_headers){
   auto logger{get_logger()};
   curlpp::Easy curl_request;
-  promise<stringstream> response_promise;
-  future<stringstream> response_stream{response_promise.get_future()};
   headers.emplace_back("Expect:");
   curl_request.setOpt(new curlpp::Options::HttpHeader(headers));
   curl_request.setOpt(new curlpp::Options::Url(url));
@@ -147,7 +151,8 @@ SessionResponse perform_get_request(string url, list<string> headers, bool get_h
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
   curl_request.setOpt(new curlpp::Options::Header(get_headers));
-  send_curl(curl_request, move(response_promise));
+  //this future trickery has to be done to properly wait for a reply
+  auto response_stream{async(send_curl,std::ref(curl_request))};
   response_stream.wait();
   auto responsecode = curlpp::Infos::ResponseCode::get(curl_request);
   auto stream = response_stream.get();
@@ -209,13 +214,6 @@ string assemble_remote_url(RemoteConfiguration const *remote_config) {
 }
 string assemble_remote_url(const shared_ptr<const RemoteConfiguration>& remote_config) {
   return assemble_remote_url(remote_config.get());
-}
-
-void send_curl(curlpp::Easy& request, std::promise<std::stringstream> barrier){
-  std::stringstream response;
-  request.setOpt(new curlpp::Options::WriteStream(&response));
-  request.perform();
-  barrier.set_value(move(response));
 }
 
 }  // namespace sel
