@@ -108,18 +108,11 @@ void RemoteConfiguration::test_configuration(
     logger->error("Configuration is not compatible to remote config");
     return;
   }
-  const auto common_port{get_headers(response.body, "SEL-Port")};
-  if (!common_port.empty()) {
-    logger->info("Client registered common Port {}", common_port.front());
-    set_aby_port(stoul(common_port.front()));
+  const auto aby_server_port{get_headers(response.body, "SEL-Port")};
+  if (!aby_server_port.empty()) {
+    logger->info("Client registered aby Port {}", aby_server_port.front());
+    set_aby_port(stoul(aby_server_port.front()));
     mark_mutually_initialized();
-    try {
-      ConnectionHandler::get().mark_port_used(m_aby_port);
-    } catch (const exception& e) {
-      logger->warn(
-          "Can not mark port as used. If server and client are the same "
-          "process, that is ok.");
-    }
     std::thread client_creator([this](){ServerHandler::get().insert_client(m_remote_id);});
     client_creator.detach();
   }

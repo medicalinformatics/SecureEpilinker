@@ -61,24 +61,20 @@ SessionResponse valid_test_config_json_handler(
         auth_result.return_code != 200){ // auth not ok
       return auth_result;
     }
-    // negotiate common ABY port
-    auto client_ports{client_config.at("availableAbyPorts").get<set<Port>>()};
-    Port common_port = connection_handler.choose_common_port(client_ports);
-    logger->debug("Common port: {}", common_port);
-    // The aby port information is not needed for config comparison
+    Port aby_port = connection_handler.choose_aby_port();
+    logger->debug("ABY Server port: {}", aby_port);
     auto client_comparison_config = client_config;
-    client_comparison_config.erase("availableAbyPorts");
     // Compare Configs
     if (config_handler.compare_configuration(client_comparison_config, remote_id)) {
       logger->info("Valid config");
-      remote_config->set_aby_port(common_port);
+      remote_config->set_aby_port(aby_port);
       remote_config->mark_mutually_initialized();
 
       logger->info("Building MPC Server");
-      RemoteAddress tempadr{remote_config->get_remote_host(),common_port};
+      RemoteAddress tempadr{remote_config->get_remote_host(),aby_port};
       std::thread server_creator([remote_id,tempadr](){ServerHandler::get().insert_server(remote_id, tempadr);});
       server_creator.detach();
-      return responses::server_initialized(common_port);
+      return responses::server_initialized(aby_port);
     } else {
       logger->error("Invalid Configs");
       return responses::status_error(restbed::BAD_REQUEST,"Configurations are not compatible");
@@ -232,7 +228,7 @@ SessionResponse valid_init_remote_json_handler(
     return responses::status_error(restbed::NOT_IMPLEMENTED, "Updating of configurations is not implemented yet");
   }
   config_handler.set_remote_config(move(remote_config));
-  // Test connection and negotiate common port
+  // Test connection and request server aby port
   //auto placed_config{config_handler.get_remote_config(remote_id)};
   //placed_config->test_configuration(config_handler->get_local_config()->get_local_id(), config_handler->make_comparison_config(remote_id), connection_handler, server_handler);
   // TODO(TK): Error handling

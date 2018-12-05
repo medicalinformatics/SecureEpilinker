@@ -105,13 +105,11 @@ nlohmann::json ConfigurationHandler::make_comparison_config(const RemoteId& remo
   lock_guard<shared_mutex> remote_lock(m_remote_mutex);
   server_config["matchingMode"] = m_remote_configs.at(remote_id)->get_matching_mode();
   }
-  server_config["availableAbyPorts"] = ConnectionHandler::cget().get_free_ports();
   return server_config;
 }
 bool ConfigurationHandler::compare_configuration(const nlohmann::json& client_config, const RemoteId& remote_id) const{
   nlohmann::json server_config;
   server_config = make_comparison_config(remote_id);
-  server_config.erase(server_config.find("availableAbyPorts"));
   return client_config == server_config;
 }
 }  // namespace sel

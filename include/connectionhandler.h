@@ -71,13 +71,12 @@ class ConnectionHandler {
 
   Port use_free_port();
   std::set<Port> get_free_ports() const;
-  Port choose_common_port(const std::set<Port>&);
+  Port choose_aby_port();
   void mark_port_used(Port);
 
   Port initialize_aby_server(std::shared_ptr<RemoteConfiguration>);
 
  private:
-  std::string get_available_ports() const;
   std::shared_ptr<restbed::Service> m_service;
   std::set<Port> m_aby_available_ports;
   std::mutex m_port_mutex;

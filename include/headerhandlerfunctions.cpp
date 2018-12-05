@@ -37,7 +37,7 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
                               string remote_id,
                               const shared_ptr<spdlog::logger>& logger) {
   SessionResponse response;
-  Port common_port;
+  Port aby_server_port;
   string client_ip;
   bool counting_mode;
   logger->info("Recieved Linkage Request from {}", remote_id);
@@ -54,7 +54,7 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
   if(header.find("Counting-Mode") == header.end()) {
     counting_mode = false;
   }
-  common_port = ServerHandler::cget().get_server_port(remote_id);
+  aby_server_port = ServerHandler::cget().get_server_port(remote_id);
   size_t num_records = stoull(header.find("Record-Number")->second);
   counting_mode = header.find("Counting-Mode")->second == "true" ? true : false;
   size_t server_record_number;
@@ -74,7 +74,7 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
   }
   response.headers = {{"Content-Length", to_string(response.body.length())},
                       {"Record-Number", to_string(server_record_number)},
-                      {"SEL-Port", to_string(common_port)},
+                      {"SEL-Port", to_string(aby_server_port)},
                       {"Connection", "Close"}};
   std::thread server_runner([remote_id, data, num_records, counting_mode]() {
       ServerHandler::get().run_server(remote_id, data, num_records, counting_mode);

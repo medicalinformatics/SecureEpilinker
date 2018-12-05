@@ -66,13 +66,9 @@ set<Port> ConnectionHandler::get_free_ports() const {
 
 Port ConnectionHandler::initialize_aby_server(
     shared_ptr<RemoteConfiguration> remote_config) {
-  if (m_aby_available_ports.empty()) {
-    throw std::runtime_error("No available port for smpc communication");
-  }
   string data{"{}"};
   list<string> headers{
     "Authorization: "s+ remote_config->get_remote_authenticator().sign_transaction(""),
-    "Available-Ports: "s+get_available_ports(),
     "Content-Type: application/json",
     };
   string url{assemble_remote_url(remote_config)+"/testConfig/"+ConfigurationHandler::cget().get_local_config()->get_local_id()};
@@ -80,34 +76,21 @@ Port ConnectionHandler::initialize_aby_server(
   // FIXME(TK): Auth from response
   auto resp_port(get_headers(response.body, "SEL-Port"));
   if(resp_port.empty()){
-    throw runtime_error("No common available port for smpc communication");
+    throw runtime_error("No aby port for smpc communication in server response");
   }
   Port sel_port = stoul(resp_port.front());
   return sel_port;
 }
 
-Port ConnectionHandler::choose_common_port(const set<Port>& remote_ports) {
-  vector<Port> intersection;
+Port ConnectionHandler::choose_aby_port() {
   lock_guard<mutex> lock(m_port_mutex);
-  set_intersection(m_aby_available_ports.begin(), m_aby_available_ports.end(),
-                   remote_ports.begin(), remote_ports.end(),
-                   back_inserter(intersection));
-
-  if (intersection.empty()) {
-    throw runtime_error("No common available port for smpc communication");
+  if (!m_aby_available_ports.empty()) {
+    return move(m_aby_available_ports.extract(m_aby_available_ports.begin()).value());
+  } else {
+    throw runtime_error("No available port for smpc communication");
   }
-  m_aby_available_ports.erase(m_aby_available_ports.find(intersection.front()));
-  return intersection.front();
 }
 
-string ConnectionHandler::get_available_ports() const {
-  string result;
-  for (const auto& port : m_aby_available_ports) {
-    result += to_string(port) + ',';
-  }
-  result.pop_back();  // remove trailing comma
-  return result;
-}
 void ConnectionHandler::mark_port_used(Port port) {
   if (auto it = m_aby_available_ports.find(port);
       it != m_aby_available_ports.end()) {
