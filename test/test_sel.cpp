@@ -238,10 +238,10 @@ EpilinkInput input_empty() {
   return {move(epi_cfg), move(in_client), move(in_server)};
 }
 
-EpilinkInput input_dkfz_random(size_t dbsize) {
+EpilinkInput input_dkfz_random(size_t dbsize, size_t nrecords=1) {
   RandomInputGenerator random_input(make_dkfz_cfg());
   random_input.set_client_empty_fields({"ort"});
-  return random_input.generate(dbsize);
+  return random_input.generate(dbsize, nrecords);
 }
 
 EpilinkConfig read_config_file(const fs::path& cfg_path) {
@@ -459,7 +459,8 @@ int main(int argc, char *argv[])
 {
   bool role_server = false;
   unsigned int sharing_num = S_YAO;
-  uint32_t dbsize = 1;
+  size_t dbsize = 1;
+  size_t nrecords = 1;
   uint32_t nthreads = 1;
   string remote_host = "127.0.0.1";
   bool match_counting = false;
@@ -472,6 +473,7 @@ int main(int argc, char *argv[])
     ("c,conversion", "Whether to convert to arithmetic space for multiplications",
         cxxopts::value(use_conversion))
     ("n,dbsize", "Database size", cxxopts::value(dbsize))
+    ("N,nrecords", "Number of client records", cxxopts::value(nrecords))
     ("r,run-both", "Use set_both_inputs()", cxxopts::value(run_both))
     ("L,local-only", "Only run local calculations on clear values."
         " Doesn't initialize the SecureEpilinker.", cxxopts::value(only_local))
@@ -501,7 +503,7 @@ int main(int argc, char *argv[])
     role, remote_host, 5676, nthreads
   };
 
-  const auto in = input_dkfz_random(dbsize);
+  const auto in = input_dkfz_random(dbsize, nrecords);
   //const auto in = input_multi_test_0824();
 
   const auto circ_cfg = make_circuit_config<CircUnit>(in.cfg);

@@ -62,44 +62,48 @@ Bitmask RandomInputGenerator::random_bm(const size_t bitsize, const int density_
   return bm;
 }
 
-EpilinkInput RandomInputGenerator::generate(const size_t nvals) {
+Record RandomInputGenerator::random_record() {
+  return transform_map(cfg.fields, [this](const FieldSpec& f)
+    -> FieldEntry {
+      bool be_empty = vec_contains(client_empty_fields, f.name);
+      if (be_empty) {
+        return nullopt;
+      } else {
+        return random_bm(f.bitsize,
+            (f.comparator == FieldComparator::DICE) ? bm_density_shift : 0);
+      }
+    });
+}
+
+EpilinkInput RandomInputGenerator::generate(const size_t database_size, const size_t num_records) {
   // Client Input
-  EpilinkClientInput in_client {
-    transform_map(cfg.fields, [this](const FieldSpec& f)
-      -> FieldEntry {
-        bool be_empty = vec_contains(client_empty_fields, f.name);
-        if (be_empty) {
-          return nullopt;
-        } else {
-          return random_bm(f.bitsize,
-              (f.comparator == FieldComparator::DICE) ? bm_density_shift : 0);
-        }
-      }),
-      nvals
-  };
+  auto records = make_unique<Records>();
+  records->reserve(num_records);
+  generate_n(back_inserter(*records), num_records, bind(&RandomInputGenerator::random_record, this));
+  EpilinkClientInput in_client { move(records), database_size };
 
   // Server Input
-
   EpilinkServerInput in_server {
     transform_map(cfg.fields,
-      [this, &nvals, &in_client](const FieldSpec& f)
+      [this, &database_size, &num_records, &in_client](const FieldSpec& f)
       -> VFieldEntry {
         VFieldEntry ve;
-        ve.reserve(nvals);
-        for (size_t i = 0; i < nvals; ++i) {
+        ve.reserve(database_size);
+        for (size_t i = 0; i < database_size; ++i) {
           if (random_empty(gen)) {
             ve.emplace_back(nullopt);
           } else if (f.comparator == FieldComparator::DICE) {
             ve.emplace_back(random_bm(f.bitsize, bm_density_shift));
           } else if (random_match(gen)) {
-            ve.emplace_back(in_client.records->at(0).at(f.name));
+            size_t match_idx = i % num_records;
+            ve.emplace_back(in_client.records->at(match_idx).at(f.name));
           } else {
             ve.emplace_back(random_bm(f.bitsize, 0));
           }
         }
         return ve;
       }),
-      1 // TODO generate multiple client records
+      num_records
   };
 
   return {move(cfg), move(in_client), move(in_server)};
