@@ -429,7 +429,7 @@ private:
     // of two values of original bitsize. Both are hammingweights.
     const auto bitsize = hw_size(cfg.epi.fields.at(i.left).bitsize) + 1;
     const auto int_div_file_path = format((cfg.circ_dir/"sel_int_div/{}_{}.aby").string(),
-    bitsize, cfg.dice_prec);
+        bitsize, cfg.dice_prec);
     const BoolShare dice = apply_file_binary(hw_and_twice, hw_plus, bitsize, bitsize, int_div_file_path);
 
 #ifdef DEBUG_SEL_CIRCUIT
