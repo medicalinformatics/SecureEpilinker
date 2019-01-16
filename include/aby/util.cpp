@@ -20,6 +20,7 @@
 #include <functional>
 #include "abycore/aby/abyparty.h"
 #include "abycore/circuit/arithmeticcircuits.h"
+#include "abycore/circuit/booleancircuits.h"
 #include "abycore/sharing/sharing.h"
 #include "util.h"
 
@@ -38,28 +39,51 @@ uint32_t get_milis() {
  * Prints stats that don't change from query to query
  */
 void print_stats_query_oneoff(ABYParty& party) {
-  //Sharing* bs = party->GetSharings()[S_BOOL];
-  //BooleanCircuit* bc = (BooleanCircuit*) bs->GetCircuitBuildRoutine();
-  Sharing* bs = party.GetSharings()[S_ARITH];
-  ArithmeticCircuit* bc = (ArithmeticCircuit*) bs->GetCircuitBuildRoutine();
+  const auto sharings = party.GetSharings();
+  auto bs = sharings[S_BOOL];
+  BooleanCircuit* bc = (BooleanCircuit*) bs->GetCircuitBuildRoutine();
+  auto ys = sharings[S_YAO];
+  BooleanCircuit* yc = (BooleanCircuit*) bs->GetCircuitBuildRoutine();
+  auto as  = sharings[S_ARITH];
+  ArithmeticCircuit* ac = (ArithmeticCircuit*) as->GetCircuitBuildRoutine();
   // Print Gates Statistics
-  cout << "#ArithmeticCircuit" << endl
-    //<< "NumANDGates" << SEP << bc->GetNumANDGates() << endl
-    << "NumMULGates" << SEP << bc->GetNumMULGates() << endl
-    << "NumCONVGates" << SEP << bc->GetNumCONVGates() << endl
-    << "Depth" << SEP << bs->GetMaxCommunicationRounds() << endl
-    << "NumCombGates" << SEP << bc->GetNumCombGates() << endl
-    << "TotalGates" << SEP << bc->GetNumGates() << endl; // TODO Let ABYParty expose TotalNumberGates via call to m_pCircuit->GetGateHead()
+  cout << "#ArithmeticCircuit"
+    << "\nNumMULGates" << SEP << ac->GetNumMULGates()
+    << "\nNumNonLinearGates" << SEP << as->GetNumNonLinearOperations()
+    << "\nNumCONVGates" << SEP << ac->GetNumCONVGates()
+    << "\nDepth" << SEP << as->GetMaxCommunicationRounds()
+    << "\nNumCombGates" << SEP << ac->GetNumCombGates()
+    << "\nTotalGates" << SEP << ac->GetNumGates();
+
+  cout << "\n#GMWCircuit\n"
+    << "\nNumANDGates" << SEP << bc->GetNumANDGates()
+    << "\nNumNonLinearGates" << SEP << bs->GetNumNonLinearOperations()
+    //<< "\nNumCONVGates" << SEP << bc->GetNumCONVGates()
+    << "\nDepth" << SEP << bs->GetMaxCommunicationRounds()
+    << "\nNumCombGates" << SEP << bc->GetNumCombGates()
+    << "\nTotalGates" << SEP << bc->GetNumGates();
+
+  cout << "\n#YaoCircuit\n"
+    << "\nNumANDGates" << SEP << yc->GetNumANDGates()
+    << "\nNumNonLinearGates" << SEP << ys->GetNumNonLinearOperations()
+    //<< "\nNumCONVGates" << SEP << yc->GetNumCONVGates()
+    << "\nDepth" << SEP << ys->GetMaxCommunicationRounds()
+    << "\nNumCombGates" << SEP << yc->GetNumCombGates()
+    << "\nTotalGates" << SEP << yc->GetNumGates();
+
+  // TODO Implement
+  // ABYParty::GetTotalGates() {return m_pCircuit->GetGateHead();}
+  // ABYParty::GetTotalDepth() {return m_pCircuit->GetTotalDepth();}
 
   // One-off timing and communication
-  cout << "BaseOTsTiming" << SEP << party.GetTiming(P_BASE_OT) << endl
-    << "SetupCommSent" << SEP << party.GetSentData(P_SETUP) << endl
-    << "SetupCommRecv" << SEP << party.GetReceivedData(P_SETUP) << endl
-    << "OnlineCommSent" << SEP << party.GetSentData(P_ONLINE) << endl
-    << "OnlineCommRecv" << SEP << party.GetReceivedData(P_ONLINE) << endl;
+  cout << "\nBaseOTsTiming" << SEP << party.GetTiming(P_BASE_OT)
+    << "\nSetupCommSent" << SEP << party.GetSentData(P_SETUP)
+    << "\nSetupCommRecv" << SEP << party.GetReceivedData(P_SETUP)
+    << "\nOnlineCommSent" << SEP << party.GetSentData(P_ONLINE)
+    << "\nOnlineCommRecv" << SEP << party.GetReceivedData(P_ONLINE);
 
   // Finally print header for timings
-  cout << "#QueryTimings" << endl << "Time" << SEP << "Setup" << SEP << "Online" << endl;
+  cout << "\n#Timings\nTime" << SEP << "Setup" << SEP << "Online" << endl;
 }
 
 /*
