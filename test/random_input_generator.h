@@ -37,7 +37,7 @@ public:
   RandomInputGenerator(EpilinkConfig&& cfg);
 
   /* Generate random input, moving the PRNG state forward */
-  EpilinkInput generate(const size_t nvals);
+  EpilinkInput generate(const size_t database_size, const size_t num_records=1);
 
   /**
     * The bitmask density shift controls the density of randomly set bits in
@@ -71,6 +71,7 @@ private:
   std::bernoulli_distribution random_empty{server_empty_field_prob};
 
   Bitmask random_bm(const size_t bitsize, const int density_shift);
+  Record random_record();
 };
 
 } /* END namespace sel::test */
