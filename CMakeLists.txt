@@ -135,6 +135,7 @@ target_compile_definitions(test_sel PRIVATE
   "$<$<CONFIG:Debug>:DEBUG_SEL_RESULT>"
   #"DEBUG_SEL_CLEAR" # For intermediary value output in clear epilinker
   #"DEBUG_SEL_GADGETS"
+  "SEL_STATS"
 )
 
 # Test ABY Stuff

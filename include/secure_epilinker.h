@@ -24,6 +24,9 @@
 #include "epilink_input.h"
 #include "epilink_result.hpp"
 #include "circuit_config.h"
+#ifdef SEL_STATS
+#include "aby/statsprinter.h"
+#endif
 
 // ABY forward declarations
 class BooleanCircuit;
@@ -103,6 +106,10 @@ public:
   void reset();
 
   State get_state();
+
+#ifdef SEL_STATS
+  sel::aby::StatsPrinter get_stats_printer();
+#endif
 
 private:
   std::unique_ptr<ABYParty> party;

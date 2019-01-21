@@ -341,7 +341,6 @@ auto run_sel_linkage(SecureEpilinker& linker, const EpilinkInput& in) {
   linker.run_setup_phase();
   set_inputs(linker, in.client, in.server);
   const auto res = linker.run_linkage();
-  linker.reset();
   return res;
 }
 
@@ -350,7 +349,6 @@ auto run_sel_count(SecureEpilinker& linker, const EpilinkInput& in) {
   linker.run_setup_phase();
   set_inputs(linker, in.client, in.server);
   const auto res = linker.run_count();
-  linker.reset();
   return res;
 }
 
@@ -511,6 +509,13 @@ int main(int argc, char *argv[])
   if(!only_local) linker.connect();
   if(match_counting) run_and_print_counting(linker, in);
   else run_and_print_linkage(linker, in);
+
+#ifdef SEL_STATS
+  auto stats = linker.get_stats_printer();
+  stats.print_all();
+#endif
+
+  linker.reset();
 
   return 0;
 }
