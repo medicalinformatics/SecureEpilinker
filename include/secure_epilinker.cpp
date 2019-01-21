@@ -211,4 +211,10 @@ void SecureEpilinker::reset() {
   state.reset();
 }
 
+#ifdef SEL_STATS
+sel::aby::StatsPrinter SecureEpilinker::get_stats_printer() {
+  return sel::aby::StatsPrinter(*party);
+}
+#endif
+
 } // namespace sel
