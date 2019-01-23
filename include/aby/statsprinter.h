@@ -32,6 +32,19 @@ class ABYParty;
 
 namespace sel::aby {
 
+/**
+ * An attempt to bring some sanity to the statistics output of ABY
+ *
+ * Danger: Some gate numbers are according to the number of bits or values
+ * (arith.), that is, without SIMD multiplicity, i.e., nvals, taken into account.
+ * But some are according to the number of abstract gates.
+ * Per bit/value: MUL, AND, XOR, conversions (B2A per bits!)
+ * Per abstract gate: Totals, GetNumXORGates (GetNumXORVals is per bit),
+ *    structural gates
+ * Also, circuit depth is really the number of interactive communication
+ * rounds, which is similar to depth for A and B, but Y only ever has 2 or 3
+ * such rounds
+ */
 class StatsPrinter {
 public:
   StatsPrinter(ABYParty& party);
@@ -42,13 +55,17 @@ public:
    */
   void set_output(const std::filesystem::path& filepath = std::filesystem::path());
 
+  void print_baseOTs();
   void print_circuit();
   void print_communication();
   void print_timings();
   void print_all();
   /**
-   * Prints circuit and communication stats only on first call,
+   * Prints BaseOTs, circuit and communication stats only on first call,
    * but timings on every call.
+   * This makes only sense on consecutive runs using the _same circuit layout_.
+   * If the circuit changes between runs, all, but the BaseOTs stats, should be
+   * printed again.
    */
   void print_smart();
 

@@ -62,6 +62,14 @@ string now_rfc3339() {
   return ss.str();
 }
 
+void StatsPrinter::print_baseOTs() {
+  *out << "[BaseOTs]"
+    << "\nTime" << SEP << party.GetTiming(P_BASE_OT)
+    << "\nSent" << SEP << party.GetSentData(P_BASE_OT)
+    << "\nRecv" << SEP << party.GetReceivedData(P_BASE_OT)
+    << endl;
+}
+
 void StatsPrinter::print_circuit() {
   const auto sharings = party.GetSharings();
   auto as  = sharings[S_ARITH];
@@ -71,43 +79,33 @@ void StatsPrinter::print_circuit() {
   auto ys = sharings[S_YAO];
   BooleanCircuit* yc = (BooleanCircuit*) ys->GetCircuitBuildRoutine();
 
-  *out << "[Circuit.Arithmetic]"
+  *out << "[Circuit]"
+    << "\nTotal" << SEP << party.GetTotalGates()
+    << "\nRounds" << SEP << party.GetTotalDepth();
+
+  *out << "\n[Circuit.Arithmetic]"
     << "\nMUL" << SEP << ac->GetNumMULGates()
-    << "\nNonLinear" << SEP << as->GetNumNonLinearOperations()
-    << "\nCONV" << SEP << ac->GetNumCONVGates()
-    << "\nComb" << SEP << ac->GetNumCombGates()
+    << "\nB2A" << SEP << ac->GetNumCONVGates()
+    //<< "\nComb" << SEP << ac->GetNumCombGates()
     << "\nTotal" << SEP << ac->GetNumGates()
-    << "\nMaxDepth" << SEP << ac->GetMaxDepth()
-    << "\nDepth" << SEP << as->GetMaxCommunicationRounds();
+    << "\nRounds" << SEP << ac->GetMaxDepth();
 
   *out << "\n[Circuit.GMW]"
     << "\nAND" << SEP << bc->GetNumANDGates()
-    << "\nNonLinear" << SEP << bs->GetNumNonLinearOperations()
-    << "\nXOR" << SEP << bc->GetNumXORGates()
-    << "\nA2Y" << SEP << bc->GetNumA2YGates()
-    << "\nB2Y" << SEP << bc->GetNumB2YGates()
-    //<< "\nConv" << SEP << bc->GetNumCONVGates()
-    << "\nComb" << SEP << bc->GetNumCombGates()
+    << "\nXOR" << SEP << bc->GetNumXORVals()
+    //<< "\nComb" << SEP << bc->GetNumCombGates()
     << "\nTotal" << SEP << bc->GetNumGates()
-    << "\nMaxDepth" << SEP << bc->GetMaxDepth()
-    << "\nDepth" << SEP << bs->GetMaxCommunicationRounds();
+    << "\nRounds" << SEP << bc->GetMaxDepth();
 
   *out << "\n[Circuit.Yao]"
     << "\nAND" << SEP << yc->GetNumANDGates()
-    << "\nNonLinear" << SEP << ys->GetNumNonLinearOperations()
-    << "\nXOR" << SEP << yc->GetNumXORGates()
+    << "\nXOR" << SEP << yc->GetNumXORVals()
     << "\nA2Y" << SEP << yc->GetNumA2YGates()
     << "\nB2Y" << SEP << yc->GetNumB2YGates()
-    //<< "\nConv" << SEP << yc->GetNumCONVGates()
-    << "\nComb" << SEP << yc->GetNumCombGates()
+    //<< "\nComb" << SEP << yc->GetNumCombGates()
     << "\nTotal" << SEP << yc->GetNumGates()
-    << "\nMaxDepth" << SEP << yc->GetMaxDepth()
-    << "\nDepth" << SEP << ys->GetMaxCommunicationRounds()
+    << "\nRounds" << SEP << yc->GetMaxDepth()
     << endl;
-
-  // TODO Implement
-  // ABYParty::GetTotalGates() {return m_pCircuit->GetGateHead();}
-  // ABYParty::GetTotalDepth() {return m_pCircuit->GetTotalDepth();}
 }
 
 void StatsPrinter::print_communication() {
@@ -122,13 +120,13 @@ void StatsPrinter::print_communication() {
 void StatsPrinter::print_timings() {
   *out << "[[Timings]]"
     << "\nTimestamp" << SEP << now_rfc3339()
-    << "\nBaseOTs" << SEP << party.GetTiming(P_BASE_OT)
     << "\nSetup" << SEP << party.GetTiming(P_SETUP)
-    << "\nOnline" << SEP << party.GetTiming(P_SETUP)
+    << "\nOnline" << SEP << party.GetTiming(P_ONLINE)
     << endl;
 }
 
 void StatsPrinter::print_all() {
+  print_baseOTs();
   print_circuit();
   print_communication();
   print_timings();
@@ -136,6 +134,7 @@ void StatsPrinter::print_all() {
 
 void StatsPrinter::print_smart() {
   if (!static_data_printed) {
+    print_baseOTs();
     print_circuit();
     print_communication();
     static_data_printed = true;
