@@ -5,11 +5,13 @@ windows:
 - test_sel:
   panes:
     - shell_command:
+      - export role="1"
       - alias test_sel="./test_sel"
-      - test_sel
+      - test_sel -B test.toml.${role}
     - shell_command:
+      - export role="0"
       - alias test_sel="./test_sel -S"
-      - test_sel
+      - test_sel -B test.toml.${role}
   options_after:
     synchronize-panes: on
 
