@@ -54,6 +54,7 @@ public:
    * If empty, or "-", output is written to stdout.
    */
   void set_output(const std::filesystem::path& filepath = std::filesystem::path());
+  void set_output(std::ostream* out);
 
   void print_baseOTs();
   void print_circuit();

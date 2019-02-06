@@ -42,10 +42,13 @@ void StatsPrinter::set_output(const std::filesystem::path& filepath) {
     return;
   }
 
-  fout = ofstream(filepath, ios::ate | ios::out);
+  fout = ofstream(filepath, ios::ate | ios::app);
   out = &fout;
 }
 
+void StatsPrinter::set_output(std::ostream* out) {
+  this->out = out;
+}
 
 auto get_millis() {
   return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -63,10 +66,10 @@ string now_rfc3339() {
 }
 
 void StatsPrinter::print_baseOTs() {
-  *out << "[BaseOTs]"
-    << "\nTime" << SEP << party.GetTiming(P_BASE_OT)
-    << "\nSent" << SEP << party.GetSentData(P_BASE_OT)
-    << "\nRecv" << SEP << party.GetReceivedData(P_BASE_OT)
+  *out << "[baseOTs]"
+    << "\ntime" << SEP << party.GetTiming(P_BASE_OT)
+    << "\nsent" << SEP << party.GetSentData(P_BASE_OT)
+    << "\nrecv" << SEP << party.GetReceivedData(P_BASE_OT)
     << endl;
 }
 
@@ -79,49 +82,49 @@ void StatsPrinter::print_circuit() {
   auto ys = sharings[S_YAO];
   BooleanCircuit* yc = (BooleanCircuit*) ys->GetCircuitBuildRoutine();
 
-  *out << "[Circuit]"
-    << "\nTotal" << SEP << party.GetTotalGates()
-    << "\nRounds" << SEP << party.GetTotalDepth();
+  *out << "[circuit]"
+    << "\ntotal" << SEP << party.GetTotalGates()
+    << "\nrounds" << SEP << party.GetTotalDepth();
 
-  *out << "\n[Circuit.Arithmetic]"
+  *out << "\n[circuit.Arithmetic]"
     << "\nMUL" << SEP << ac->GetNumMULGates()
     << "\nB2A" << SEP << ac->GetNumCONVGates()
     //<< "\nComb" << SEP << ac->GetNumCombGates()
-    << "\nTotal" << SEP << ac->GetNumGates()
-    << "\nRounds" << SEP << ac->GetMaxDepth();
+    << "\ntotal" << SEP << ac->GetNumGates()
+    << "\nrounds" << SEP << ac->GetMaxDepth();
 
-  *out << "\n[Circuit.GMW]"
+  *out << "\n[circuit.GMW]"
     << "\nAND" << SEP << bc->GetNumANDGates()
     << "\nXOR" << SEP << bc->GetNumXORVals()
     //<< "\nComb" << SEP << bc->GetNumCombGates()
-    << "\nTotal" << SEP << bc->GetNumGates()
-    << "\nRounds" << SEP << bc->GetMaxDepth();
+    << "\ntotal" << SEP << bc->GetNumGates()
+    << "\nrounds" << SEP << bc->GetMaxDepth();
 
-  *out << "\n[Circuit.Yao]"
+  *out << "\n[circuit.Yao]"
     << "\nAND" << SEP << yc->GetNumANDGates()
     << "\nXOR" << SEP << yc->GetNumXORVals()
     << "\nA2Y" << SEP << yc->GetNumA2YGates()
     << "\nB2Y" << SEP << yc->GetNumB2YGates()
     //<< "\nComb" << SEP << yc->GetNumCombGates()
-    << "\nTotal" << SEP << yc->GetNumGates()
-    << "\nRounds" << SEP << yc->GetMaxDepth()
+    << "\ntotal" << SEP << yc->GetNumGates()
+    << "\nrounds" << SEP << yc->GetMaxDepth()
     << endl;
 }
 
 void StatsPrinter::print_communication() {
-  *out << "[Communication]"
-    << "\nSetupCommSent" << SEP << party.GetSentData(P_SETUP)
-    << "\nSetupCommRecv" << SEP << party.GetReceivedData(P_SETUP)
-    << "\nOnlineCommSent" << SEP << party.GetSentData(P_ONLINE)
-    << "\nOnlineCommRecv" << SEP << party.GetReceivedData(P_ONLINE)
+  *out << "[communication]"
+    << "\nsetupCommSent" << SEP << party.GetSentData(P_SETUP)
+    << "\nsetupCommRecv" << SEP << party.GetReceivedData(P_SETUP)
+    << "\nonlineCommSent" << SEP << party.GetSentData(P_ONLINE)
+    << "\nonlineCommRecv" << SEP << party.GetReceivedData(P_ONLINE)
     << endl;
 }
 
 void StatsPrinter::print_timings() {
-  *out << "[[Timings]]"
-    << "\nTimestamp" << SEP << now_rfc3339()
-    << "\nSetup" << SEP << party.GetTiming(P_SETUP)
-    << "\nOnline" << SEP << party.GetTiming(P_ONLINE)
+  *out << "[[timings]]"
+    << "\ntimestamp" << SEP << now_rfc3339()
+    << "\nsetup" << SEP << party.GetTiming(P_SETUP)
+    << "\nonline" << SEP << party.GetTiming(P_ONLINE)
     << endl;
 }
 
