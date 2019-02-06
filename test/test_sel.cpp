@@ -449,6 +449,11 @@ void run_and_print_counting(SecureEpilinker& linker, const EpilinkInput& in) {
   }
 }
 
+template <typename T>
+void print_toml(ostream& out, string field, T value) {
+  print(out, "{} = {}\n", field, value);
+}
+
 } /* END namespace sel::test */
 
 using namespace sel;
@@ -463,6 +468,9 @@ int main(int argc, char *argv[])
   uint32_t nthreads = 2; // 2 is ABYs default
   string remote_host = "127.0.0.1";
   bool match_counting = false;
+#ifdef SEL_STATS
+  string benchmark_filepath;
+#endif
 
   cxxopts::Options options{"test_aby", "Test ABY related components"};
   options.add_options()
@@ -477,6 +485,9 @@ int main(int argc, char *argv[])
     ("L,local-only", "Only run local calculations on clear values."
         " Doesn't initialize the SecureEpilinker.", cxxopts::value(only_local))
     ("m,match-count", "Run match counting instead of linkage.", cxxopts::value(match_counting))
+#ifdef SEL_STATS
+    ("B,benchmark-file", "Print benchmarking output to file.", cxxopts::value(benchmark_filepath))
+#endif
     ("v,verbose", "Set verbosity. May be specified multiple times to log on "
       "info/debug/trace level. Default level is warning.")
     ("h,help", "Print help");
@@ -516,8 +527,21 @@ int main(int argc, char *argv[])
   else correct = run_and_print_linkage(linker, in);
 
 #ifdef SEL_STATS
-  auto stats = linker.get_stats_printer();
-  stats.print_all();
+  if (!benchmark_filepath.empty()) {
+    ofstream bfile{benchmark_filepath, ios::ate | ios::app};
+    print_toml(bfile, "correct", correct);
+    print(bfile, "[parameters]\n");
+    print_toml(bfile, "role", role_server ? '0' : '1');
+    print_toml(bfile, "mode", match_counting ? "count" : "linkage");
+    print_toml(bfile, "boolSharing", sharing_num ? "yao" : "bool");
+    print_toml(bfile, "arithConversion", use_conversion);
+    print_toml(bfile, "dbSize", dbsize);
+    print_toml(bfile, "numRecords", nrecords);
+
+    auto stats = linker.get_stats_printer();
+    stats.set_output(&bfile);
+    stats.print_all();
+  }
 #endif
 
   linker.reset();
