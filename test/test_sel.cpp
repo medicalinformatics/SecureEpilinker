@@ -20,6 +20,7 @@ namespace fs = std::filesystem;
 namespace sel::test {
 
 // GLOBALS
+shared_ptr<spdlog::logger> logger;
 // Whether to use run_as_{client/server}() or run_as_both()
 bool run_both{false};
 bool only_local{false};
@@ -89,7 +90,7 @@ EpilinkConfig make_dkfz_cfg() {
 
 auto set_inputs(SecureEpilinker& linker,
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
-  print("Calling set_{}_input()\n", run_both ? "both" : ((role==MPCRole::CLIENT) ? "client" : "server"));
+  logger->info("Calling set_{}_input()\n", run_both ? "both" : ((role==MPCRole::CLIENT) ? "client" : "server"));
   if (!run_both) {
     if (role==MPCRole::CLIENT) {
       linker.set_client_input(in_client);
@@ -112,7 +113,7 @@ EpilinkInput input_simple(uint32_t dbsize) {
   auto td = make_test_data();
   auto& data_int_1 = td["int_1"].data;
   auto& f_int1 = td["int_1"].field;
-  print("data_int_1: {}\n", data_int_1);
+  logger->debug("data_int_1: {}\n", data_int_1);
 
   // First test: only one bin field, single byte integer
   EpilinkConfig epi_cfg {
@@ -386,14 +387,14 @@ void print_local_result(Result<CircUnit>* sel, const Result<T>& local, const str
     const auto dev_perc = deviation_perc(*sel, local);
     if (dev_perc) dev = format("{:+.3f}%", dev_perc);
   }
-  print("------ {} ------\n{} {}\n", name, local, dev);
+  logger->info("------ {} ------\n{} {}\n", name, local, dev);
 }
 
 string test_str(bool test) {
   return test ? "✅" : "💥";
 }
 
-void run_and_print_linkage(SecureEpilinker& linker, const EpilinkInput& in) {
+bool run_and_print_linkage(SecureEpilinker& linker, const EpilinkInput& in) {
   vector<Result<CircUnit>> results;
   if (!only_local) results = run_sel_linkage(linker, in);
   const auto results_32 = run_local_linkage<uint32_t>(in);
@@ -402,13 +403,13 @@ void run_and_print_linkage(SecureEpilinker& linker, const EpilinkInput& in) {
 
   bool all_good = true;
   for (size_t i = 0; i != in.client.num_records; ++i) {
-    print("********************* {} ********************\n", i);
+    logger->info("********************* {} ********************\n", i);
     Result<CircUnit>* resp = nullptr;
     if (!only_local) {
       resp = &results[i];
       bool correct = *resp == results_32[i];
       all_good &= correct;
-      print("------ Secure Epilinker -------\n{} {}\n", *resp, test_str(correct));
+      logger->info("------ Secure Epilinker -------\n{} {}\n", *resp, test_str(correct));
     }
     print_local_result(resp, results_32[i], "32 Bit");
     print_local_result(resp, results_64[i], "64 Bit");
@@ -416,10 +417,11 @@ void run_and_print_linkage(SecureEpilinker& linker, const EpilinkInput& in) {
   }
 
   if (all_good) {
-    print ("🎉🎉🎉 All good! 🎉🎉🎉\n");
+    logger->info("🎉🎉🎉 All good! 🎉🎉🎉\n");
   } else {
-    print ("💩💩💩 Errors occured! 💩💩💩\n");
+    logger->warn("💩💩💩 Errors occured! 💩💩💩\n");
   }
+  return all_good;
 }
 
 void run_and_print_counting(SecureEpilinker& linker, const EpilinkInput& in) {
@@ -435,17 +437,16 @@ void run_and_print_counting(SecureEpilinker& linker, const EpilinkInput& in) {
 
   const auto& first_result = results.cbegin()->second;
   vector<bool> same_count = {true, true};
-  print("\tmatches\ttmatches\n");
+  logger->info("\tmatches\ttmatches\n");
   for (const auto& resp : results) {
     const auto& res = resp.second;
-    print("{}\t{}\t{}\n", resp.first, res.matches, res.tmatches);
+    logger->info("{}\t{}\t{}\n", resp.first, res.matches, res.tmatches);
     same_count[0] = same_count[0] && (first_result.matches == res.matches);
     same_count[1] = same_count[1] && (first_result.tmatches == res.tmatches);
   }
   for (const auto good : same_count) {
-    print("\t{}", test_str(good));
+    logger->info("\t{}", test_str(good));
   }
-  print("\n");
 }
 
 } /* END namespace sel::test */
@@ -459,7 +460,7 @@ int main(int argc, char *argv[])
   unsigned int sharing_num = S_YAO;
   size_t dbsize = 1;
   size_t nrecords = 1;
-  uint32_t nthreads = 1;
+  uint32_t nthreads = 2; // 2 is ABYs default
   string remote_host = "127.0.0.1";
   bool match_counting = false;
 
@@ -493,6 +494,7 @@ int main(int argc, char *argv[])
     case 2: spdlog::set_level(spdlog::level::debug); break;
     default: spdlog::set_level(spdlog::level::trace); break;
   }
+  logger = get_logger(ComponentLogger::TEST);
 
   role = role_server ? MPCRole::SERVER : MPCRole::CLIENT;
   sharing = sharing_num ? BooleanSharing::YAO : BooleanSharing::GMW;
@@ -507,8 +509,11 @@ int main(int argc, char *argv[])
   const auto circ_cfg = make_circuit_config<CircUnit>(in.cfg);
   SecureEpilinker linker{aby_cfg, circ_cfg};
   if(!only_local) linker.connect();
+  /* in counting mode, we don't really know if the calculations are correct, as
+   * we cannot compare the scores directly. So we default to true. */
+  bool correct = true;
   if(match_counting) run_and_print_counting(linker, in);
-  else run_and_print_linkage(linker, in);
+  else correct = run_and_print_linkage(linker, in);
 
 #ifdef SEL_STATS
   auto stats = linker.get_stats_printer();
@@ -517,5 +522,5 @@ int main(int argc, char *argv[])
 
   linker.reset();
 
-  return 0;
+  return correct ? 0 : 1;
 }
