@@ -64,7 +64,7 @@ void create_terminal_logger() {
 
   vector<spdlog::sink_ptr> sinks = {
     make_shared<spdlog::sinks::stdout_color_sink_mt>()
- };
+  };
 
   register_multisink_logger(sinks);
   spdlog::set_pattern("[%Y-%m-%d %T.%e][%n][%t]%^[%l]%$ %v");
