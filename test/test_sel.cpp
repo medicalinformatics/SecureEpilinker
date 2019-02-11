@@ -532,8 +532,8 @@ int main(int argc, char *argv[])
     print_toml(bfile, "correct", correct);
     print(bfile, "[parameters]\n");
     print_toml(bfile, "role", role_server ? '0' : '1');
-    print_toml(bfile, "mode", match_counting ? "count" : "linkage");
-    print_toml(bfile, "boolSharing", sharing_num ? "yao" : "bool");
+    print_toml(bfile, "mode", match_counting ? "\"count\"" : "\"linkage\"");
+    print_toml(bfile, "boolSharing", sharing_num ? "\"yao\"" : "\"bool\"");
     print_toml(bfile, "arithConversion", use_conversion);
     print_toml(bfile, "dbSize", dbsize);
     print_toml(bfile, "numRecords", nrecords);
