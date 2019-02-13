@@ -381,13 +381,15 @@ double deviation_perc(const Result<T>& l, const Result<U>& r) {
 }
 
 template <typename T>
-void print_local_result(Result<CircUnit>* sel, const Result<T>& local, const string& name) {
+void print_local_result(stringstream& ss, Result<CircUnit>* sel,
+    const Result<T>& local, const string& name)
+{
   string dev = "";
   if (sel) {
     const auto dev_perc = deviation_perc(*sel, local);
     if (dev_perc) dev = format("{:+.3f}%", dev_perc);
   }
-  logger->info("------ {} ------\n{} {}\n", name, local, dev);
+  print(ss, "------ {} ------\n{} {}\n", name, local, dev);
 }
 
 string test_str(bool test) {
@@ -402,30 +404,40 @@ bool run_and_print_linkage(SecureEpilinker& linker, const EpilinkInput& in) {
   const auto results_double = run_local_linkage<double>(in);
 
   bool all_good = true;
+  stringstream outputss;
+  outputss << "Matching Results\n";
   for (size_t i = 0; i != in.client.num_records; ++i) {
-    logger->info("********************* {} ********************\n", i);
+    print(outputss, "********************* {} ********************\n", i);
     Result<CircUnit>* resp = nullptr;
+// Without DEBUG_SEL_RESULT sel's output doesn't contain the numerator and
+// denominator, they're set to 0. So we don't compare.
+#ifdef DEBUG_SEL_RESULT
     if (!only_local) {
       resp = &results[i];
       bool correct = *resp == results_32[i];
       all_good &= correct;
-      logger->info("------ Secure Epilinker -------\n{} {}\n", *resp, test_str(correct));
+      print(outputss, "------ Secure Epilinker -------\n{} {}\n", *resp, test_str(correct));
     }
-    print_local_result(resp, results_32[i], "32 Bit");
-    print_local_result(resp, results_64[i], "64 Bit");
-    print_local_result(resp, results_double[i], "Double");
+#endif
+    print_local_result(outputss, resp, results_32[i], "32 Bit");
+    print_local_result(outputss, resp, results_64[i], "64 Bit");
+    print_local_result(outputss, resp, results_double[i], "Double");
   }
 
   if (all_good) {
-    logger->info("🎉🎉🎉 All good! 🎉🎉🎉\n");
+    outputss << "🎉🎉🎉 All good! 🎉🎉🎉\n";
+    logger->info(outputss.str());
   } else {
-    logger->warn("💩💩💩 Errors occured! 💩💩💩\n");
+    outputss << "💩💩💩 Errors occured! 💩💩💩\n";
+    logger->warn(outputss.str());
   }
   return all_good;
 }
 
 void run_and_print_counting(SecureEpilinker& linker, const EpilinkInput& in) {
   vector<pair<string, CountResult<size_t>>> results;
+  stringstream outputss;
+  outputss << "Counting Results:\n";
   if (!only_local) {
     const auto sel_result = run_sel_count(linker, in);
     results.emplace_back("SEL",
@@ -437,16 +449,17 @@ void run_and_print_counting(SecureEpilinker& linker, const EpilinkInput& in) {
 
   const auto& first_result = results.cbegin()->second;
   vector<bool> same_count = {true, true};
-  logger->info("\tmatches\ttmatches\n");
+  outputss << "\tmatches\ttmatches\n";
   for (const auto& resp : results) {
     const auto& res = resp.second;
-    logger->info("{}\t{}\t{}\n", resp.first, res.matches, res.tmatches);
+    print(outputss, "{}\t{}\t{}\n", resp.first, res.matches, res.tmatches);
     same_count[0] = same_count[0] && (first_result.matches == res.matches);
     same_count[1] = same_count[1] && (first_result.tmatches == res.tmatches);
   }
   for (const auto good : same_count) {
-    logger->info("\t{}", test_str(good));
+    outputss << '\t' << test_str(good);
   }
+  logger->info(outputss.str());
 }
 
 template <typename T>
