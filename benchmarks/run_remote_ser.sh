@@ -1,11 +1,11 @@
 #!/bin/bash
 #
 # Run me like
-# $ Q=5 N=1000 ./run_local_par.sh 3 bioclust3 bioclust7
+# $ D=5 N=1000 ./run_local_par.sh 3 bioclust3 bioclust7
 # to run three (pairs of) remote instances serially with the optional parameters
-# Q, N, S prepended as environment variables. Second argument is remote host
+# D, N, S, C prepended as environment variables. Second argument is remote host
 # that becomes the server, third argument becomes the client.
-# Assumes binary path to be '~/aby-vq/bin/variant_query.exe' on remotes
+# Assumes binary path to be '~/secure_epilink/build/test_sel' on remotes
 # Outputs are written to one file per run. The path name includes all parameters.
 # Average CPU load and max. memory (RSS - resident set size) is written at the
 # end of each file
@@ -17,29 +17,37 @@
 # You should use ssh's ControlMaster capabilities to speedup remote execution,
 # see https://puppet.com/blog/speed-up-ssh-by-reusing-connections
 
-exe="aby-vq/bin/variant_query.exe"
-Q=${Q:-1}      # Number of queries
-N=${N:-100000} # Size of a single entry
-S=${S:-5}      # Size of a query
-P=${P:-6677}   # Port
+exepath="secure_epilink/build"
+exe="./test_sel"
+D=${D:-1}      # Number of records in database
+N=${N:-1}      # Number of records to link
+C=${C:-""}     # Use Arithmetic circuit
+S=${S:-1}      # Boolean Sharing to use, 0: GMW 1: YAO
 R=${1:-1}      # Number of seriell runs
-K=${K:-32}     # dictionary key bit length
-V=${V:-16}     # dictionary value bit length
 declare -a remote
 remote[0]=${2:-localhost}
 remote[1]=${3:-localhost}
+
+if [[ ${C} ]]
+then
+  C="-c"
+fi
+
+serverip=$(getent ahostsv4 ${remote[0]} | awk '{ print $1}' | head -n1)
 echo "Remote server: ${remote[0]} client: ${remote[1]}"
+echo "Server IP: ${serverip}"
 
 ts=$(date +%s)
-out_base="${T}${T:+_}${remote[0]}_${remote[1]}_${ts}_N${N}_Q${Q}_S${S}_R${R}_ser"
+arith=${C+1}
+out_base="${T}${T:+_}${remote[0]}_${remote[1]}_${ts}_D${D}_N${N}_S${S}_C${arith-0}_sel"
 dir="runs/${out_base}"
-rdir="/tmp/${dir}"
-session="vq-remote-${ts}"
+rdir="~/tmp/${dir}"
+session="sel-remote-${ts}"
 mkdir -p $dir
 for role in 0 1; do ssh ${remote[$role]} "mkdir -p $rdir"; done
 
-cmd="$exe -q $Q -n $N -s $S -v $V -k $K -a ${remote[0]} -p $P"
-cmd_time="/usr/bin/time -f '#TimeStats\nAvgCPU\t%P\nMaxMem\t%M' -a -o"
+cmd="$exe ${C} -s ${S} -n ${D} -N ${N}"
+cmd_time="/usr/bin/time -f '[TimeStats]\nAvgCPU=\"%P\"\nMaxMem=%M' -a -o"
 echo "cmd=$cmd"
 
 # Arg 1: role (0 or 1)
@@ -51,7 +59,7 @@ run-role() {
     echo "********** Run ${r} of ${R} **********"
     out1="${out}_r${r}"
     rout1="${rout}_r${r}"
-    ssh ${remote[$1]} "${cmd_time} ${rout1} $cmd -r ${1} > ${rout1}; cat ${rout1}" | tee ${out1}
+    ssh ${remote[$1]} "cd ${exepath}; ${cmd_time} ${rout1} $cmd -r $1 -S ${serverip} -B ${rout1} > ${rout1}; cat ${rout1}" | tee ${out1}
   done
 }
 
@@ -77,3 +85,6 @@ echo "********** Done. You may cleanup /tmp/runs/ on remotes **********"
 # Weirdly, sometimes time prints the string 'Command terminated by signal 13',
 # so we have to manually delete it afterward :( E.g. with
 # $ sed -i -e '/Command terminated by signal 13/d' *
+# TK: Signal 13 means "broken pip", i.e. something is written to a pipe 
+# where nothing is read from anymore (e.g. see 
+# http://people.cs.pitt.edu/~alanjawi/cs449/code/shell/UnixSignals.htm).
