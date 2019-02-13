@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 from statistics import mean, stdev
-from functools import reduce
 from itertools import groupby
-import sys, csv, argparse, os.path, glob, operator, toml
-
 from collections.abc import MutableMapping
+import sys, csv, argparse, os.path, glob, toml
+
 
 def flatten(d, parent_key='', sep='_'):
     """ Flatten nested dictionaries with configurable separator. Taken from
@@ -19,13 +18,13 @@ def flatten(d, parent_key='', sep='_'):
             items.append((new_key, v))
     return dict(items)
 
-def parse_file(file, fields, combinefields):
+def parse_file(file, fields):
     data = toml.load(file, _dict=dict)
     if not data["correct"]:
         print("!Incorrect Calculation in ", file)
     fill_stats(data)
-    data = flatten(data,sep='.')
-    yield combine_fields(data, fields, combinefields)
+    data = flatten(data, sep='.')
+    yield data
 
 
 def fill_stats(data):
@@ -38,21 +37,12 @@ def fill_stats(data):
             "stdev": stdev(online_series) if len(online_series) > 1 else 0}
 
 
-def combine_fields(data, fields, combinefields):
-    if combinefields is not None:
-        concat_value = ""
-        concat_key = ""
-        for field in combinefields:
-            concat_value += str(data[field])
-            concat_key += field.split(".")[-1]
-        data[concat_key] = concat_value
-        if not concat_key in fields:
-            fields.append(concat_key)
-    return data
-
-
 def group_runs(runs, gby):
-    keyf = lambda x: x[gby]
+    if len(gby) == 1:
+        keyf = lambda x: x[gby]
+    else:
+        def keyf(x):
+            return "_".join((str(x[key]) for key in gby))
     try:
         sruns = sorted(runs, key=keyf)
     except KeyError as e:
@@ -91,20 +81,20 @@ def combine_runs(runs):
 
     return data
 
-def parse_folder(path, fields, combinefields, role='0'):
+def parse_folder(path, fields, role='0'):
     assert os.path.isdir(path), "Path %s is not a folder."
 
     for fname in glob.iglob('%s/*run.%s*' %(path, role)):
         with open(fname) as file:
-            yield from parse_file(file, fields, combinefields)
+            yield from parse_file(file, fields)
 
-def parse_paths(paths, fields, combinefields, role='0'):
+def parse_paths(paths, fields, role='0'):
     for path in paths:
         if os.path.isfile(path) and ('run.'+role) in path:
             with open(path) as file:
-                yield parse_file(file, fields, combinefields)
+                yield parse_file(file, fields)
         elif os.path.isdir(path):
-            yield from parse_folder(path, fields, combinefields, role)
+            yield from parse_folder(path, fields, role)
 
 def write_csv(runs, fields, csvfile, delimiter):
     w = csv.DictWriter(csvfile, fieldnames=fields, extrasaction='ignore',
@@ -128,18 +118,17 @@ def parse_args():
             help="Overwrite output file")
     parser.add_argument("-f", "--fields", type=split_comma,
             default=["parameters.dbSize",
-                "parameters.numRecords","circuit.total","baseOTs.time",\
+                "parameters.numRecords","parameters.boolSharing",\
+                "parameters.arithConversion","circuit.total","baseOTs.time",\
                 "communication.setupCommSent","communication.onlineCommSent",\
                 "setupTime.mean","setupTime.stdev","onlineTime.mean",\
                 "onlineTime.stdev"],
             help="Comma separated list of fields to include in output.\
                     Subfields are separated by a dot")
-    parser.add_argument("-c", "--combinefields", type=split_comma, \
-            default=["parameters.boolSharing","parameters.arithConversion"],\
-            help="Comma separated list of fields, that get compressed into one")
     parser.add_argument("-r", "--role", default='0',
             help="0/1/'': Role to filter folders to. Default: 0 (Server)")
-    parser.add_argument("-C", "--combine", metavar="parameter", default=None,
+    parser.add_argument("-C", "--combine", metavar="parameter",\
+            type =split_comma, default=None,\
             help="Combine runs for given parameter. Calculates Avgs and Maxs")
 
     args = parser.parse_args()
@@ -157,8 +146,7 @@ def main():
     args = parse_args()
 
     # Read in runs
-    runs = parse_paths(args.paths, fields=args.fields, \
-            combinefields=args.combinefields, role=args.role)
+    runs = parse_paths(args.paths, fields=args.fields, role=args.role)
 
     # Group and combine if necessary
     if args.combine is not None:
