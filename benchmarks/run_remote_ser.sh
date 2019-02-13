@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Run me like
-# $ D=5 N=1000 ./run_local_par.sh 3 bioclust3 bioclust7
+# $ N=100 D=100 ./run_remote_ser.sh 5 phi0 phi1
 # to run three (pairs of) remote instances serially with the optional parameters
 # D, N, S, C prepended as environment variables. Second argument is remote host
 # that becomes the server, third argument becomes the client.
@@ -41,7 +41,8 @@ session="sel-remote-${ts}"
 mkdir -p $dir
 for role in 0 1; do ssh -l ${ssh_user} ${remote[$role]} "mkdir -p $rdir"; done
 
-cmd="$exe ${C:+"-c"} -s ${S} -n ${D} -N ${N}"
+[[ $C -eq 1 ]] && c_arg="-c"
+cmd="$exe ${c_arg} -s ${S} -n ${D} -N ${N}"
 cmd_time="/usr/bin/time -f '[TimeStats]\nAvgCPU=\"%P\"\nMaxMem=%M' -a -o"
 echo "cmd=$cmd"
 
