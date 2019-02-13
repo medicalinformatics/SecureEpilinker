@@ -461,27 +461,27 @@ using namespace sel::test;
 
 int main(int argc, char *argv[])
 {
-  bool role_server = false;
+  uint8_t role_client = 0;
   unsigned int sharing_num = S_YAO;
   size_t dbsize = 1;
   size_t nrecords = 1;
   uint32_t nthreads = 2; // 2 is ABYs default
-  string remote_host = "127.0.0.1";
+  string server_host = "127.0.0.1";
   bool match_counting = false;
 #ifdef SEL_STATS
   string benchmark_filepath;
 #endif
 
-  cxxopts::Options options{"test_aby", "Test ABY related components"};
+  cxxopts::Options options{"test_sel", "Test SEL circuit"};
   options.add_options()
-    ("S,server", "Run as server. Default to client", cxxopts::value(role_server))
-    ("R,remote-host", "Remote host. Default 127.0.0.1", cxxopts::value(remote_host))
+    ("r,role", "0: server, 1: client. Default to server", cxxopts::value(role_client))
+    ("S,server", "Server host. Default 127.0.0.1", cxxopts::value(server_host))
     ("s,sharing", "Boolean sharing to use. 0: GMW, 1: YAO (default)", cxxopts::value(sharing_num))
     ("c,conversion", "Whether to convert to arithmetic space for multiplications",
         cxxopts::value(use_conversion))
     ("n,dbsize", "Database size", cxxopts::value(dbsize))
     ("N,nrecords", "Number of client records", cxxopts::value(nrecords))
-    ("r,run-both", "Use set_both_inputs()", cxxopts::value(run_both))
+    ("R,run-both", "Use set_both_inputs()", cxxopts::value(run_both))
     ("L,local-only", "Only run local calculations on clear values."
         " Doesn't initialize the SecureEpilinker.", cxxopts::value(only_local))
     ("m,match-count", "Run match counting instead of linkage.", cxxopts::value(match_counting))
@@ -507,11 +507,11 @@ int main(int argc, char *argv[])
   }
   logger = get_logger(ComponentLogger::TEST);
 
-  role = role_server ? MPCRole::SERVER : MPCRole::CLIENT;
+  role = role_client ? MPCRole::CLIENT : MPCRole::SERVER;
   sharing = sharing_num ? BooleanSharing::YAO : BooleanSharing::GMW;
 
   SecureEpilinker::ABYConfig aby_cfg {
-    role, remote_host, 5676, nthreads
+    role, server_host, 5676, nthreads
   };
 
   const auto in = input_dkfz_random(dbsize, nrecords);
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
     ofstream bfile{benchmark_filepath, ios::ate | ios::app};
     print_toml(bfile, "correct", correct);
     print(bfile, "[parameters]\n");
-    print_toml(bfile, "role", role_server ? '0' : '1');
+    print_toml(bfile, "role", role_client ? '1' : '0');
     print_toml(bfile, "mode", match_counting ? "\"count\"" : "\"linkage\"");
     print_toml(bfile, "boolSharing", sharing_num ? "\"yao\"" : "\"bool\"");
     print_toml(bfile, "arithConversion", use_conversion);
