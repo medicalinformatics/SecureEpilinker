@@ -5,67 +5,35 @@ from functools import reduce
 from itertools import groupby
 import sys, csv, argparse, os.path, glob, operator, toml
 
+from collections.abc import MutableMapping
+
+def flatten(d, parent_key='', sep='_'):
+    """ Flatten nested dictionaries with configurable separator. Taken from
+    StackExchange: https://stackoverflow.com/a/6027615 """
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, MutableMapping):
+            items.extend(flatten(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+def parse_file(file,fields):
+    data = toml.load(file, _dict=dict)
+    if not data["correct"]:
+        print("!Incorrect Calculation in ", file)
+    fill_stats(data)
+    yield flatten(data,sep='.')
+
 def fill_stats(data):
     """Calculates Mean and StDev for all timings"""
-    # data['header'] = header
-    # data['timings'] = timings
-    # # Skip first column 'Time'
-    # for i, phase in enumerate(header[1:]):
-        # series = [x[i+1] for x in timings]
-        # data['First'+phase] = series[0]
-        # data['Avg'+phase] = mean(series)
-        # data['Stdev'+phase] = stdev(series) if len(timings) > 1 else 0
     setup_series = [x["setup"] for x in data["timings"]]
     online_series = [x["online"] for x in data["timings"]]
     data["setupTime"] = {"mean": mean(setup_series),\
             "stdev": stdev(setup_series) if len(setup_series) > 1 else 0}
     data["onlineTime"] = {"mean": mean(online_series),\
             "stdev": stdev(online_series) if len(online_series) > 1 else 0}
-
-
-def parse_file(file):
-    data = toml.load(file, _dict=dict)
-    if not data["correct"]:
-        print("!Incorrect Calculation in ", file)
-    # section, header, timings, data = None, None, [], {}
-    # def data_sec(section):
-        # return data if flat else data[section]
-
-    # for line in file:
-        # if line.startswith('#'):
-            # section = line[1:-1] # remove trailing \n
-            # if not flat: data[section] = {}
-            # continue
-
-        # # Make sure we don't have a broken file that doesn't begin with a section
-        # assert section is not None, "File doesn't start with a section name"
-
-        # if section == 'QueryTimings':
-            # sline = line.split()
-            # # If header is not set, we're at the first line, specifying the header
-            # if not header:
-                # header = sline
-                # continue
-
-            # tline = tuple(tonum(*entry) for entry in zip(header,sline))
-
-            # # Append line to array otherwise
-            # timings.append(tline)
-
-        # else:
-            # key, value = line.split()
-            # datasec = data if flat else data[section]
-            # data_sec(section)[key] = tonum(key, value)
-
-    # # Check that number of queries match
-    # nqueries = data_sec('Parameters')['nqueries']
-    # assert len(timings) == nqueries, \
-        # "Expected %i query timings, got %i" % (nqueries, len(timings))
-
-    # # Post Processign
-    # fill_stats(data_sec('QueryTimings'), header, timings)
-    fill_stats(data)
-    return data
 
 def group_runs(runs, gby):
     keyf = lambda x: x[gby]
@@ -97,7 +65,7 @@ def combine_runs(runs):
         if key == 'runid': # save list of runids
             runids = list(values(key))
             data[key] = "%i..%i" %(runids[0], runids[-1])
-        elif key in ['BaseOTsTiming', 'AvgCPU']:
+        elif key in ['AvgCPU']:
             data[key] = mean(values(key))
         elif key in ['MaxMem'] or 'Comm' in key:
             data[key] = max(values(key))
@@ -107,46 +75,26 @@ def combine_runs(runs):
 
     return data
 
-def parse_folder(path, role='0'):
+def parse_folder(path, fields, role='0'):
     assert os.path.isdir(path), "Path %s is not a folder."
 
     for fname in glob.iglob('%s/*run.%s*' %(path, role)):
-        print("DEBUG::",fname)
         with open(fname) as file:
-            yield parse_file(file)
+            yield from parse_file(file, fields)
 
-def parse_paths(paths, role='0'):
+def parse_paths(paths, fields, role='0'):
     for path in paths:
         if os.path.isfile(path) and ('run.'+role) in path:
             with open(path) as file:
-                yield parse_file(file)
+                yield parse_file(file, fields)
         elif os.path.isdir(path):
-            yield from parse_folder(path, role)
-
-def filter_data(data_gen, fields):
-    """Filter Data to print according to input arg. This allows the printing of
-    nested information, formated as "circuit.Arithmetic.B2A". Max level of
-    nesting allowed is 2 (i.e. as in previous example)"""
-    row = []
-    data = dict(next(data_gen))
-    for datum in sorted(fields):
-        heading = datum.split(".")
-        if len(heading) > 3 or len(heading) == 0:
-            raise KeyError("Invalid number of fields")
-        if len(heading) == 1:
-            row.append(data[datum])
-        elif len(heading) == 2:
-            row.append(data[heading[0]][heading[1]])
-        elif len(heading) == 3:
-            row.append(data[heading[0]][heading[1]][heading[2]])
-    yield row
-
+            yield from parse_folder(path, fields, role)
 
 def write_csv(runs, fields, csvfile, delimiter):
-    filtered_data = filter_data(runs, fields)
-    writer = csv.writer(csvfile, quotechar='"', delimiter=delimiter)
-    writer.writerow(sorted(fields))
-    writer.writerows(filtered_data)
+    w = csv.DictWriter(csvfile, fieldnames=fields, extrasaction='ignore',
+            delimiter=delimiter)
+    w.writeheader()
+    w.writerows(runs)
 
 def parse_args():
     def split_comma(s): return s.split(',')
@@ -190,7 +138,7 @@ def main():
     args = parse_args()
 
     # Read in runs
-    runs = parse_paths(args.paths, role=args.role)
+    runs = parse_paths(args.paths, fields=args.fields, role=args.role)
 
     # Group and combine if necessary
     if args.combine is not None:
