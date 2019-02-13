@@ -19,34 +19,29 @@
 
 exepath="secure_epilink/build"
 exe="./test_sel"
+ssh_user="kussel"
 D=${D:-1}      # Number of records in database
 N=${N:-1}      # Number of records to link
-C=${C:-""}     # Use Arithmetic circuit
+C=${C:-0}      # Use Arithmetic circuit
 S=${S:-1}      # Boolean Sharing to use, 0: GMW 1: YAO
 R=${1:-1}      # Number of seriell runs
 declare -a remote
 remote[0]=${2:-localhost}
 remote[1]=${3:-localhost}
 
-if [[ ${C} ]]
-then
-  C="-c"
-fi
-
 serverip=$(getent ahostsv4 ${remote[0]} | awk '{ print $1}' | head -n1)
 echo "Remote server: ${remote[0]} client: ${remote[1]}"
 echo "Server IP: ${serverip}"
 
 ts=$(date +%s)
-arith=${C+1}
-out_base="${T}${T:+_}${remote[0]}_${remote[1]}_${ts}_D${D}_N${N}_S${S}_C${arith-0}_sel"
+out_base="${T}${T:+_}${remote[0]}_${remote[1]}_${ts}_D${D}_N${N}_S${S}_C${C}_sel"
 dir="runs/${out_base}"
 rdir="~/tmp/${dir}"
 session="sel-remote-${ts}"
 mkdir -p $dir
-for role in 0 1; do ssh ${remote[$role]} "mkdir -p $rdir"; done
+for role in 0 1; do ssh -l ${ssh_user} ${remote[$role]} "mkdir -p $rdir"; done
 
-cmd="$exe ${C} -s ${S} -n ${D} -N ${N}"
+cmd="$exe ${C:+"-c"} -s ${S} -n ${D} -N ${N}"
 cmd_time="/usr/bin/time -f '[TimeStats]\nAvgCPU=\"%P\"\nMaxMem=%M' -a -o"
 echo "cmd=$cmd"
 
@@ -54,12 +49,14 @@ echo "cmd=$cmd"
 run-role() {
   out="${dir}/run.${1}"
   rout="${rdir}/run.${1}"
-  echo "Starting local queries for role $1 -> ${out}_r*"
+  echo "Starting remote queries for role $1 -> ${out}_r*"
   for r in $(seq $R); do
     echo "********** Run ${r} of ${R} **********"
     out1="${out}_r${r}"
     rout1="${rout}_r${r}"
-    ssh ${remote[$1]} "cd ${exepath}; ${cmd_time} ${rout1} $cmd -r $1 -S ${serverip} -B ${rout1} > ${rout1}; cat ${rout1}" | tee ${out1}
+    ssh -l ${ssh_user} ${remote[$1]} \
+      "cd ${exepath}; ${cmd_time} ${rout1} $cmd -r $1 -S ${serverip} -B ${rout1}; cat ${rout1}" \
+      | tee ${out1}
   done
 }
 
@@ -80,11 +77,11 @@ trap cleanup SIGINT SIGTERM
 wait $pid0
 wait $pid1
 
-echo "********** Done. You may cleanup /tmp/runs/ on remotes **********"
+echo "********** Done. You may cleanup ~/tmp/runs/ on remotes **********"
 
 # Weirdly, sometimes time prints the string 'Command terminated by signal 13',
 # so we have to manually delete it afterward :( E.g. with
 # $ sed -i -e '/Command terminated by signal 13/d' *
-# TK: Signal 13 means "broken pip", i.e. something is written to a pipe 
-# where nothing is read from anymore (e.g. see 
+# TK: Signal 13 means "broken pipe", i.e. something is written to a pipe
+# where nothing is read from anymore (e.g. see
 # http://people.cs.pitt.edu/~alanjawi/cs449/code/shell/UnixSignals.htm).
