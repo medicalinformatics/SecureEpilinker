@@ -19,3 +19,4 @@ tags
 /log
 *.autosave
 /CMakeLists.txt.user
+/benchmarks/runs/
