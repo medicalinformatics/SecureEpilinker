@@ -18,37 +18,36 @@ def flatten(d, parent_key='', sep='_'):
             items.append((new_key, v))
     return dict(items)
 
-def parse_file(file, fields):
+def parse_file(file):
     data = toml.load(file, _dict=dict)
     if not data["correct"]:
         print("!Incorrect Calculation in ", file)
+
+    # AvgCPU needs special treatment...
+    data["TimeStats"]["AvgCPU"] = int(data["TimeStats"]["AvgCPU"][:-1])
     fill_stats(data)
     data = flatten(data, sep='.')
     yield data
 
 
 def fill_stats(data):
-    """Calculates Mean and StDev for all timings"""
-    setup_series = [x["setup"] for x in data["timings"]]
-    online_series = [x["online"] for x in data["timings"]]
-    data["setupTime"] = {"mean": mean(setup_series),\
-            "stdev": stdev(setup_series) if len(setup_series) > 1 else 0}
-    data["onlineTime"] = {"mean": mean(online_series),\
-            "stdev": stdev(online_series) if len(online_series) > 1 else 0}
+    """Calculates Mean and StDev for all timings and saves them to the provided
+    data object. Uses flat keys {phase}Time.{mean,stdev}"""
+    for phase in ["setup", "online"]:
+        series = [x[phase] for x in data["timings"]]
+        data[phase + "Time.mean"] = mean(series)
+        data[phase + "Time.stdev"] = stdev(series) if len(series) > 1 else 0
 
 
 def group_runs(runs, gby):
-    if len(gby) == 1:
-        keyf = lambda x: x[gby]
-    else:
-        def keyf(x):
-            return "_".join((str(x[key]) for key in gby))
+    keyf = lambda x: "+".join((str(x[key]) for key in gby))
     try:
-        sruns = sorted(runs, key=keyf)
+        sruns = sorted(runs, key=keyf) # groupby only works properly on sorted iterable
     except KeyError as e:
-        raise KeyError("%s is not a parameter by which runs can be grouped. \
-                Use parameters.dbSize, parameters.numRecords etc." %gby) from e
+        raise KeyError(f"{gby} is not a parameter by which runs can be grouped. \
+                Use parameters.dbSize, parameters.numRecords etc.") from e
 
+    # we only need the groups, not the keys
     for _, groups in groupby(sruns, key=keyf):
         yield groups
 
@@ -68,33 +67,32 @@ def combine_runs(runs):
         return (run[key] for run in runs)
 
     for key in data:
-        if key == 'runid': # save list of runids
-            runids = list(values(key))
-            data[key] = "%i..%i" %(runids[0], runids[-1])
-        elif key in ['AvgCPU']:
+        if key in ['TimeStats.AvgCPU']:
             data[key] = mean(values(key))
-        elif key in ['MaxMem'] or 'Comm' in key:
+        elif key in ['TimeStats.MaxMem'] or key.startswith("communication"):
             data[key] = max(values(key))
 
-    # Recalculate mean and Stdev
+    # Merge timings
+    data["timings"] = [ts for run in runs for ts in run["timings"]]
+    # Recalculate mean and Stdev of timings
     fill_stats(data)
 
     return data
 
-def parse_folder(path, fields, role='0'):
+def parse_folder(path, role='0'):
     assert os.path.isdir(path), "Path %s is not a folder."
 
     for fname in glob.iglob('%s/*run.%s*' %(path, role)):
         with open(fname) as file:
-            yield from parse_file(file, fields)
+            yield from parse_file(file)
 
-def parse_paths(paths, fields, role='0'):
+def parse_paths(paths, role='0'):
     for path in paths:
         if os.path.isfile(path) and ('run.'+role) in path:
             with open(path) as file:
-                yield parse_file(file, fields)
+                yield parse_file(file)
         elif os.path.isdir(path):
-            yield from parse_folder(path, fields, role)
+            yield from parse_folder(path, role)
 
 def write_csv(runs, fields, csvfile, delimiter):
     w = csv.DictWriter(csvfile, fieldnames=fields, extrasaction='ignore',
@@ -128,14 +126,14 @@ def parse_args():
     parser.add_argument("-r", "--role", default='0',
             help="0/1/'': Role to filter folders to. Default: 0 (Server)")
     parser.add_argument("-C", "--combine", metavar="parameter",\
-            type =split_comma, default=None,\
-            help="Combine runs for given parameter. Calculates Avgs and Maxs")
+            type=split_comma, default=None,\
+            help="Combine runs for comma-separated list of parameters. Calculates Avgs and Maxs")
 
     args = parser.parse_args()
 
     if not args.output == '-' and os.path.isfile(args.output) and not (args.overwrite or args.append):
         print("Output file exists. Either choose overwrite or append or change output path")
-        exit(1)
+        sys.exit(1)
 
     # Interpret \t as tab char
     if args.delimiter == "\\t": args.delimiter = "\t"
@@ -146,7 +144,7 @@ def main():
     args = parse_args()
 
     # Read in runs
-    runs = parse_paths(args.paths, fields=args.fields, role=args.role)
+    runs = parse_paths(args.paths, role=args.role)
 
     # Group and combine if necessary
     if args.combine is not None:
@@ -160,6 +158,6 @@ def main():
         if csvfile is not sys.stdout:
             csvfile.close()
 
-    exit(0)
+    sys.exit(0)
 
 if __name__ == '__main__': main()
