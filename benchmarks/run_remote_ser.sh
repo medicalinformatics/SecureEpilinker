@@ -34,7 +34,7 @@ echo "Remote server: ${remote[0]} client: ${remote[1]}"
 echo "Server IP: ${serverip}"
 
 ts=$(date +%s)
-out_base="${T}${T:+_}${remote[0]}_${remote[1]}_${ts}_D${D}_N${N}_S${S}_C${C}_sel"
+out_base="${T}${T:+_}${remote[0]}_${remote[1]}_D${D}_N${N}_S${S}_C${C}_${ts}_sel"
 dir="runs/${out_base}"
 rdir="~/tmp/${dir}"
 session="sel-remote-${ts}"
