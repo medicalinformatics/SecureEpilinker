@@ -88,6 +88,25 @@ EpilinkConfig make_dkfz_cfg() {
   };
 }
 
+enum class RunMode { dkfz = 0, integer = 1, bitmask = 2, combined = 3};
+
+EpilinkConfig make_benchmark_cfg(size_t num_fields, RunMode mode) {
+  map<string, FieldSpec> field_config;
+  for (size_t i = 0; i != num_fields; ++i){
+    string fieldname{"Field"+std::to_string(i)};
+    if (mode == RunMode::integer || mode == RunMode::combined){
+      field_config[fieldname] = FieldSpec(fieldname, 0.01, 0.04, "binary", "integer", 12);
+    }
+    if (mode == RunMode::bitmask || mode == RunMode::combined) {
+      if (mode == RunMode::combined)
+        fieldname += "b";
+      field_config[fieldname] = FieldSpec(fieldname, 0.01, 0.04, "dice", "bitmask", 500);
+    }
+  }
+  EpilinkConfig cfg(field_config,{},Threshold, TThreshold);
+  return cfg;
+}
+
 auto set_inputs(SecureEpilinker& linker,
     const EpilinkClientInput& in_client, const EpilinkServerInput& in_server) {
   logger->info("Calling set_{}_input()\n", run_both ? "both" : ((role==MPCRole::CLIENT) ? "client" : "server"));
@@ -243,6 +262,20 @@ EpilinkInput input_dkfz_random(size_t dbsize, size_t nrecords=1) {
   RandomInputGenerator random_input(make_dkfz_cfg());
   random_input.set_client_empty_fields({"ort"});
   return random_input.generate(dbsize, nrecords);
+}
+EpilinkInput input_benchmark_random(size_t dbsize, size_t nrecords, size_t num_fields, RunMode mode) {
+  RandomInputGenerator random_input(make_benchmark_cfg(num_fields, mode));
+  return random_input.generate(dbsize, nrecords);
+}
+
+EpilinkInput generate_modal_epilink_input(size_t dbsize, size_t nrecords, size_t num_fields, uint8_t mode){
+  switch (mode) {
+    case 0: return input_dkfz_random(dbsize, nrecords);
+    case 1: return input_benchmark_random(dbsize, nrecords, num_fields, RunMode::integer);
+    case 2: return input_benchmark_random(dbsize, nrecords, num_fields, RunMode::bitmask);
+    case 3: return input_benchmark_random(dbsize, nrecords, num_fields, RunMode::combined);
+    default: throw std::runtime_error("Wrong mode of operation! Use 0,1,2 or 3");
+  }
 }
 
 EpilinkConfig read_config_file(const fs::path& cfg_path) {
@@ -481,6 +514,8 @@ int main(int argc, char *argv[])
   uint32_t nthreads = 2; // 2 is ABYs default
   string server_host = "127.0.0.1";
   bool match_counting = false;
+  uint8_t mode = 0;
+  size_t num_fields = 1;
 #ifdef SEL_STATS
   string benchmark_filepath;
 #endif
@@ -498,6 +533,9 @@ int main(int argc, char *argv[])
     ("L,local-only", "Only run local calculations on clear values."
         " Doesn't initialize the SecureEpilinker.", cxxopts::value(only_local))
     ("m,match-count", "Run match counting instead of linkage.", cxxopts::value(match_counting))
+    ("M,mode", "Select test mode: (0) dkfz config, (1) integer fields,"
+            " (2) bitfield fields, (3) combined fields", cxxopts::value(mode))
+    ("num-fields", "Number of fields to generate in modes 1,2 and 3", cxxopts::value(num_fields))
 #ifdef SEL_STATS
     ("B,benchmark-file", "Print benchmarking output to file.", cxxopts::value(benchmark_filepath))
 #endif
@@ -527,7 +565,7 @@ int main(int argc, char *argv[])
     role, server_host, 5676, nthreads
   };
 
-  const auto in = input_dkfz_random(dbsize, nrecords);
+  const auto in = generate_modal_epilink_input(dbsize, nrecords, num_fields, mode);
   //const auto in = input_multi_test_0824();
 
   const auto circ_cfg = make_circuit_config<CircUnit>(in.cfg);
