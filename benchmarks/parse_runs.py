@@ -115,12 +115,13 @@ def parse_args():
     parser.add_argument("-F", "--overwrite", action='store_true',
             help="Overwrite output file")
     parser.add_argument("-f", "--fields", type=split_comma,
-            default=["parameters.dbSize",
-                "parameters.numRecords","parameters.boolSharing",\
-                "parameters.arithConversion","circuit.total","baseOTs.time",\
-                "communication.setupCommSent","communication.onlineCommSent",\
-                "setupTime.mean","setupTime.stdev","onlineTime.mean",\
-                "onlineTime.stdev"],
+            default=["parameters.dbSize", "parameters.numRecords",\
+                "parameters.boolSharing", "parameters.arithConversion",\
+                "TimeStats.AvgCPU", "TimeStats.MaxMem", "circuit.total", \
+                "communication.setupCommSent", "communication.setupCommRecv",\
+                "communication.onlineCommSent", "communication.onlineCommRecv",\
+                "setupTime.mean", "setupTime.stdev",\
+                "onlineTime.mean", "onlineTime.stdev"],
             help="Comma separated list of fields to include in output.\
                     Subfields are separated by a dot")
     parser.add_argument("-r", "--role", default='0',
