@@ -17,6 +17,5 @@ for C in 0 1; do
   # GMW RAM usage can take it
   S=0
   D=25000 $cmd_gmw
-  D=100000 $cmd_gmw
-  N=100 D=1000 $cmd_gmw
+  # for D=100000 there's an overflow in CBitVector...
 done
