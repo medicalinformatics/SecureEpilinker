@@ -25,6 +25,8 @@ N=${N:-1}      # Number of records to link
 C=${C:-0}      # Use Arithmetic circuit
 S=${S:-1}      # Boolean Sharing to use, 0: GMW 1: YAO
 R=${1:-1}      # Number of seriell runs
+M=${M:-0}      # Run Mode: 0 dkfz, 1 integer fields, 2 bitmask fields, 3 combined
+F=${F:-16}     # Number of fields in modes 1 - 3
 declare -a remote
 remote[0]=${2:-localhost}
 remote[1]=${3:-localhost}
@@ -56,7 +58,7 @@ run-role() {
     out1="${out}_r${r}"
     rout1="${rout}_r${r}"
     ssh -l ${ssh_user} ${remote[$1]} \
-      "cd ${exepath}; ${cmd_time} ${rout1} $cmd -r $1 -S ${serverip} -B ${rout1}; cat ${rout1}" \
+      "cd ${exepath}; ${cmd_time} ${rout1} $cmd -r $1 -S ${serverip} -B ${rout1} -M ${M} --num-fields ${F}; cat ${rout1}" \
       | tee ${out1}
   done
 }
