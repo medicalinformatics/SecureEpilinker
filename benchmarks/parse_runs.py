@@ -47,9 +47,7 @@ def group_runs(runs, gby):
         raise KeyError(f"{gby} is not a parameter by which runs can be grouped. \
                 Use parameters.dbSize, parameters.numRecords etc.") from e
 
-    # we only need the groups, not the keys
-    for _, groups in groupby(sruns, key=keyf):
-        yield groups
+    yield from groupby(sruns, key=keyf)
 
 def combine_runs(runs):
     """Combines several run dicitonaries to one, taking the average over
@@ -107,7 +105,7 @@ def parse_args():
     parser.add_argument("paths", metavar="path", nargs="+",
             help="Input .run files or folders containing them")
     parser.add_argument("-o", "--output", default="-",
-            help="Output CSV file (default: stdout)")
+            help="Output CSV file basename (default: stdout)")
     parser.add_argument("-d", "--delimiter", default=",",
             help="Delimiter to use in CSV output (default: ',')")
     parser.add_argument("-a", "--append", action='store_true',
@@ -126,13 +124,17 @@ def parse_args():
                     Subfields are separated by a dot")
     parser.add_argument("-r", "--role", default='0',
             help="0/1/'': Role to filter folders to. Default: 0 (Server)")
-    parser.add_argument("-C", "--combine", metavar="parameter",\
+    parser.add_argument("-C", "--combine", metavar="parameters",\
             type=split_comma, default=None,\
             help="Combine runs for comma-separated list of parameters. Calculates Avgs and Maxs")
+    parser.add_argument("-S", "--split", metavar="parameters",\
+            type=split_comma, default=None,\
+            help=("Split output by those parameters. Output will be named "
+                "{output}_{1}+{...}+{n}"))
 
     args = parser.parse_args()
 
-    if not args.output == '-' and os.path.isfile(args.output) and not (args.overwrite or args.append):
+    if not args.output == '-' and glob.glob(args.output+'*') and not (args.overwrite or args.append):
         print("Output file exists. Either choose overwrite or append or change output path")
         sys.exit(1)
 
@@ -149,15 +151,22 @@ def main():
 
     # Group and combine if necessary
     if args.combine is not None:
-        runs = (combine_runs(list(rung)) for rung in group_runs(runs, args.combine))
+        runs = (combine_runs(list(rung)) for _, rung in group_runs(runs, args.combine))
 
     mode = 'a' if args.append else 'w'
-    csvfile = sys.stdout if args.output == '-' else open(args.output, mode)
-    try:
-        write_csv(runs, args.fields, csvfile, args.delimiter)
-    finally:
-        if csvfile is not sys.stdout:
-            csvfile.close()
+
+    def out_file(key: str):
+        if args.output == '-': return sys.stdout
+        out = f"{args.output}_{key}.csv" if key else args.output+'.csv'
+        return open(out, mode)
+
+    if args.split is not None:
+        for key, rung in group_runs(runs, args.split):
+            with out_file(key) as f:
+                write_csv(rung, args.fields, f, args.delimiter)
+    else:
+        with out_file(None) as f:
+            write_csv(runs, args.fields, f, args.delimiter)
 
     sys.exit(0)
 

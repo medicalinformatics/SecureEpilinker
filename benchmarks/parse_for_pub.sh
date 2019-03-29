@@ -3,7 +3,8 @@
 # to reside next to the secure_epilink directory
 
 groupby=parameters.boolSharing,parameters.arithConversion,parameters.dbSize,parameters.numRecords
-pubdir=../../2018-secure-record-linkage/benchmarks/
+splitby=parameters.boolSharing,parameters.arithConversion
+pubdir=../../2018-secure-record-linkage/data/
 pattern=sizes
 
-./parse_runs.py -C $groupby -o "${pubdir}${pattern}.csv" "runs/${pattern}"*
+./parse_runs.py -C $groupby -S $splitby -o "${pubdir}${pattern}" "runs/${pattern}"*
