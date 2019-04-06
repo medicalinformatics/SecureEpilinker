@@ -130,7 +130,8 @@ def parse_args():
     parser.add_argument("-S", "--split", metavar="parameters",\
             type=split_comma, default=None,\
             help=("Split output by those parameters. Output will be named "
-                "{output}_{1}+{...}+{n}"))
+                "{output}_{1}+{...}+{n}.csv"))
+    parser.add_argument("-s", "--sort", help="Sort output table by this field")
 
     args = parser.parse_args()
 
@@ -160,13 +161,17 @@ def main():
         out = f"{args.output}_{key}.csv" if key else args.output+'.csv'
         return open(out, mode)
 
+    def sorted_run(run):
+        if not args.sort: return run
+        else: return sorted(run, key=lambda x: x[args.sort])
+
     if args.split is not None:
         for key, rung in group_runs(runs, args.split):
             with out_file(key) as f:
-                write_csv(rung, args.fields, f, args.delimiter)
+                write_csv(sorted_run(rung), args.fields, f, args.delimiter)
     else:
         with out_file(None) as f:
-            write_csv(runs, args.fields, f, args.delimiter)
+            write_csv(sorted_run(runs), args.fields, f, args.delimiter)
 
     sys.exit(0)
 
