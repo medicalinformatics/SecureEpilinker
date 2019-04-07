@@ -37,6 +37,7 @@ def fill_stats(data):
         series = [x[phase] for x in data["timings"]]
         data[phase + "Time.mean"] = mean(series)
         data[phase + "Time.stdev"] = stdev(series) if len(series) > 1 else 0
+    data["count"] = len(data["timings"])
 
 
 def group_runs(runs, gby):
@@ -119,9 +120,10 @@ def parse_args():
                 "communication.setupCommSent", "communication.setupCommRecv",\
                 "communication.onlineCommSent", "communication.onlineCommRecv",\
                 "setupTime.mean", "setupTime.stdev",\
-                "onlineTime.mean", "onlineTime.stdev"],
-            help="Comma separated list of fields to include in output.\
-                    Subfields are separated by a dot")
+                "onlineTime.mean", "onlineTime.stdev",\
+                "count"],
+            help=("Comma separated list of fields to include in output. "
+                  "Subfields are separated by a dot"))
     parser.add_argument("-r", "--role", default='0',
             help="0/1/'': Role to filter folders to. Default: 0 (Server)")
     parser.add_argument("-C", "--combine", metavar="parameters",\
@@ -130,7 +132,7 @@ def parse_args():
     parser.add_argument("-S", "--split", metavar="parameters",\
             type=split_comma, default=None,\
             help=("Split output by those parameters. Output will be named "
-                "{output}_{1}+{...}+{n}.csv"))
+                  "{output}_{1}+{...}+{n}.csv"))
     parser.add_argument("-s", "--sort", help="Sort output table by this field")
 
     args = parser.parse_args()
