@@ -3,7 +3,7 @@
 from statistics import mean, stdev
 from itertools import groupby
 from collections.abc import MutableMapping
-import sys, csv, argparse, os.path, glob, toml
+import sys, csv, argparse, os.path, glob, toml, re
 
 
 def flatten(d, parent_key='', sep='_'):
@@ -27,7 +27,7 @@ def parse_file(file):
     data["TimeStats"]["AvgCPU"] = int(data["TimeStats"]["AvgCPU"][:-1])
     fill_stats(data)
     data = flatten(data, sep='.')
-    yield data
+    return data
 
 
 def fill_stats(data):
@@ -45,8 +45,8 @@ def group_runs(runs, gby):
     try:
         sruns = sorted(runs, key=keyf) # groupby only works properly on sorted iterable
     except KeyError as e:
-        raise KeyError(f"{gby} is not a parameter by which runs can be grouped. \
-                Use parameters.dbSize, parameters.numRecords etc.") from e
+        raise KeyError((f"{gby} aren't parameters by which runs can be grouped."
+            " Use parameters.dbSize, parameters.numRecords etc.")) from e
 
     yield from groupby(sruns, key=keyf)
 
@@ -78,20 +78,26 @@ def combine_runs(runs):
 
     return data
 
-def parse_folder(path, role='0'):
-    assert os.path.isdir(path), "Path %s is not a folder."
+def parse_folder(path, role='0', parseparam=None):
+    assert os.path.isdir(path), f"{path} is not a folder."
 
-    for fname in glob.iglob('%s/*run.%s*' %(path, role)):
+    # parse number from path name
+    if parseparam:
+        parsenum = int(re.match(r"[a-zA-Z0-9]+_(\d+)_", os.path.basename(path)).group(1))
+
+    for fname in glob.iglob(f'{path}/*run.{role}*'):
         with open(fname) as file:
-            yield from parse_file(file)
+            data = parse_file(file)
+            if parseparam: data[parseparam] = parsenum
+            yield data
 
-def parse_paths(paths, role='0'):
+def parse_paths(paths, role='0', parseparam=None):
     for path in paths:
         if os.path.isfile(path) and ('run.'+role) in path:
             with open(path) as file:
                 yield parse_file(file)
         elif os.path.isdir(path):
-            yield from parse_folder(path, role)
+            yield from parse_folder(path, role, parseparam)
 
 def write_csv(runs, fields, csvfile, delimiter):
     w = csv.DictWriter(csvfile, fieldnames=fields, extrasaction='ignore',
@@ -134,6 +140,10 @@ def parse_args():
             help=("Split output by those parameters. Output will be named "
                   "{output}_{1}+{...}+{n}.csv"))
     parser.add_argument("-s", "--sort", help="Sort output table by this field")
+    parser.add_argument("--parse-num-parameter", metavar="parameter",
+            dest="parseparam", help=(
+            "Parse a numerical parameter from the folder name into given "
+            "parameter. The number is parsed from the pattern [a-zA-Z0-9]+_{number}_*"))
 
     args = parser.parse_args()
 
@@ -144,13 +154,17 @@ def parse_args():
     # Interpret \t as tab char
     if args.delimiter == "\\t": args.delimiter = "\t"
 
+    # prepend parse-parameter to fields list
+    if args.parseparam and args.parseparam not in args.fields:
+        args.fields.insert(0, args.parseparam)
+
     return args
 
 def main():
     args = parse_args()
 
     # Read in runs
-    runs = parse_paths(args.paths, role=args.role)
+    runs = parse_paths(args.paths, role=args.role, parseparam=args.parseparam)
 
     # Group and combine if necessary
     if args.combine is not None:
