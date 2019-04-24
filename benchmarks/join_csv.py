@@ -6,19 +6,16 @@
 # then appended to all output fields after a dot, i.e., field {x} of file
 # {tag}_...csv becomes {x}.{tag}.
 
-from itertools import groupby
 import sys, csv, argparse, os.path, glob, re
-from agate import Table, Formula, Number
-from decimal import Decimal
 from functools import reduce
+from agate import Table, Formula, Number
 
 def main():
     args = parse_args()
 
     file_lists = get_file_lists(args.basenames)
     for suf, flist in file_lists.items():
-        joined = join_csv_files(flist, args)
-        table = filter_table(args, joined)
+        table = join_csv_files(flist, args)
         write_csv_table(args.output, suf, table)
     # read all files
     #   reads tag from file name
@@ -72,16 +69,17 @@ def get_file_lists(basenames):
 
 def join_csv_files(filelist, args):
     tables = []
+    cols = [args.join] + args.fields
+    if args.add_comm: cols.extend(["setupComm", "onlineComm"])
+
     for base, f in filelist.items():
         t = Table.from_csv(f, delimiter=args.delimiter)
         if args.add_comm:
-            print("adding comm cols")
             t = t.compute([comm_adder_computation('setup'),
                            comm_adder_computation('online')])
-
-        t = t.rename([x if x in [args.join, 'setupComm', 'onlineComm']
-                        else f'{x}.{base}'
-                for x in t.column_names])
+        t = t.select(cols)
+        t = t.rename([x if x == args.join else f'{x}.{base}'
+                      for x in t.column_names])
 
         tables.append(t)
 
@@ -92,15 +90,6 @@ def comm_adder_computation(phase: str):
         lambda x: x[f'communication.{phase}CommSent']
                 + x[f'communication.{phase}CommRecv']
     ))
-
-def filter_table(args, table):
-    cols = [args.join]
-    if args.add_comm: cols.extend(["setupComm", "onlineComm"])
-
-    field_selector = lambda fld: any(map(fld.startswith, args.fields))
-    cols.extend(filter(field_selector, table.column_names))
-
-    return table.select(cols)
 
 def write_csv_table(outbase, suf, table):
     table.to_csv(f"{outbase}_{suf}.csv")
