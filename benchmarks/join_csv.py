@@ -42,12 +42,13 @@ def parse_args():
     parser.add_argument("-j", "--join", default="parameters.dbSize",
             help="Field to join on.")
     parser.add_argument("-f", "--fields", type=split_comma,
-            default=["setupTime.mean", "onlineTime.mean", "circuit.rounds"],
+            default=["setupTime.mean", "onlineTime.mean"],
             help=("Comma separated list of fields to include in output. "
                   "Fields will be included from each file, with the file basename"
                   " appended after a dot."))
     parser.add_argument("--add-comm", action='store_true',
-            help=("Create new column by adding communication columns "
+            help=("Add circuit.rounds and total setup and online communication "
+                "from first table. Comm columns are created by adding "
                 "communication.{setup,online}Comm{Sent,Recv}"))
 
     args = parser.parse_args()
@@ -73,13 +74,13 @@ def get_file_lists(basenames):
 def join_csv_files(filelist, args):
     tables = []
     cols = [args.join] + args.fields
-    if args.add_comm: cols.extend(["setupComm", "onlineComm"])
+
+    if args.add_comm:
+        firstfile = filelist[args.basenames[0]]
+        tables.append(comm_fields_table(firstfile, args))
 
     for base, f in filelist.items():
         t = Table.from_csv(f, delimiter=args.delimiter)
-        if args.add_comm:
-            t = t.compute([comm_adder_computation('setup'),
-                           comm_adder_computation('online')])
         t = t.select(cols)
         t = t.rename([x if x == args.join else f'{x}.{base}'
                       for x in t.column_names])
@@ -87,6 +88,14 @@ def join_csv_files(filelist, args):
         tables.append(t)
 
     return reduce(lambda left, right: left.join(right, args.join), tables)
+
+def comm_fields_table(filepath, args):
+    cols = [args.join, "circuit.rounds", "setupComm", "onlineComm"]
+    return Table.from_csv(filepath, delimiter=args.delimiter) \
+        .compute([comm_adder_computation('setup'),
+                  comm_adder_computation('online')]) \
+        .select(cols)
+
 
 def comm_adder_computation(phase: str):
     return (f"{phase}Comm", Formula(Number(),
