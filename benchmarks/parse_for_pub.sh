@@ -6,6 +6,6 @@ groupby=parameters.boolSharing,parameters.arithConversion,parameters.dbSize,para
 splitby=parameters.boolSharing,parameters.arithConversion
 sortby=parameters.dbSize
 pubdir=../../2018-secure-record-linkage/data/
-pattern=sizes
+pattern=sizes # or bandw100 or lat100ms
 
 ./parse_runs.py -C $groupby -S $splitby -s $sortby -F -o "${pubdir}${pattern}" "runs/${pattern}"*
