@@ -5,6 +5,9 @@
 # filename, assuming the filename is of the form {tag}_\w*.csv. This tag is
 # then appended to all output fields after a dot, i.e., field {x} of file
 # {tag}_...csv becomes {x}.{tag}.
+#
+# cd into data/ dir of pub and run me like
+# ~/p/sel/secure_epilink/benchmarks/join_csv.py -o comparison --add-comm sizes bandw100 lat100ms
 
 import sys, csv, argparse, os.path, glob, re
 from functools import reduce
@@ -39,7 +42,7 @@ def parse_args():
     parser.add_argument("-j", "--join", default="parameters.dbSize",
             help="Field to join on.")
     parser.add_argument("-f", "--fields", type=split_comma,
-            default=["setupTime.mean", "onlineTime.mean"],
+            default=["setupTime.mean", "onlineTime.mean", "circuit.rounds"],
             help=("Comma separated list of fields to include in output. "
                   "Fields will be included from each file, with the file basename"
                   " appended after a dot."))

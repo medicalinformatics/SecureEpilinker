@@ -122,7 +122,8 @@ def parse_args():
     parser.add_argument("-f", "--fields", type=split_comma,
             default=["parameters.dbSize", "parameters.numRecords",\
                 "parameters.boolSharing", "parameters.arithConversion",\
-                "TimeStats.AvgCPU", "TimeStats.MaxMem", "circuit.total", \
+                "TimeStats.AvgCPU", "TimeStats.MaxMem", \
+                "circuit.total", "circuit.rounds", \
                 "communication.setupCommSent", "communication.setupCommRecv",\
                 "communication.onlineCommSent", "communication.onlineCommRecv",\
                 "setupTime.mean", "setupTime.stdev",\
