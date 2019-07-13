@@ -28,6 +28,7 @@ MPCRole role;
 BooleanSharing sharing;
 bool use_conversion{false};
 bool print_table{false};
+int bitmask_density_shift{0};
 
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
@@ -262,10 +263,12 @@ EpilinkInput input_empty() {
 EpilinkInput input_dkfz_random(size_t dbsize, size_t nrecords=1) {
   RandomInputGenerator random_input(make_dkfz_cfg());
   random_input.set_client_empty_fields({"ort"});
+  random_input.set_bitmask_density_shift(bitmask_density_shift);
   return random_input.generate(dbsize, nrecords);
 }
 EpilinkInput input_benchmark_random(size_t dbsize, size_t nrecords, size_t num_fields, RunMode mode) {
   RandomInputGenerator random_input(make_benchmark_cfg(num_fields, mode));
+  random_input.set_bitmask_density_shift(bitmask_density_shift);
   return random_input.generate(dbsize, nrecords);
 }
 
@@ -560,6 +563,9 @@ int main(int argc, char *argv[])
     ("M,mode", "Select test mode: (0) dkfz config, (1) integer fields,"
         " (2) bitfield fields, (3) combined fields", cxxopts::value(mode))
     ("num-fields", "Number of fields to generate in modes 1,2 and 3", cxxopts::value(num_fields))
+    ("bm-density-shift", "Bitmask density shift during generation of random "
+        "inputs: 0: equal number of 1s and 0s; >0: more 1s; <0: more 0s.",
+        cxxopts::value(bitmask_density_shift))
 #ifdef SEL_STATS
     ("B,benchmark-file", "Print benchmarking output to file.", cxxopts::value(benchmark_filepath))
 #endif
