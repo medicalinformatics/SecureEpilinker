@@ -27,6 +27,7 @@ bool only_local{false};
 MPCRole role;
 BooleanSharing sharing;
 bool use_conversion{false};
+bool print_table{false};
 
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
@@ -496,6 +497,29 @@ void run_and_print_counting(SecureEpilinker& linker, const EpilinkInput& in) {
 }
 
 template <typename T>
+string result_entry(const Result<T>& r) {
+  return format("{};{}", r.sum_field_weights, r.sum_weights);
+}
+
+void run_and_print_score_table(const EpilinkInput& in) {
+  print("num_16;den_16;num_32;den_32;num_64;den_64;num_double;den_double\n");
+
+  const auto results_16 = run_local_linkage<uint16_t>(in);
+  const auto results_32 = run_local_linkage<uint32_t>(in);
+  const auto results_64 = run_local_linkage<uint64_t>(in);
+  const auto results_double = run_local_linkage<double>(in);
+
+  for (size_t i = 0; i != in.client.num_records; ++i) {
+    print("{};{};{};{}\n",
+        result_entry(results_16[i]),
+        result_entry(results_32[i]),
+        result_entry(results_64[i]),
+        result_entry(results_double[i])
+    );
+  }
+}
+
+template <typename T>
 void print_toml(ostream& out, string field, T value) {
   print(out, "{} = {}\n", field, value);
 }
@@ -534,13 +558,15 @@ int main(int argc, char *argv[])
         " Doesn't initialize the SecureEpilinker.", cxxopts::value(only_local))
     ("m,match-count", "Run match counting instead of linkage.", cxxopts::value(match_counting))
     ("M,mode", "Select test mode: (0) dkfz config, (1) integer fields,"
-            " (2) bitfield fields, (3) combined fields", cxxopts::value(mode))
+        " (2) bitfield fields, (3) combined fields", cxxopts::value(mode))
     ("num-fields", "Number of fields to generate in modes 1,2 and 3", cxxopts::value(num_fields))
 #ifdef SEL_STATS
     ("B,benchmark-file", "Print benchmarking output to file.", cxxopts::value(benchmark_filepath))
 #endif
     ("v,verbose", "Set verbosity. May be specified multiple times to log on "
       "info/debug/trace level. Default level is warning.")
+    ("T,print-table", "Print locally computed scores as CSV. "
+        "Useful for precision caluclation.", cxxopts::value(print_table))
     ("h,help", "Print help");
   auto op = options.parse(argc, argv);
 
@@ -558,15 +584,20 @@ int main(int argc, char *argv[])
   }
   logger = get_logger(ComponentLogger::TEST);
 
+  const auto in = generate_modal_epilink_input(dbsize, nrecords, num_fields, mode);
+  //const auto in = input_multi_test_0824();
+
+  if (print_table) {
+    run_and_print_score_table(in);
+    return 0;
+  }
+
   role = role_client ? MPCRole::CLIENT : MPCRole::SERVER;
   sharing = sharing_num ? BooleanSharing::YAO : BooleanSharing::GMW;
 
   SecureEpilinker::ABYConfig aby_cfg {
     role, server_host, 5676, nthreads
   };
-
-  const auto in = generate_modal_epilink_input(dbsize, nrecords, num_fields, mode);
-  //const auto in = input_multi_test_0824();
 
   const auto circ_cfg = make_circuit_config<CircUnit>(in.cfg);
   SecureEpilinker linker{aby_cfg, circ_cfg};
