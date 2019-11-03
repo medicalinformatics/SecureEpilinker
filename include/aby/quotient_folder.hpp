@@ -55,7 +55,7 @@ public:
    * that arithmetic shares that are converted back to boolean space can be
    * truncated.
    */
-  std::enable_if_t<do_conversion> set_converters_and_den_bits(
+  void set_converters_and_den_bits(
     T2BConverter<ShareT> const* _to_bool, B2AConverter const* _to_arith,
     const size_t _den_bits = 0) {
       to_bool = _to_bool;
