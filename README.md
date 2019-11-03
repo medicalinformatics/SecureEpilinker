@@ -1,10 +1,12 @@
-# Secure EpiLinker
-
-Perform privacy-preserving record linkage using the EpiLink algorithm
+# Mainzelliste SecureEpiLinker (MainSEL)
+Privacy-Preserving Record Linkage using Secure Multi-Party Computation and the
+EpiLink algorithm. This is the repository of the ABY sMCP Node: SecureEpilinker.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+These instructions will get you a copy of the project up and running on your
+local machine for development and testing purposes. See deployment for notes on
+how to deploy the project on a live system.
 
 ### Prerequisites
 
@@ -20,17 +22,17 @@ openssl (Ubuntu: libssl-dev)
 gmp (Ubuntu: libgmp-dev)
 ```
 
-Note that on Arch Linux based systems, openssl is not shipped with static
-libraries, so unfortunately the restbed included openssl version needs to
-be cloned and built or another custom openssl with static libraries.
+Note that on Arch Linux based systems, `openssl` is not shipped with static
+libraries, so unfortunately the `openssl` version included in `restbed` needs to
+be cloned and built or another custom `openssl` with static libraries needs to be
+installed.
 
 ### Clone
 
 To clone this repository and the necessary submodules, run
-
 ```
-git clone git@git.compbiol.bio.tu-darmstadt.de:kussel/secure_epilink.git
-cd secure_epilink
+git clone https://github.com/medicalinformatics/SecureEpilinker.git
+cd SecureEpilinker
 scripts/init_submodules.sh
 ```
 
@@ -46,10 +48,10 @@ more submodules than necessary.
 As mentioned above, on Arch you may need to manually compile (static) openssl
 libs:
 ```
-cd extern/restbed/dependency/
+cd extern/restbed/dependency
 git submodule update --init openssl
 cd openssl
-./config && make
+./config && make -j$(nproc)
 ```
 
 #### Secure Epilinker
@@ -65,19 +67,11 @@ make -j$(nproc) sel
 Omit or customize `-j` if you don't want to build in parallel with the maximum
 amount of threads available on your system.
 
-For now, the path from which `test_sel` or `sel` is called needs to have a
-symlink to the `ABY/bin/circ` folder, where it can find the `int_div_16.aby`
-circuit description. E.g. for running from `build/`:
-
-```
-ln -s ../extern/ABY/bin/circ/
-```
-
 ### Running
 
-The default server configuration logs to `../log`, so create that directory in the
-repository's top level folder if running from build. To start the Secure
-Epilinker with https enabled and debug log level, run
+The default server configuration logs to `../log/`, so create that directory in the
+repository's top level folder if running from `build/`. To start the Secure
+Epilinker with https enabled and log level debug, run
 
 ```
 # current directory is build/
@@ -88,17 +82,16 @@ mkdir ../log
 To conclude all steps in one code block for convenience:
 
 ```
-git clone git@git.compbiol.bio.tu-darmstadt.de:kussel/secure_epilink.git
-cd secure_epilink
+git clone https://github.com/medicalinformatics/SecureEpilinker.git
+cd SecureEpilinker
 scripts/init_submodules.sh
 # START optional on Arch or where static openssl is not available
 cd extern/restbed/dependency/openssl
-./config && make
+./config && make -j$(nproc)
 cd ../../../..
 # END
-mkdir {build,log}; cd build
-cmake .. && make -j $(nproc) sel
-ln -s ../extern/ABY/bin/circ/
+mkdir build log; cd build
+cmake .. && make -j$(nproc) sel
 ./sel -s -vv
 ```
 
@@ -107,29 +100,38 @@ ln -s ../extern/ABY/bin/circ/
 To run the service in https mode with self-created keys and self-signed
 certificates, generate those with `scripts/genkeys.sh`.
 
-## Running the tests
+## Tests
 
-Test targets for different components exist:
+Test build targets for different components exist:
 
-  * test_sel
-  * test_aby
-  * test_util
+  * `test_sel` to build and run the SEL circuit tests
+  * `test_aby` to build and run ABY tests
+  * `test_util` to test utility functions
 
-### Break down into end to end tests
+### SEL Tests
 
-Explain what these tests test and why
+To run the SEL circuit tests, the `test_sel` binary needs to be build and
+started in two separate terminals, each representing one of two sMPC nodes. An
+example of a simple invocation is as follows:
 
+```sh
+cd build
+make -j $(nproc) test_sel
+# Terminal Alice (server)
+./test_sel -r 0 -v
+# Terminal Bob (client)
+./test_sel -r 1 -v
 ```
-Give an example
-```
 
-### And coding style tests
-
-Explain what these tests test and why
-
+Alternatively, using the [tmuxp](https://github.com/tmux-python/tmuxp) utility,
+both sessions can be started in a tmux session by invoking
+```sh
+cd build
+tmuxp load ../test/test_sel.tmuxp.yaml
 ```
-Give an example
-```
+This will run the benchmarks and write them to a file. To show the results in
+the terminal, use <arrow-up> and change the invocation to
+`./test_sel -r $role -v`. Use the `-h` flag to see additional options.
 
 ## Deployment
 
@@ -151,8 +153,8 @@ To build the Docker container, clone the repo and its submodules as described
 above and run the Docker build:
 
 ```
-git clone git@git.compbiol.bio.tu-darmstadt.de:kussel/secure_epilink.git
-cd secure_epilink
+git clone https://github.com/medicalinformatics/SecureEpilinker.git
+cd SecureEpilinker
 scripts/init_submodules.sh
 docker build -t sel:ubuntu -f Dockerfile.ubuntu .
 ```
@@ -174,7 +176,7 @@ directory inside the Docker container.
 
 ## REST interface
 
-Information on how to use the API
+TODO
 
 ## Built With
 
@@ -196,11 +198,9 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Authors
 
-* **Tobias Kussel** - *Initial work* - Github Link?
-* **Sebastian Stammler** - *Initial work* - Github Link?
-* **Philip Schoppmann_** - _Initial docker build file_ - Github Link?
-
-See also the list of [contributors](https://git.compbiol.bio.tu-darmstadt.de/kussel/secure_epilink/graphs/dev) who participated in this project.
+* **Tobias Kussel** - *Main author/focus on REST stack* - @tkussel
+* **Sebastian Stammler** - *Main author/focus on sMPC circuit* - @sebastianst
+* **Phillipp Schoppmann** - _Initial docker build file_ - @schoppmp
 
 ## License
 
