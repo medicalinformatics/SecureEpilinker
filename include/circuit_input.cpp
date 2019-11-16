@@ -59,7 +59,7 @@ void CircuitInput<MultShare>::set(const EpilinkClientInput& input) {
   set_constants(input.database_size, input.num_records);
   set_real_client_input(input);
   set_dummy_server_input();
-  get_default_logger()->trace("SELCircuit inputs set (client only).");
+  get_logger()->trace("SELCircuit inputs set (client only).");
   input_set = true;
 }
 
@@ -69,7 +69,7 @@ void CircuitInput<MultShare>::set(const EpilinkServerInput& input) {
   set_constants(input.database_size, input.num_records);
   set_dummy_client_input();
   set_real_server_input(input);
-  get_default_logger()->trace("SELCircuit inputs set (server only).");
+  get_logger()->trace("SELCircuit inputs set (server only).");
   input_set = true;
 }
 
@@ -84,7 +84,7 @@ void CircuitInput<MultShare>::set_both(const EpilinkClientInput& in_client,
   set_constants(in_client.database_size, in_client.num_records);
   set_real_client_input(in_client);
   set_real_server_input(in_server);
-  get_default_logger()->trace("SELCircuit inputs set (both).");
+  get_logger()->trace("SELCircuit inputs set (both).");
   input_set = true;
 }
 #endif
@@ -109,7 +109,7 @@ const MultShare& CircuitInput<MultShare>::get_const_weight(const ComparisonIndex
   FieldNamePair ipair{i.left, i.right};
   const auto& cache_hit = weight_cache.find(ipair);
   if (cache_hit != weight_cache.cend()) {
-    get_default_logger()->trace("weight cache hit for ({}|{})", i.left, i.right);
+    get_logger()->trace("weight cache hit for ({}|{})", i.left, i.right);
     return cache_hit->second;
   }
 
@@ -131,7 +131,7 @@ void CircuitInput<MultShare>::set_constants(size_t database_size, size_t num_rec
   CircUnit T = llround(cfg.epi.threshold * (1 << cfg.dice_prec));
   CircUnit Tt = llround(cfg.epi.tthreshold * (1 << cfg.dice_prec));
 
-  get_default_logger()->debug(
+  get_logger()->debug(
       "Rescaled threshold: {:x}/ tentative: {:x}", T, Tt);
 
   const_threshold_ = constant(mcirc, T, BitLen);

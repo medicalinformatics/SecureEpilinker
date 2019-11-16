@@ -65,11 +65,6 @@ DatabaseFetcher::DatabaseFetcher(
       m_page_size(page_size),
       m_logger{get_logger()} {}
 
-DatabaseFetcher::DatabaseFetcher(
-        shared_ptr<const LocalConfiguration> local_conf)
-    : m_local_config(move(local_conf)),
-      m_logger{get_default_logger()} {}
-
 ServerData DatabaseFetcher::fetch_data(bool matching_mode) {
   m_logger->debug("Requesting Database from {}?pageSize={}\n", m_url,
                   m_page_size);
