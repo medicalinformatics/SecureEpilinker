@@ -1,6 +1,7 @@
 # Mainzelliste SecureEpiLinker (MainSEL)
 Privacy-Preserving Record Linkage using Secure Multi-Party Computation and the
 EpiLink algorithm. This is the repository of the ABY sMCP Node: SecureEpilinker.
+The SEL extended Mainzelliste is available at https://github.com/medicalinformatics/MainzellisteSEL.
 
 ## Getting Started
 
