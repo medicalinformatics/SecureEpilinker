@@ -87,7 +87,7 @@ void config_override(nlohmann::json& config, const cxxopts::ParseResult& cmdopti
 
 int main(int argc, char* argv[]) {
   // Commandline Parser
-  cxxopts::Options options("Secure EpiLinker", "Secure Multi Party Recard Linkage via EpiLink algorithm, Version 0.2.0");
+  cxxopts::Options options("Secure EpiLinker", "Secure Multi-Party Record Linkage via the EpiLink algorithm, Version 1.0.0");
   options.add_options()
     ("c,config", "Config file name", cxxopts::value<std::string>()->default_value("../data/serverconf.json"))
     ("i,localschema", "File name of local initialization schema", cxxopts::value<std::string>())
