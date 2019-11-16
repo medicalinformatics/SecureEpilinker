@@ -70,15 +70,15 @@ public:
     : selector{std::forward<Quotient<ShareT>>(_selector)},
       targets{std::forward<std::vector<BoolShare>>(_targets)}
     {
-      size_t nvals0 = selector.num.get_nvals();
+      [[maybe_unused]] size_t nvals0 = selector.num.get_nvals();
       assert (selector.den.get_nvals() == nvals0);
-      for (const auto& t : targets) assert(t.get_nvals() == nvals0);
+      for ([[maybe_unused]] const auto& t : targets) assert(t.get_nvals() == nvals0);
     }
 
     bool empty() const {
       bool res = selector.den.is_null();
       assert (selector.num.is_null() == res);
-      for (auto& t : targets) assert (t.is_null() == res);
+      for ([[maybe_unused]] auto& t : targets) assert (t.is_null() == res);
       return res;
     }
 

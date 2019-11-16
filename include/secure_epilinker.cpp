@@ -134,7 +134,7 @@ void SecureEpilinker::set_both_inputs(
 }
 #endif
 
-Result<CircUnit> to_clear_value(LinkageOutputShares& res, size_t dice_prec) {
+Result<CircUnit> to_clear_value(LinkageOutputShares& res, [[maybe_unused]] size_t dice_prec) {
 #ifdef DEBUG_SEL_RESULT
     const auto sum_field_weights = res.score_numerator.get_clear_value<CircUnit>();
     // shift by dice-precision to account for precision of threshold, i.e.,
