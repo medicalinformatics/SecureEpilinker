@@ -21,6 +21,7 @@ add_subdirectory(valijson EXCLUDE_FROM_ALL)
 add_subdirectory(restbed EXCLUDE_FROM_ALL)
 add_subdirectory(curlpp EXCLUDE_FROM_ALL)
 add_subdirectory(spdlog EXCLUDE_FROM_ALL)
+add_subdirectory(pybind11 EXCLUDE_FROM_ALL)
 
 target_compile_options(aby PRIVATE "-w")
 target_compile_options(encrypto_utils PRIVATE "-w")
