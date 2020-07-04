@@ -155,3 +155,18 @@ target_compile_features(test_util PUBLIC cxx_std_17)
 target_compile_options(test_util PRIVATE ${${P}_EXTRA_WARNING_FLAGS})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
+# python bindings for clear-text EpiLinker
+pybind11_add_module(pysel SYSTEM
+  pysel/pysel.cpp
+  include/math.cpp
+  include/util.cpp
+  include/logger.cpp
+  include/seltypes.cpp
+  include/epilink_input.cpp
+  include/circuit_config.cpp
+  include/clear_epilinker.cpp
+)
+target_link_libraries_system(pysel PUBLIC fmt::fmt-header-only spdlog::spdlog)
+target_compile_features(pysel PUBLIC cxx_std_17)
+target_compile_options(pysel PRIVATE ${${P}_EXTRA_WARNING_FLAGS})
