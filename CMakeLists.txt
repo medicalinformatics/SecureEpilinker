@@ -172,3 +172,6 @@ pybind11_add_module(pysel SYSTEM
 target_link_libraries_system(pysel PUBLIC fmt::fmt-header-only spdlog::spdlog)
 target_compile_features(pysel PUBLIC cxx_std_17)
 target_compile_options(pysel PRIVATE ${${P}_EXTRA_WARNING_FLAGS})
+target_compile_definitions(pysel PRIVATE
+  "$<$<CONFIG:Debug>:DEBUG_SEL_CLEAR>" # For intermediary value output in clear epilinker
+)
