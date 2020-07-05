@@ -17,6 +17,7 @@
 */
 
 #include "../include/clear_epilinker.h"
+#include "../include/logger.h"
 #include "../test/epilink.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -34,8 +35,31 @@ auto epilink_dkfz_exact(const clear_epilink::Input& input) {
   return clear_epilink::calc_exact(input, cfg);
 }
 
-PYBIND11_MODULE(pysel, m) {
+// multi-record versions
 
+auto v_epilink_int(const Records& records, const VRecord& database, const CircuitConfig& cfg) {
+  return clear_epilink::calc<CircUnit>(records, database, cfg);
+}
+
+auto v_epilink_exact(const Records& records, const VRecord& database, const CircuitConfig& cfg) {
+  return clear_epilink::calc<double>(records, database, cfg);
+}
+
+auto v_epilink_dkfz_int(const Records& records, const VRecord& database) {
+  auto cfg = CircuitConfig(test::make_dkfz_cfg());
+  return v_epilink_int(records, database, cfg);
+}
+
+auto v_epilink_dkfz_exact(const Records& records, const VRecord& database) {
+  auto cfg = CircuitConfig(test::make_dkfz_cfg());
+  return v_epilink_exact(records, database, cfg);
+}
+
+void set_log_level(int lvl) {
+  spdlog::set_level(spdlog::level::level_enum(lvl));
+}
+
+PYBIND11_MODULE(pysel, m) {
   m.doc() = "Clear-text EpiLinker";
 
   // Epilink and Circuit configuration types
@@ -71,7 +95,6 @@ PYBIND11_MODULE(pysel, m) {
   py::class_<CircuitConfig>(m, "CircuitConfig")
     .def(py::init<const EpilinkConfig&>());
 
-
   // Epilink Input type. Record and VRecord can directly
   // be created from python, since they are built from stl types:
   // Record  = map<string, optional<vector<uint8_t>>>
@@ -92,6 +115,11 @@ PYBIND11_MODULE(pysel, m) {
   m.def("epilink_dkfz_int", &epilink_dkfz_int,
       "Calculates the EpiLink score using the 32-bit fixed-point circuit"
       " with the DKFZ EpiLink configuration.");
+  m.def("v_epilink_int", &v_epilink_int,
+      "Calculates the EpiLink score using the 32-bit fixed-point circuit. Multi-record version.");
+  m.def("v_epilink_dkfz_int", &v_epilink_dkfz_int,
+      "Calculates the EpiLink score using the 32-bit fixed-point circuit"
+      " with the DKFZ EpiLink configuration. Multi-record version.");
 
   py::class_<Result<double>>(m, "ResultDouble")
     .def_readonly("index", &Result<double>::index)
@@ -104,4 +132,16 @@ PYBIND11_MODULE(pysel, m) {
   m.def("epilink_dkfz_exact", &epilink_dkfz_exact,
       "Calculates the EpiLink score using double-precision floats"
       " with the DKFZ EpiLink configuration.");
+  m.def("v_epilink_exact", &v_epilink_exact,
+      "Calculates the EpiLink score using double-precision floats. Multi-record version.");
+  m.def("v_epilink_dkfz_exact", &v_epilink_dkfz_exact,
+      "Calculates the EpiLink score using double-precision floats"
+      " with the DKFZ EpiLink configuration. Multi-record version.");
+
+  // optional configuration of log-level: trace..crit = 0..5, off = 6.
+  m.def("set_log_level", &set_log_level,
+      "Sets the log-level of the terminal logger: trace..crit = 0..5, off = 6.");
+
+  // module initialization
+  create_terminal_logger();
 }
