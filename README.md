@@ -179,6 +179,30 @@ directory inside the Docker container.
 
 TODO
 
+## PySEL
+
+The build target `pysel` generates python bindings to some functionalities of
+SEL. Currently, only bindings to the clear-text EpiLink calculation are
+available. After running `make pysel`, the CMake `build` directory will contain
+a python module named `pysel.cpython-38-x86_64-linux-gnu.so`, or similar. This
+module can be loaded by any python runtime and used like so:
+```python
+import pysel
+
+pysel.set_log_level(3) # optionally set log-level (here: warning)
+
+# create input with one record and two database entries, only containing a Bloom
+# field "name" of size at most 16 bits (two bytes set in this example).
+# Note that this examle will core-dump as the DKFZ EpiLink config is more complex.
+input = pysel.Input({"name": [5, 23]}, {"name": [[24, 5], [88, 123]]})
+res = pysel.epilink_dkfz_int(input) # perform EpiLinkage
+
+# Or using the multi-record version
+records = [{"name": [5, 23]}, {"name": [87, 234]}] # two records
+db = {"name": [[24, 5], [89, 123]]} # two database entries
+res = pysel.v_epilink_dkfz_int(input) # perform multiple EpiLinkages
+```
+
 ## Built With
 
 * [ABY](https://github.com/encryptogroup/ABY/) - The multi party computation framework used
@@ -188,6 +212,7 @@ TODO
 * [valijson](https://github.com/tristanpenman/valijson) - JSON schema validation library
 * [cxxpts](https://github.com/jarro2783/cxxopts/) - Commandline option parser
 * [curlpp](https://github.com/jpbarrette/curlpp) - HTTP communication
+* [pybind11](https://github.com/pybind/pybind11) - Python bindings
 
 ## Contributing
 
