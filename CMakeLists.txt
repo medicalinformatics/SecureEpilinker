@@ -123,6 +123,7 @@ target_compile_definitions(sel PRIVATE
 add_executable(test_sel
   test/test_sel.cpp
   test/random_input_generator.cpp
+  test/epilink.cpp
   ${${P}_CIRCUIT_SOURCES})
 target_link_libraries(test_sel stdc++fs)
 target_link_libraries_system(test_sel ABY::aby

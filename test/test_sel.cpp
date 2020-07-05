@@ -1,3 +1,21 @@
+/**
+ \file    test_sel.cpp
+ \author  Sebastian Stammler <sebastian.stammler@cysec.de>
+ \copyright SEL - Secure EpiLinker
+      Copyright (C) 2020 Computational Biology & Simulation Group TU-Darmstadt
+      This program is free software: you can redistribute it and/or modify
+      it under the terms of the GNU Affero General Public License as published
+      by the Free Software Foundation, either version 3 of the License, or
+      (at your option) any later version.
+      This program is distributed in the hope that it will be useful,
+      but WITHOUT ANY WARRANTY; without even the implied warranty of
+      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+      GNU Affero General Public License for more details.
+      You should have received a copy of the GNU Affero General Public License
+      along with this program. If not, see <http://www.gnu.org/licenses/>.
+ \brief SEL Circuit tests
+*/
+
 #include "cxxopts.hpp"
 #include "fmt/format.h"
 #include "abycore/aby/abyparty.h"
@@ -8,6 +26,7 @@
 #include "../include/secure_epilinker.h"
 #include "../include/clear_epilinker.h"
 #include "random_input_generator.h"
+#include "epilink.h"
 
 #include <filesystem>
 
@@ -32,8 +51,6 @@ int bitmask_density_shift{0};
 
 constexpr auto BIN = FieldComparator::BINARY;
 constexpr auto BM = FieldComparator::DICE;
-constexpr double Threshold = 0.9;
-constexpr double TThreshold = 0.7;
 const fs::path CircDir = "../data/circ";
 
 struct FieldData { FieldSpec field; Bitmask data; };
@@ -63,31 +80,6 @@ map<string, FieldData> make_test_data() {
     ret.emplace(fd.field.name, move(fd));
   }
   return ret;
-}
-
-EpilinkConfig make_dkfz_cfg() {
-  return {
-    { // begin map<string, ML_Field>
-      { "vorname",
-        FieldSpec("vorname", 0.000235, 0.01, "dice", "bitmask", 500) },
-      { "nachname",
-        FieldSpec("nachname", 0.0000271, 0.008, "dice", "bitmask", 500) },
-      { "geburtsname",
-        FieldSpec("geburtsname", 0.0000271, 0.008, "dice", "bitmask", 500) },
-      { "geburtstag",
-        FieldSpec("geburtstag", 0.0333, 0.005, "binary", "integer", 5) },
-      { "geburtsmonat",
-        FieldSpec("geburtsmonat", 0.0833, 0.002, "binary", "integer", 4) },
-      { "geburtsjahr",
-        FieldSpec("geburtsjahr", 0.0286, 0.004, "binary", "integer", 11) },
-      { "plz",
-        FieldSpec("plz", 0.01, 0.04, "binary", "string", 40) },
-      { "ort",
-        FieldSpec("ort", 0.01, 0.04, "dice", "bitmask", 500) }
-    }, // end map<string, ML_Field>
-    { { "vorname", "nachname", "geburtsname" } }, // exchange groups
-    Threshold, TThreshold
-  };
 }
 
 enum class RunMode { dkfz = 0, integer = 1, bitmask = 2, combined = 3};
