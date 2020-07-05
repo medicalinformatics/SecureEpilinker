@@ -17,32 +17,69 @@
 */
 
 #include "../include/clear_epilinker.h"
-#include "../include/epilink_result.hpp"
+#include "../test/epilink.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 using namespace sel;
 
+auto epilink_dkfz_int(const clear_epilink::Input& input) {
+  auto cfg = CircuitConfig(test::make_dkfz_cfg());
+  return clear_epilink::calc_integer(input, cfg);
+}
+
+auto epilink_dkfz_exact(const clear_epilink::Input& input) {
+  auto cfg = CircuitConfig(test::make_dkfz_cfg());
+  return clear_epilink::calc_exact(input, cfg);
+}
+
 PYBIND11_MODULE(pysel, m) {
+
   m.doc() = "Clear-text EpiLinker";
 
-  // This creates bindings for the Input struct. Record and VRecord can directly
+  // Epilink and Circuit configuration types
+
+  py::class_<FieldSpec>(m, "FieldSpec")
+    .def(py::init<
+          const std::string&, // name
+          double, // frequency
+          double, // error
+          const std::string&, // comparator
+          const std::string&, // type
+          const size_t // bitsize
+        >())
+    .def(py::init<
+          const std::string&, // name
+          const double, // weight
+          const FieldComparator, // comparator
+          const FieldType, // type
+          const size_t // bitsize
+        >());
+
+  py::class_<EpilinkConfig>(m, "EpilinkConfig")
+    .def(py::init<
+          std::map<FieldName, FieldSpec>, // field weights
+          std::vector<IndexSet>, // exchange groups
+          double, double // match(,tentative) thresholds
+        >());
+
+  // DKFZ Mainzelliste default config
+  m.def("dkfz_cfg", &test::make_dkfz_cfg,
+      "Returns the default DKFZ Mainzelliste EpiLink configuration.");
+
+  py::class_<CircuitConfig>(m, "CircuitConfig")
+    .def(py::init<const EpilinkConfig&>());
+
+
+  // Epilink Input type. Record and VRecord can directly
   // be created from python, since they are built from stl types:
   // Record  = map<string, optional<vector<uint8_t>>>
   // VRecord = map<string, vector<optional<vector<uint8_t>>>>
   py::class_<clear_epilink::Input>(m, "Input")
     .def(py::init<const Record&, const VRecord&>());
 
-  py::class_<EpilinkConfig>(m, "EpilinkConfig")
-    .def(py::init<
-          std::map<FieldName, FieldSpec>,
-          std::vector<IndexSet>,
-          double, double
-        >());
-
-  py::class_<CircuitConfig>(m, "CircuitConfig")
-    .def(py::init<const EpilinkConfig&>());
+  // Clear-text Epilink function bindings and Return types
 
   py::class_<Result<CircUnit>>(m, "ResultInt")
     .def_readonly("index", &Result<CircUnit>::index)
@@ -50,8 +87,11 @@ PYBIND11_MODULE(pysel, m) {
     .def_readonly("tmatch", &Result<CircUnit>::tmatch)
     .def_readonly("sum_field_weights", &Result<CircUnit>::sum_field_weights)
     .def_readonly("sum_weights", &Result<CircUnit>::sum_weights);
-  m.def("calc_integer", &clear_epilink::calc_integer,
+  m.def("epilink_int", &clear_epilink::calc_integer,
       "Calculates the EpiLink score using the 32-bit fixed-point circuit.");
+  m.def("epilink_dkfz_int", &epilink_dkfz_int,
+      "Calculates the EpiLink score using the 32-bit fixed-point circuit"
+      " with the DKFZ EpiLink configuration.");
 
   py::class_<Result<double>>(m, "ResultDouble")
     .def_readonly("index", &Result<double>::index)
@@ -59,6 +99,9 @@ PYBIND11_MODULE(pysel, m) {
     .def_readonly("tmatch", &Result<double>::tmatch)
     .def_readonly("sum_field_weights", &Result<double>::sum_field_weights)
     .def_readonly("sum_weights", &Result<double>::sum_weights);
-  m.def("calc_exact", &clear_epilink::calc_exact,
+  m.def("epilink_exact", &clear_epilink::calc_exact,
       "Calculates the EpiLink score using double-precision floats.");
+  m.def("epilink_dkfz_exact", &epilink_dkfz_exact,
+      "Calculates the EpiLink score using double-precision floats"
+      " with the DKFZ EpiLink configuration.");
 }

@@ -167,6 +167,7 @@ pybind11_add_module(pysel SYSTEM
   include/epilink_input.cpp
   include/circuit_config.cpp
   include/clear_epilinker.cpp
+  test/epilink.cpp
 )
 target_link_libraries_system(pysel PUBLIC fmt::fmt-header-only spdlog::spdlog)
 target_compile_features(pysel PUBLIC cxx_std_17)
