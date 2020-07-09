@@ -25,16 +25,6 @@
 namespace py = pybind11;
 using namespace sel;
 
-auto epilink_dkfz_int(const clear_epilink::Input& input) {
-  auto cfg = CircuitConfig(test::make_dkfz_cfg());
-  return clear_epilink::calc_integer(input, cfg);
-}
-
-auto epilink_dkfz_exact(const clear_epilink::Input& input) {
-  auto cfg = CircuitConfig(test::make_dkfz_cfg());
-  return clear_epilink::calc_exact(input, cfg);
-}
-
 // multi-record versions
 
 auto v_epilink_int(const Records& records, const VRecord& database, const CircuitConfig& cfg) {
@@ -57,6 +47,50 @@ auto v_epilink_dkfz_exact(const Records& records, const VRecord& database) {
 
 void set_log_level(int lvl) {
   spdlog::set_level(spdlog::level::level_enum(lvl));
+}
+
+using PyEntry = std::optional<py::bytes>;
+using PyRecord = std::map<FieldName, PyEntry>;
+using PyVEntry = std::vector<PyEntry>;
+using PyVRecord = std::map<FieldName, PyVEntry>;
+
+FieldEntry from_py_entry(const PyEntry& entry) {
+  if (entry.has_value()) {
+    const std::string& es = entry.value();
+    return std::make_optional<Bitmask>(es.cbegin(), es.cend());
+  }
+  return std::nullopt;
+}
+
+Record from_py_record(const PyRecord& rec) {
+  return transform_map(rec, from_py_entry);
+}
+
+VRecord from_py_vrecord(const PyVRecord& db) {
+  return transform_map(db, [](const auto& x) {
+      return transform_vec(x, from_py_entry);
+  });
+}
+
+auto epilink_int(const PyRecord& rec, const PyVRecord& db, const CircuitConfig& cfg) {
+  clear_epilink::Input input(from_py_record(rec), from_py_vrecord(db));
+  return clear_epilink::calc_integer(input, cfg);
+}
+
+auto epilink_exact(const PyRecord& rec, const PyVRecord& db, const CircuitConfig& cfg) {
+  clear_epilink::Input input(from_py_record(rec), from_py_vrecord(db));
+  return clear_epilink::calc_exact(input, cfg);
+}
+auto epilink_dkfz_int(const PyRecord& rec, const PyVRecord& db) {
+  clear_epilink::Input input(from_py_record(rec), from_py_vrecord(db));
+  auto cfg = CircuitConfig(test::make_dkfz_cfg());
+  return clear_epilink::calc_integer(input, cfg);
+}
+
+auto epilink_dkfz_exact(const PyRecord& rec, const PyVRecord& db) {
+  clear_epilink::Input input(from_py_record(rec), from_py_vrecord(db));
+  auto cfg = CircuitConfig(test::make_dkfz_cfg());
+  return clear_epilink::calc_exact(input, cfg);
 }
 
 PYBIND11_MODULE(pysel, m) {
@@ -110,7 +144,7 @@ PYBIND11_MODULE(pysel, m) {
     .def_readonly("tmatch", &Result<CircUnit>::tmatch)
     .def_readonly("sum_field_weights", &Result<CircUnit>::sum_field_weights)
     .def_readonly("sum_weights", &Result<CircUnit>::sum_weights);
-  m.def("epilink_int", &clear_epilink::calc_integer,
+  m.def("epilink_int", &epilink_int,
       "Calculates the EpiLink score using the 32-bit fixed-point circuit.");
   m.def("epilink_dkfz_int", &epilink_dkfz_int,
       "Calculates the EpiLink score using the 32-bit fixed-point circuit"
@@ -127,7 +161,7 @@ PYBIND11_MODULE(pysel, m) {
     .def_readonly("tmatch", &Result<double>::tmatch)
     .def_readonly("sum_field_weights", &Result<double>::sum_field_weights)
     .def_readonly("sum_weights", &Result<double>::sum_weights);
-  m.def("epilink_exact", &clear_epilink::calc_exact,
+  m.def("epilink_exact", &epilink_exact,
       "Calculates the EpiLink score using double-precision floats.");
   m.def("epilink_dkfz_exact", &epilink_dkfz_exact,
       "Calculates the EpiLink score using double-precision floats"
