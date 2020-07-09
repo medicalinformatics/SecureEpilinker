@@ -113,14 +113,34 @@ PYBIND11_MODULE(pysel, m) {
           const FieldComparator, // comparator
           const FieldType, // type
           const size_t // bitsize
-        >());
+        >())
+    .def_readonly("name", &FieldSpec::name)
+    .def_readonly("weight", &FieldSpec::weight)
+    .def_readonly("bitsize", &FieldSpec::bitsize)
+    .def_property_readonly("comparator",
+        [](const FieldSpec& f) {
+          std::string s;
+          switch(f.comparator) {
+            case sel::FieldComparator::BINARY: s = "Binary"; break;
+            case sel::FieldComparator::DICE: s = "Bitmask"; break;
+          }
+          return s;
+        })
+    .def_property_readonly("type",
+        [](const FieldSpec& f) {
+          return ftype_to_str(f.type);
+        });
 
   py::class_<EpilinkConfig>(m, "EpilinkConfig")
     .def(py::init<
           std::map<FieldName, FieldSpec>, // field weights
           std::vector<IndexSet>, // exchange groups
           double, double // match(,tentative) thresholds
-        >());
+        >())
+    .def_readonly("fields", &EpilinkConfig::fields)
+    .def_readonly("exchange_groups", &EpilinkConfig::exchange_groups)
+    .def_readonly("threshold", &EpilinkConfig::threshold)
+    .def_readonly("tthreshold", &EpilinkConfig::tthreshold);
 
   // DKFZ Mainzelliste default config
   m.def("dkfz_cfg", &test::make_dkfz_cfg,
