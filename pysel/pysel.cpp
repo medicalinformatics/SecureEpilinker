@@ -122,6 +122,10 @@ PYBIND11_MODULE(pysel, m) {
           const FieldType, // type
           const size_t // bitsize
         >())
+    .def("__repr__",
+        [](const FieldSpec& x) {
+          return fmt::format("{}", x);
+        })
     .def_readonly("name", &FieldSpec::name)
     .def_readonly("weight", &FieldSpec::weight)
     .def_readonly("bitsize", &FieldSpec::bitsize)
@@ -145,6 +149,10 @@ PYBIND11_MODULE(pysel, m) {
           std::vector<IndexSet>, // exchange groups
           double, double // match(,tentative) thresholds
         >())
+    .def("__repr__",
+        [](const EpilinkConfig& c) {
+          return fmt::format("{}", c);
+        })
     .def_readonly("fields", &EpilinkConfig::fields)
     .def_readonly("exchange_groups", &EpilinkConfig::exchange_groups)
     .def_readonly("threshold", &EpilinkConfig::threshold)
@@ -155,7 +163,11 @@ PYBIND11_MODULE(pysel, m) {
       "Returns the default DKFZ Mainzelliste EpiLink configuration.");
 
   py::class_<CircuitConfig>(m, "CircuitConfig")
-    .def(py::init<const EpilinkConfig&>());
+    .def(py::init<const EpilinkConfig&>())
+    .def("__repr__",
+        [](const CircuitConfig& c) {
+          return fmt::format("{}", c);
+        });
 
   // Epilink Input type. Record and VRecord can directly
   // be created from python, since they are built from stl types:
