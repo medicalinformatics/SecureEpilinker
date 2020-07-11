@@ -25,26 +25,6 @@
 namespace py = pybind11;
 using namespace sel;
 
-// multi-record versions
-
-auto v_epilink_int(const Records& records, const VRecord& database, const CircuitConfig& cfg) {
-  return clear_epilink::calc<CircUnit>(records, database, cfg);
-}
-
-auto v_epilink_exact(const Records& records, const VRecord& database, const CircuitConfig& cfg) {
-  return clear_epilink::calc<double>(records, database, cfg);
-}
-
-auto v_epilink_dkfz_int(const Records& records, const VRecord& database) {
-  auto cfg = CircuitConfig(test::make_dkfz_cfg());
-  return v_epilink_int(records, database, cfg);
-}
-
-auto v_epilink_dkfz_exact(const Records& records, const VRecord& database) {
-  auto cfg = CircuitConfig(test::make_dkfz_cfg());
-  return v_epilink_exact(records, database, cfg);
-}
-
 void set_log_level(int lvl) {
   spdlog::set_level(spdlog::level::level_enum(lvl));
 }
@@ -99,6 +79,32 @@ auto epilink_dkfz_exact(const PyRecord& rec, const PyVRecord& db) {
   clear_epilink::Input input(crec, cdb); // Input only holds refs!
   auto cfg = CircuitConfig(test::make_dkfz_cfg());
   return clear_epilink::calc_exact(input, cfg);
+}
+
+// multi-record versions
+
+using PyRecords = std::vector<PyRecord>;
+
+auto v_epilink_int(const PyRecords& records, const PyVRecord& database, const CircuitConfig& cfg) {
+  const auto crecs = transform_vec(records, from_py_record);
+  const auto cdb = from_py_vrecord(database);
+  return clear_epilink::calc<CircUnit>(crecs, cdb, cfg);
+}
+
+auto v_epilink_exact(const PyRecords& records, const PyVRecord& database, const CircuitConfig& cfg) {
+  const auto crecs = transform_vec(records, from_py_record);
+  const auto cdb = from_py_vrecord(database);
+  return clear_epilink::calc<double>(crecs, cdb, cfg);
+}
+
+auto v_epilink_dkfz_int(const PyRecords& records, const PyVRecord& database) {
+  auto cfg = CircuitConfig(test::make_dkfz_cfg());
+  return v_epilink_int(records, database, cfg);
+}
+
+auto v_epilink_dkfz_exact(const PyRecords& records, const PyVRecord& database) {
+  auto cfg = CircuitConfig(test::make_dkfz_cfg());
+  return v_epilink_exact(records, database, cfg);
 }
 
 PYBIND11_MODULE(pysel, m) {
