@@ -73,22 +73,30 @@ VRecord from_py_vrecord(const PyVRecord& db) {
 }
 
 auto epilink_int(const PyRecord& rec, const PyVRecord& db, const CircuitConfig& cfg) {
-  clear_epilink::Input input(from_py_record(rec), from_py_vrecord(db));
+  const auto crec = from_py_record(rec);
+  const auto cdb = from_py_vrecord(db);
+  clear_epilink::Input input(crec, cdb); // Input only holds refs!
   return clear_epilink::calc_integer(input, cfg);
 }
 
 auto epilink_exact(const PyRecord& rec, const PyVRecord& db, const CircuitConfig& cfg) {
-  clear_epilink::Input input(from_py_record(rec), from_py_vrecord(db));
+  const auto crec = from_py_record(rec);
+  const auto cdb = from_py_vrecord(db);
+  clear_epilink::Input input(crec, cdb); // Input only holds refs!
   return clear_epilink::calc_exact(input, cfg);
 }
 auto epilink_dkfz_int(const PyRecord& rec, const PyVRecord& db) {
-  clear_epilink::Input input(from_py_record(rec), from_py_vrecord(db));
+  const auto crec = from_py_record(rec);
+  const auto cdb = from_py_vrecord(db);
+  clear_epilink::Input input(crec, cdb); // Input only holds refs!
   auto cfg = CircuitConfig(test::make_dkfz_cfg());
   return clear_epilink::calc_integer(input, cfg);
 }
 
 auto epilink_dkfz_exact(const PyRecord& rec, const PyVRecord& db) {
-  clear_epilink::Input input(from_py_record(rec), from_py_vrecord(db));
+  const auto crec = from_py_record(rec);
+  const auto cdb = from_py_vrecord(db);
+  clear_epilink::Input input(crec, cdb); // Input only holds refs!
   auto cfg = CircuitConfig(test::make_dkfz_cfg());
   return clear_epilink::calc_exact(input, cfg);
 }
