@@ -380,9 +380,10 @@ private:
     MultShare field_weight = delta_weight * comp;
 
 #ifdef DEBUG_SEL_CIRCUIT
-    print_share(delta_weight, format("weight ({}){}", ftype, i));
-    print_share(comp, format("comp ({}){}", ftype, i));
-    print_share(field_weight, format("^^^^ field weight ({}){} ^^^^", ftype, i));
+    //FIXME(SS): Compilation error, if -DDEBUG_SEL_CIRCUIT
+    //print_share(delta_weight, format("weight ({}){}", ftype, i));
+    //print_share(comp, format("comp ({}){}", ftype, i));
+    //print_share(field_weight, format("^^^^ field weight ({}){} ^^^^", ftype, i));
 #endif
 
     return field_weight_cache[i] = {field_weight, delta_weight};
