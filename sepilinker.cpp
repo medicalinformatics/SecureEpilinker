@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
           sel::valid_matchrecord_json_handler, sel::invalid_json_handler);
   auto matchrecords_methodhandler =
       sel::MethodHandler::create_methodhandler<sel::JsonMethodHandler>(
-          "POST", linkrecord_validator,
+          "POST", null_validator,
           sel::valid_matchrecords_json_handler, sel::invalid_json_handler);
 #endif
   // Create GET-Handler for job status monitoring
@@ -273,6 +273,7 @@ int main(int argc, char* argv[]) {
   linkrecords_handler.publish(service);
 #ifdef SEL_MATCHING_MODE
   matchrecord_handler.publish(service);
+  matchrecords_handler.publish(service);
 #endif
   jobmonitor_handler.publish(service);
   test_config_handler.publish(service);
