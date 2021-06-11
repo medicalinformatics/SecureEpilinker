@@ -209,6 +209,6 @@ This project is licensed under the AGPL License - see the [LICENSE](LICENSE) fil
 
 ## Acknowledgments
 
-* Thanks to [Lennard Braun](https://github.com/lenerd/ABY-build) for a sane ABY build process
+* Thanks to [Lennart Braun](https://github.com/lenerd/ABY-build) for a sane ABY build process
 * This work has been supported by the German Federal Ministry of Education and Research (BMBF) and by the Hessian State Ministry for Higher Education, Research and the Arts (HMWK) within the [HiGHmed Consortium](http://www.highmed.org) and [CRISP](http://www.crisp-da.de).
 
