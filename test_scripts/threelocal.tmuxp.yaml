@@ -19,7 +19,7 @@ windows:
 - cmd:
   panes:
     - shell_command:
-      - python httplisten.py
+      - python3 httplisten.py
     - shell_command:
       - ./threelocal.sh
 
