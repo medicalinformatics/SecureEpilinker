@@ -11,7 +11,7 @@ windows:
 - cmd:
   panes:
     - shell_command:
-      - python httplisten.py
+      - python3 httplisten.py
     - shell_command:
       - ./n-m_single.sh
 

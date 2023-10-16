@@ -26,6 +26,7 @@
 #include <vector>
 #include <map>
 #include <cstdint>
+#include <optional>
 
 namespace sel {
 

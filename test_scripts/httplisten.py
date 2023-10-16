@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Reflects the requests from HTTP methods GET, POST, PUT, and DELETE
 # Written by Nathan Hamiel (2010)
 

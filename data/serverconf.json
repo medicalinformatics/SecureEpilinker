@@ -2,7 +2,7 @@
 "port": 8161,
 "serverKeyPath": "../data/server.key",
 "serverCertificatePath": "../data/server.crt",
-"serverDHPath": "../data/dh768.pem",
+"serverDHPath": "../data/dh.pem",
 "localInitSchemaPath": "../data/local-init-schema.json",
 "remoteInitSchemaPath": "../data/remote-init-schema.json",
 "linkRecordSchemaPath": "../data/linkrecord-schema.json",
