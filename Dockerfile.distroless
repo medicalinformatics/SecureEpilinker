@@ -19,6 +19,9 @@ RUN apt-get update && \
   libboost-thread-dev \
   libgmp-dev \
   libcurl4-openssl-dev \
+  libpython3-dev \
+  python3 \
+  # python-is-python3 \
   && rm -rf /var/lib/apt/lists/*
 
 
@@ -32,6 +35,7 @@ COPY cmake cmake
 COPY include include
 COPY test test
 COPY scripts scripts
+COPY pysel pysel
 COPY CMakeLists.txt sepilinker.cpp ./
 
 # build!
