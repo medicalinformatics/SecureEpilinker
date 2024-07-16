@@ -93,7 +93,8 @@ void RemoteConfiguration::test_configuration(
   auto logger{get_logger()};
   auto data = client_config.dump();
   list<string> headers{"Authorization: "s + m_connection_profile.authenticator.sign_transaction(""),
-                       "Content-Type: application/json" };
+                       "Content-Type: application/json",
+                       "Beam-Remote: "s + m_remote_id};
   string url{assemble_remote_url(this) + "/testConfig/" + client_id};
 
   logger->debug("Sending config test to: {}\n", url);
