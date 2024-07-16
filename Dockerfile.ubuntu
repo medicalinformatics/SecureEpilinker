@@ -1,4 +1,4 @@
-FROM ubuntu:rolling as build
+FROM ubuntu:rolling AS build
 
 # Backup libs so we know what to copy later to runtime image
 RUN find /lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/ -name '*.so*' > /shared-libs.list
