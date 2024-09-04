@@ -6,8 +6,10 @@ RUN find /lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/ -name '*.so*' > /shar
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
   dpkg-dev \
-  g++-8 \
+  g++-12 \
   libc6-dev \
+  python3-dev \
+  python3-distutils-extra \
   libssl-dev \
   openssl \
   cmake \
@@ -18,10 +20,10 @@ RUN apt-get update && \
   libcurl4-openssl-dev \
   && rm -rf /var/lib/apt/lists/*
 
-# We only installed gcc-8 -> make default
-RUN ln -s /usr/bin/gcc-8 /usr/bin/gcc \
-  && ln -s /usr/bin/g++-8 /usr/bin/g++ \
-  && ln -s /usr/bin/gcov-8 /usr/bin/gcov
+# We only installed gcc-12 -> make default
+RUN ln -s /usr/bin/gcc-12 /usr/bin/gcc \
+  && ln -s /usr/bin/g++-12 /usr/bin/g++ \
+  && ln -s /usr/bin/gcov-12 /usr/bin/gcov
 
 WORKDIR /app
 COPY extern extern
