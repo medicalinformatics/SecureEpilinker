@@ -6,7 +6,7 @@ on:
   push:
     branches:
       - 'master'
-      - 'develop'
+      - 'dev'
       - 'feature/beamsel'
     tags:
       - 'v*.*.*'
@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         include:

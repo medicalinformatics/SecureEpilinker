@@ -1,4 +1,4 @@
-FROM ubuntu:rolling as build
+FROM ubuntu:rolling AS build
 
 # Backup libs so we know what to copy later to runtime image
 RUN find /lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/ -name '*.so*' > /shared-libs.list
@@ -6,10 +6,8 @@ RUN find /lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/ -name '*.so*' > /shar
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
   dpkg-dev \
-  g++-12 \
+  g++-10 \
   libc6-dev \
-  python3-dev \
-  python3-distutils-extra \
   libssl-dev \
   openssl \
   cmake \
@@ -17,13 +15,16 @@ RUN apt-get update && \
   libboost-system-dev \
   libboost-thread-dev \
   libgmp-dev \
+  python3 \
+  libpython3-dev \
+  python3-distutils-extra \
   libcurl4-openssl-dev \
   && rm -rf /var/lib/apt/lists/*
 
-# We only installed gcc-12 -> make default
-RUN ln -s /usr/bin/gcc-12 /usr/bin/gcc \
-  && ln -s /usr/bin/g++-12 /usr/bin/g++ \
-  && ln -s /usr/bin/gcov-12 /usr/bin/gcov
+# We only installed gcc-10 -> make default
+RUN ln -s /usr/bin/gcc-10 /usr/bin/gcc \
+  && ln -s /usr/bin/g++-10 /usr/bin/g++ \
+  && ln -s /usr/bin/gcov-10 /usr/bin/gcov
 
 WORKDIR /app
 COPY extern extern
@@ -31,6 +32,7 @@ COPY cmake cmake
 COPY include include
 COPY test test
 COPY scripts scripts
+COPY pysel pysel
 COPY CMakeLists.txt sepilinker.cpp ./
 
 # build!
@@ -80,3 +82,4 @@ EXPOSE 1337-1344
 
 USER sel:sel
 ENTRYPOINT ["/app/sel"]
+
