@@ -1,4 +1,4 @@
-FROM ubuntu:rolling AS build
+FROM ubuntu:noble AS build
 
 # Backup libs so we know what to copy later to runtime image
 RUN find /lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/ -name '*.so*' > /shared-libs.list
@@ -58,7 +58,7 @@ WORKDIR /app/data
 RUN ../scripts/genkeys.sh .
 
 # copy everything into minimal image
-FROM ubuntu:rolling
+FROM ubuntu:noble
 
 RUN groupadd -r sel && useradd --no-log-init -r -g sel sel
 
