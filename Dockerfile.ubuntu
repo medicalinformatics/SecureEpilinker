@@ -76,8 +76,8 @@ RUN mkdir /log && chown sel:sel /log
 # find libraries in the correct order
 ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/:/deps/
 
-EXPOSE 8161
-EXPOSE 1337-1344
+# EXPOSE 8161
+# EXPOSE 1337-1344
 
 USER sel:sel
 ENTRYPOINT ["/app/sel"]

@@ -94,7 +94,7 @@ void RemoteConfiguration::test_configuration(
   auto data = client_config.dump();
   list<string> headers{"Authorization: "s + m_connection_profile.authenticator.sign_transaction(""),
                        "Content-Type: application/json",
-                       "Beam-Remote: "s + m_remote_id};
+                       "beam-remote: "s + m_remote_id};
   string url{assemble_remote_url(this) + "/testConfig/" + client_id};
 
   logger->debug("Sending config test to: {}\n", url);
@@ -109,13 +109,16 @@ void RemoteConfiguration::test_configuration(
     logger->error("Configuration is not compatible to remote config");
     return;
   }
-  const auto aby_server_port{get_headers(response.body, "SEL-Port")};
+  const auto aby_server_port{get_headers(response.body, "sel-port")};
+  logger->debug("Response.body: {}", response.body);
+  logger->debug("ABY Port: {}", aby_server_port);
   if (!aby_server_port.empty()) {
     logger->info("Client registered aby Port {}", aby_server_port.front());
     set_aby_port(stoul(aby_server_port.front()));
     mark_mutually_initialized();
     std::thread client_creator([this](){ServerHandler::get().insert_client(m_remote_id);});
     client_creator.detach();
+    logger->info("Creating client {}", m_remote_id);
   }
 }
 
