@@ -38,6 +38,7 @@ COPY CMakeLists.txt sepilinker.cpp ./
 WORKDIR /app/build
 RUN cmake \
   -DCMAKE_FLAGS_EXTRA=-w \
+  -DCMAKE_BUILD_TYPE=Release \
   .. \
   && make sel -j $(nproc)
 
