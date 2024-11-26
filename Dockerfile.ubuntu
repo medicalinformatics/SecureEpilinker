@@ -1,23 +1,21 @@
-FROM ubuntu:rolling AS build
+FROM ubuntu:22.04 AS build
 
 # Backup libs so we know what to copy later to runtime image
 RUN find /lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/ -name '*.so*' > /shared-libs.list
 
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   dpkg-dev \
   g++-10 \
-  libc6-dev \
   libssl-dev \
   openssl \
   cmake \
-  libboost-dev \
-  libboost-system-dev \
-  libboost-thread-dev \
+  libboost-all-dev \
   libgmp-dev \
   python3 \
   libpython3-dev \
   libcurl4-openssl-dev \
+  python3-distutils \
   && rm -rf /var/lib/apt/lists/*
 
 # We only installed gcc-10 -> make default
@@ -58,7 +56,7 @@ WORKDIR /app/data
 RUN ../scripts/genkeys.sh .
 
 # copy everything into minimal image
-FROM ubuntu:rolling
+FROM ubuntu:22.04
 
 RUN groupadd -r sel && useradd --no-log-init -r -g sel sel
 
