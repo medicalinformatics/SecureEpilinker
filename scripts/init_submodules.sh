@@ -7,7 +7,7 @@ cd $(git rev-parse --show-toplevel)
 git submodule update --init
 
 cd extern/restbed
-git submodule update --init dependency/asio dependency/catch # ignore openssl
+git submodule update --init
 
 cd ../ABY
 git submodule update --init # ENCRYPTO_utils and OTExtension

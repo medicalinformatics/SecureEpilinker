@@ -13,6 +13,7 @@ execute_process(COMMAND
   "${PROJECT_SOURCE_DIR}/cmake/patch-valijson.sh"
   "${PROJECT_SOURCE_DIR}/extern/valijson")
 
+# First add all subdirectories
 add_subdirectory(ABY)
 add_subdirectory(fmt)
 add_subdirectory(cxxopts)
@@ -22,6 +23,7 @@ add_subdirectory(restbed EXCLUDE_FROM_ALL)
 add_subdirectory(curlpp EXCLUDE_FROM_ALL)
 add_subdirectory(spdlog EXCLUDE_FROM_ALL)
 
+# Then set compile options
 target_compile_options(aby PRIVATE "-w")
 target_compile_options(encrypto_utils PRIVATE "-w")
 target_compile_options(otextension PRIVATE "-w")
