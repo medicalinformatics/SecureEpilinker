@@ -17,6 +17,7 @@
 */
 
 #include "util.h"
+#include <cassert>
 #include <sstream>
 #include <iterator>
 #include <algorithm>

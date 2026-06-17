@@ -88,8 +88,8 @@ struct formatter<sel::BooleanSharing> {
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const sel::BooleanSharing& bs, FormatContext &ctx) {
-    return format_to(ctx.begin(), bs == sel::BooleanSharing::GMW ? "GMW" : "YAO");
+  auto format(const sel::BooleanSharing& bs, FormatContext &ctx) const {
+    return format_to(ctx.out(), "{}", bs == sel::BooleanSharing::GMW ? "GMW" : "YAO");
   }
 };
 
@@ -99,8 +99,8 @@ struct formatter<sel::CircuitConfig> {
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const sel::CircuitConfig& conf, FormatContext &ctx) {
-    auto out =  format_to(ctx.begin(),
+  auto format(const sel::CircuitConfig& conf, FormatContext &ctx) const {
+    auto out =  format_to(ctx.out(),
         "CircuitConfig{{{}, mathing_mode={}, bitlen={}, "
         "bool_sharing={}, use_conversion={}, "
         "precisions{{dice={}, weight={}}}, rescaled_weights={{",

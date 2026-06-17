@@ -294,14 +294,17 @@ namespace fmt {
  * Container printer (vector, set, ...)
  * inspired by https://github.com/louisdx/cxx-prettyprint
  */
+// Constrained to non-string-like containers: fmt provides its own formatters for
+// string/string_view, so an unconstrained Container<T> would be ambiguous with them.
 template <typename T, template<typename...> class Container>
-struct formatter<Container<T>> {
+struct formatter<Container<T>, char,
+    std::enable_if_t<!std::is_convertible_v<Container<T>, fmt::string_view>>> {
   template <typename ParseContext>
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const Container<T> v, FormatContext &ctx) {
-    auto c = format_to(ctx.begin(), "[");
+  auto format(const Container<T> v, FormatContext &ctx) const {
+    auto c = format_to(ctx.out(), "[");
 
     auto it = std::cbegin(v);
     auto the_end = std::cend(v);
@@ -320,8 +323,8 @@ template<> struct formatter<Bitmask> {
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const Bitmask v, FormatContext &ctx) {
-    auto c = ctx.begin();
+  auto format(const Bitmask v, FormatContext &ctx) const {
+    auto c = ctx.out();
     for (auto e = v.cbegin(); e != v.cend(); ++e) {
       c = format_to(c, "{:x}", *e);
       // separate each 2 bytes by whitespace

@@ -55,12 +55,13 @@ struct formatter<sel::Result<T>> {
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const sel::Result<T>& r, FormatContext &ctx) {
+  auto format(const sel::Result<T>& r, FormatContext &ctx) const {
     std::string type_spec;
     if constexpr (std::is_integral_v<T>) type_spec = ":x";
-    return format_to(ctx.begin(),
+    return format_to(ctx.out(),
+        fmt::runtime(
         "best index: {}; match(/tent.)? {}/{}; "
-        "num: {" + type_spec + "}; den: {" + type_spec + "}; score: {}"
+        "num: {" + type_spec + "}; den: {" + type_spec + "}; score: {}")
         , (uint64_t)r.index, r.match, r.tmatch
         , r.sum_field_weights, r.sum_weights,
         (((double)r.sum_field_weights)/r.sum_weights)
@@ -74,8 +75,8 @@ struct formatter<sel::CountResult<T>> {
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const sel::CountResult<T>& r, FormatContext &ctx) {
-    return format_to(ctx.begin(), "matches/tent.: {}/{}", r.matches, r.tmatches);
+  auto format(const sel::CountResult<T>& r, FormatContext &ctx) const {
+    return format_to(ctx.out(), "matches/tent.: {}/{}", r.matches, r.tmatches);
   }
 };
 

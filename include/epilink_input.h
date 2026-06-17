@@ -124,9 +124,9 @@ struct formatter<sel::EpilinkConfig> {
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const sel::EpilinkConfig& conf, FormatContext &ctx) {
+  auto format(const sel::EpilinkConfig& conf, FormatContext &ctx) const {
     const auto field_names = map_keys(conf.fields);
-    return format_to(ctx.begin(),
+    return format_to(ctx.out(),
         "EpilinkConfig{{thresholds={};{}, nfields={}, fields={}}}",
         conf.threshold, conf.tthreshold, conf.nfields, field_names
     );

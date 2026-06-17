@@ -83,13 +83,13 @@ struct formatter<sel::FieldComparator> {
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const sel::FieldComparator& c, FormatContext &ctx) {
+  auto format(const sel::FieldComparator& c, FormatContext &ctx) const {
     std::string s;
     switch(c) {
       case sel::FieldComparator::BINARY: s = "Binary"; break;
       case sel::FieldComparator::DICE: s = "Bitmask"; break;
     }
-    return format_to(ctx.begin(), s);
+    return format_to(ctx.out(), "{}", s);
   }
 };
 
@@ -99,8 +99,8 @@ struct formatter<sel::FieldSpec> {
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const sel::FieldSpec& field, FormatContext &ctx) {
-    return format_to(ctx.begin(),
+  auto format(const sel::FieldSpec& field, FormatContext &ctx) const {
+    return format_to(ctx.out(),
         "ML_Field{{name={}, weight={}, comp={}, type={}, bitsize={}}}",
         field.name, field.weight, field.comparator, ftype_to_str(field.type), field.bitsize
         );

@@ -7,6 +7,10 @@ option(valijson_BUILD_EXAMPLES "valijson Examples (Overwrite)" OFF)
 option(SPDLOG_BUILD_BENCH "spdlog Benchmarks (Overwrite)" OFF)
 option(SPDLOG_BUILD_EXAMPLES "spdlog Examples (Overwrite)" OFF)
 option(SPDLOG_BUILD_TESTING "spdlog Tests (Overwrite)" OFF)
+# Make spdlog use the project's (header-only) fmt instead of its bundled copy,
+# so spdlog and the rest of the codebase share exactly one fmt version.
+# Relies on add_subdirectory(fmt) running before add_subdirectory(spdlog) below.
+set(SPDLOG_FMT_EXTERNAL_HO ON CACHE BOOL "spdlog uses external header-only fmt (Overwrite)" FORCE)
 
 # patch nlohmann/json include path and CMake option names
 execute_process(COMMAND

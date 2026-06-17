@@ -17,6 +17,7 @@
 */
 
 #include <stdexcept>
+#include <cassert>
 #include "fmt/format.h"
 using fmt::format;
 #include "abycore/aby/abyparty.h"

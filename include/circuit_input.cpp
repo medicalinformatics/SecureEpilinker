@@ -16,6 +16,7 @@
  \brief SEL Circuit input helper
 */
 
+#include <cassert>
 #include "fmt/format.h"
 using fmt::format;
 #include "circuit_input.h"

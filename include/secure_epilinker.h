@@ -146,9 +146,9 @@ struct formatter<sel::SecureEpilinker::ABYConfig> {
   constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const sel::SecureEpilinker::ABYConfig& conf, FormatContext &ctx) {
-    return format_to(ctx.begin(),
-        "ABYConfig{{role={}, sharing={}, {}={}:{}, threads={}}}",
+  auto format(const sel::SecureEpilinker::ABYConfig& conf, FormatContext &ctx) const {
+    return format_to(ctx.out(),
+        "ABYConfig{{role={}, {}={}:{}, threads={}}}",
         ((conf.role == sel::MPCRole::SERVER) ? "Server" : "Client"),
         ((conf.role == sel::MPCRole::SERVER) ? "binding to" : "remote host"),
         conf.host, conf.port, conf.nthreads);
