@@ -177,6 +177,7 @@ size_t LinkageJob::get_server_nvals(size_t num_records) {
       "Authorization: "s+m_remote_config->get_remote_authenticator().sign_transaction(""),
       "Record-Number: "s + to_string(num_records),
       "Counting-Mode: "s + (m_counting_job ? "true" : "false"),
+      "beam-remote: "s + m_remote_config->get_id(),
       "Content-Type: application/json"};
   string url{assemble_remote_url(m_remote_config) + "/initMPC/"+m_local_config->get_local_id()};
   logger->debug("Sending {} request to {}\n",(m_counting_job ? "matching" : "linkage"), url);
@@ -186,7 +187,7 @@ size_t LinkageJob::get_server_nvals(size_t num_records) {
     logger->debug("Response stream:\n{} - {}\n",response.return_code, response.body);
     // get nvals from response header
     if (response.return_code == 200) {
-      return stoull(get_headers(response.body, "Record-Number").front());
+      return stoull(get_headers(response.body, "record-number").front());
     } else {
       logger->error("Error communicating with remote epilinker: {} - {}", response.return_code, response.body);
     }

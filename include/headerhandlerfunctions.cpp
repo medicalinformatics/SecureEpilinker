@@ -47,16 +47,16 @@ SessionResponse init_mpc(const shared_ptr<restbed::Session>&,
       auth_result.return_code != 200){ // auth not ok
     return auth_result;
   }
-  if(header.find("Record-Number") == header.end()) {
+  if(header.find("record-number") == header.end()) {
     logger->error("No client record number from {}", remote_id);
     return responses::status_error(400, "No client record number transmitted");
   }
-  if(header.find("Counting-Mode") == header.end()) {
+  if(header.find("counting-mode") == header.end()) {
     counting_mode = false;
   }
   aby_server_port = ServerHandler::cget().get_server_port(remote_id);
-  size_t num_records = stoull(header.find("Record-Number")->second);
-  counting_mode = header.find("Counting-Mode")->second == "true" ? true : false;
+  size_t num_records = stoull(header.find("record-number")->second);
+  counting_mode = header.find("counting-mode")->second == "true" ? true : false;
   size_t server_record_number;
   shared_ptr<const ServerData> data;
   try {

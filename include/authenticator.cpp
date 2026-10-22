@@ -75,8 +75,12 @@ SessionResponse Authenticator::check_authentication_header(
   auto logger = get_logger();
   try {
     string auth_info;
-    if (auto it = header.find("Authorization"); it != header.end()) {
+    if (auto it = header.find("Authorization"), it2 = header.find("authorization"); it != header.end() || it2 != header.end()) {
+      if (it != header.end()) {
       auth_info = it->second;
+      } else {
+      auth_info = it2->second;
+      }
       return check_authentication(auth_info);
     } else {  // No auth header
       auto type{print_auth_type()};

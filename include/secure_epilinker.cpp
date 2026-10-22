@@ -52,7 +52,7 @@ SecureEpilinker::SecureEpilinker(ABYConfig config, CircuitConfig circuit_config)
       ->GetCircuitBuildRoutine())},
   acirc{dynamic_cast<ArithmeticCircuit*>(party->GetSharings()[S_ARITH]->GetCircuitBuildRoutine())},
   cfg{circuit_config}, selc{make_unique_circuit_builder(cfg, bcirc, ccirc, acirc)} {
-    get_logger()->debug("SecureEpilinker created.");
+    get_logger()->debug("SecureEpilinker created:\nRole:{},host:{},port:{}",(int)config.role, config.host, config.port);
   }
 // TODO when ABY can separate circuit building/setup/online phases, we create
 // different SELCircuits per build_circuit()...

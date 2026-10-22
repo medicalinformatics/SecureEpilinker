@@ -112,6 +112,7 @@ void ServerHandler::insert_server(RemoteId id, RemoteAddress remote_address) {
 void ServerHandler::add_linkage_job(const RemoteId& remote_id, const std::shared_ptr<LinkageJob>& job){
   const auto& config_handler = ConfigurationHandler::cget();
   const auto job_id = job->get_id();
+  m_logger->debug("Adding job {} with remote {}", job_id, remote_id);
   if(config_handler.get_remote_config(remote_id)->get_mutual_initialization_status()) {
     m_client_jobs.emplace(job_id, job);
     m_worker_threads.at(remote_id).push(job);

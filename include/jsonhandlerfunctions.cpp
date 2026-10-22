@@ -126,6 +126,7 @@ SessionResponse create_job(
 #ifdef SEL_MATCHING_MODE
         if(counting_mode){
           job->set_counting_job();
+          logger->debug("Set job to counting job");
         }
 #endif
         server_handler.add_linkage_job(remote_id, job);
