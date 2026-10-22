@@ -24,7 +24,6 @@
 #include <memory>
 #include <optional>
 
-#include <future>
 #include <sstream>
 
 #include <nlohmann/json.hpp>

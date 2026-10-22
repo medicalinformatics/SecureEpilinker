@@ -59,6 +59,9 @@ void run_job(const shared_ptr<LinkageJob>& job) {
 
 ServerHandler::~ServerHandler() {
   for (auto& worker_thread : m_worker_threads) {
+    worker_thread.second.interrupt();
+  }
+  for (auto& worker_thread : m_worker_threads) {
     worker_thread.second.join();
   }
 }

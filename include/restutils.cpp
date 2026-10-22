@@ -16,7 +16,6 @@
 #include <map>
 #include <iostream>
 #include <sstream>
-#include <future>
 #include <algorithm>
 
 using namespace std;
@@ -131,13 +130,12 @@ SessionResponse perform_post_request(string url, string data, list<string> heade
   curl_request.setOpt(new curlpp::Options::PostFieldSize(data.size()));
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
+  curl_request.setOpt(new curlpp::Options::ConnectTimeout(10L));
+  curl_request.setOpt(new curlpp::Options::Timeout(60L));
   curl_request.setOpt(new curlpp::Options::Header(get_headers));
-  //this future trickery has to be done to properly wait for a reply
-  auto response_stream{async(send_curl,std::ref(curl_request))};
-  response_stream.wait();
+  auto response_stream{send_curl(curl_request)};
   auto responsecode = curlpp::Infos::ResponseCode::get(curl_request);
-  auto stream = response_stream.get();
-  return {static_cast<int>(responsecode), stream.str(),{}};
+  return {static_cast<int>(responsecode), response_stream.str(),{}};
 }
 
 SessionResponse perform_get_request(string url, list<string> headers, bool get_headers){
@@ -150,13 +148,12 @@ SessionResponse perform_get_request(string url, list<string> headers, bool get_h
   curl_request.setOpt(new curlpp::Options::HttpGet(true));
   curl_request.setOpt(new curlpp::Options::SslVerifyHost(false));
   curl_request.setOpt(new curlpp::Options::SslVerifyPeer(false));
+  curl_request.setOpt(new curlpp::Options::ConnectTimeout(10L));
+  curl_request.setOpt(new curlpp::Options::Timeout(60L));
   curl_request.setOpt(new curlpp::Options::Header(get_headers));
-  //this future trickery has to be done to properly wait for a reply
-  auto response_stream{async(send_curl,std::ref(curl_request))};
-  response_stream.wait();
+  auto response_stream{send_curl(curl_request)};
   auto responsecode = curlpp::Infos::ResponseCode::get(curl_request);
-  auto stream = response_stream.get();
-  return {static_cast<int>(responsecode), stream.str(),{}};
+  return {static_cast<int>(responsecode), response_stream.str(),{}};
 }
 
   SessionResponse send_result_to_linkageservice(const vector<Result<CircUnit>>& share,

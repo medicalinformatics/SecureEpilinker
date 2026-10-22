@@ -35,7 +35,6 @@ later version. This program is distributed in the hope that it will be useful,
 #include <variant>
 #include <vector>
 #include <optional>
-#include <future>
 
 using namespace std;
 namespace sel {
@@ -57,11 +56,11 @@ void LinkageJob::add_data(unique_ptr<Records> data) {
 }
 
 JobStatus LinkageJob::get_status() const {
-  return m_status;
+  return m_status.load(std::memory_order_acquire);
 }
 
 void LinkageJob::set_status(JobStatus status){
-  m_status = status;
+  m_status.store(status, std::memory_order_release);
 }
 
 JobId LinkageJob::get_id() const {
@@ -73,16 +72,9 @@ RemoteId LinkageJob::get_remote_id() const {
 }
 
 LinkageJob::JobPreparation LinkageJob::prepare_run() {
-  m_status = JobStatus::RUNNING;
-  // Get number of records from server
-  size_t num_records{m_records->size()};
-  //this future trickery has to be done to properly wait for a reply
-  auto nvals{std::async(&LinkageJob::get_server_nvals, this, num_records)};
-  nvals.wait_for(15s);
-  if(!nvals.valid()){
-    throw runtime_error("Error retrieving number of records from server");
-  }
-  const auto database_size{nvals.get()};
+  set_status(JobStatus::RUNNING);
+  const size_t num_records{m_records->size()};
+  const auto database_size{get_server_nvals(num_records)};
   return {num_records, database_size, ServerHandler::get().get_epilink_client(m_remote_config->get_id())};
 }
 
@@ -116,10 +108,10 @@ void LinkageJob::run_linkage_job() {
       } catch (const exception& e) {
         get_logger(ComponentLogger::REST)->error("Can not connect to linkage service or callback: {}", e.what());
       }
-    m_status = JobStatus::DONE;
+    set_status(JobStatus::DONE);
   } catch (const exception& e) {
     logger->error("Error running MPC Client: {}\n", e.what());
-    m_status = JobStatus::FAULT;
+    set_status(JobStatus::FAULT);
   }
 }
 
@@ -149,15 +141,15 @@ void LinkageJob::run_matching_job() {
       match_json["result"] = match_result;
       logger->trace("Result to callback: {}", match_json.dump(0));
       perform_callback(match_json.dump());
-    m_status = JobStatus::DONE;
+    set_status(JobStatus::DONE);
   } catch (const exception& e) {
     logger->error("Error running MPC Client: {}\n", e.what());
-    m_status = JobStatus::FAULT;
+    set_status(JobStatus::FAULT);
   }
 #endif
 #ifndef SEL_MATCHING_MODE
   logger->error("Matching mode not allowed");
-  m_status = JobStatus::FAULT;
+  set_status(JobStatus::FAULT);
 #endif
 }
 
@@ -171,8 +163,6 @@ void LinkageJob::set_local_config(shared_ptr<LocalConfiguration> l_config) {
  */
 size_t LinkageJob::get_server_nvals(size_t num_records) {
   auto logger{get_logger(ComponentLogger::CLIENT)};
-  //FIXME(TK): THIS IS BAD AND I SHOULD FEEL BAD
-  std::this_thread::sleep_for(500ms);
   list<string> headers{
       "Authorization: "s+m_remote_config->get_remote_authenticator().sign_transaction(""),
       "Record-Number: "s + to_string(num_records),
@@ -181,19 +171,20 @@ size_t LinkageJob::get_server_nvals(size_t num_records) {
       "Content-Type: application/json"};
   string url{assemble_remote_url(m_remote_config) + "/initMPC/"+m_local_config->get_local_id()};
   logger->debug("Sending {} request to {}\n",(m_counting_job ? "matching" : "linkage"), url);
-  try{
-    // TODO(TK): Refactor perform_post_request w/ optional to avoid dummy data
-    auto response{perform_post_request(url, "{}", headers, true)};
-    logger->debug("Response stream:\n{} - {}\n",response.return_code, response.body);
-    // get nvals from response header
-    if (response.return_code == 200) {
-      return stoull(get_headers(response.body, "record-number").front());
-    } else {
-      logger->error("Error communicating with remote epilinker: {} - {}", response.return_code, response.body);
-    }
-  } catch (const exception& e) {
-    logger->error("Error performing initMPC call: {}", e.what());
+  // TODO(TK): Refactor perform_post_request w/ optional to avoid dummy data
+  auto response{perform_post_request(url, "{}", headers, true)};
+  logger->debug("Response stream:\n{} - {}\n",response.return_code, response.body);
+  if (response.return_code != 200) {
+    throw runtime_error(fmt::format(
+        "Error communicating with remote epilinker: {} - {}",
+        response.return_code, response.body));
   }
+
+  const auto record_number_headers{get_headers(response.body, "record-number")};
+  if (record_number_headers.empty()) {
+    throw runtime_error("Remote epilinker response is missing record-number header");
+  }
+  return stoull(record_number_headers.front());
 }
 
 bool LinkageJob::perform_callback(const string& body) const {

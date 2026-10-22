@@ -152,6 +152,7 @@ target_compile_definitions(test_aby PRIVATE
 # Test utils
 add_executable(test_util test/test_util.cpp include/util.cpp include/util.h)
 target_link_libraries_system(test_util fmt::fmt-header-only)
+target_link_libraries(test_util Threads::Threads)
 target_compile_features(test_util PUBLIC cxx_std_17)
 target_compile_options(test_util PRIVATE ${${P}_EXTRA_WARNING_FLAGS})
 

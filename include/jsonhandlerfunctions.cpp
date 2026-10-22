@@ -68,11 +68,20 @@ SessionResponse valid_test_config_json_handler(
     if (config_handler.compare_configuration(client_comparison_config, remote_id)) {
       logger->info("Valid config");
       remote_config->set_aby_port(aby_port);
-      remote_config->mark_mutually_initialized();
 
       logger->info("Building MPC Server");
       RemoteAddress tempadr{remote_config->get_remote_host(),aby_port};
-      std::thread server_creator([remote_id,tempadr](){ServerHandler::get().insert_server(remote_id, tempadr);});
+      std::thread server_creator([remote_id,tempadr,remote_config](){
+        try {
+          ServerHandler::get().insert_server(remote_id, tempadr);
+          // The server can only accept jobs after its blocking ABY connection
+          // setup has completed.
+          remote_config->mark_mutually_initialized();
+        } catch (const std::exception& e) {
+          get_logger()->error("Failed to initialize MPC server for {}: {}",
+                              remote_id, e.what());
+        }
+      });
       server_creator.detach();
       return responses::server_initialized(aby_port);
     } else {

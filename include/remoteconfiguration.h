@@ -20,6 +20,7 @@
 #define SEL_REMOTECONFIGURATION_H
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -73,7 +74,7 @@ class RemoteConfiguration {
   ConnectionConfig m_linkage_service;
   Port m_aby_port;
   bool m_matching_mode{false};
-  mutable bool m_mutually_initialized{false};
+  mutable std::atomic<bool> m_mutually_initialized{false};
 };
 
 }  // Namespace sel

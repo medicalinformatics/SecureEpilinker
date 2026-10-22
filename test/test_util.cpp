@@ -1,5 +1,9 @@
 #include "fmt/format.h"
+#include "../include/serialworker.hpp"
 #include "../include/util.h"
+
+#include <chrono>
+#include <future>
 
 using namespace std;
 
@@ -48,6 +52,42 @@ void test_map_str_double_to_vector_double() {
   assert (vw.size() == mw.size());
 }
 
+void test_serial_worker_shutdown_while_idle() {
+  using namespace std::chrono_literals;
+  auto shutdown = async(launch::async, [] {
+    SerialWorker<int> worker{[](const shared_ptr<int>&) {}};
+  });
+  assert(shutdown.wait_for(1s) == future_status::ready);
+}
+
+void test_serial_worker_does_not_lock_producers_while_consuming() {
+  using namespace std::chrono_literals;
+  promise<void> first_started;
+  promise<void> release_first;
+  auto release = release_first.get_future().share();
+  promise<void> second_processed;
+
+  SerialWorker<int> worker{[&](const shared_ptr<int>& value) {
+    if (*value == 1) {
+      first_started.set_value();
+      release.wait();
+    } else {
+      second_processed.set_value();
+    }
+  }};
+
+  worker.push(make_shared<int>(1));
+  assert(first_started.get_future().wait_for(1s) == future_status::ready);
+
+  auto second_push = async(launch::async, [&] {
+    worker.push(make_shared<int>(2));
+  });
+  assert(second_push.wait_for(1s) == future_status::ready);
+
+  release_first.set_value();
+  assert(second_processed.get_future().wait_for(1s) == future_status::ready);
+}
+
 } // namespace sel
 
 using namespace sel;
@@ -58,5 +98,7 @@ int main(int argc, char *argv[])
   test_ceil_log2();
   test_map();
   test_format_vector();
+  test_serial_worker_shutdown_while_idle();
+  test_serial_worker_does_not_lock_producers_while_consuming();
   return 0;
 }

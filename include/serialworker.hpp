@@ -20,12 +20,13 @@
 #define SEL_SERIALWORKER_HPP
 #pragma once
 
-#include <memory>
-#include <queue>
-#include <thread>
-#include <mutex>
 #include <condition_variable>
 #include <functional>
+#include <memory>
+#include <mutex>
+#include <queue>
+#include <thread>
+#include <utility>
 
 namespace sel {
 
@@ -40,23 +41,39 @@ class SerialWorker {
   using JobConsumer = std::function<void (const std::shared_ptr<T>&)>;
 
 public:
-  SerialWorker(const JobConsumer& job_consumer) :
-    thread_{&SerialWorker<T>::worker_loop, this, job_consumer}
+  explicit SerialWorker(JobConsumer job_consumer)
+    : job_consumer_{std::move(job_consumer)},
+      thread_{&SerialWorker<T>::worker_loop, this}
   {}
 
+  ~SerialWorker() {
+    interrupt();
+    join();
+  }
+
   void push(std::shared_ptr<T> job) {
-    std::unique_lock<std::mutex> mlock(mutex_);
-    queue_.push(job);
-    mlock.unlock();
+    {
+      std::lock_guard<std::mutex> lock{mutex_};
+      if (interrupted_) {
+        return;
+      }
+      queue_.push(std::move(job));
+    }
     cond_.notify_one();
   }
 
   void interrupt() {
-    interrupted = true;
+    {
+      std::lock_guard<std::mutex> lock{mutex_};
+      interrupted_ = true;
+    }
+    cond_.notify_all();
   }
 
   void join() {
-    thread_.join();
+    if (thread_.joinable()) {
+      thread_.join();
+    }
   }
 
   SerialWorker()=delete;
@@ -64,26 +81,34 @@ public:
   SerialWorker& operator=(const SerialWorker&) = delete;
 
 private:
-  std::thread thread_;
+  // The worker thread must be declared last so all state it accesses is
+  // constructed before the thread starts.
   std::queue<std::shared_ptr<T>> queue_;
   std::mutex mutex_;
   std::condition_variable cond_;
-  bool interrupted = false;
+  bool interrupted_{false};
+  JobConsumer job_consumer_;
+  std::thread thread_;
 
-  void worker_loop(const JobConsumer job_consumer) {
-    do {
-      std::unique_lock<std::mutex> mlock(mutex_);
-      while (queue_.empty()) {
-        if (interrupted) return;
-        cond_.wait(mlock);
+  void worker_loop() {
+    while (true) {
+      std::shared_ptr<T> job;
+      {
+        std::unique_lock<std::mutex> lock{mutex_};
+        cond_.wait(lock, [this] {
+          return interrupted_ || !queue_.empty();
+        });
+        if (interrupted_) {
+          return;
+        }
+        job = std::move(queue_.front());
+        queue_.pop();
       }
-      if (interrupted) return;
-      auto job = queue_.front();
-      queue_.pop();
 
-      job_consumer(job);
-
-    } while(!interrupted);
+      // Jobs may enqueue more work, so do not hold the queue mutex while a
+      // consumer runs.
+      job_consumer_(job);
+    }
   }
 };
 

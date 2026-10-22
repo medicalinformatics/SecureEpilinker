@@ -80,11 +80,11 @@ bool RemoteConfiguration::get_matching_mode() const {
 }
 
 void RemoteConfiguration::mark_mutually_initialized() const {
-  m_mutually_initialized = true;
+  m_mutually_initialized.store(true, std::memory_order_release);
 }
 
 bool RemoteConfiguration::get_mutual_initialization_status() const {
-  return m_mutually_initialized;
+  return m_mutually_initialized.load(std::memory_order_acquire);
 }
 
 void RemoteConfiguration::test_configuration(
@@ -115,10 +115,11 @@ void RemoteConfiguration::test_configuration(
   if (!aby_server_port.empty()) {
     logger->info("Client registered aby Port {}", aby_server_port.front());
     set_aby_port(stoul(aby_server_port.front()));
-    mark_mutually_initialized();
-    std::thread client_creator([this](){ServerHandler::get().insert_client(m_remote_id);});
-    client_creator.detach();
     logger->info("Creating client {}", m_remote_id);
+    // Connecting is intentionally synchronous: callers must not observe this
+    // remote as initialized until the ABY client and its worker are ready.
+    ServerHandler::get().insert_client(m_remote_id);
+    mark_mutually_initialized();
   }
 }
 

@@ -25,6 +25,7 @@
 #include "resttypes.h"
 #include "resourcehandler.h"
 #include "methodhandler.hpp"
+#include <atomic>
 #include <memory>
 #include <string>
 #include <variant>
@@ -72,8 +73,8 @@ class LinkageJob {
   void print_data() const;
 #endif
   JobId m_id;
-  JobStatus m_status{JobStatus::QUEUED};
-    std::unique_ptr<Records> m_records;
+  std::atomic<JobStatus> m_status{JobStatus::QUEUED};
+  std::unique_ptr<Records> m_records;
   std::string m_callback;
   std::shared_ptr<const LocalConfiguration> m_local_config;
   std::shared_ptr<const RemoteConfiguration> m_remote_config;
