@@ -1,8 +1,11 @@
-FROM ubuntu:22.04 AS build
+# ABY's bundled crypto dependencies are compiled with x86-64 SIMD flags.
+ARG SEL_PLATFORM=linux/amd64
+FROM --platform=${SEL_PLATFORM} ubuntu:22.04 AS build
 
 
-# Backup libs so we know what to copy later to runtime image
-RUN find /lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/ -name '*.so*' > /shared-libs.list
+# Backup libs so we know what to copy later to runtime image without
+# hard-coding Debian's multiarch library directory.
+RUN find /lib /usr/lib -name '*.so*' > /shared-libs.list
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -33,11 +36,13 @@ COPY scripts scripts
 COPY pysel pysel
 COPY CMakeLists.txt sepilinker.cpp ./
 
-# build!
+# build! Restbed's vendored OpenSSL headers are incomplete and must not be
+# mixed with Ubuntu's OpenSSL 3 libraries.
 WORKDIR /app/build
 RUN cmake \
   -DCMAKE_FLAGS_EXTRA=-w \
   -DCMAKE_BUILD_TYPE=Release \
+  -Dssl_INCLUDE=/usr/include \
   .. \
   && make sel -j $(nproc)
 
@@ -57,7 +62,7 @@ WORKDIR /app/data
 RUN ../scripts/genkeys.sh .
 
 # copy everything into minimal image
-FROM ubuntu:22.04
+FROM --platform=${SEL_PLATFORM} ubuntu:22.04
 
 RUN groupadd -r sel && useradd --no-log-init -r -g sel sel
 
@@ -73,8 +78,9 @@ COPY --chown=sel:sel data/circ /data/circ
 #RUN chmod a+r circ/* \
 RUN mkdir /log && chown sel:sel /log
 
-# find libraries in the correct order
-ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/:/deps/
+# Base-image libraries are found by the system loader; dependencies copied from
+# the build image live here.
+ENV LD_LIBRARY_PATH=/deps/
 
 # EXPOSE 8161
 # EXPOSE 1337-1344
