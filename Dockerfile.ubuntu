@@ -1,5 +1,6 @@
 FROM ubuntu:22.04 AS build
 
+
 # Backup libs so we know what to copy later to runtime image
 RUN find /lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/ -name '*.so*' > /shared-libs.list
 
@@ -80,3 +81,4 @@ ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu/:/deps/
 
 USER sel:sel
 ENTRYPOINT ["/app/sel"]
+
