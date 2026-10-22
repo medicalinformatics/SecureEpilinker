@@ -70,9 +70,7 @@ ServerData DatabaseFetcher::fetch_data(bool matching_mode) {
                   m_page_size);
   m_logger->info("Requesting Database");
   m_page = 1u;
-  auto paget{request_page(m_url + "?pageSize=" + to_string(m_page_size))};
-  auto page =
-      *(paget.begin());  // FIXME(TK): JSon wird zusätzlich in Array gepack
+  auto page = request_page(m_url + "?pageSize=" + to_string(m_page_size));
   if (page.count("lastPageNumber")) {
     m_last_page = page.at("lastPageNumber").get<unsigned>();
   }
